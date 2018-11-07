@@ -21,7 +21,12 @@
 # SOFTWARE.
 
 project(authserver VERSION 1.0.0 DESCRIPTION "Authserver for NovusCore")
-add_executable(authserver main.cpp)
+add_executable(authserver)
+
+target_sources(authserver
+    PRIVATE
+    "${CMAKE_CURRENT_LIST_DIR}/main.cpp"
+)
 
 # Set VERSION & FOLDER Property
 set_target_properties(authserver PROPERTIES VERSION ${PROJECT_VERSION})

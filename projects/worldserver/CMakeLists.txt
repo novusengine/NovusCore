@@ -21,7 +21,12 @@
 # SOFTWARE.
 
 project(worldserver VERSION 1.0.0 DESCRIPTION "Worldserver for NovusCore")
-add_executable(worldserver main.cpp)
+add_executable(worldserver)
+
+target_sources(worldserver
+    PRIVATE
+    "${CMAKE_CURRENT_LIST_DIR}/main.cpp"
+)
 
 # Set VERSION & FOLDER Property
 set_target_properties(worldserver PROPERTIES VERSION ${PROJECT_VERSION})

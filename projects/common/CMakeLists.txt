@@ -21,7 +21,16 @@
 # SOFTWARE.
 
 project(common VERSION 1.0.0 DESCRIPTION "Common is a static library for NovusCore")
-add_library(common STATIC common.h common.cpp)
+add_library(common)
+
+target_sources(common
+    PRIVATE
+    "${CMAKE_CURRENT_LIST_DIR}/common.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/common.h"
+    "${CMAKE_CURRENT_LIST_DIR}/BaseConnection.h"
+    "${CMAKE_CURRENT_LIST_DIR}/TcpServer.h"
+)
+
 target_link_libraries(common asio)
 
 # Set VERSION & FOLDER Property
