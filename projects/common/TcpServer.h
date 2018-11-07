@@ -5,33 +5,11 @@ namespace Common
     class TcpServer
     {
     public:
-        TcpServer(asio::io_service& io_service)
-            : acceptor_(io_service, tcp::endpoint(tcp::v4(), 3724))
-        {
-            start_accept();
-        }
+        TcpServer(asio::io_service& io_service) : acceptor_(io_service, tcp::endpoint(tcp::v4(), 3724)) { }
 
-    private:
-        void start_accept()
-        {
-            BaseConnection::pointer new_connection =
-                BaseConnection::create(acceptor_.get_io_service());
-
-            acceptor_.async_accept(new_connection->socket(),
-                std::bind(&TcpServer::handle_accept, this, new_connection,
-                    std::placeholders::_1));
-        }
-
-        void handle_accept(BaseConnection::pointer new_connection,
-            const asio::error_code& error)
-        {
-            if (!error)
-            {
-                new_connection->start();
-            }
-
-            start_accept();
-        }
+    protected:
+        virtual void StartAccept() = 0;
+        virtual void HandleAccept(BaseConnection::pointer new_connection, const asio::error_code& error) = 0;
 
         tcp::acceptor acceptor_;
     };

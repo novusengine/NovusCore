@@ -26,6 +26,7 @@ add_executable(authserver)
 target_sources(authserver
     PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/main.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/Authsocket.h"
 )
 
 # Set VERSION & FOLDER Property

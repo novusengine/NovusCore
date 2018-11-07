@@ -14,7 +14,6 @@ namespace Common
     {
     public:
         typedef std::shared_ptr<BaseConnection> pointer;
-
         static pointer create(asio::io_service& io_service)
         {
             return pointer(new BaseConnection(io_service));
