@@ -2,6 +2,7 @@
 
 class Authsocket : Common::TcpServer
 {
+public:
     Authsocket(asio::io_service& io_service) : Common::TcpServer(io_service)
     {
         StartAccept();

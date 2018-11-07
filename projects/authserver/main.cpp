@@ -1,4 +1,4 @@
-#include "../common/TcpServer.h"
+#include "Authsocket.h"
 
 int main()
 {
@@ -8,7 +8,7 @@ int main()
         try
         {
             asio::io_service io_service;
-            Common::TcpServer server(io_service);
+            Authsocket server(io_service);
             io_service.run();
         }
         catch (std::exception& e)
