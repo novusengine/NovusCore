@@ -21,7 +21,9 @@
 # SOFTWARE.
 
 # ASIO Include Directory
-set (ASIO_INCLUDE_DIR "C:/local/asio-1.12.1/include" CACHE PATH "default install path" FORCE )
+if (NOT ASIO_INCLUDE_DIR)
+    set (ASIO_INCLUDE_DIR "C:/local/asio-1.12.1/include" CACHE PATH "default install path" FORCE )
+endif()
 
 # Folder Structure Options
 option(WITH_FOLDER_STRUCTURE    "Build source tree"                            1)
