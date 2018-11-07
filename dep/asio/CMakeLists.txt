@@ -22,9 +22,12 @@
 
 add_library(asio INTERFACE)
 
+# Fix ASIO_DIR
 find_path(ASIO_DIR NAMES asio.hpp PATHS "${ASIO_INCLUDE_DIR}")
 set_property(CACHE ASIO_DIR PROPERTY ADVANCED TRUE)
-if (NOT ASIO_DIR)
+if (ASIO_DIR AND EXISTS "${ASIO_INCLUDE_DIR}/asio.hpp")
+    message("Found ASIO header (asio.hpp) at ${ASIO_INCLUDE_DIR}.")
+else()
     message(SEND_ERROR "ASIO header (asio.hpp) could not be found at ${ASIO_INCLUDE_DIR}.")
 endif()
 
