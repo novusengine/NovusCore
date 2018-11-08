@@ -1,4 +1,32 @@
 #include "../common/TcpServer.h"
+#include <thread>
+
+struct SocketSession
+{
+    Common::BaseConnection::pointer _connections;
+};
+
+struct WorkerThread
+{
+    std::thread _thread;
+    std::vector<SocketSession*> _sessions;
+    std::mutex _mutex;
+};
+
+void WorkerThreadMain(WorkerThread* workerThread)
+{
+    while (true)
+    {
+        workerThread->_mutex.lock();
+
+        for (auto& session : workerThread->_sessions)
+        {
+            // Listen & Read
+        }
+
+        workerThread->_mutex.unlock();
+    }
+}
 
 class Authsocket : Common::TcpServer
 {
@@ -8,7 +36,20 @@ public:
         StartAccept();
     }
 
+    void Init()
+    {
+        // Network Thread (TEMPORARY)
+        for (int i = 0; i < 2; i++)
+        {
+            WorkerThread* thread = new WorkerThread();
+            thread->_thread = std::thread(WorkerThreadMain, thread);
+            _workerThreads.push_back(thread);
+        }
+    }
+
 private:
+    std::vector<WorkerThread*> _workerThreads;
+
     void StartAccept() override
     {
         Common::BaseConnection::pointer new_connection =
@@ -23,7 +64,30 @@ private:
     {
         if (!error)
         {
-            // Add client to queue here
+            printf("Client Connected\n");
+
+            WorkerThread* workerThread = nullptr;
+            int leastActiveSessions = INT32_MAX;
+            for (auto& i : _workerThreads)
+            {
+                i->_mutex.lock();
+
+                if (i->_sessions.size() < leastActiveSessions)
+                {
+                    leastActiveSessions = i->_sessions.size();
+                    workerThread = i;
+                }
+
+                i->_mutex.unlock();
+            }
+
+            workerThread->_mutex.lock();
+
+            SocketSession* socketSession = new SocketSession();
+            socketSession->_connections = new_connection;
+
+            workerThread->_sessions.push_back(socketSession);
+            workerThread->_mutex.unlock();
         }
 
         StartAccept();

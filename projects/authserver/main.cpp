@@ -1,21 +1,17 @@
 #include "Authsocket.h"
 
+
 int main()
 {
-    // Network Thread (TEMPORARY)
+    asio::io_service io_service;
+    Authsocket server(io_service);
+    server.Init();
+
     std::thread run_thread([&]
     {
-        try
-        {
-            asio::io_service io_service;
-            Authsocket server(io_service);
-            io_service.run();
-        }
-        catch (std::exception& e)
-        {
-            std::cerr << e.what() << std::endl;
-        }
+        io_service.run();
     });
+
 
     printf("Authserver Running\n\n");
     std::getchar();
