@@ -27,7 +27,7 @@ target_sources(common
     PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/common.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/common.h"
-    "${CMAKE_CURRENT_LIST_DIR}/BaseConnection.h"
+    "${CMAKE_CURRENT_LIST_DIR}/BaseSocket.h"
     "${CMAKE_CURRENT_LIST_DIR}/TcpServer.h"
 )
 
