@@ -24,6 +24,14 @@
 if (NOT ASIO_INCLUDE_DIR)
     set (ASIO_INCLUDE_DIR "C:/local/asio-1.12.1/include" CACHE PATH "default install path" FORCE )
 endif()
+# MySQL Include Directory
+if (NOT MYSQL_INCLUDE_DIR)
+    set (MYSQL_INCLUDE_DIR "C:/Program Files/MySQL/MySQL Connector C 6.1/include" CACHE PATH "default install path" FORCE )
+endif()
+# MySQL Library Directory
+if (NOT MYSQL_LIB_DIR)
+    set (MYSQL_LIB_DIR "C:/Program Files/MySQL/MySQL Connector C 6.1/lib" CACHE PATH "default install path" FORCE )
+endif()
 
 # Folder Structure Options
 option(WITH_FOLDER_STRUCTURE    "Build source tree"                            1)

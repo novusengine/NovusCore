@@ -29,9 +29,13 @@ target_sources(common
     "${CMAKE_CURRENT_LIST_DIR}/common.h"
     "${CMAKE_CURRENT_LIST_DIR}/BaseSocket.h"
     "${CMAKE_CURRENT_LIST_DIR}/TcpServer.h"
+    "${CMAKE_CURRENT_LIST_DIR}/DatabaseConnector.h"
+    "${CMAKE_CURRENT_LIST_DIR}/DatabaseConnector.cpp"
 )
 
-target_link_libraries(common asio)
+target_include_directories(common PRIVATE ${CMAKE_CURRENT_LIST_DIR}/amy)
+
+target_link_libraries(common asio mysql)
 
 # Set VERSION & FOLDER Property
 set_target_properties(common PROPERTIES VERSION ${PROJECT_VERSION})

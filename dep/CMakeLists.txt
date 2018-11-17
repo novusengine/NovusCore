@@ -21,3 +21,4 @@
 # SOFTWARE.
 
 add_subdirectory(asio)
+add_subdirectory(mysql)

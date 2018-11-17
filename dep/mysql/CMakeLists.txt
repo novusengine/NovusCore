@@ -20,18 +20,17 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-project(worldserver VERSION 1.0.0 DESCRIPTION "Worldserver for NovusCore")
-add_executable(worldserver)
+add_library(mysql INTERFACE)
 
-target_sources(worldserver
-    PRIVATE
-    "${CMAKE_CURRENT_LIST_DIR}/main.cpp"
-)
+# Fix MYSQL_DIR
+find_path(MYSQL_DIR NAMES mysql.h PATHS "${MYSQL_INCLUDE_DIR}")
+set_property(CACHE MYSQL_DIR PROPERTY ADVANCED TRUE)
+if (MYSQL_DIR AND EXISTS "${MYSQL_INCLUDE_DIR}/mysql.h")
+    message("Found MySql Connector C 6.1 header (mysql.h) at ${MYSQL_INCLUDE_DIR}.")
+else()
+    message(SEND_ERROR "MySql Connector C 6.1 header (mysql.h) could not be found at ${MYSQL_INCLUDE_DIR}.")
+endif()
 
-# Set VERSION & FOLDER Property
-set_target_properties(worldserver PROPERTIES VERSION ${PROJECT_VERSION})
-set_target_properties(worldserver PROPERTIES FOLDER "server")
-
-target_link_libraries(worldserver common)
-target_include_directories(worldserver PRIVATE "../common/amy")
-install(TARGETS worldserver DESTINATION bin)
+target_include_directories(mysql SYSTEM INTERFACE "${MYSQL_INCLUDE_DIR}")
+target_link_libraries(mysql INTERFACE "${MYSQL_LIB_DIR}/libmysql.lib")
+target_compile_definitions(mysql INTERFACE _ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH)
