@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "../common/DatabaseConnector.h"
+#include "../common/Database/DatabaseConnector.h"
 
 int main()
 {

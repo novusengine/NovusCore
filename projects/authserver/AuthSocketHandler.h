@@ -1,4 +1,31 @@
-#include "../common/TcpServer.h"
+/*
+# MIT License
+
+# Copyright(c) 2018 NovusCore
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files(the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions :
+
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+*/
+
+#ifndef AUTHSOCKETHANDLER_H
+#define AUTHSOCKETHANDLER_H
+
+#include <Networking/TcpServer.h>
 #include "AuthSession.h"
 
 struct WorkerThread
@@ -17,17 +44,14 @@ void WorkerThreadMain(WorkerThread* workerThread)
         // Remove closed sessions
         if (workerThread->_sessions.size() > 0)
         {
-            printf("Sessions Before: %u\n", workerThread->_sessions.size());
-            workerThread->_sessions.erase((std::remove_if(workerThread->_sessions.begin(), workerThread->_sessions.end() - 1, [](AuthSession* session) {
-                return !session->socket()->is_open();
+            workerThread->_sessions.erase((std::remove_if(workerThread->_sessions.begin(), workerThread->_sessions.end() - 1, [](AuthSession* session) 
+            {
+                if (session->socket()->is_open())
+                    return false;
+
+                return true;
             }), workerThread->_sessions.end() - 1));
-
-            printf("Sessions After: %u\n", workerThread->_sessions.size());
         }
-
-        /*for (auto& session : workerThread->_sessions)
-        {
-        }*/
 
         workerThread->_mutex.unlock();
     }
@@ -40,13 +64,8 @@ public:
 
     void Init()
     {
-        // Network Thread (TEMPORARY)
-        for (int i = 0; i < 2; i++)
-        {
-            WorkerThread* workerThread = new WorkerThread();
-            workerThread->_thread = std::thread(WorkerThreadMain, workerThread);
-            _workerThreads.push_back(workerThread);
-        }
+        _workerThreads = new WorkerThread();
+        _workerThreads->_thread = std::thread(WorkerThreadMain, _workerThreads);
     }
     void Start()
     {
@@ -65,35 +84,20 @@ private:
         if (!error_code)
         {
             printf("Client Connected\n");
-
-            WorkerThread* workerThread = nullptr;
-            size_t leastActiveSessions = INT32_MAX;
-            for (auto& i : _workerThreads)
-            {
-                i->_mutex.lock();
-
-                if (i->_sessions.size() < leastActiveSessions)
-                {
-                    leastActiveSessions = i->_sessions.size();
-                    workerThread = i;
-                }
-
-                i->_mutex.unlock();
-            }
-
-            workerThread->_mutex.lock();
-
+            _workerThreads->_mutex.lock();
 
             socket->non_blocking(true);
             AuthSession* authSession = new AuthSession(socket);
             authSession->Start();
-            workerThread->_sessions.push_back(authSession);
-            workerThread->_mutex.unlock();
+
+            _workerThreads->_sessions.push_back(authSession);
+            _workerThreads->_mutex.unlock();
         }
 
         StartListening();
     }
 
     asio::io_service& _ioService;
-    std::vector<WorkerThread*> _workerThreads;
+    WorkerThread* _workerThreads;
 };
+#endif // AUTHSOCKETHANDLER_H

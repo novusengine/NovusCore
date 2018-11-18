@@ -21,8 +21,34 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 */
+#pragma once
 
-void test()
+#include <string>
+#include <openssl/sha.h>
+
+class BigNumber;
+
+class SHA1Hasher
 {
+public:
+    SHA1Hasher();
+    ~SHA1Hasher();
 
-}
+    void UpdateHashForBn(size_t size, BigNumber* bigNumber0, ...);
+
+    void UpdateHash(const uint8_t* data, size_t size);
+    void UpdateHash(const std::string& str);
+
+    void Init();
+    void Finish();
+
+    uint8_t* GetData(void) { return _data; }
+    int GetLength(void) const { return SHA_DIGEST_LENGTH; }
+
+private:
+    SHA_CTX _state;
+    uint8_t _data[SHA_DIGEST_LENGTH];
+};
+
+/// Returns SHA1 hash from hex string.
+std::string GetSHA1FromHexStr(std::string const& content);

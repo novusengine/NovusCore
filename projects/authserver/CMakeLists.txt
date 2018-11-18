@@ -23,12 +23,22 @@
 project(authserver VERSION 1.0.0 DESCRIPTION "Authserver for NovusCore")
 add_executable(authserver)
 
-target_sources(authserver
-    PRIVATE
+set(AUTHSERVER_MAIN
     "${CMAKE_CURRENT_LIST_DIR}/main.cpp"
+)
+set(AUTHSERVER_AUTHSESSION
     "${CMAKE_CURRENT_LIST_DIR}/AuthSocketHandler.h"
     "${CMAKE_CURRENT_LIST_DIR}/AuthSession.h"
     "${CMAKE_CURRENT_LIST_DIR}/AuthSession.cpp"
+)
+
+source_group(" " FILES ${AUTHSERVER_MAIN})
+source_group(AuthSession FILES ${AUTHSERVER_AUTHSESSION})
+
+target_sources(authserver
+    PRIVATE
+    ${AUTHSERVER_MAIN}
+    ${AUTHSERVER_AUTHSESSION}
 )
 
 # Set VERSION & FOLDER Property
@@ -36,4 +46,5 @@ set_target_properties(authserver PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(authserver PROPERTIES FOLDER "server")
 
 target_link_libraries(authserver common)
+include_directories(authserver "${common_SOURCE_DIR}")
 install(TARGETS authserver DESTINATION bin)

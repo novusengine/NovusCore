@@ -23,19 +23,42 @@
 project(common VERSION 1.0.0 DESCRIPTION "Common is a static library for NovusCore")
 add_library(common)
 
+set(COMMON_MAIN
+    "${CMAKE_CURRENT_LIST_DIR}/common.h"
+    "${CMAKE_CURRENT_LIST_DIR}/common.cpp"
+)
+set(COMMON_CRYPTOGRAPHY
+    "${CMAKE_CURRENT_LIST_DIR}/Cryptography/BigNumber.h"
+    "${CMAKE_CURRENT_LIST_DIR}/Cryptography/BigNumber.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/Cryptography/SHA1.h"
+    "${CMAKE_CURRENT_LIST_DIR}/Cryptography/SHA1.cpp"
+)
+set(COMMON_DATABASE
+    "${CMAKE_CURRENT_LIST_DIR}/Database/DatabaseConnector.h"
+    "${CMAKE_CURRENT_LIST_DIR}/Database/DatabaseConnector.cpp"
+)
+set(COMMON_NETWORKING
+    "${CMAKE_CURRENT_LIST_DIR}/Networking/BaseSocket.h"
+    "${CMAKE_CURRENT_LIST_DIR}/Networking/TcpServer.h"
+    "${CMAKE_CURRENT_LIST_DIR}/Networking/ByteBuffer.h"
+    "${CMAKE_CURRENT_LIST_DIR}/Networking/ByteBuffer.cpp"
+)
+
+source_group(" " FILES ${COMMON_MAIN})
+source_group(Cryptography FILES ${COMMON_CRYPTOGRAPHY})
+source_group(Networking FILES ${COMMON_NETWORKING})
+source_group(Database FILES ${COMMON_DATABASE})
+
 target_sources(common
     PRIVATE
-    "${CMAKE_CURRENT_LIST_DIR}/common.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/common.h"
-    "${CMAKE_CURRENT_LIST_DIR}/BaseSocket.h"
-    "${CMAKE_CURRENT_LIST_DIR}/TcpServer.h"
-    "${CMAKE_CURRENT_LIST_DIR}/DatabaseConnector.h"
-    "${CMAKE_CURRENT_LIST_DIR}/DatabaseConnector.cpp"
+    ${COMMON_MAIN}
+    ${COMMON_CRYPTOGRAPHY}
+    ${COMMON_DATABASE}
+    ${COMMON_NETWORKING}
 )
 
 target_include_directories(common PRIVATE ${CMAKE_CURRENT_LIST_DIR}/amy)
-
-target_link_libraries(common asio mysql)
+target_link_libraries(common asio openssl mysql)
 
 # Set VERSION & FOLDER Property
 set_target_properties(common PROPERTIES VERSION ${PROJECT_VERSION})
