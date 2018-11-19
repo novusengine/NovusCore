@@ -148,7 +148,7 @@ inline sql_time value_cast(const char* str, unsigned long len) {
     if (negative) {
         v = hours(0) - v;
     }*/
-	assert(0, "NOT IMPLEMENTED YET");
+	assert(0); // NOT IMPLEMENTED YET
 	sql_time* v = new sql_time();
     return *v;
 }

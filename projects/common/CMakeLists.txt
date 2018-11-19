@@ -36,6 +36,8 @@ set(COMMON_CRYPTOGRAPHY
 set(COMMON_DATABASE
     "${CMAKE_CURRENT_LIST_DIR}/Database/DatabaseConnector.h"
     "${CMAKE_CURRENT_LIST_DIR}/Database/DatabaseConnector.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/Database/PreparedStatement.h"
+    "${CMAKE_CURRENT_LIST_DIR}/Database/PreparedStatement.cpp"
 )
 set(COMMON_NETWORKING
     "${CMAKE_CURRENT_LIST_DIR}/Networking/BaseSocket.h"

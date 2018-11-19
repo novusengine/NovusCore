@@ -7,18 +7,27 @@ int main()
 	DatabaseConnector::SetHost("127.0.0.1");
 
 	std::unique_ptr<DatabaseConnector> connector;
-	if (!DatabaseConnector::Create(DATABASE_TYPE::AUTH, connector))
+	if (!DatabaseConnector::Create(DATABASE_TYPE::AUTHSERVER, connector))
 	{
 		std::cout << "Connecting to database failed!\n";
 		return -1;
 	}
 
+	PreparedStatement sql("SELECT * FROM accounts WHERE id={i} AND name={s}");
+	sql.Bind(1).Bind("Pursche");
+
+
 	amy::result_set results;
-	if (!connector->Query("SELECT * FROM accounts", results))
+	//if (!connector->Query("SELECT * FROM accounts", results)) // Non prepared statement
+	if (!connector->Query(sql, results)) // Prepared statement
 	{
 		std::cout << "Querying the database failed!\n";
 		return -1;
 	}
+
+	connector->QueryAsync("SELECT * FROM accounts WHERE id=1", [](std::error_code const& ec, amy::result_set rs, amy::connector& connector) {
+		std::cout << "Got the data!";
+	});
 
 	std::cout
 		<< "Affected rows: " << results.affected_rows()
@@ -37,5 +46,5 @@ int main()
 			<< std::endl;
 	}
 
-    return 0;
+	return 0;
 }

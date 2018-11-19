@@ -99,7 +99,7 @@ inline mysql_handle mysql_real_connect(mysql_handle m,
 
 inline int32_t mysql_real_query(mysql_handle m,
                                 char const* stmt_str,
-                                unsigned long length,
+                                size_t length,
                                 AMY_SYSTEM_NS::error_code& ec)
 {
     clear_error(ec);

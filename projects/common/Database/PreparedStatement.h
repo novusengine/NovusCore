@@ -24,36 +24,28 @@
 #pragma once
 
 #include <string>
-#include <functional>
 
-#include <amy/connector.hpp>
-#include "PreparedStatement.h"
+// Valid type/tokens
+// {s} - std::string
+// {i} - int
+// {u} - unsigned int
+// {f} - float
+// {d} - double
 
-enum DATABASE_TYPE
-{
-	AUTHSERVER,
-	CHARSERVER,
-	WORLDSERVER
-};
-
-class DatabaseConnector
+class PreparedStatement
 {
 public:
-	static void SetHost(std::string inHost) { host = inHost; }
-	static bool Create(DATABASE_TYPE type, std::unique_ptr<DatabaseConnector>& out);
+	PreparedStatement(std::string statement);
 
-	bool Query(std::string sql, amy::result_set& results);
-	bool Query(PreparedStatement statement, amy::result_set& results);
-	bool QueryAsync(std::string sql, std::function<void(std::error_code const& ec, amy::result_set rs, amy::connector& connector)> const& func);
+	PreparedStatement& Bind(std::string value);
+	PreparedStatement& Bind(unsigned int value);
+	PreparedStatement& Bind(int value);
+	PreparedStatement& Bind(float value);
+	PreparedStatement& Bind(double value);
 
-	bool Execute(std::string sql);
-	bool Execute(PreparedStatement statement);
+	bool Verify();
+	std::string Get();
 
-	~DatabaseConnector();
 private:
-	DatabaseConnector(); // Constructor is private because we don't want to allow newing these, use Create to aquire a smartpointer.
-
-	std::thread* _connectorThread;
-	amy::connector* _connector;
-	static std::string host;
+	std::string _statement;
 };
