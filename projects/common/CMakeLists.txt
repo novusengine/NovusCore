@@ -32,6 +32,12 @@ set(COMMON_CRYPTOGRAPHY
     "${CMAKE_CURRENT_LIST_DIR}/Cryptography/BigNumber.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/Cryptography/SHA1.h"
     "${CMAKE_CURRENT_LIST_DIR}/Cryptography/SHA1.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/Cryptography/ArcFour.h"
+    "${CMAKE_CURRENT_LIST_DIR}/Cryptography/ArcFour.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/Cryptography/HMAC.h"
+    "${CMAKE_CURRENT_LIST_DIR}/Cryptography/HMAC.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/Cryptography/StreamCrypto.h"
+    "${CMAKE_CURRENT_LIST_DIR}/Cryptography/StreamCrypto.cpp"
 )
 set(COMMON_DATABASE
     "${CMAKE_CURRENT_LIST_DIR}/Database/DatabaseConnector.h"
@@ -45,10 +51,15 @@ set(COMMON_NETWORKING
     "${CMAKE_CURRENT_LIST_DIR}/Networking/ByteBuffer.h"
     "${CMAKE_CURRENT_LIST_DIR}/Networking/ByteBuffer.cpp"
 )
+set(COMMON_NETWORKING_OPCODE
+    "${CMAKE_CURRENT_LIST_DIR}/Networking/Opcode/Opcode.h"
+    "${CMAKE_CURRENT_LIST_DIR}/Networking/Opcode/Opcode.cpp"
+)
 
 source_group(" " FILES ${COMMON_MAIN})
 source_group(Cryptography FILES ${COMMON_CRYPTOGRAPHY})
 source_group(Networking FILES ${COMMON_NETWORKING})
+source_group(Networking\\Opcode FILES ${COMMON_NETWORKING_OPCODE})
 source_group(Database FILES ${COMMON_DATABASE})
 
 target_sources(common
@@ -57,6 +68,7 @@ target_sources(common
     ${COMMON_CRYPTOGRAPHY}
     ${COMMON_DATABASE}
     ${COMMON_NETWORKING}
+	${COMMON_NETWORKING_OPCODE}
 )
 
 target_include_directories(common PRIVATE ${CMAKE_CURRENT_LIST_DIR}/amy)
