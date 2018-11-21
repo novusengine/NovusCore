@@ -21,9 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 */
-
-#ifndef AUTHSESSION_H
-#define AUTHSESSION_H
+#pragma once
 
 #include <asio\ip\tcp.hpp>
 #include <Networking\BaseSocket.h>
@@ -112,7 +110,7 @@ class AuthSession : public Common::BaseSocket
 public:
     static std::unordered_map<uint8_t, AuthMessageHandler> InitMessageHandlers();
 
-    AuthSession(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), _status(STATUS_CHALLENGE)
+    AuthSession(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), _status(STATUS_CHALLENGE), username()
     { 
         N.Hex2BN("894B645E89E1535BBDAD5B8B290650530801B18EBFBF5E8FAB3C82872A3E9BB7");
         g.SetUInt32(7);
@@ -133,6 +131,7 @@ public:
     BigNumber _reconnectProof;
     AuthStatus _status;
 
+    std::string username;
 };
 
 #pragma pack(push, 1)
@@ -143,4 +142,3 @@ struct AuthMessageHandler
     bool (AuthSession::*handler)();
 };
 #pragma pack(pop)
-#endif // AUTHSESSION_H

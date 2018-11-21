@@ -21,12 +21,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 */
-
-#ifndef AUTHSOCKETHANDLER_H
-#define AUTHSOCKETHANDLER_H
+#pragma once
 
 #include <Networking/TcpServer.h>
-#include "AuthSession.h"
+#include "AuthSession\AuthSession.h"
 
 struct WorkerThread
 {
@@ -100,4 +98,3 @@ private:
     asio::io_service& _ioService;
     WorkerThread* _workerThreads;
 };
-#endif // AUTHSOCKETHANDLER_H

@@ -70,6 +70,7 @@ void AuthSession::HandleRead()
         if (byteBuffer.GetActualSize() < size)
             break;
 
+
         if (command == AUTH_CHALLENGE || command == AUTH_RECONNECT_CHALLENGE)
         {
             cAuthLogonChallenge* logonChallenge = reinterpret_cast<cAuthLogonChallenge*>(byteBuffer.GetReadPointer());
@@ -108,15 +109,9 @@ bool AuthSession::HandleCommandChallenge()
     pkt.Write(uint8_t(0));//AUTH_LOGON_CHALLENGE);
     pkt.Write(uint8_t(0x00));
 
-    // Check if account exists
-    if (login != "NIXIFY")
-    {
-        pkt.Write(uint8_t(0x03)); //WOW_FAIL_UNKNOWN_ACCOUNT);
-        Send(pkt);
-        return true;
-    }
+    // Check if account exist in DB if so, grab v and s
 
-    std::string passHash = "9370A0AD70675CE5B1E03FF8B2440921594DA208";
+    username = login;
     std::string databaseV = "18CA3F48A75E879D83959E12AFEEA682A8C8EADC20582107F3721F8AE44400CD";
     std::string databaseS = "C55B9889E9CC8DE96F8A3D0B2D54C6B39AEF58E2C50C816660E7FB77802E760B";
 
@@ -345,8 +340,8 @@ bool AuthSession::HandleCommandGameServerList()
     pkt.Write(0); // Realm Locked (Only needed for clients TBC+)
     pkt.Write(0); // Realm Flag
 
-    pkt.Write("Ultimatum Test Realm"); // Realm Name
-    pkt.Write("193.70.63.125:8084"); // Realm IP/Port
+    pkt.Write("[NovusCore] Internal Realm"); // Realm Name
+    pkt.Write("127.0.0.1:8085"); // Realm IP/Port
     pkt.Append((uint8_t*)&population, sizeof(population)); // Realm Population Level
 
     pkt.Write(9); // Characters Count

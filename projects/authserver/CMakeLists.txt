@@ -25,11 +25,11 @@ add_executable(authserver)
 
 set(AUTHSERVER_MAIN
     "${CMAKE_CURRENT_LIST_DIR}/main.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/AuthSocketHandler.h"
 )
 set(AUTHSERVER_AUTHSESSION
-    "${CMAKE_CURRENT_LIST_DIR}/AuthSocketHandler.h"
-    "${CMAKE_CURRENT_LIST_DIR}/AuthSession.h"
-    "${CMAKE_CURRENT_LIST_DIR}/AuthSession.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/AuthSession/AuthSession.h"
+    "${CMAKE_CURRENT_LIST_DIR}/AuthSession/AuthSession.cpp"
 )
 
 source_group(" " FILES ${AUTHSERVER_MAIN})
@@ -46,5 +46,6 @@ set_target_properties(authserver PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(authserver PROPERTIES FOLDER "server")
 
 target_link_libraries(authserver common)
+target_include_directories(authserver PRIVATE "../common/amy")
 include_directories(authserver "${common_SOURCE_DIR}")
 install(TARGETS authserver DESTINATION bin)
