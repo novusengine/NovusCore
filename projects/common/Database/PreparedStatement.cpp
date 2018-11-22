@@ -15,7 +15,7 @@ PreparedStatement& PreparedStatement::Bind(std::string value)
 	if (value.find("'") != 0)
 		value = "'" + value;
 
-	if (value.find_last_of("'") != value.length())
+	if (value.find_last_of("'") != value.length() - 1)
 		value += "'";
 
 	if (replacePos != std::string::npos)
