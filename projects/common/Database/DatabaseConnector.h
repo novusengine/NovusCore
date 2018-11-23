@@ -39,7 +39,8 @@ enum DATABASE_TYPE
 class DatabaseConnector
 {
 public:
-	static void SetHost(std::string inHost) { host = inHost; }
+	static void SetHost(std::string inHost) { _host = inHost; }
+    static void SetUser(std::string username, std::string password) { _username = username; _password = password; }
 	static bool Create(DATABASE_TYPE type, std::unique_ptr<DatabaseConnector>& out);
 
 	bool Query(std::string sql, amy::result_set& results);
@@ -55,5 +56,7 @@ private:
 
 	std::thread* _connectorThread;
 	amy::connector* _connector;
-	static std::string host;
+	static std::string _host;
+    static std::string _username;
+    static std::string _password;
 };

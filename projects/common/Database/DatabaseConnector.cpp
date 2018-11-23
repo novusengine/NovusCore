@@ -2,11 +2,13 @@
 #include "DatabaseConnector.h"
 #include <amy/placeholders.hpp>
 
-std::string DatabaseConnector::host = "INVALID";
+std::string DatabaseConnector::_host = "INVALID";
+std::string DatabaseConnector::_username = "root";
+std::string DatabaseConnector::_password = "";
 
 bool DatabaseConnector::Create(DATABASE_TYPE type, std::unique_ptr<DatabaseConnector>& out)
 {
-	if (host == "INVALID")
+	if (_host == "INVALID")
 	{
 		std::cerr << "ERROR: Failed to connect to MySQL Server, please set host with DatabaseConnector::SetHost!\n";
 		return false;
@@ -29,14 +31,14 @@ bool DatabaseConnector::Create(DATABASE_TYPE type, std::unique_ptr<DatabaseConne
 		break;
 	}
 
-	AMY_ASIO_NS::ip::tcp::endpoint endpoint(AMY_ASIO_NS::ip::address::from_string(host), 3306);
+	AMY_ASIO_NS::ip::tcp::endpoint endpoint(AMY_ASIO_NS::ip::address::from_string(_host), 3306);
 	AMY_ASIO_NS::io_service io_service;
 	out->_connector = new amy::connector(io_service);
 
 
-	out->_connector->connect(endpoint, amy::auth_info("root"), db, amy::default_flags);
+	out->_connector->connect(endpoint, amy::auth_info(_username, _password), db, amy::default_flags);
 
-	std::cout << "Successfully connected to database on " << host << std::endl;
+	std::cout << "Successfully connected to database on " << _host << std::endl;
 
 	return true;
 }
