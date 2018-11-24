@@ -59,6 +59,9 @@ set(COMMON_NETWORKING_OPCODE
     "${CMAKE_CURRENT_LIST_DIR}/Networking/Opcode/Opcode.h"
     "${CMAKE_CURRENT_LIST_DIR}/Networking/Opcode/Opcode.cpp"
 )
+set(COMMON_UTILS
+    "${CMAKE_CURRENT_LIST_DIR}/Utils/SharedPool.h"
+)
 
 set(COMMON_DEPENDENCIES
     "${CMAKE_CURRENT_LIST_DIR}/Dependencies/amy"
@@ -71,6 +74,7 @@ source_group(Database FILES ${COMMON_DATABASE})
 source_group(Config FILES ${COMMON_CONFIG})
 source_group(Networking FILES ${COMMON_NETWORKING})
 source_group(Networking\\Opcode FILES ${COMMON_NETWORKING_OPCODE})
+source_group(Utils FILES ${COMMON_UTILS})
 
 target_sources(common
     PRIVATE
@@ -80,6 +84,7 @@ target_sources(common
     ${COMMON_CONFIG}
     ${COMMON_NETWORKING}
 	${COMMON_NETWORKING_OPCODE}
+    ${COMMON_UTILS}
 )
 
 target_include_directories(common PRIVATE ${COMMON_DEPENDENCIES})

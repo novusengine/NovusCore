@@ -5,6 +5,7 @@
 std::string DatabaseConnector::_host = "INVALID";
 std::string DatabaseConnector::_username = "root";
 std::string DatabaseConnector::_password = "";
+SharedPool<DatabaseConnector> DatabaseConnector::connectorPool;
 
 bool DatabaseConnector::Create(DATABASE_TYPE type, std::unique_ptr<DatabaseConnector>& out)
 {
@@ -15,9 +16,51 @@ bool DatabaseConnector::Create(DATABASE_TYPE type, std::unique_ptr<DatabaseConne
 	}
 
 	out.reset(new DatabaseConnector());
+	out->_Connect(type);
+
+	std::cout << "Successfully connected to database on " << _host << std::endl;
+
+	return true;
+}
+
+bool DatabaseConnector::Borrow(DATABASE_TYPE type, std::shared_ptr<DatabaseConnector>& out)
+{
+	if (_host == "INVALID")
+	{
+		std::cerr << "ERROR: Failed to connect to MySQL Server, please set host with DatabaseConnector::SetHost!\n";
+		assert(false);
+		return false;
+	}
+
+	// If we are out of connectors, create one!
+	if (connectorPool.empty())
+	{
+		DatabaseConnector* newConnector = new DatabaseConnector();
+		newConnector->_Connect(type);
+		connectorPool.add(std::unique_ptr<DatabaseConnector>(newConnector));
+	}
+
+	out = connectorPool.acquire();
+
+	return true;
+}
+
+DatabaseConnector::DatabaseConnector()
+{
+
+}
+
+DatabaseConnector::~DatabaseConnector()
+{
+
+}
+
+void DatabaseConnector::_Connect(DATABASE_TYPE inType)
+{
+	type = inType;
 
 	std::string db = "INVALID";
-	
+
 	switch (type)
 	{
 	case DATABASE_TYPE::AUTHSERVER:
@@ -33,24 +76,8 @@ bool DatabaseConnector::Create(DATABASE_TYPE type, std::unique_ptr<DatabaseConne
 
 	AMY_ASIO_NS::ip::tcp::endpoint endpoint(AMY_ASIO_NS::ip::address::from_string(_host), 3306);
 	AMY_ASIO_NS::io_service io_service;
-	out->_connector = new amy::connector(io_service);
-
-
-	out->_connector->connect(endpoint, amy::auth_info(_username, _password), db, amy::default_flags);
-
-	std::cout << "Successfully connected to database on " << _host << std::endl;
-
-	return true;
-}
-
-DatabaseConnector::DatabaseConnector()
-{
-
-}
-
-DatabaseConnector::~DatabaseConnector()
-{
-
+	_connector = new amy::connector(io_service);
+	_connector->connect(endpoint, amy::auth_info(_username, _password), db, amy::default_flags);
 }
 
 bool DatabaseConnector::Execute(std::string sql)

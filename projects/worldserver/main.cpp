@@ -6,8 +6,17 @@ int main()
 {
 	DatabaseConnector::SetHost("127.0.0.1");
 
-	std::unique_ptr<DatabaseConnector> connector;
+	// Owning a connector
+	/*std::unique_ptr<DatabaseConnector> connector;
 	if (!DatabaseConnector::Create(DATABASE_TYPE::AUTHSERVER, connector))
+	{
+		std::cout << "Connecting to database failed!\n";
+		return -1;
+	}*/
+
+	// Borrowing a connector, first inside of a scope, this calls the constructor
+	std::shared_ptr<DatabaseConnector> connector;
+	if (!DatabaseConnector::Borrow(DATABASE_TYPE::AUTHSERVER, connector))
 	{
 		std::cout << "Connecting to database failed!\n";
 		return -1;
@@ -42,7 +51,7 @@ int main()
 			<< fields_info[0].name() << ": " << row[0].as<amy::sql_bigint>() << ", "
 			<< fields_info[1].name() << ": " << row[1].as<std::string>() << ", "
 			<< fields_info[2].name() << ": " << row[2].as<std::string>() << ", "
-			<< fields_info[3].name() << ": " << row[3].as<amy::sql_datetime>()
+			<< fields_info[3].name() << ": " << row[3].as<amy::sql_datetime>() // TODO: This date is off by 1 month, pls fix
 			<< std::endl;
 	}
 

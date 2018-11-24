@@ -27,6 +27,7 @@
 #include <functional>
 
 #include <amy/connector.hpp>
+#include "../Utils/SharedPool.h"
 #include "PreparedStatement.h"
 
 enum DATABASE_TYPE
@@ -39,9 +40,10 @@ enum DATABASE_TYPE
 class DatabaseConnector
 {
 public:
-	static void SetHost(std::string inHost) { _host = inHost; }
+	static void SetHost(std::string host) { _host = host; }
     static void SetUser(std::string username, std::string password) { _username = username; _password = password; }
 	static bool Create(DATABASE_TYPE type, std::unique_ptr<DatabaseConnector>& out);
+	static bool Borrow(DATABASE_TYPE type, std::shared_ptr<DatabaseConnector>& out);
 
 	bool Query(std::string sql, amy::result_set& results);
 	bool Query(PreparedStatement statement, amy::result_set& results);
@@ -53,10 +55,15 @@ public:
 	~DatabaseConnector();
 private:
 	DatabaseConnector(); // Constructor is private because we don't want to allow newing these, use Create to aquire a smartpointer.
+	void _Connect(DATABASE_TYPE inType);
 
+	DATABASE_TYPE type;
 	std::thread* _connectorThread;
 	amy::connector* _connector;
+
 	static std::string _host;
     static std::string _username;
     static std::string _password;
+
+	static SharedPool<DatabaseConnector> connectorPool;
 };
