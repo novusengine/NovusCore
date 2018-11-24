@@ -30,15 +30,24 @@ namespace Common
     class ByteBuffer
     {
     public:
-        ByteBuffer() : _readPos(0), _writePos(0), _bufferData()
+        ByteBuffer() : _readPos(0), _writePos(0)
         {
             _bufferData.reserve(4096);
         }
-        ByteBuffer(size_t reserveSize)
+        ByteBuffer(size_t reserveSize) : _readPos(0), _writePos(0)
         {
             _bufferData.reserve(reserveSize);
         }
         virtual ~ByteBuffer() { }
+
+        void Write(void const* data, std::size_t size)
+        {
+            if (size)
+            {
+                memcpy(GetWritePointer(), data, size);
+                WriteBytes(size);
+            }
+        }
 
         void Write(const std::string& value)
         {
@@ -98,6 +107,11 @@ namespace Common
             std::memcpy(&_bufferData[_writePos], value, size);
             _writePos = newSize;
         }
+        void ResetPos()
+        {
+            _readPos = 0;
+            _writePos = 0;
+        }
 
         void Clean()
         {
@@ -150,9 +164,9 @@ namespace Common
         uint8_t* GetDataPointer() { return _bufferData.data(); }
         uint8_t* GetReadPointer() { return _bufferData.data() + _readPos; }
         uint8_t* GetWritePointer() { return _bufferData.data() + _writePos; }
-        size_t GetActualSize() { return _writePos - _readPos; }
-        size_t GetSpaceLeft() { return _bufferData.size() - _writePos; }
-        size_t size() const { return _bufferData.size(); }
+        uint32_t GetActualSize() { return _writePos - _readPos; }
+        uint32_t GetSpaceLeft() { return _bufferData.size() - _writePos; }
+        uint32_t size() const { return _bufferData.size(); }
         bool empty() const { return _bufferData.empty(); }
 
         size_t _readPos, _writePos;
