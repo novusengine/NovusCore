@@ -22,32 +22,21 @@
 # SOFTWARE.
 */
 
-#include "AuthSocketHandler.h"
-#include <Config\ConfigHandler.h>
+#include "NodeSocket.h"
+#include "Networking\ByteBuffer.h"
 
-int main()
+void NodeSocket::Start()
 {
-    if (!ConfigHandler::Setup("authserver_configuration.json"))
+    AsyncRead();
+}
+
+void NodeSocket::HandleRead()
+{
+    Common::ByteBuffer& byteBuffer = GetByteBuffer();
+    while (byteBuffer.GetActualSize() > 0)
     {
-        std::getchar();
-        return 0;
+       
     }
 
-    std::string ip = ConfigHandler::GetOption<std::string>("ip", "127.0.0.1");
-    std::cout << ip << std::endl;
-
-    asio::io_service io_service(2);
-    AuthSocketHandler server(io_service, 3724);
-    server.Init();
-    server.Start();
-
-    std::thread run_thread([&]
-    {
-        io_service.run();
-    });
-
-    printf("Authserver Running\n\n");
-    std::getchar();
-
-    return 0;
+    AsyncRead();
 }

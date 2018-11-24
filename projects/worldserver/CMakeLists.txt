@@ -23,15 +23,35 @@
 project(worldserver VERSION 1.0.0 DESCRIPTION "Worldserver for NovusCore")
 add_executable(worldserver)
 
+set(WORLDSERVER_MAIN
+    "${CMAKE_CURRENT_LIST_DIR}/main.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/NodeSocketHandler.h"
+)
+set(WORLDSERVER_WORLDSOCKET
+"${CMAKE_CURRENT_LIST_DIR}/Socket/NodeSocket.h"
+"${CMAKE_CURRENT_LIST_DIR}/Socket/NodeSocket.cpp"
+)
+
+set(WORLDSERVER_DEPENDENCIES
+    "../common/Dependencies/amy"
+    "../common/Dependencies/json"
+)
+
+source_group(" " FILES ${WORLDSERVER_MAIN})
+source_group(Socket FILES ${WORLDSERVER_WORLDSOCKET})
+
 target_sources(worldserver
     PRIVATE
-    "${CMAKE_CURRENT_LIST_DIR}/main.cpp"
+    ${WORLDSERVER_MAIN}
+    ${WORLDSERVER_WORLDSOCKET}
 )
+
 
 # Set VERSION & FOLDER Property
 set_target_properties(worldserver PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(worldserver PROPERTIES FOLDER "server")
 
 target_link_libraries(worldserver common)
-target_include_directories(worldserver PRIVATE "../common/amy")
+target_include_directories(worldserver PRIVATE ${WORLDSERVER_DEPENDENCIES})
+include_directories(worldserver "${common_SOURCE_DIR}")
 install(TARGETS worldserver DESTINATION bin)

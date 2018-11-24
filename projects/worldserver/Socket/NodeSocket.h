@@ -21,33 +21,23 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 */
+#pragma once
 
-#include "AuthSocketHandler.h"
-#include <Config\ConfigHandler.h>
+#include <asio\ip\tcp.hpp>
+#include <Networking\BaseSocket.h>
+#include <Database\DatabaseConnector.h>
 
-int main()
+class NodeSocket : public Common::BaseSocket
 {
-    if (!ConfigHandler::Setup("authserver_configuration.json"))
+public:
+
+    NodeSocket(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), _byteBuffer()
     {
-        std::getchar();
-        return 0;
+        _byteBuffer.Resize(4096);
     }
 
-    std::string ip = ConfigHandler::GetOption<std::string>("ip", "127.0.0.1");
-    std::cout << ip << std::endl;
+    void Start() override;
+    void HandleRead() override;
 
-    asio::io_service io_service(2);
-    AuthSocketHandler server(io_service, 3724);
-    server.Init();
-    server.Start();
-
-    std::thread run_thread([&]
-    {
-        io_service.run();
-    });
-
-    printf("Authserver Running\n\n");
-    std::getchar();
-
-    return 0;
-}
+    Common::ByteBuffer _byteBuffer;
+};

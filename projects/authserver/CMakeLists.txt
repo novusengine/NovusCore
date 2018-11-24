@@ -32,6 +32,11 @@ set(AUTHSERVER_AUTHSESSION
     "${CMAKE_CURRENT_LIST_DIR}/AuthSession/AuthSession.cpp"
 )
 
+set(AUTHSERVER_DEPENDENCIES
+    "../common/Dependencies/amy"
+    "../common/Dependencies/json"
+)
+
 source_group(" " FILES ${AUTHSERVER_MAIN})
 source_group(AuthSession FILES ${AUTHSERVER_AUTHSESSION})
 
@@ -46,6 +51,6 @@ set_target_properties(authserver PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(authserver PROPERTIES FOLDER "server")
 
 target_link_libraries(authserver common)
-target_include_directories(authserver PRIVATE "../common/amy")
+target_include_directories(authserver PRIVATE ${AUTHSERVER_DEPENDENCIES})
 include_directories(authserver "${common_SOURCE_DIR}")
 install(TARGETS authserver DESTINATION bin)

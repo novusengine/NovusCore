@@ -45,6 +45,10 @@ set(COMMON_DATABASE
     "${CMAKE_CURRENT_LIST_DIR}/Database/PreparedStatement.h"
     "${CMAKE_CURRENT_LIST_DIR}/Database/PreparedStatement.cpp"
 )
+set(COMMON_CONFIG
+    "${CMAKE_CURRENT_LIST_DIR}/Config/ConfigHandler.h"
+    "${CMAKE_CURRENT_LIST_DIR}/Config/ConfigHandler.cpp"
+)
 set(COMMON_NETWORKING
     "${CMAKE_CURRENT_LIST_DIR}/Networking/BaseSocket.h"
     "${CMAKE_CURRENT_LIST_DIR}/Networking/TcpServer.h"
@@ -56,22 +60,29 @@ set(COMMON_NETWORKING_OPCODE
     "${CMAKE_CURRENT_LIST_DIR}/Networking/Opcode/Opcode.cpp"
 )
 
+set(COMMON_DEPENDENCIES
+    "${CMAKE_CURRENT_LIST_DIR}/Dependencies/amy"
+    "${CMAKE_CURRENT_LIST_DIR}/Dependencies/json"
+)
+
 source_group(" " FILES ${COMMON_MAIN})
 source_group(Cryptography FILES ${COMMON_CRYPTOGRAPHY})
+source_group(Database FILES ${COMMON_DATABASE})
+source_group(Config FILES ${COMMON_CONFIG})
 source_group(Networking FILES ${COMMON_NETWORKING})
 source_group(Networking\\Opcode FILES ${COMMON_NETWORKING_OPCODE})
-source_group(Database FILES ${COMMON_DATABASE})
 
 target_sources(common
     PRIVATE
     ${COMMON_MAIN}
     ${COMMON_CRYPTOGRAPHY}
     ${COMMON_DATABASE}
+    ${COMMON_CONFIG}
     ${COMMON_NETWORKING}
 	${COMMON_NETWORKING_OPCODE}
 )
 
-target_include_directories(common PRIVATE ${CMAKE_CURRENT_LIST_DIR}/amy)
+target_include_directories(common PRIVATE ${COMMON_DEPENDENCIES})
 target_link_libraries(common asio openssl mysql)
 
 # Set VERSION & FOLDER Property

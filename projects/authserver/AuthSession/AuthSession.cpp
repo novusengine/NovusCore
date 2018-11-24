@@ -332,7 +332,7 @@ bool AuthSession::HandleCommandGameServerList()
 
     Common::ByteBuffer pkt;
 
-    size_t RealmListSize = 1;
+    uint16_t RealmListSize = 1;
     float population = 0;
 
     /* Test Packet */
