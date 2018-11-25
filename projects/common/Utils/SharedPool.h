@@ -9,7 +9,7 @@ class SharedPool
 private:
     struct PoolDeleter
     {
-        explicit PoolDeleter(std::weak_ptr<SharedPool<T>* > pool) : _pool(pool) {}
+        explicit PoolDeleter(std::weak_ptr<SharedPool<T>*> pool) : _pool(pool) {}
 
         void operator()(T* ptr)
         {
@@ -27,11 +27,11 @@ private:
             std::default_delete<T>{}(ptr);
         }
     private:
-        std::weak_ptr<SharedPool<T>* > _pool;
+        std::weak_ptr<SharedPool<T>*> _pool;
     };
 
 public:
-    using ptr_type = std::unique_ptr<T, PoolDeleter >;
+    using ptr_type = std::unique_ptr<T, PoolDeleter>;
 
     SharedPool() : _thisPtr(new SharedPool<T>*(this)), _mutex() {}
     virtual ~SharedPool() {}
@@ -46,7 +46,7 @@ public:
     {
         std::lock_guard<std::mutex> lock(_mutex);
         assert(!_pool.empty());
-        ptr_type tmp(_pool.top().release(), PoolDeleter{ std::weak_ptr<SharedPool<T>*>{_thisPtr} });
+        ptr_type tmp(_pool.top().release(), PoolDeleter{std::weak_ptr<SharedPool<T>*>{_thisPtr}});
         _pool.pop();
         return std::move(tmp);
     }
@@ -64,7 +64,7 @@ public:
     }
 
 private:
-    std::shared_ptr<SharedPool<T>* > _thisPtr;
-    std::stack<std::unique_ptr<T> > _pool;
+    std::shared_ptr<SharedPool<T>*> _thisPtr;
+    std::stack<std::unique_ptr<T>> _pool;
     std::mutex _mutex;
 };
