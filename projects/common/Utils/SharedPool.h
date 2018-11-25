@@ -7,14 +7,17 @@ template <class T>
 class SharedPool
 {
 private:
-	struct PoolDeleter {
-		explicit PoolDeleter(std::weak_ptr<SharedPool<T>* > pool)
-			: pool_(pool) {}
+	struct PoolDeleter 
+    {
+		explicit PoolDeleter(std::weak_ptr<SharedPool<T>* > pool) : _pool(pool) {}
 
-		void operator()(T* ptr) {
+		void operator()(T* ptr) 
+        {
 			// Put it back into the pool if the pool still exists
-			if (auto pool_ptr = pool_.lock()) {
-				try {
+			if (auto pool_ptr = _pool.lock())
+            {
+				try 
+                {
 					(*pool_ptr.get())->add(std::unique_ptr<T>{ptr});
 					return;
 				}
@@ -24,43 +27,44 @@ private:
 			std::default_delete<T>{}(ptr);
 		}
 	private:
-		std::weak_ptr<SharedPool<T>* > pool_;
+		std::weak_ptr<SharedPool<T>* > _pool;
 	};
 
 public:
 	using ptr_type = std::unique_ptr<T, PoolDeleter >;
 
-	SharedPool() : 
-		this_ptr_(new SharedPool<T>*(this)), 
-		mutex_() {}
+	SharedPool() : _thisPtr(new SharedPool<T>*(this)), _mutex() {}
 	virtual ~SharedPool() {}
 
-	void add(std::unique_ptr<T> t) {
-		std::lock_guard<std::mutex> lock(mutex_);
-		pool_.push(std::move(t));
+	void add(std::unique_ptr<T> t) 
+    {
+		std::lock_guard<std::mutex> lock(_mutex);
+        _pool.push(std::move(t));
 	}
 
-	ptr_type acquire() {
-		std::lock_guard<std::mutex> lock(mutex_);
-		assert(!pool_.empty());
-		ptr_type tmp(pool_.top().release(),
-			PoolDeleter{ std::weak_ptr<SharedPool<T>*>{this_ptr_} });
-		pool_.pop();
+	ptr_type acquire() 
+    {
+		std::lock_guard<std::mutex> lock(_mutex);
+		assert(!_pool.empty());
+		ptr_type tmp(_pool.top().release(), PoolDeleter{ std::weak_ptr<SharedPool<T>*>{_thisPtr} });
+        _pool.pop();
 		return std::move(tmp);
 	}
 
-	bool empty() {
-		std::lock_guard<std::mutex> lock(mutex_);
-		return pool_.empty();
+	bool empty() 
+    {
+		std::lock_guard<std::mutex> lock(_mutex);
+		return _pool.empty();
 	}
 
-	size_t size() {
-		std::lock_guard<std::mutex> lock(mutex_);
-		return pool_.size();
+	size_t size() 
+    {
+		std::lock_guard<std::mutex> lock(_mutex);
+		return _pool.size();
 	}
 
 private:
-	std::shared_ptr<SharedPool<T>* > this_ptr_;
-	std::stack<std::unique_ptr<T> > pool_;
-	std::mutex mutex_;
+	std::shared_ptr<SharedPool<T>* > _thisPtr;
+	std::stack<std::unique_ptr<T> > _pool;
+	std::mutex _mutex;
 };
