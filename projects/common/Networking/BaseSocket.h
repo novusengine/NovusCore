@@ -37,6 +37,7 @@ namespace Common
     {
     public:
         virtual bool Start() = 0;
+        virtual void Close(asio::error_code error) { _socket->close(); }
         virtual void HandleRead() = 0;
 
         asio::ip::tcp::socket* socket()
@@ -68,15 +69,16 @@ namespace Common
 
             _byteBuffer.CleanBuffer();
             _byteBuffer.RecalculateSize();
+
             _socket->async_read_some(asio::buffer(_byteBuffer.GetWritePointer(), _byteBuffer.GetSpaceLeft()),
                 std::bind(&BaseSocket::HandleInternalRead, this, std::placeholders::_1, std::placeholders::_2));
         }
-        void HandleInternalRead(asio::error_code errorCode, size_t bytes)
+        void HandleInternalRead(asio::error_code error, size_t bytes)
         {
-            if (errorCode)
+            if (error)
             {
-                printf("HandleInternalRead: Error %s\n", errorCode.message().c_str());
-                _socket->close();
+                printf("HandleInternalRead: Error %s\n", error.message().c_str());
+                Close(error);
                 return;
             }
 
@@ -91,7 +93,7 @@ namespace Common
             else
             {
                 printf("WRITE ERROR\n");
-                _socket->close();
+                Close(error);
             }
         }
 

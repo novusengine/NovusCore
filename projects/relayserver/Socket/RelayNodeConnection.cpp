@@ -69,6 +69,12 @@ void RelayNodeConnection::HandleRead()
     Common::ByteBuffer& byteBuffer = GetByteBuffer();
     while (byteBuffer.GetActualSize())
     {
+        // Decrypt data post CHALLENGE Status
+        if (_status == RELAYSTATUS_PROOF || _status == RELAYSTATUS_AUTHED)
+        {
+            _crypto->Decrypt(byteBuffer.GetReadPointer(), byteBuffer.GetActualSize());
+        }
+
         uint8_t command = byteBuffer.GetDataPointer()[0];
 
         auto itr = MessageHandlers.find(command);
@@ -81,7 +87,7 @@ void RelayNodeConnection::HandleRead()
         // Client attempted incorrect auth step
         if (_status != itr->second.status)
         {
-            _socket->close();
+            Close(asio::error::shut_down);
             return;
         }
 
@@ -91,7 +97,7 @@ void RelayNodeConnection::HandleRead()
 
         if (!(*this.*itr->second.handler)())
         {
-            _socket->close();
+            Close(asio::error::shut_down);
             return;
         }
 
@@ -108,24 +114,16 @@ bool RelayNodeConnection::HandleCommandChallenge()
     _status = RELAYSTATUS_CLOSED;
     sRelayChallenge* relayChallenge = reinterpret_cast<sRelayChallenge*>(GetByteBuffer().GetReadPointer());
 
-    if (relayChallenge->error == 0)
-    {
-        _status = RELAYSTATUS_PROOF;
-        _crypto->SetupClient(_key);
-    }
-    else
-        return false;
+    _status = RELAYSTATUS_PROOF;
+    _key->Bin2BN(relayChallenge->K, 32);
+    _crypto->SetupClient(_key);
 
     /* Send fancy encrypted packet here */
     Common::ByteBuffer packet;
-    packet.Write(1); // RELAY_PROOF
+    packet.Write(RELAY_PROOF); // RELAY_PROOF
     packet.Write(99);
     _crypto->Encrypt(packet.GetReadPointer(), 2);
 
-    int command = packet.GetDataPointer()[0];
-    std::cout << "Sending: (" << command << ")" << std::endl;
-
-    //_crypto->Decrypt(packet.GetReadPointer(), 2);
     Send(packet);
     return true;
 }

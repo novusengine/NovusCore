@@ -48,9 +48,10 @@ void NodeSession::HandleRead()
 
     while (byteBuffer.GetActualSize())
     {
+        // Decrypt data post CHALLENGE Status
         if (_status == NODESTATUS_PROOF || _status == NODESTATUS_AUTHED)
         {
-            _crypto->Decrypt(byteBuffer.GetReadPointer(), 2);
+            _crypto->Decrypt(byteBuffer.GetReadPointer(), byteBuffer.GetActualSize());
         }
         uint8_t command = byteBuffer.GetDataPointer()[0];
 
@@ -65,7 +66,7 @@ void NodeSession::HandleRead()
         // Client attempted incorrect auth step
         if (_status != itr->second.status)
         {
-            _socket->close();
+            Close(asio::error::shut_down);
             return;
         }
 
@@ -75,7 +76,7 @@ void NodeSession::HandleRead()
 
         if (!(*this.*itr->second.handler)())
         {
-            _socket->close();
+            Close(asio::error::shut_down);
             return;
         }
 
@@ -91,24 +92,20 @@ bool NodeSession::HandleCommandChallenge()
     _status = NODESTATUS_CLOSED;
     cNodeChallenge* nodeChallenge = reinterpret_cast<cNodeChallenge*>(GetByteBuffer().GetReadPointer());
 
-    Common::ByteBuffer packet;
-    packet.Write(0); // NODESTATUS_CHALLENGE
-
     if (nodeChallenge->version1 == 3 && nodeChallenge->version2 == 3 && nodeChallenge->version3 == 5 && nodeChallenge->build == 12340)
     {
         _status = NODESTATUS_PROOF;
-        packet.Write(0);   
-        _crypto->SetupServer(_key);
-    }
-    else
-    {
-        packet.Write(1);
-        Send(packet);
-        return false;
-    }
 
-    Send(packet);
-    return true;
+        Common::ByteBuffer packet;
+        packet.Write(NODE_CHALLENGE);
+        packet.Append(_key->BN2BinArray(32).get(), 32);
+        _crypto->SetupServer(_key);
+
+        Send(packet);
+        return true;
+    }
+        
+    return false;
 }
 
 bool NodeSession::HandleCommandProof()

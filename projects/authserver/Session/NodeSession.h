@@ -70,7 +70,7 @@ public:
     {
         _crypto = new StreamCrypto();
         _key = new BigNumber();
-        _key->SetUInt32(100);
+        _key->Rand(16 * 8);
     }
 
     bool Start() override;

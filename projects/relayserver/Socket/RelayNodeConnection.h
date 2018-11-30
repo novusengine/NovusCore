@@ -46,8 +46,8 @@ enum RelayStatus
 #pragma pack(push, 1)
 struct sRelayChallenge
 {
-    uint8_t   command;
-    uint8_t   error;
+    uint8_t command;
+    uint8_t K[32];
 };
 
 struct sRelayProof
@@ -66,7 +66,6 @@ public:
     { 
         _crypto = new StreamCrypto();
         _key = new BigNumber();
-        _key->SetUInt32(100);
     }
 
     bool Start() override;
