@@ -22,32 +22,52 @@
 # SOFTWARE.
 */
 
-#include "AuthSocketHandler.h"
-#include "NodeSocketHandler.h"
+#include "asio.hpp"
+#include "RelaySocketHandler.h"
+#include "Socket\RelayNodeConnection.h"
+#include "Networking\ByteBuffer.h"
 #include <Config\ConfigHandler.h>
 
 int main()
 {
-    if (!ConfigHandler::Setup("authserver_configuration.json"))
+    if (!ConfigHandler::Setup("relayserver_configuration.json"))
     {
         std::getchar();
         return 0;
     }
 
+    // Seed Rand
+    srand(time(NULL));
+
     asio::io_service io_service(2);
-    AuthSocketHandler server(io_service, ConfigHandler::GetOption<uint16_t>("port", 3724));
-    NodeSocketHandler nodeServer(io_service, ConfigHandler::GetOption<uint16_t>("nodeport", 8000));
-    nodeServer.Start();
+    RelaySocketHandler server(io_service, ConfigHandler::GetOption<uint16_t>("port", 8085));
     server.Start();
+    
+    RelayNodeConnection nodeConnection(new asio::ip::tcp::socket(io_service), ConfigHandler::GetOption<std::string>("authserverip", "127.0.0.1"), ConfigHandler::GetOption<uint16_t>("authserverport", 3724));
+    if (!nodeConnection.Start())
+    {
+        std::getchar();
+        return 0;
+    }
+    std::cout << "Connected to authserver" << std::endl;
+
+    /*asio::error_code error;
+    asio::write(socket, asio::buffer(buffer.GetReadPointer(), buffer.GetActualSize()), error);
+
+    if (!error)
+    {
+        std::cout << "Sent message to authserver" << std::endl;
+    }
+    else
+    {
+        std::cout << "Failed to sent message to authserver" << std::endl;
+    }*/
 
     std::thread run_thread([&]
     {
         io_service.run();
     });
 
-    std::cout << "Server Node Instance running on port: " << nodeServer.GetPort() << std::endl;
-    std::cout << "Server Auth Instance running on port: " << server.GetPort() << std::endl;
     std::getchar();
-
-    return 0;
+	return 0;
 }

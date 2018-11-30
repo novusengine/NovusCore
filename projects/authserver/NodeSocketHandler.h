@@ -24,16 +24,16 @@
 #pragma once
 
 #include <Networking/TcpServer.h>
-#include "Session\AuthSession.h"
+#include "Session\NodeSession.h"
 
-struct AuthWorkerThread
+struct NodeWorkerThread
 {
     std::thread _thread;
-    std::vector<AuthSession*> _sessions;
+    std::vector<NodeSession*> _sessions;
     std::mutex _mutex;
 };
 
-void AuthWorkerThreadMain(AuthWorkerThread* workerThread)
+void NodeWorkerThreadMain(NodeWorkerThread* workerThread)
 {
     while (true)
     {
@@ -42,7 +42,7 @@ void AuthWorkerThreadMain(AuthWorkerThread* workerThread)
         // Remove closed sessions
         if (workerThread->_sessions.size() > 0)
         {
-            workerThread->_sessions.erase((std::remove_if(workerThread->_sessions.begin(), workerThread->_sessions.end() - 1, [](AuthSession* session) 
+            workerThread->_sessions.erase((std::remove_if(workerThread->_sessions.begin(), workerThread->_sessions.end() - 1, [](NodeSession* session) 
             {
                 if (session->socket()->is_open())
                     return false;
@@ -55,18 +55,16 @@ void AuthWorkerThreadMain(AuthWorkerThread* workerThread)
     }
 }
 
-class AuthSocketHandler : Common::TcpServer
+class NodeSocketHandler : Common::TcpServer
 {
 public:
-    AuthSocketHandler(asio::io_service& io_service, int port) : Common::TcpServer(io_service, port), _ioService(io_service) { }
+    NodeSocketHandler(asio::io_service& io_service, int port) : Common::TcpServer(io_service, port), _ioService(io_service) { }
 
     void Start()
     {
-        _workerThreads = new AuthWorkerThread();
-        _workerThreads->_thread = std::thread(AuthWorkerThreadMain, _workerThreads);
-
+        _workerThreads = new NodeWorkerThread();
+        _workerThreads->_thread = std::thread(NodeWorkerThreadMain, _workerThreads);
         StartListening();
-
     }
 
     uint16_t GetPort()
@@ -77,21 +75,21 @@ private:
     void StartListening() override
     {
         asio::ip::tcp::socket* socket = new asio::ip::tcp::socket(_ioService);
-        _acceptor.async_accept(*socket, std::bind(&AuthSocketHandler::HandleNewConnection, this, socket, std::placeholders::_1));
+        _acceptor.async_accept(*socket, std::bind(&NodeSocketHandler::HandleNewConnection, this, socket, std::placeholders::_1));
     }
 
     void HandleNewConnection(asio::ip::tcp::socket* socket, const asio::error_code& error_code) override
     {
         if (!error_code)
         {
-            printf("Client Connected\n");
+            printf("Relayserver Connected\n");
             _workerThreads->_mutex.lock();
 
             socket->non_blocking(true);
-            AuthSession* authSession = new AuthSession(socket);
-            authSession->Start();
+            NodeSession* nodeSession = new NodeSession(socket);
+            nodeSession->Start();
 
-            _workerThreads->_sessions.push_back(authSession);
+            _workerThreads->_sessions.push_back(nodeSession);
             _workerThreads->_mutex.unlock();
         }
 
@@ -99,5 +97,5 @@ private:
     }
 
     asio::io_service& _ioService;
-    AuthWorkerThread* _workerThreads;
+    NodeWorkerThread* _workerThreads;
 };

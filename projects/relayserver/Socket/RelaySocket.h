@@ -23,20 +23,33 @@
 */
 #pragma once
 
-#include <asio.hpp>
+#include <asio\ip\tcp.hpp>
+#include <Networking\BaseSocket.h>
+#include <Networking\Opcode\Opcode.h>
+#include <Cryptography\StreamCrypto.h>
+#include <random>
 
-namespace Common
+class RelaySocket : public Common::BaseSocket
 {
-    class TcpServer
+public:
+
+    RelaySocket(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), username(), _headerBuffer(), _packetBuffer()
     {
-    public:
-        TcpServer(asio::io_service& io_service, int port) : _acceptor(io_service, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port)), _port(port) { }
+        srand(time(NULL));
+        _seed = (uint32_t)rand();
 
-    protected:
-        virtual void StartListening() = 0;
-        virtual void HandleNewConnection(asio::ip::tcp::socket* socket, const asio::error_code& error) = 0;
+        _headerBuffer.Resize(sizeof(Common::ClientMessageHeader));
 
-        asio::ip::tcp::acceptor _acceptor;
-        uint16_t _port;
-    };
-}
+    }
+
+    bool Start() override;
+    void HandleRead() override;
+
+    std::string username;
+
+    Common::ByteBuffer _headerBuffer;
+    Common::ByteBuffer _packetBuffer;
+
+    uint32_t _seed;
+    StreamCrypto _streamCrypto;
+};

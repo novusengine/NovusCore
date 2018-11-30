@@ -29,7 +29,8 @@ class StreamCrypto
 {
     public:
         StreamCrypto();
-        void Setup(BigNumber* key);
+        void SetupClient(BigNumber* key);
+        void SetupServer(BigNumber* key);
         void Decrypt(uint8_t* data, size_t size);
         void Encrypt(uint8_t* data, size_t size);
 

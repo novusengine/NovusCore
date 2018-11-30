@@ -114,9 +114,11 @@ public:
     { 
         N.Hex2BN("894B645E89E1535BBDAD5B8B290650530801B18EBFBF5E8FAB3C82872A3E9BB7");
         g.SetUInt32(7);
+
+        ResetPacketsReadThisRead();
     }
 
-    void Start() override;
+    bool Start() override;
     void HandleRead() override;
 
     bool HandleCommandChallenge();
@@ -132,6 +134,20 @@ public:
     AuthStatus _status;
 
     std::string username;
+
+    void ResetPacketsReadThisRead() 
+    { 
+        for (uint8_t c = 0; c < 4; ++c)
+        {
+            packetsReadThisRead[c] = 0;
+
+            if (c == 3)
+            {
+                packetsReadThisRead[AUTH_GAMESERVER_LIST] = 0;
+            }
+        }
+    }
+    std::vector<uint8_t> packetsReadThisRead;
 };
 
 #pragma pack(push, 1)
@@ -139,6 +155,7 @@ struct AuthMessageHandler
 {
     AuthStatus status;
     size_t packetSize;
+    uint8_t maxPacketsPerRead;
     bool (AuthSession::*handler)();
 };
 #pragma pack(pop)

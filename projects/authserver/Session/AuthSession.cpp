@@ -23,30 +23,32 @@
 */
 
 #include "AuthSession.h"
-#include "Networking\ByteBuffer.h"
+#include <Networking\ByteBuffer.h>
 
 std::unordered_map<uint8_t, AuthMessageHandler> AuthSession::InitMessageHandlers()
 {
     std::unordered_map<uint8_t, AuthMessageHandler> messageHandlers;
 
-    messageHandlers[AUTH_CHALLENGE]             =   { STATUS_CHALLENGE,         4,                              &AuthSession::HandleCommandChallenge };
-    messageHandlers[AUTH_PROOF]                 =   { STATUS_PROOF,             sizeof(cAuthLogonProof),        &AuthSession::HandleCommandProof };
-    messageHandlers[AUTH_RECONNECT_CHALLENGE]   =   { STATUS_CHALLENGE,         4,                              &AuthSession::HandleCommandReconnectChallenge };
-    messageHandlers[AUTH_RECONNECT_PROOF]       =   { STATUS_RECONNECT_PROOF,   sizeof(cAuthReconnectProof),    &AuthSession::HandleCommandReconnectProof };
-    messageHandlers[AUTH_GAMESERVER_LIST]       =   { STATUS_AUTHED,            5,                              &AuthSession::HandleCommandGameServerList };
+    messageHandlers[AUTH_CHALLENGE]             =   { STATUS_CHALLENGE,         4,                              1,   &AuthSession::HandleCommandChallenge };
+    messageHandlers[AUTH_PROOF]                 =   { STATUS_PROOF,             sizeof(cAuthLogonProof),        1,   &AuthSession::HandleCommandProof };
+    messageHandlers[AUTH_RECONNECT_CHALLENGE]   =   { STATUS_CHALLENGE,         4,                              1,   &AuthSession::HandleCommandReconnectChallenge };
+    messageHandlers[AUTH_RECONNECT_PROOF]       =   { STATUS_RECONNECT_PROOF,   sizeof(cAuthReconnectProof),    1,   &AuthSession::HandleCommandReconnectProof };
+    messageHandlers[AUTH_GAMESERVER_LIST]       =   { STATUS_AUTHED,            5,                              3,   &AuthSession::HandleCommandGameServerList };
 
     return messageHandlers;
 }
 std::unordered_map<uint8_t, AuthMessageHandler> const MessageHandlers = AuthSession::InitMessageHandlers();
 
-void AuthSession::Start()
+bool AuthSession::Start()
 {
     AsyncRead();
+    return true;
 }
 
 void AuthSession::HandleRead()
 {
     Common::ByteBuffer& byteBuffer = GetByteBuffer();
+    ResetPacketsReadThisRead();
 
     while (byteBuffer.GetActualSize())
     {
@@ -66,10 +68,19 @@ void AuthSession::HandleRead()
             return;
         }
 
+        if (packetsReadThisRead[command] == itr->second.maxPacketsPerRead)
+        {
+            _socket->close();
+            return;
+        }
+        else
+        {
+            ++packetsReadThisRead[command];
+        }
+
         uint16_t size = uint16_t(itr->second.packetSize);
         if (byteBuffer.GetActualSize() < size)
             break;
-
 
         if (command == AUTH_CHALLENGE || command == AUTH_RECONNECT_CHALLENGE)
         {

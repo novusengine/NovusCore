@@ -23,17 +23,17 @@
 */
 #pragma once
 
-#include <Networking/TcpServer.h>
-#include "Session\AuthSession.h"
+#include <Networking\TcpServer.h>
+#include "Socket\RelaySocket.h"
 
-struct AuthWorkerThread
+struct WorkerThread
 {
     std::thread _thread;
-    std::vector<AuthSession*> _sessions;
+    std::vector<RelaySocket*> _sessions;
     std::mutex _mutex;
 };
 
-void AuthWorkerThreadMain(AuthWorkerThread* workerThread)
+void WorkerThreadMain(WorkerThread* workerThread)
 {
     while (true)
     {
@@ -42,7 +42,7 @@ void AuthWorkerThreadMain(AuthWorkerThread* workerThread)
         // Remove closed sessions
         if (workerThread->_sessions.size() > 0)
         {
-            workerThread->_sessions.erase((std::remove_if(workerThread->_sessions.begin(), workerThread->_sessions.end() - 1, [](AuthSession* session) 
+            workerThread->_sessions.erase((std::remove_if(workerThread->_sessions.begin(), workerThread->_sessions.end() - 1, [](RelaySocket* session)
             {
                 if (session->socket()->is_open())
                     return false;
@@ -55,29 +55,23 @@ void AuthWorkerThreadMain(AuthWorkerThread* workerThread)
     }
 }
 
-class AuthSocketHandler : Common::TcpServer
+class RelaySocketHandler : Common::TcpServer
 {
 public:
-    AuthSocketHandler(asio::io_service& io_service, int port) : Common::TcpServer(io_service, port), _ioService(io_service) { }
+    RelaySocketHandler(asio::io_service& io_service, int port) : Common::TcpServer(io_service, port), _ioService(io_service) { }
 
     void Start()
     {
-        _workerThreads = new AuthWorkerThread();
-        _workerThreads->_thread = std::thread(AuthWorkerThreadMain, _workerThreads);
-
+        _workerThreads = new WorkerThread();
+        _workerThreads->_thread = std::thread(WorkerThreadMain, _workerThreads);
         StartListening();
-
     }
 
-    uint16_t GetPort()
-    {
-        return _port;
-    }
 private:
     void StartListening() override
     {
         asio::ip::tcp::socket* socket = new asio::ip::tcp::socket(_ioService);
-        _acceptor.async_accept(*socket, std::bind(&AuthSocketHandler::HandleNewConnection, this, socket, std::placeholders::_1));
+        _acceptor.async_accept(*socket, std::bind(&RelaySocketHandler::HandleNewConnection, this, socket, std::placeholders::_1));
     }
 
     void HandleNewConnection(asio::ip::tcp::socket* socket, const asio::error_code& error_code) override
@@ -88,10 +82,21 @@ private:
             _workerThreads->_mutex.lock();
 
             socket->non_blocking(true);
-            AuthSession* authSession = new AuthSession(socket);
-            authSession->Start();
 
-            _workerThreads->_sessions.push_back(authSession);
+            {
+                asio::error_code error;
+                socket->set_option(asio::socket_base::send_buffer_size(-1), error);
+            }
+
+            {
+                asio::error_code error;
+                socket->set_option(asio::ip::tcp::no_delay(true), error);
+            }
+
+            RelaySocket* relaySocket = new RelaySocket(socket);
+            relaySocket->Start();
+
+            _workerThreads->_sessions.push_back(relaySocket);
             _workerThreads->_mutex.unlock();
         }
 
@@ -99,5 +104,5 @@ private:
     }
 
     asio::io_service& _ioService;
-    AuthWorkerThread* _workerThreads;
+    WorkerThread* _workerThreads;
 };

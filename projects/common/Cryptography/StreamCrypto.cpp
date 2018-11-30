@@ -23,24 +23,49 @@
 
 StreamCrypto::StreamCrypto() : _cDecrypt(20), _sEncrypt(20), _valid(false) { }
 
-void StreamCrypto::Setup(BigNumber* key)
+void StreamCrypto::SetupClient(BigNumber* key)
+{
+    uint8_t cEncryptionKey[16] = { 0xC2, 0xB3, 0x72, 0x3C, 0xC6, 0xAE, 0xD9, 0xB5, 0x34, 0x3C, 0x53, 0xEE, 0x2F, 0x43, 0x67, 0xCE };
+    HMACH cEncryptionHMAC(16, (uint8_t*)cEncryptionKey);
+    uint8_t* eHash = cEncryptionHMAC.CalculateHash(key);
+
+    uint8_t sDecryptionKey[16] = { 0xCC, 0x98, 0xAE, 0x04, 0xE8, 0x97, 0xEA, 0xCA, 0x12, 0xDD, 0xC0, 0x93, 0x42, 0x91, 0x53, 0x57 };
+    HMACH sDecryptHMAC(16, (uint8_t*)sDecryptionKey);
+    uint8_t* dHash = sDecryptHMAC.CalculateHash(key);
+
+    _sEncrypt.Setup(eHash);
+    _cDecrypt.Setup(dHash);
+
+    // Drop first 1024 bytes, as WoW uses ARC4-drop1024.
+    uint8_t dropBuffer[1024];
+
+    memset(dropBuffer, 0, 1024);
+    _sEncrypt.UpdateEncryption(1024, dropBuffer);
+
+    memset(dropBuffer, 0, 1024);
+    _cDecrypt.UpdateEncryption(1024, dropBuffer);
+
+    _valid = true;
+}
+void StreamCrypto::SetupServer(BigNumber* key)
 {
     uint8_t sEncryptionKey[16] = { 0xCC, 0x98, 0xAE, 0x04, 0xE8, 0x97, 0xEA, 0xCA, 0x12, 0xDD, 0xC0, 0x93, 0x42, 0x91, 0x53, 0x57 };
     HMACH sEncryptionHMAC(16, (uint8_t*)sEncryptionKey);
     uint8_t* eHash = sEncryptionHMAC.CalculateHash(key);
 
-    uint8_t sDecryptionKey[16] = { 0xC2, 0xB3, 0x72, 0x3C, 0xC6, 0xAE, 0xD9, 0xB5, 0x34, 0x3C, 0x53, 0xEE, 0x2F, 0x43, 0x67, 0xCE };
-    HMACH cDecryptHMAC(16, (uint8_t*)sDecryptionKey);
+    uint8_t cDecryptionKey[16] = { 0xC2, 0xB3, 0x72, 0x3C, 0xC6, 0xAE, 0xD9, 0xB5, 0x34, 0x3C, 0x53, 0xEE, 0x2F, 0x43, 0x67, 0xCE };
+    HMACH cDecryptHMAC(16, (uint8_t*)cDecryptionKey);
     uint8_t* dHash = cDecryptHMAC.CalculateHash(key);
 
-    _cDecrypt.Setup(dHash);
     _sEncrypt.Setup(eHash);
+    _cDecrypt.Setup(dHash);
 
     // Drop first 1024 bytes, as WoW uses ARC4-drop1024.
     uint8_t dropBuffer[1024];
-    memset(dropBuffer, 0, 1024);
 
+    memset(dropBuffer, 0, 1024);
     _sEncrypt.UpdateEncryption(1024, dropBuffer);
+
     memset(dropBuffer, 0, 1024);
     _cDecrypt.UpdateEncryption(1024, dropBuffer);
 

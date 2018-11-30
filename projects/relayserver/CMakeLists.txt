@@ -20,40 +20,40 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-project(authserver VERSION 1.0.0 DESCRIPTION "Authserver for NovusCore")
-add_executable(authserver)
+project(relayserver VERSION 1.0.0 DESCRIPTION "relayserver for NovusCore")
+add_executable(relayserver)
 
-set(AUTHSERVER_MAIN
+set(RELAYSERVER_MAIN
     "${CMAKE_CURRENT_LIST_DIR}/main.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/AuthSocketHandler.h"
-    "${CMAKE_CURRENT_LIST_DIR}/NodeSocketHandler.h"
+    "${CMAKE_CURRENT_LIST_DIR}/RelaySocketHandler.h"
 )
-set(AUTHSERVER_SESSION
-    "${CMAKE_CURRENT_LIST_DIR}/Session/AuthSession.h"
-    "${CMAKE_CURRENT_LIST_DIR}/Session/AuthSession.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/Session/NodeSession.h"
-    "${CMAKE_CURRENT_LIST_DIR}/Session/NodeSession.cpp"
+set(RELAYSERVER_RELAYSOCKET
+    "${CMAKE_CURRENT_LIST_DIR}/Socket/RelaySocket.h"
+    "${CMAKE_CURRENT_LIST_DIR}/Socket/RelaySocket.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/Socket/RelayNodeConnection.h"
+    "${CMAKE_CURRENT_LIST_DIR}/Socket/RelayNodeConnection.cpp"
 )
 
-set(AUTHSERVER_DEPENDENCIES
+set(RELAYSERVER_DEPENDENCIES
     "../common/Dependencies/amy"
     "../common/Dependencies/json"
 )
 
-source_group(" " FILES ${AUTHSERVER_MAIN})
-source_group(Session FILES ${AUTHSERVER_SESSION})
+source_group(" " FILES ${RELAYSERVER_MAIN})
+source_group(Socket FILES ${RELAYSERVER_RELAYSOCKET})
 
-target_sources(authserver
+target_sources(relayserver
     PRIVATE
-    ${AUTHSERVER_MAIN}
-    ${AUTHSERVER_SESSION}
+    ${RELAYSERVER_MAIN}
+    ${RELAYSERVER_RELAYSOCKET}
 )
 
-# Set VERSION & FOLDER Property
-set_target_properties(authserver PROPERTIES VERSION ${PROJECT_VERSION})
-set_target_properties(authserver PROPERTIES FOLDER "server")
 
-target_link_libraries(authserver common)
-target_include_directories(authserver PRIVATE ${AUTHSERVER_DEPENDENCIES})
-include_directories(authserver "${common_SOURCE_DIR}")
-install(TARGETS authserver DESTINATION bin)
+# Set VERSION & FOLDER Property
+set_target_properties(relayserver PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties(relayserver PROPERTIES FOLDER "server")
+
+target_link_libraries(relayserver common)
+target_include_directories(relayserver PRIVATE ${RELAYSERVER_DEPENDENCIES})
+include_directories(relayserver "${common_SOURCE_DIR}")
+install(TARGETS relayserver DESTINATION bin)

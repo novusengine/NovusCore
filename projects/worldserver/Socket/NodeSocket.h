@@ -36,7 +36,7 @@ public:
         _byteBuffer.Resize(4096);
     }
 
-    void Start() override;
+    bool Start() override;
     void HandleRead() override;
 
     Common::ByteBuffer _byteBuffer;

@@ -139,7 +139,7 @@ namespace Common
 
         void ReadBytes(size_t size)
         {
-            _readPos = size;
+            _readPos += size;
         }
 
         void CleanBuffer()

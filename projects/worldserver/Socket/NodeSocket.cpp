@@ -25,9 +25,10 @@
 #include "NodeSocket.h"
 #include "Networking\ByteBuffer.h"
 
-void NodeSocket::Start()
+bool NodeSocket::Start()
 {
     AsyncRead();
+    return true;
 }
 
 void NodeSocket::HandleRead()
