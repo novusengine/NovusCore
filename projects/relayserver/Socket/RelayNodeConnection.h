@@ -49,11 +49,6 @@ struct sRelayChallenge
     uint8_t command;
     uint8_t K[32];
 };
-
-struct sRelayProof
-{
-    uint8_t   command;
-};
 #pragma pack(pop)
 
 struct RelayMessageHandler;

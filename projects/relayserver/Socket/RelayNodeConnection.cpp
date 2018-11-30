@@ -30,7 +30,7 @@ std::unordered_map<uint8_t, RelayMessageHandler> RelayNodeConnection::InitMessag
     std::unordered_map<uint8_t, RelayMessageHandler> messageHandlers;
 
     messageHandlers[RELAY_CHALLENGE] =  { RELAYSTATUS_CHALLENGE,    sizeof(sRelayChallenge),    &RelayNodeConnection::HandleCommandChallenge };
-    messageHandlers[RELAY_PROOF]     =  { RELAYSTATUS_PROOF,        sizeof(sRelayProof),        &RelayNodeConnection::HandleCommandProof };
+    messageHandlers[RELAY_PROOF]     =  { RELAYSTATUS_PROOF,        1,                          &RelayNodeConnection::HandleCommandProof };
 
     return messageHandlers;
 }
@@ -47,12 +47,12 @@ bool RelayNodeConnection::Start()
         /* NODE_CHALLENGE */
         Common::ByteBuffer packet(6);
 
-        packet.Write(0);
-        packet.Write(3);
-        packet.Write(3);
-        packet.Write(5);
+        packet.Write(0); // Command
+        packet.Write(0); // Type
+        uint16_t version = 335;
+        packet.Append((uint8_t*)&version, sizeof(version)); // Version
         uint16_t build = 12340;
-        packet.Append((uint8_t*)&build, sizeof(build));
+        packet.Append((uint8_t*)&build, sizeof(build)); // Build
 
         Send(packet);
         return true;
@@ -121,8 +121,7 @@ bool RelayNodeConnection::HandleCommandChallenge()
     /* Send fancy encrypted packet here */
     Common::ByteBuffer packet;
     packet.Write(RELAY_PROOF); // RELAY_PROOF
-    packet.Write(99);
-    _crypto->Encrypt(packet.GetReadPointer(), 2);
+    _crypto->Encrypt(packet.GetReadPointer(), packet.GetActualSize());
 
     Send(packet);
     return true;
@@ -131,7 +130,7 @@ bool RelayNodeConnection::HandleCommandChallenge()
 bool RelayNodeConnection::HandleCommandProof()
 {
     std::cout << "Received RelayProof" << std::endl;
-    _status = RELAYSTATUS_CLOSED;
+    _status = RELAYSTATUS_AUTHED;
 
 
     return true;

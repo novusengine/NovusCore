@@ -30,7 +30,7 @@ std::unordered_map<uint8_t, NodeMessageHandler> NodeSession::InitMessageHandlers
     std::unordered_map<uint8_t, NodeMessageHandler> messageHandlers;
 
     messageHandlers[NODE_CHALLENGE]             =   { NODESTATUS_CHALLENGE,         sizeof(cNodeChallenge),    &NodeSession::HandleCommandChallenge };
-    messageHandlers[NODE_PROOF]                 =   { NODESTATUS_PROOF,             sizeof(cNodeProof),        &NodeSession::HandleCommandProof     };
+    messageHandlers[NODE_PROOF]                 =   { NODESTATUS_PROOF,             1,                         &NodeSession::HandleCommandProof     };
 
     return messageHandlers;
 }
@@ -92,9 +92,10 @@ bool NodeSession::HandleCommandChallenge()
     _status = NODESTATUS_CLOSED;
     cNodeChallenge* nodeChallenge = reinterpret_cast<cNodeChallenge*>(GetByteBuffer().GetReadPointer());
 
-    if (nodeChallenge->version1 == 3 && nodeChallenge->version2 == 3 && nodeChallenge->version3 == 5 && nodeChallenge->build == 12340)
+    if (nodeChallenge->version == 335 && nodeChallenge->build == 12340)
     {
         _status = NODESTATUS_PROOF;
+        _type = nodeChallenge->type;
 
         Common::ByteBuffer packet;
         packet.Write(NODE_CHALLENGE);
@@ -111,9 +112,12 @@ bool NodeSession::HandleCommandChallenge()
 bool NodeSession::HandleCommandProof()
 {
     std::cout << "Received NodeProof" << std::endl;
-    _status = NODESTATUS_CLOSED;
-    cNodeProof* nodeProof = reinterpret_cast<cNodeProof*>(GetByteBuffer().GetReadPointer());
+    _status = NODESTATUS_AUTHED;
 
-
+    Common::ByteBuffer packet;
+    packet.Write(NODE_PROOF);
+    _crypto->Encrypt(packet.GetReadPointer(), packet.GetActualSize());
+    
+    Send(packet);
     return true;
 }

@@ -46,17 +46,10 @@ enum NodeStatus
 #pragma pack(push, 1)
 struct cNodeChallenge
 {
-    uint8_t   command;
-    uint8_t   version1;
-    uint8_t   version2;
-    uint8_t   version3;
-    uint16_t  build;
-};
-
-struct cNodeProof
-{
-    uint8_t   command;
-    uint8_t   unk;
+    uint8_t     command;
+    uint8_t     type;
+    uint16_t    version;
+    uint16_t    build;
 };
 #pragma pack(pop)
 
@@ -66,7 +59,7 @@ class NodeSession : public Common::BaseSocket
 public:
     static std::unordered_map<uint8_t, NodeMessageHandler> InitMessageHandlers();
 
-    NodeSession(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), _status(NODESTATUS_CHALLENGE), _crypto()
+    NodeSession(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), _status(NODESTATUS_CHALLENGE), _crypto(), _type(255)
     {
         _crypto = new StreamCrypto();
         _key = new BigNumber();
@@ -80,6 +73,7 @@ public:
     bool HandleCommandProof();
 
     NodeStatus _status;
+    uint8_t _type;
 
     private:
     StreamCrypto* _crypto;
