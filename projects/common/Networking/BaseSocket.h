@@ -36,7 +36,7 @@ namespace Common
     class BaseSocket : public std::enable_shared_from_this<BaseSocket>
     {
     public:
-        virtual void Start() = 0;
+        virtual bool Start() = 0;
         virtual void HandleRead() = 0;
 
         asio::ip::tcp::socket* socket()
