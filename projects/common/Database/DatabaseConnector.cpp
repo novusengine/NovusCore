@@ -5,7 +5,7 @@
 std::string DatabaseConnector::_host = "INVALID";
 std::string DatabaseConnector::_username = "root";
 std::string DatabaseConnector::_password = "";
-SharedPool<DatabaseConnector> DatabaseConnector::connectorPool;
+SharedPool<DatabaseConnector> DatabaseConnector::connectorPools[];
 
 bool DatabaseConnector::Create(DATABASE_TYPE type, std::unique_ptr<DatabaseConnector>& out)
 {
@@ -33,14 +33,14 @@ bool DatabaseConnector::Borrow(DATABASE_TYPE type, std::shared_ptr<DatabaseConne
 	}
 
 	// If we are out of connectors, create one!
-	if (connectorPool.empty())
+	if (connectorPools[type].empty())
 	{
 		DatabaseConnector* newConnector = new DatabaseConnector();
 		newConnector->_Connect(type);
-		connectorPool.add(std::unique_ptr<DatabaseConnector>(newConnector));
+		connectorPools[type].add(std::unique_ptr<DatabaseConnector>(newConnector));
 	}
 
-	out = connectorPool.acquire();
+	out = connectorPools[type].acquire();
 
 	return true;
 }

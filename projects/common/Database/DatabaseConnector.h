@@ -34,7 +34,8 @@ enum DATABASE_TYPE
 {
 	AUTHSERVER,
 	CHARSERVER,
-	WORLDSERVER
+	WORLDSERVER,
+	COUNT
 };
 
 class DatabaseConnector
@@ -65,5 +66,5 @@ private:
     static std::string _username;
     static std::string _password;
 
-	static SharedPool<DatabaseConnector> connectorPool;
+	static SharedPool<DatabaseConnector> connectorPools[DATABASE_TYPE::COUNT];
 };
