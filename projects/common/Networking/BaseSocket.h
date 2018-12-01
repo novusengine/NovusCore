@@ -37,7 +37,7 @@ namespace Common
     {
     public:
         virtual bool Start() = 0;
-        virtual void Close(asio::error_code error) { _socket->close(); }
+        virtual void Close(asio::error_code error) { _socket->close(); _isClosed = true; std::cout << "Closed: " << error.message().c_str() << std::endl; }
         virtual void HandleRead() = 0;
 
         asio::ip::tcp::socket* socket()
@@ -49,14 +49,13 @@ namespace Common
         {
             if (!buffer.empty())
             {
-                //printf("Sending Packet to client: size(%u)\n", buffer.GetBufferSize());
                 _socket->async_write_some(asio::buffer(buffer.GetReadPointer(), buffer.GetActualSize()),
                    std::bind(&BaseSocket::HandleInternalWrite, this, std::placeholders::_1, std::placeholders::_2));
             }
         }
-
+        bool IsClosed() { return _isClosed; }
     protected:
-        BaseSocket(asio::ip::tcp::socket* socket) : _socket(socket), _byteBuffer() 
+        BaseSocket(asio::ip::tcp::socket* socket) : _socket(socket), _byteBuffer(), _isClosed(false)
         { 
             _byteBuffer.Resize(4096);
         }
@@ -77,7 +76,7 @@ namespace Common
         {
             if (error)
             {
-                printf("HandleInternalRead: Error %s\n", error.message().c_str());
+                //printf("HandleInternalRead: Error %s\n", error.message().c_str());
                 Close(error);
                 return;
             }
@@ -92,13 +91,15 @@ namespace Common
             }
             else
             {
-                printf("WRITE ERROR\n");
+                //printf("WRITE ERROR\n");
                 Close(error);
             }
         }
 
         ByteBuffer& GetByteBuffer() { return _byteBuffer; }
         ByteBuffer _byteBuffer;
+
+        bool _isClosed;
         asio::ip::tcp::socket* _socket;
     };
 }

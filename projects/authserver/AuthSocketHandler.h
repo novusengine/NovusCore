@@ -26,47 +26,17 @@
 #include <Networking/TcpServer.h>
 #include "Session\AuthSession.h"
 
-struct AuthWorkerThread
-{
-    std::thread _thread;
-    std::vector<AuthSession*> _sessions;
-    std::mutex _mutex;
-};
-
-void AuthWorkerThreadMain(AuthWorkerThread* workerThread)
-{
-    while (true)
-    {
-        workerThread->_mutex.lock();
-
-        // Remove closed sessions
-        if (workerThread->_sessions.size() > 0)
-        {
-            workerThread->_sessions.erase((std::remove_if(workerThread->_sessions.begin(), workerThread->_sessions.end() - 1, [](AuthSession* session) 
-            {
-                if (session->socket()->is_open())
-                    return false;
-
-                return true;
-            }), workerThread->_sessions.end() - 1));
-        }
-
-        workerThread->_mutex.unlock();
-    }
-}
-
-class AuthSocketHandler : Common::TcpServer
+class AuthSocketHandler : Common::TcpServer<AuthSession>
 {
 public:
-    AuthSocketHandler(asio::io_service& io_service, int port) : Common::TcpServer(io_service, port), _ioService(io_service) { }
+    AuthSocketHandler(asio::io_service& io_service, int port) : Common::TcpServer<AuthSession>(io_service, port), _ioService(io_service) { }
 
     void Start()
     {
-        _workerThreads = new AuthWorkerThread();
-        _workerThreads->_thread = std::thread(AuthWorkerThreadMain, _workerThreads);
+        _workerThread = new Common::WorkerThread<AuthSession>();
+        _workerThread->_thread = std::thread(Common::WorkerThreadMain<Common::WorkerThread<AuthSession>, AuthSession>, _workerThread);
 
         StartListening();
-
     }
 
     uint16_t GetPort()
@@ -85,19 +55,18 @@ private:
         if (!error_code)
         {
             printf("Client Connected\n");
-            _workerThreads->_mutex.lock();
+            _workerThread->_mutex.lock();
 
             socket->non_blocking(true);
             AuthSession* authSession = new AuthSession(socket);
             authSession->Start();
 
-            _workerThreads->_sessions.push_back(authSession);
-            _workerThreads->_mutex.unlock();
+            _workerThread->_sessions.push_back(authSession);
+            _workerThread->_mutex.unlock();
         }
 
         StartListening();
     }
 
     asio::io_service& _ioService;
-    AuthWorkerThread* _workerThreads;
 };

@@ -26,44 +26,16 @@
 #include <Networking\TcpServer.h>
 #include "Socket\RelaySocket.h"
 
-struct WorkerThread
-{
-    std::thread _thread;
-    std::vector<RelaySocket*> _sessions;
-    std::mutex _mutex;
-};
-
-void WorkerThreadMain(WorkerThread* workerThread)
-{
-    while (true)
-    {
-        workerThread->_mutex.lock();
-
-        // Remove closed sessions
-        if (workerThread->_sessions.size() > 0)
-        {
-            workerThread->_sessions.erase((std::remove_if(workerThread->_sessions.begin(), workerThread->_sessions.end() - 1, [](RelaySocket* session)
-            {
-                if (session->socket()->is_open())
-                    return false;
-
-                return true;
-            }), workerThread->_sessions.end() - 1));
-        }
-
-        workerThread->_mutex.unlock();
-    }
-}
-
-class RelaySocketHandler : Common::TcpServer
+class RelaySocketHandler : Common::TcpServer<RelaySocket>
 {
 public:
-    RelaySocketHandler(asio::io_service& io_service, int port) : Common::TcpServer(io_service, port), _ioService(io_service) { }
+    RelaySocketHandler(asio::io_service& io_service, int port) : Common::TcpServer<RelaySocket>(io_service, port), _ioService(io_service) { }
 
     void Start()
     {
-        _workerThreads = new WorkerThread();
-        _workerThreads->_thread = std::thread(WorkerThreadMain, _workerThreads);
+        _workerThread = new Common::WorkerThread<RelaySocket>();
+        _workerThread->_thread = std::thread(Common::WorkerThreadMain<Common::WorkerThread<RelaySocket>, RelaySocket>, _workerThread);
+
         StartListening();
     }
 
@@ -79,7 +51,7 @@ private:
         if (!error_code)
         {
             printf("Client Connected\n");
-            _workerThreads->_mutex.lock();
+            _workerThread->_mutex.lock();
 
             socket->non_blocking(true);
 
@@ -96,13 +68,12 @@ private:
             RelaySocket* relaySocket = new RelaySocket(socket);
             relaySocket->Start();
 
-            _workerThreads->_sessions.push_back(relaySocket);
-            _workerThreads->_mutex.unlock();
+            _workerThread->_sessions.push_back(relaySocket);
+            _workerThread->_mutex.unlock();
         }
 
         StartListening();
     }
 
     asio::io_service& _ioService;
-    WorkerThread* _workerThreads;
 };

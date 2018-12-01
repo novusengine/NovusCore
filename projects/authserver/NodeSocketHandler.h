@@ -26,44 +26,16 @@
 #include <Networking/TcpServer.h>
 #include "Session\NodeSession.h"
 
-struct NodeWorkerThread
-{
-    std::thread _thread;
-    std::vector<NodeSession*> _sessions;
-    std::mutex _mutex;
-};
-
-void NodeWorkerThreadMain(NodeWorkerThread* workerThread)
-{
-    while (true)
-    {
-        workerThread->_mutex.lock();
-
-        // Remove closed sessions
-        if (workerThread->_sessions.size() > 0)
-        {
-            workerThread->_sessions.erase((std::remove_if(workerThread->_sessions.begin(), workerThread->_sessions.end() - 1, [](NodeSession* session) 
-            {
-                if (session->socket()->is_open())
-                    return false;
-
-                return true;
-            }), workerThread->_sessions.end() - 1));
-        }
-
-        workerThread->_mutex.unlock();
-    }
-}
-
-class NodeSocketHandler : Common::TcpServer
+class NodeSocketHandler : Common::TcpServer<NodeSession>
 {
 public:
-    NodeSocketHandler(asio::io_service& io_service, int port) : Common::TcpServer(io_service, port), _ioService(io_service) { }
+    NodeSocketHandler(asio::io_service& io_service, int port) : Common::TcpServer<NodeSession>(io_service, port), _ioService(io_service) { }
 
     void Start()
     {
-        _workerThreads = new NodeWorkerThread();
-        _workerThreads->_thread = std::thread(NodeWorkerThreadMain, _workerThreads);
+        _workerThread = new Common::WorkerThread<NodeSession>();
+        _workerThread->_thread = std::thread(Common::WorkerThreadMain<Common::WorkerThread<NodeSession>, NodeSession>, _workerThread);
+
         StartListening();
     }
 
@@ -83,19 +55,18 @@ private:
         if (!error_code)
         {
             printf("Relayserver Connected\n");
-            _workerThreads->_mutex.lock();
+            _workerThread->_mutex.lock();
 
             socket->non_blocking(true);
             NodeSession* nodeSession = new NodeSession(socket);
             nodeSession->Start();
 
-            _workerThreads->_sessions.push_back(nodeSession);
-            _workerThreads->_mutex.unlock();
+            _workerThread->_sessions.push_back(nodeSession);
+            _workerThread->_mutex.unlock();
         }
 
         StartListening();
     }
 
     asio::io_service& _ioService;
-    NodeWorkerThread* _workerThreads;
 };

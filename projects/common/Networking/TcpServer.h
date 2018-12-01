@@ -27,6 +27,35 @@
 
 namespace Common
 {
+    template <class T>
+    struct WorkerThread
+    {
+        std::thread _thread;
+        std::mutex _mutex;
+        std::vector<T*> _sessions;
+    };
+
+    template <class T, class S>
+    void WorkerThreadMain(T* thread)
+    {
+        while (true)
+        {
+            thread->_mutex.lock();
+            // Remove closed sessions
+            if (thread->_sessions.size() > 0)
+            {
+                thread->_sessions.erase(std::remove_if(thread->_sessions.begin(), thread->_sessions.end(), [](S* session)
+                {
+                    return session->IsClosed();
+                }), thread->_sessions.end());
+            }
+
+            thread->_mutex.unlock();
+            std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+        }
+    }
+
+    template <class T>
     class TcpServer
     {
     public:
@@ -36,6 +65,7 @@ namespace Common
         virtual void StartListening() = 0;
         virtual void HandleNewConnection(asio::ip::tcp::socket* socket, const asio::error_code& error) = 0;
 
+        Common::WorkerThread<T>* _workerThread;
         asio::ip::tcp::acceptor _acceptor;
         uint16_t _port;
     };

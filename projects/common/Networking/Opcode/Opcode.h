@@ -4,42 +4,41 @@
 namespace Common
 {
 #pragma pack(push, 1)
-    struct ClientMessageHeader
+    struct ClientPacketHeader
     {
         uint16_t size;
         uint32_t command;
     };
 
-    struct ServerMessageHeader
+    struct ServerPacketHeader
     {
-        ServerMessageHeader(uint32_t size, uint16_t cmd) : size(size)
+        ServerPacketHeader(uint32_t size, uint16_t cmd) : size(size)
         {
-            uint8_t headerIndex = 0;
-            if (isLargePacket())
+            uint8_t index = 0;
+
+            if (BigPacket())
             {
-                // TC_LOG_DEBUG("network", "initializing large server to client packet. Size: %u, cmd: %u", size, cmd);
-                // header[headerIndex++] = 0x80 | (0xFF & (size >> 16));
+                headerArray[index++] = 0x80 | (0xFF & (size >> 16));
             }
-            header[headerIndex++] = 0xFF & (size >> 8);
-            header[headerIndex++] = 0xFF & size;
 
-            header[headerIndex++] = 0xFF & cmd;
-            header[headerIndex++] = 0xFF & (cmd >> 8);
+            headerArray[index++] = 0xFF & (size >> 8);
+            headerArray[index++] = 0xFF & size;
+            headerArray[index++] = 0xFF & cmd;
+            headerArray[index++] = 0xFF & (cmd >> 8);
         }
 
-        uint8_t getHeaderLength()
+        uint8_t GetLength()
         {
-            // cmd = 2 bytes, size= 2||3bytes
-            return 2 + (isLargePacket() ? 3 : 2);
+            return 2 + (BigPacket() ? 3 : 2);
         }
 
-        bool isLargePacket() const
+        bool BigPacket() const
         {
             return size > 0x7FFF;
         }
 
         const uint32_t size;
-        uint8_t header[5];
+        uint8_t headerArray[5];
     };
 #pragma pack(pop)
 
