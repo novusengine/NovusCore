@@ -25,6 +25,7 @@
 #include "AuthSocketHandler.h"
 #include "NodeSocketHandler.h"
 #include <Config\ConfigHandler.h>
+#include <Database\DatabaseConnector.h>
 
 int main()
 {
@@ -33,6 +34,7 @@ int main()
         std::getchar();
         return 0;
     }
+    DatabaseConnector::SetHost("127.0.0.1");
 
     asio::io_service io_service(2);
     AuthSocketHandler server(io_service, ConfigHandler::GetOption<uint16_t>("port", 3724));

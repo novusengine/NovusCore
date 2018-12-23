@@ -27,6 +27,7 @@
 #include "Socket\RelayNodeConnection.h"
 #include "Networking\ByteBuffer.h"
 #include <Config\ConfigHandler.h>
+#include <Database\DatabaseConnector.h>
 
 int main()
 {
@@ -35,6 +36,7 @@ int main()
         std::getchar();
         return 0;
     }
+    DatabaseConnector::SetHost("127.0.0.1");
 
     // Seed Rand
     srand(time(NULL));
