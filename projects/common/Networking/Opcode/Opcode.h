@@ -9,10 +9,9 @@ namespace Common
         uint16_t size;
         uint32_t command;
     };
-
     struct ServerPacketHeader
     {
-        ServerPacketHeader(uint32_t size, uint16_t cmd) : size(size)
+        ServerPacketHeader(uint32_t size, uint16_t command) : size(size)
         {
             uint8_t index = 0;
 
@@ -23,8 +22,8 @@ namespace Common
 
             headerArray[index++] = 0xFF & (size >> 8);
             headerArray[index++] = 0xFF & size;
-            headerArray[index++] = 0xFF & cmd;
-            headerArray[index++] = 0xFF & (cmd >> 8);
+            headerArray[index++] = 0xFF & command;
+            headerArray[index++] = 0xFF & (command >> 8);
         }
 
         uint8_t GetLength()
@@ -42,7 +41,7 @@ namespace Common
     };
 #pragma pack(pop)
 
-    enum Opcodes
+    enum Opcode
     {
         MSG_NULL_ACTION                     = 0x00,
         CMSG_BOOTME                         = 0x001,
@@ -205,14 +204,14 @@ namespace Common
         CMSG_CHANNEL_OWNER                  = 0x09E,
         CMSG_CHANNEL_MODERATOR              = 0x09F,
         CMSG_CHANNEL_UNMODERATOR            = 0x0A0,
-        CMSG_CHANNEL_MUTE = 0x0A1,
-        CMSG_CHANNEL_UNMUTE = 0x0A2,
-        CMSG_CHANNEL_INVITE = 0x0A3,
-        CMSG_CHANNEL_KICK = 0x0A4,
-        CMSG_CHANNEL_BAN = 0x0A5,
-        CMSG_CHANNEL_UNBAN = 0x0A6,
-        CMSG_CHANNEL_ANNOUNCEMENTS = 0x0A7,
-        CMSG_CHANNEL_MODERATE = 0x0A8,
+        CMSG_CHANNEL_MUTE                   = 0x0A1,
+        CMSG_CHANNEL_UNMUTE                 = 0x0A2,
+        CMSG_CHANNEL_INVITE                 = 0x0A3,
+        CMSG_CHANNEL_KICK                   = 0x0A4,
+        CMSG_CHANNEL_BAN                    = 0x0A5,
+        CMSG_CHANNEL_UNBAN                  = 0x0A6,
+        CMSG_CHANNEL_ANNOUNCEMENTS          = 0x0A7,
+        CMSG_CHANNEL_MODERATE               = 0x0A8,
         SMSG_UPDATE_OBJECT = 0x0A9,
         SMSG_DESTROY_OBJECT = 0x0AA,
         CMSG_USE_ITEM = 0x0AB,

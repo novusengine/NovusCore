@@ -24,6 +24,7 @@
 
 #include "AuthSession.h"
 #include <Networking\ByteBuffer.h>
+#include <Database\DatabaseConnector.h>
 
 std::unordered_map<uint8_t, AuthMessageHandler> AuthSession::InitMessageHandlers()
 {
@@ -121,10 +122,25 @@ bool AuthSession::HandleCommandChallenge()
     pkt.Write(uint8_t(0x00));
 
     // Check if account exist in DB if so, grab v and s
+    std::shared_ptr<DatabaseConnector> connector;
+    if (!DatabaseConnector::Borrow(DATABASE_TYPE::AUTHSERVER, connector)) { return false; }
+
+    PreparedStatement sql("SELECT v,s FROM accounts WHERE name={s};");
+    sql.Bind(login);
+
+    amy::result_set results;
+    if (connector->Query(sql, results) && results.affected_rows() != 1)
+    {
+        pkt.Write(0x04); //WOW_FAILED
+        Send(pkt);
+        return true;
+    }
 
     username = login;
-    std::string databaseV = "18CA3F48A75E879D83959E12AFEEA682A8C8EADC20582107F3721F8AE44400CD";
-    std::string databaseS = "C55B9889E9CC8DE96F8A3D0B2D54C6B39AEF58E2C50C816660E7FB77802E760B";
+    std::string databaseV = results[0][0].as<amy::sql_varchar>(); //"18CA3F48A75E879D83959E12AFEEA682A8C8EADC20582107F3721F8AE44400CD";
+    std::string databaseS = results[0][1].as<amy::sql_varchar>(); //"C55B9889E9CC8DE96F8A3D0B2D54C6B39AEF58E2C50C816660E7FB77802E760B";
+
+    // We should generate s,v here if they aren't found in the database
 
     s.Hex2BN(databaseS.c_str());
     v.Hex2BN(databaseV.c_str());
@@ -218,7 +234,7 @@ bool AuthSession::HandleCommandProof()
         hash[i] ^= sha.GetData()[i];
 
     sha.Init();
-    sha.UpdateHash("NIXIFY");
+    sha.UpdateHash(username);
     sha.Finish();
 
     BigNumber t3;
@@ -243,6 +259,14 @@ bool AuthSession::HandleCommandProof()
         sha.Finish();
 
         // Update Database with SessionKey
+
+        std::shared_ptr<DatabaseConnector> connector;
+        if (!DatabaseConnector::Borrow(DATABASE_TYPE::AUTHSERVER, connector)) { return false; }
+
+        PreparedStatement sql("UPDATE accounts SET k={s} WHERE name={s};");
+        sql.Bind(K.BN2Hex());
+        sql.Bind(username);
+        if (!connector->Execute(sql)) { return false; }
 
         Common::ByteBuffer packet;
         sAuthLogonProof proof;
@@ -283,7 +307,7 @@ bool AuthSession::HandleCommandReconnectChallenge()
     pkt.Write(AUTH_RECONNECT_CHALLENGE);
 
     // Check if account exists
-    /*if (login != "NIXIFY")
+    if (login != username)
     {
         pkt.Write(uint8_t(0x03)); //WOW_FAIL_UNKNOWN_ACCOUNT);
         Send(pkt);
@@ -305,7 +329,7 @@ bool AuthSession::HandleCommandReconnectChallenge()
 bool AuthSession::HandleCommandReconnectProof()
 {
     _status = STATUS_CLOSED;
-    cAuthReconnectProof *reconnectLogonProof = reinterpret_cast<cAuthReconnectProof*>(GetByteBuffer().GetReadPointer());
+    cAuthReconnectProof* reconnectLogonProof = reinterpret_cast<cAuthReconnectProof*>(GetByteBuffer().GetReadPointer());
     
     if (!_reconnectProof.GetBytes() || !K.GetBytes())
         return false;
@@ -315,7 +339,7 @@ bool AuthSession::HandleCommandReconnectProof()
 
     SHA1Hasher sha;
     sha.Init();
-    sha.UpdateHash("NIXIFY");
+    sha.UpdateHash(username);
     sha.UpdateHashForBn(3, &t1, &_reconnectProof, &K);
     sha.Finish();
 
