@@ -40,6 +40,52 @@ namespace Common
         }
         virtual ~ByteBuffer() { }
 
+        void Read(uint8_t* destination, size_t length)
+        {
+            memcpy(destination, &_bufferData[_readPos], length);
+            _readPos += length;
+        }
+        void Read(uint16_t* destination, size_t length)
+        {
+            memcpy(destination, &_bufferData[_readPos], length);
+            _readPos += length;
+        }
+        void Read(uint32_t* destination, size_t length)
+        {
+            memcpy(destination, &_bufferData[_readPos], length);
+            _readPos += length;
+        }
+        void Read(uint64_t* destination, size_t length)
+        {
+            memcpy(destination, &_bufferData[_readPos], length);
+            _readPos += length;
+        }
+
+        char Read(size_t position)
+        {
+            char val = *((char const*)&_bufferData[position]);
+            return val;
+        }
+
+        char Read()
+        {
+            char r = Read(_readPos);
+            _readPos += sizeof(char);
+            return r;
+        }
+
+        void Read(std::string& value)
+        {
+            value.clear();
+            while (_readPos < size())                         // prevent crash at wrong string format in packet
+            {
+                char c = Read();
+                if (c == 0)
+                    break;
+                value += c;
+            }
+        }
+
         void Write(void const* data, std::size_t size)
         {
             if (size)

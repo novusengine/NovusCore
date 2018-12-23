@@ -32,18 +32,31 @@
 class RelaySocket : public Common::BaseSocket
 {
 public:
-
     RelaySocket(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), username(), _headerBuffer(), _packetBuffer()
     {
-        srand(time(NULL));
         _seed = (uint32_t)rand();
-
-        _headerBuffer.Resize(sizeof(Common::ClientMessageHeader));
-
+        _headerBuffer.Resize(sizeof(Common::ClientPacketHeader));
     }
 
     bool Start() override;
     void HandleRead() override;
+
+    bool HandleHeaderRead();
+    bool HandlePacketRead();
+
+    void HandleAuthSession();
+
+    template<size_t T>
+    inline void convert(char *val)
+    {
+        std::swap(*val, *(val + T - 1));
+    }
+
+    inline void apply(uint16_t *val)
+    {
+        convert<sizeof(uint16_t)>((char *)(val));
+    }
+    inline void EndianConvertReverse(uint16_t& val) { apply(&val); }
 
     std::string username;
 
