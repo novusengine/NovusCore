@@ -34,7 +34,7 @@ int main()
         std::getchar();
         return 0;
     }
-    DatabaseConnector::SetHost("127.0.0.1");
+    DatabaseConnector::Setup("127.0.0.1", "root", "");
 
     asio::io_service io_service(2);
     AuthSocketHandler server(io_service, ConfigHandler::GetOption<uint16_t>("port", 3724));

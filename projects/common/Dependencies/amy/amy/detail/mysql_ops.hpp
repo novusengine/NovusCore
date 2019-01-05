@@ -103,7 +103,7 @@ inline int32_t mysql_real_query(mysql_handle m,
                                 AMY_SYSTEM_NS::error_code& ec)
 {
     clear_error(ec);
-    return error_wrapper(::mysql_real_query(m, stmt_str, length), m, ec);
+    return error_wrapper(::mysql_real_query(m, stmt_str, (unsigned long)length), m, ec);
 }
 
 inline uint32_t mysql_field_count(const mysql_handle m) {

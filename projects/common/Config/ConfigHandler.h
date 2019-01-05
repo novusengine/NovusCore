@@ -37,6 +37,8 @@ public:
     template<class T>
     static T GetOption(std::string optionName, T defaultValue);
 
+	static bool IsInitialized() { return _isInitialized; }
+
 	~ConfigHandler() {}
 private:
 	ConfigHandler() {} // Constructor is private because we don't want to allow newing these
@@ -44,6 +46,7 @@ private:
 
 	static std::string _configFileName;
     static json _configFile;
+	static bool _isInitialized;
 };
 
 template<class T>

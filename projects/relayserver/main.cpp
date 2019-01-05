@@ -36,7 +36,7 @@ int main()
         std::getchar();
         return 0;
     }
-    DatabaseConnector::SetHost("127.0.0.1");
+	DatabaseConnector::Setup("127.0.0.1", "root", "");
 
     // Seed Rand
     srand(time(NULL));

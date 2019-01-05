@@ -61,6 +61,9 @@ set(COMMON_NETWORKING_OPCODE
 )
 set(COMMON_UTILS
     "${CMAKE_CURRENT_LIST_DIR}/Utils/SharedPool.h"
+    "${CMAKE_CURRENT_LIST_DIR}/Utils/ConcurrentQueue.h"
+    "${CMAKE_CURRENT_LIST_DIR}/Utils/DebugHandler.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/Utils/DebugHandler.h"
 )
 
 set(COMMON_DEPENDENCIES

@@ -21,7 +21,7 @@ public:
 
     field(char const* value) :
         value_str_(value),
-        length_(value ? ::strlen(value) : 0ul)
+        length_(value ? (unsigned long)::strlen(value) : 0ul)
     {}
 
     bool is_null() const {

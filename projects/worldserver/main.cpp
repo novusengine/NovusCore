@@ -1,10 +1,25 @@
 #include <iostream>
 
-#include "../common/Database/DatabaseConnector.h"
+#include <Config\ConfigHandler.h>
+#include <Database/DatabaseConnector.h>
+#include <Utils/DebugHandler.h>
 
 int main()
 {
-	DatabaseConnector::SetHost("127.0.0.1");
+	/*if (!ConfigHandler::Setup("worldserver_configuration.json"))
+	{
+		std::getchar();
+		return 0;
+	}*/
+	InitDebugger(PROGRAM_TYPE::World);
+
+	/*NC_LOG_MESSAGE("This is a message");
+	NC_LOG_DEPRECATED("This is a deprecation");
+	NC_LOG_WARNING("This is a warning");
+	NC_LOG_ERROR("This is a error");
+	NC_LOG_FATAL("This is a fatal error");*/
+
+	DatabaseConnector::Setup("127.0.0.1", "root", "");
 
 	// Owning a connector
 	/*std::unique_ptr<DatabaseConnector> connector;
@@ -25,7 +40,6 @@ int main()
 	PreparedStatement sql("SELECT * FROM accounts WHERE id={i} AND name={s}");
 	sql.Bind(1).Bind("Pursche");
 
-
 	amy::result_set results;
 	//if (!connector->Query("SELECT * FROM accounts", results)) // Non prepared statement
 	if (!connector->Query(sql, results)) // Prepared statement
@@ -34,9 +48,19 @@ int main()
 		return -1;
 	}
 
-	connector->QueryAsync("SELECT * FROM accounts WHERE id=1", [](std::error_code const& ec, amy::result_set rs, amy::connector& connector) {
-		std::cout << "Got the data!";
+	DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, "SELECT * FROM accounts WHERE id=1", [](amy::result_set rs, DatabaseConnector& connector) {
+		std::this_thread::sleep_for(std::chrono::seconds(1));
+		std::cout << "Buzz!\n";
 	});
+
+	// Also callable through a connector like this:
+	/*connector->QueryAsync("SELECT * FROM accounts WHERE id=1", [](amy::result_set rs, DatabaseConnector& connector) {
+		std::this_thread::sleep_for(std::chrono::seconds(1));
+		std::cout << "Buzz!\n";
+	});*/
+
+	std::cout << "Fizz ";
+	std::this_thread::sleep_for(std::chrono::seconds(2));
 
 	std::cout
 		<< "Affected rows: " << results.affected_rows()

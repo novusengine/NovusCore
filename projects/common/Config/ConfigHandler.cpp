@@ -2,6 +2,7 @@
 
 std::string ConfigHandler::_configFileName;
 json ConfigHandler::_configFile;
+bool ConfigHandler::_isInitialized = false;
 
 bool ConfigHandler::Setup(std::string configFileName)
 {
@@ -25,6 +26,7 @@ bool ConfigHandler::Setup(std::string configFileName)
         return false;
     }
 
+	_isInitialized = true;
 	std::cout << "Successfully initialized config file: " << _configFileName << std::endl;
 	return true;
 }
