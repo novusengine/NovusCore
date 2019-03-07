@@ -1,7 +1,7 @@
 /*
 # MIT License
 
-# Copyright(c) 2018 NovusCore
+# Copyright(c) 2018-2019 NovusCore
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files(the "Software"), to deal
@@ -47,8 +47,8 @@ bool RelayNodeConnection::Start()
         /* NODE_CHALLENGE */
         Common::ByteBuffer packet(6);
 
-        packet.Write(0); // Command
-        packet.Write(0); // Type
+        packet.Write<uint8_t>(0); // Command
+        packet.Write<uint8_t>(0); // Type
         uint16_t version = 335;
         packet.Append((uint8_t*)&version, sizeof(version)); // Version
         uint16_t build = 12340;
@@ -114,14 +114,14 @@ bool RelayNodeConnection::HandleCommandChallenge()
     _status = RELAYSTATUS_CLOSED;
     sRelayChallenge* relayChallenge = reinterpret_cast<sRelayChallenge*>(GetByteBuffer().GetReadPointer());
 
-    _status = RELAYSTATUS_PROOF;
     _key->Bin2BN(relayChallenge->K, 32);
     _crypto->SetupClient(_key);
 
     /* Send fancy encrypted packet here */
     Common::ByteBuffer packet;
-    packet.Write(RELAY_PROOF); // RELAY_PROOF
+    packet.Write<uint8_t>(RELAY_PROOF); // RELAY_PROOF
     _crypto->Encrypt(packet.GetReadPointer(), packet.GetActualSize());
+    _status = RELAYSTATUS_PROOF;
 
     Send(packet);
     return true;

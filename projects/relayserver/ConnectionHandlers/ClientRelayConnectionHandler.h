@@ -23,66 +23,45 @@
 */
 #pragma once
 
-#include <Networking/TcpServer.h>
-#include "Socket\NodeSocket.h"
+#include <Networking\TcpServer.h>
+#include "..\Connections\RelayConnection.h"
 
-struct WorkerThread
-{
-    std::thread _thread;
-    std::vector<NodeSocket*> _sessions;
-    std::mutex _mutex;
-};
-
-void WorkerThreadMain(WorkerThread* workerThread)
-{
-    while (true)
-    {
-        workerThread->_mutex.lock();
-
-        // Remove closed sessions
-        if (workerThread->_sessions.size() > 0)
-        {
-            workerThread->_sessions.erase((std::remove_if(workerThread->_sessions.begin(), workerThread->_sessions.end() - 1, [](NodeSocket* session)
-            {
-                if (session->socket()->is_open())
-                    return false;
-
-                return true;
-            }), workerThread->_sessions.end() - 1));
-        }
-
-        workerThread->_mutex.unlock();
-    }
-}
-
-class NodeSocketHandler : Common::TcpServer
+class ClientRelayConnectionHandler : public Common::TcpServer
 {
 public:
-    NodeSocketHandler(asio::io_service& io_service, int port) : Common::TcpServer(io_service, port), _ioService(io_service) { }
-
-    void Init()
+    ClientRelayConnectionHandler(asio::io_service& io_service, int port) : Common::TcpServer(io_service, port) { _instance = this; }
+    static RelayConnection* GetConnectionByAccountGuid(uint64_t accountGuid)
     {
-        _workerThreads = new WorkerThread();
-        _workerThreads->_thread = std::thread(WorkerThreadMain, _workerThreads);
+        if (_instance->_connections.size() == 0)
+            return nullptr;
+
+        for (auto itr : _instance->_connections)
+        {
+            RelayConnection* conn = reinterpret_cast<RelayConnection*>(itr);
+            if (conn->accountGuid == accountGuid && !conn->IsClosed())
+                return conn;
+        }
+
+        return nullptr;
     }
+
     void Start()
     {
         StartListening();
     }
-
 private:
+    static ClientRelayConnectionHandler* _instance;
     void StartListening() override
     {
         asio::ip::tcp::socket* socket = new asio::ip::tcp::socket(_ioService);
-        _acceptor.async_accept(*socket, std::bind(&NodeSocketHandler::HandleNewConnection, this, socket, std::placeholders::_1));
+        _acceptor.async_accept(*socket, std::bind(&ClientRelayConnectionHandler::HandleNewConnection, this, socket, std::placeholders::_1));
     }
 
     void HandleNewConnection(asio::ip::tcp::socket* socket, const asio::error_code& error_code) override
     {
         if (!error_code)
         {
-            printf("Client Connected\n");
-            _workerThreads->_mutex.lock();
+            _workerThread->_mutex.lock();
 
             socket->non_blocking(true);
 
@@ -96,16 +75,13 @@ private:
                 socket->set_option(asio::ip::tcp::no_delay(true), error);
             }
 
-            NodeSocket* nodeSocket = new NodeSocket(socket);
-            nodeSocket->Start();
+            RelayConnection* connection = new RelayConnection(socket);
+            connection->Start();
 
-            _workerThreads->_sessions.push_back(nodeSocket);
-            _workerThreads->_mutex.unlock();
+            _connections.push_back(connection);
+            _workerThread->_mutex.unlock();
         }
 
         StartListening();
     }
-
-    asio::io_service& _ioService;
-    WorkerThread* _workerThreads;
 };

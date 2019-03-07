@@ -21,27 +21,37 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 */
-#pragma once
 
-#include <string>
-#include <openssl/hmac.h>
-#include <openssl/sha.h>
+#include <Config\ConfigHandler.h>
+#include <Database\DatabaseConnector.h>
 
-class BigNumber;
-class HMACH
+#include "Connections\NovusConnection.h"
+
+int main()
 {
-public:
-    HMACH(size_t size, uint8_t* seed);
-    ~HMACH();
+    if (!ConfigHandler::Setup("characterserver_configuration.json"))
+    {
+        std::getchar();
+        return 0;
+    }
+	DatabaseConnector::Setup("127.0.0.1", "root", "ascent");
+    srand((uint32_t)time(NULL));
 
-    void UpdateHash(std::string const& string);
-    void UpdateHash(uint8_t const* data, size_t size);
-    void Finish();
+    asio::io_service io_service(2);
+    NovusConnection novusConnection(new asio::ip::tcp::socket(io_service), ConfigHandler::GetOption<std::string>("relayserverip", "127.0.0.1"), ConfigHandler::GetOption<uint16_t>("relayserverport", 8085));
 
-    uint8_t* CalculateHash(BigNumber* bigNumber);
-    uint8_t* GetData() { return _data; }
-    int GetLength() const { return SHA_DIGEST_LENGTH; }
-private:
-    HMAC_CTX* _HMAC_CONTEXT;
-    uint8_t _data[SHA_DIGEST_LENGTH];
-};
+    if (!novusConnection.Start())
+    {
+        std::getchar();
+        return 0;
+    }
+    std::cout << "Characterserver established node connection to Relayserver." << std::endl;
+
+    std::thread run_thread([&]
+    {
+        io_service.run();
+    });
+
+    std::getchar();
+	return 0;
+}

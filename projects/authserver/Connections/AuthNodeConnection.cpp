@@ -1,7 +1,7 @@
 /*
 # MIT License
 
-# Copyright(c) 2018 NovusCore
+# Copyright(c) 2018-2019 NovusCore
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files(the "Software"), to deal
@@ -22,27 +22,27 @@
 # SOFTWARE.
 */
 
-#include "NodeSession.h"
+#include "AuthNodeConnection.h"
 #include <Networking\ByteBuffer.h>
 
-std::unordered_map<uint8_t, NodeMessageHandler> NodeSession::InitMessageHandlers()
+std::unordered_map<uint8_t, AuthNodeMessageHandler> AuthNodeConnection::InitMessageHandlers()
 {
-    std::unordered_map<uint8_t, NodeMessageHandler> messageHandlers;
+    std::unordered_map<uint8_t, AuthNodeMessageHandler> messageHandlers;
 
-    messageHandlers[NODE_CHALLENGE]             =   { NODESTATUS_CHALLENGE,         sizeof(cNodeChallenge),    &NodeSession::HandleCommandChallenge };
-    messageHandlers[NODE_PROOF]                 =   { NODESTATUS_PROOF,             1,                         &NodeSession::HandleCommandProof     };
+    messageHandlers[NODE_CHALLENGE]             =   { NODESTATUS_CHALLENGE,         sizeof(AuthNodeChallenge),    &AuthNodeConnection::HandleCommandChallenge };
+    messageHandlers[NODE_PROOF]                 =   { NODESTATUS_PROOF,             1,                         &AuthNodeConnection::HandleCommandProof     };
 
     return messageHandlers;
 }
-std::unordered_map<uint8_t, NodeMessageHandler> const MessageHandlers = NodeSession::InitMessageHandlers();
+std::unordered_map<uint8_t, AuthNodeMessageHandler> const MessageHandlers = AuthNodeConnection::InitMessageHandlers();
 
-bool NodeSession::Start()
+bool AuthNodeConnection::Start()
 {
     AsyncRead();
     return true;
 }
 
-void NodeSession::HandleRead()
+void AuthNodeConnection::HandleRead()
 {
     Common::ByteBuffer& byteBuffer = GetByteBuffer();
 
@@ -86,22 +86,22 @@ void NodeSession::HandleRead()
     AsyncRead();
 }
 
-bool NodeSession::HandleCommandChallenge()
+bool AuthNodeConnection::HandleCommandChallenge()
 {
     std::cout << "Received NodeChallenge" << std::endl;
     _status = NODESTATUS_CLOSED;
-    cNodeChallenge* nodeChallenge = reinterpret_cast<cNodeChallenge*>(GetByteBuffer().GetReadPointer());
+    AuthNodeChallenge* authNodeChallenge = reinterpret_cast<AuthNodeChallenge*>(GetByteBuffer().GetReadPointer());
 
-    if (nodeChallenge->version == 335 && nodeChallenge->build == 12340)
+    if (authNodeChallenge->version == 335 && authNodeChallenge->build == 12340)
     {
-        _status = NODESTATUS_PROOF;
-        _type = nodeChallenge->type;
+        _type = authNodeChallenge->type;
 
         Common::ByteBuffer packet;
-        packet.Write(NODE_CHALLENGE);
+        packet.Write<uint8_t>(NODE_CHALLENGE);
         packet.Append(_key->BN2BinArray(32).get(), 32);
         _crypto->SetupServer(_key);
 
+        _status = NODESTATUS_PROOF;
         Send(packet);
         return true;
     }
@@ -109,13 +109,13 @@ bool NodeSession::HandleCommandChallenge()
     return false;
 }
 
-bool NodeSession::HandleCommandProof()
+bool AuthNodeConnection::HandleCommandProof()
 {
     std::cout << "Received NodeProof" << std::endl;
     _status = NODESTATUS_AUTHED;
 
     Common::ByteBuffer packet;
-    packet.Write(NODE_PROOF);
+    packet.Write<uint8_t>(NODE_PROOF);
     _crypto->Encrypt(packet.GetReadPointer(), packet.GetActualSize());
     
     Send(packet);

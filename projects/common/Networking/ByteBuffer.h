@@ -1,7 +1,7 @@
 /*
 # MIT License
 
-# Copyright(c) 2018 NovusCore
+# Copyright(c) 2018-2019 NovusCore
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files(the "Software"), to deal
@@ -40,6 +40,91 @@ namespace Common
         }
         virtual ~ByteBuffer() { }
 
+        ByteBuffer &operator<<(uint8_t value)
+        {
+            Write<uint8_t>(value);
+            return *this;
+        }
+
+        ByteBuffer &operator<<(uint16_t value)
+        {
+            Write<uint16_t>(value);
+            return *this;
+        }
+
+        ByteBuffer &operator<<(uint32_t value)
+        {
+            Write<uint32_t>(value);
+            return *this;
+        }
+
+        ByteBuffer &operator<<(uint64_t value)
+        {
+            Write<uint64_t>(value);
+            return *this;
+        }
+
+        // signed as in 2e complement
+        ByteBuffer &operator<<(int8_t value)
+        {
+            Write<int8_t>(value);
+            return *this;
+        }
+
+        ByteBuffer &operator<<(int16_t value)
+        {
+            Write<int16_t>(value);
+            return *this;
+        }
+
+        ByteBuffer &operator<<(int32_t value)
+        {
+            Write<int32_t>(value);
+            return *this;
+        }
+
+        ByteBuffer &operator<<(int64_t value)
+        {
+            Write<int64_t>(value);
+            return *this;
+        }
+
+        // floating points
+        ByteBuffer &operator<<(float value)
+        {
+            Write<float>(value);
+            return *this;
+        }
+
+        ByteBuffer &operator<<(double value)
+        {
+            Write<double>(value);
+            return *this;
+        }
+
+        void ReadPackedGUID(uint64_t& guid)
+        {
+            guid = 0;
+
+            uint8_t guidmark = 0;
+            Read(&guidmark, 1);
+
+            for (int i = 0; i < 8; ++i)
+            {
+                if (guidmark & (uint8_t(1) << i))
+                {
+                    uint8_t bit;
+                    Read(&bit, 1);
+                    guid |= (uint64_t(bit) << (i * 8));
+                }
+            }
+        }
+
+        void Read(void* destination, size_t length)
+        {
+            memcpy(destination, &_bufferData[_readPos], length);
+            _readPos += length;
+        }
         void Read(uint8_t* destination, size_t length)
         {
             memcpy(destination, &_bufferData[_readPos], length);
@@ -95,41 +180,54 @@ namespace Common
             }
         }
 
-        void Write(const std::string& value)
+        void WriteString(const std::string& value)
         {
             if (size_t len = value.length())
                 Append((uint8_t const*)value.c_str(), len);
-            Write(0);
+            Write<uint8_t>(0);
         }
 
-        void Write(uint8_t value)
+        template <typename T>
+        void Write(T const value)
         {
-            const uint8_t* src = (uint8_t*)&value;
-            size_t size = sizeof(value);
-
-            size_t const newSize = _writePos + size;
-            if (_bufferData.capacity() < newSize)
-            {
-                if (newSize < 100)
-                    _bufferData.reserve(300);
-                else if (newSize < 750)
-                    _bufferData.reserve(2500);
-                else if (newSize < 6000)
-                    _bufferData.reserve(10000);
-                else
-                    _bufferData.reserve(400000);
-            }
-
-            if (_bufferData.size() < newSize)
-                _bufferData.resize(newSize);
-
-            std::memcpy(&_bufferData[_writePos], src, size);
-            _writePos = newSize;
+            Append((uint8_t*)&value, sizeof(value));
         }
+        template <typename T>
+        void Replace(size_t position, T Value)
+        {
+            _replace(position, (uint8_t*)&Value, sizeof(Value));
+        }
+        void _replace(size_t position, uint8_t const* src, size_t content)
+        {
+            std::memcpy(&_bufferData[position], src, content);
+        }
+
+
         void Append(ByteBuffer const& buffer)
         {
             if (buffer._writePos)
                 Append(buffer.data(), buffer._writePos);
+        }
+
+        void AppendGuid(uint64_t guid)
+        {
+            uint8_t packedGuid[8 + 1];
+            packedGuid[0] = 0;
+            size_t size = 1;
+
+            for (uint8_t i = 0; guid != 0; ++i)
+            {
+                if (guid & 0xFF)
+                {
+                    packedGuid[0] |= uint8_t(1 << i);
+                    packedGuid[size] = uint8_t(guid & 0xFF);
+                    ++size;
+                }
+
+                guid >>= 8;
+            }
+
+            Append(packedGuid, size);
         }
 
         void Append(uint8_t const* value, size_t size)
@@ -203,16 +301,16 @@ namespace Common
         {
             if (GetSpaceLeft() == 0)
             {
-                _bufferData.resize(_bufferData.size() * 1.5f);
+                _bufferData.resize((uint64_t)(_bufferData.size() * 1.5f));
             }
         }
 
         uint8_t* GetDataPointer() { return _bufferData.data(); }
         uint8_t* GetReadPointer() { return _bufferData.data() + _readPos; }
         uint8_t* GetWritePointer() { return _bufferData.data() + _writePos; }
-        uint32_t GetActualSize() { return _writePos - _readPos; }
-        uint32_t GetSpaceLeft() { return _bufferData.size() - _writePos; }
-        uint32_t size() const { return _bufferData.size(); }
+        uint32_t GetActualSize() { return (uint32_t)(_writePos - _readPos); }
+        uint32_t GetSpaceLeft() { return (uint32_t)(_bufferData.size() - _writePos); }
+        uint32_t size() const { return (uint32_t)(_bufferData.size()); }
         bool empty() const { return _bufferData.empty(); }
 
         size_t _readPos, _writePos;

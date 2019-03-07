@@ -16,13 +16,13 @@ bool ConfigHandler::Setup(std::string configFileName)
     }
     catch (nlohmann::detail::exception e)
     {
-        std::cerr << "ERROR: " << e.what() << std::endl;
+        std::cerr << "ConfigHandler: Failed to initialize config file, " << configFileName << " could not be found!" << std::endl;
         return false;
     }
     
     if (_configFile.size() == 0)
     {
-        std::cerr << "ERROR: Failed to initialize config file, found 0 configurations!" << std::endl;
+        std::cerr << "ConfigHandler: Failed to initialize config file, found 0 configurations!" << std::endl;
         return false;
     }
 

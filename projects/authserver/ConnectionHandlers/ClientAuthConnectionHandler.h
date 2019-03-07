@@ -1,7 +1,7 @@
 /*
 # MIT License
 
-# Copyright(c) 2018 NovusCore
+# Copyright(c) 2018-2019 NovusCore
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files(the "Software"), to deal
@@ -23,57 +23,36 @@
 */
 #pragma once
 
-#include <Networking\TcpServer.h>
-#include "Socket\RelaySocket.h"
+#include <Networking/TcpServer.h>
+#include "..\Connections\AuthConnection.h"
 
-class RelaySocketHandler : Common::TcpServer<RelaySocket>
+class ClientAuthConnectionHandler : public Common::TcpServer
 {
 public:
-    RelaySocketHandler(asio::io_service& io_service, int port) : Common::TcpServer<RelaySocket>(io_service, port), _ioService(io_service) { }
-
-    void Start()
-    {
-        _workerThread = new Common::WorkerThread<RelaySocket>();
-        _workerThread->_thread = std::thread(Common::WorkerThreadMain<Common::WorkerThread<RelaySocket>, RelaySocket>, _workerThread);
-
-        StartListening();
-    }
-
+    ClientAuthConnectionHandler(asio::io_service& io_service, int port) : Common::TcpServer(io_service, port) { }
 private:
     void StartListening() override
     {
         asio::ip::tcp::socket* socket = new asio::ip::tcp::socket(_ioService);
-        _acceptor.async_accept(*socket, std::bind(&RelaySocketHandler::HandleNewConnection, this, socket, std::placeholders::_1));
+        _acceptor.async_accept(*socket, std::bind(&ClientAuthConnectionHandler::HandleNewConnection, this, socket, std::placeholders::_1));
     }
 
     void HandleNewConnection(asio::ip::tcp::socket* socket, const asio::error_code& error_code) override
     {
         if (!error_code)
         {
-            printf("Client Connected\n");
             _workerThread->_mutex.lock();
 
             socket->non_blocking(true);
+            AuthConnection* connection = new AuthConnection(socket);
+            connection->Start();
 
-            {
-                asio::error_code error;
-                socket->set_option(asio::socket_base::send_buffer_size(-1), error);
-            }
-
-            {
-                asio::error_code error;
-                socket->set_option(asio::ip::tcp::no_delay(true), error);
-            }
-
-            RelaySocket* relaySocket = new RelaySocket(socket);
-            relaySocket->Start();
-
-            _workerThread->_sessions.push_back(relaySocket);
+            _connections.push_back(connection);
             _workerThread->_mutex.unlock();
         }
 
         StartListening();
     }
 
-    asio::io_service& _ioService;
+
 };

@@ -25,27 +25,35 @@ add_executable(relayserver)
 
 set(RELAYSERVER_MAIN
     "${CMAKE_CURRENT_LIST_DIR}/main.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/RelaySocketHandler.h"
 )
-set(RELAYSERVER_RELAYSOCKET
-    "${CMAKE_CURRENT_LIST_DIR}/Socket/RelaySocket.h"
-    "${CMAKE_CURRENT_LIST_DIR}/Socket/RelaySocket.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/Socket/RelayNodeConnection.h"
-    "${CMAKE_CURRENT_LIST_DIR}/Socket/RelayNodeConnection.cpp"
+set(RELAYSERVER_CONNECTIONS
+    "${CMAKE_CURRENT_LIST_DIR}/Connections/RelayConnection.h"
+    "${CMAKE_CURRENT_LIST_DIR}/Connections/RelayConnection.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/Connections/NovusConnection.h"
+    "${CMAKE_CURRENT_LIST_DIR}/Connections/NovusConnection.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/Connections/RelayAuthNodeConnection.h"
+    "${CMAKE_CURRENT_LIST_DIR}/Connections/RelayAuthNodeConnection.cpp"
+)
+set(RELAYSERVER_CONNECTIONHANDLERS
+    "${CMAKE_CURRENT_LIST_DIR}/ConnectionHandlers/ClientRelayConnectionHandler.h"
+    "${CMAKE_CURRENT_LIST_DIR}/ConnectionHandlers/NovusConnectionHandler.h"
 )
 
 set(RELAYSERVER_DEPENDENCIES
     "../common/Dependencies/amy"
     "../common/Dependencies/json"
+    "${ZLIB_INCLUDE_DIRS}"
 )
 
 source_group(" " FILES ${RELAYSERVER_MAIN})
-source_group(Socket FILES ${RELAYSERVER_RELAYSOCKET})
+source_group(Connections FILES ${RELAYSERVER_CONNECTIONS})
+source_group(ConnectionHandlers FILES ${RELAYSERVER_CONNECTIONHANDLERS})
 
 target_sources(relayserver
     PRIVATE
     ${RELAYSERVER_MAIN}
-    ${RELAYSERVER_RELAYSOCKET}
+    ${RELAYSERVER_CONNECTIONS}
+    ${RELAYSERVER_CONNECTIONHANDLERS}
 )
 
 

@@ -20,44 +20,38 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-project(authserver VERSION 1.0.0 DESCRIPTION "Authserver for NovusCore")
-add_executable(authserver)
+project(characterserver VERSION 1.0.0 DESCRIPTION "characterserver for NovusCore")
+add_executable(characterserver)
 
-set(AUTHSERVER_MAIN
+set(CHARACTERSERVER_MAIN
     "${CMAKE_CURRENT_LIST_DIR}/main.cpp"
 )
-set(AUTHSERVER_CONNECTIONS
-    "${CMAKE_CURRENT_LIST_DIR}/Connections/AuthConnection.h"
-    "${CMAKE_CURRENT_LIST_DIR}/Connections/AuthConnection.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/Connections/AuthNodeConnection.h"
-    "${CMAKE_CURRENT_LIST_DIR}/Connections/AuthNodeConnection.cpp"
-)
-set(AUTHSERVER_CONNECTIONHANDLERS
-    "${CMAKE_CURRENT_LIST_DIR}/ConnectionHandlers/ClientAuthConnectionHandler.h"
-    "${CMAKE_CURRENT_LIST_DIR}/ConnectionHandlers/RelayNodeConnectionHandler.h"
+set(CHARACTERSERVER_CONNECTIONS
+    "${CMAKE_CURRENT_LIST_DIR}/Connections/NovusConnection.h"
+    "${CMAKE_CURRENT_LIST_DIR}/Connections/NovusConnection.cpp"
 )
 
-set(AUTHSERVER_DEPENDENCIES
+set(CHARACTERSERVER_DEPENDENCIES
     "../common/Dependencies/amy"
     "../common/Dependencies/json"
+    "${ZLIB_INCLUDE_DIRS}"
 )
 
-source_group(" " FILES ${AUTHSERVER_MAIN})
-source_group(Connections FILES ${AUTHSERVER_CONNECTIONS})
-source_group(ConnectionHandlers FILES ${AUTHSERVER_CONNECTIONHANDLERS})
+source_group(" " FILES ${CHARACTERSERVER_MAIN})
+source_group(Connections FILES ${CHARACTERSERVER_CONNECTIONS})
 
-target_sources(authserver
+target_sources(characterserver
     PRIVATE
-    ${AUTHSERVER_MAIN}
-    ${AUTHSERVER_CONNECTIONS}
-    ${AUTHSERVER_CONNECTIONHANDLERS}
+    ${CHARACTERSERVER_MAIN}
+    ${CHARACTERSERVER_CONNECTIONS}
 )
+
 
 # Set VERSION & FOLDER Property
-set_target_properties(authserver PROPERTIES VERSION ${PROJECT_VERSION})
-set_target_properties(authserver PROPERTIES FOLDER "server")
+set_target_properties(characterserver PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties(characterserver PROPERTIES FOLDER "server")
 
-target_link_libraries(authserver common)
-target_include_directories(authserver PRIVATE ${AUTHSERVER_DEPENDENCIES})
-include_directories(authserver "${common_SOURCE_DIR}")
-install(TARGETS authserver DESTINATION bin)
+target_link_libraries(characterserver common)
+target_include_directories(characterserver PRIVATE ${CHARACTERSERVER_DEPENDENCIES})
+include_directories(CHARACTERSERVER "${common_SOURCE_DIR}")
+install(TARGETS characterserver DESTINATION bin)

@@ -1,7 +1,7 @@
 /*
 # MIT License
 
-# Copyright(c) 2018 NovusCore
+# Copyright(c) 2018-2019 NovusCore
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files(the "Software"), to deal
@@ -22,13 +22,16 @@
 # SOFTWARE.
 */
 
-#include "asio.hpp"
-#include "RelaySocketHandler.h"
-#include "Socket\RelayNodeConnection.h"
-#include "Networking\ByteBuffer.h"
 #include <Config\ConfigHandler.h>
 #include <Database\DatabaseConnector.h>
 
+#include "Connections\NovusConnection.h"
+#include "Connections\RelayAuthNodeConnection.h"
+#include "ConnectionHandlers\ClientRelayConnectionHandler.h"
+#include "ConnectionHandlers\NovusConnectionHandler.h"
+
+NovusConnectionHandler*         NovusConnectionHandler::_instance       = nullptr;
+ClientRelayConnectionHandler*   ClientRelayConnectionHandler::_instance = nullptr;
 int main()
 {
     if (!ConfigHandler::Setup("relayserver_configuration.json"))
@@ -36,34 +39,26 @@ int main()
         std::getchar();
         return 0;
     }
-	DatabaseConnector::Setup("127.0.0.1", "root", "");
-
-    // Seed Rand
-    srand(time(NULL));
+	DatabaseConnector::Setup("127.0.0.1", "root", "ascent");
+    srand((uint32_t)time(NULL));
 
     asio::io_service io_service(2);
-    RelaySocketHandler server(io_service, ConfigHandler::GetOption<uint16_t>("port", 8085));
-    server.Start();
+    ClientRelayConnectionHandler clientRelayConnectionHandler(io_service, ConfigHandler::GetOption<uint16_t>("port", 8000));
+    NovusConnectionHandler novusConnectionHandler(io_service, ConfigHandler::GetOption<uint16_t>("nodeport", 10000));
     
-    RelayNodeConnection nodeConnection(new asio::ip::tcp::socket(io_service), ConfigHandler::GetOption<std::string>("authserverip", "127.0.0.1"), ConfigHandler::GetOption<uint16_t>("authserverport", 3724));
-    if (!nodeConnection.Start())
+    RelayAuthNodeConnection relayAuthNodeConnection(new asio::ip::tcp::socket(io_service), ConfigHandler::GetOption<std::string>("authserverip", "127.0.0.1"), ConfigHandler::GetOption<uint16_t>("authservernodeport", 9000));
+
+    if (!relayAuthNodeConnection.Start())
     {
         std::getchar();
         return 0;
     }
-    std::cout << "Connected to authserver" << std::endl;
+    clientRelayConnectionHandler.Start();
+    novusConnectionHandler.Start();
 
-    /*asio::error_code error;
-    asio::write(socket, asio::buffer(buffer.GetReadPointer(), buffer.GetActualSize()), error);
-
-    if (!error)
-    {
-        std::cout << "Sent message to authserver" << std::endl;
-    }
-    else
-    {
-        std::cout << "Failed to sent message to authserver" << std::endl;
-    }*/
+    std::cout << "Relayserver Instance running on port: " << clientRelayConnectionHandler.GetPort() << std::endl;
+    std::cout << "Relayserver Node Instance running on port: " << novusConnectionHandler.GetPort() << std::endl;
+    std::cout << "Relayserver established node connection to Authserver." << std::endl;
 
     std::thread run_thread([&]
     {

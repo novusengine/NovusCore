@@ -1,7 +1,7 @@
 /*
 # MIT License
 
-# Copyright(c) 2018 NovusCore
+# Copyright(c) 2018-2019 NovusCore
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files(the "Software"), to deal
@@ -38,7 +38,8 @@ public:
 	PreparedStatement(std::string statement);
 
 	PreparedStatement& Bind(std::string value);
-	PreparedStatement& Bind(unsigned int value);
+    PreparedStatement& Bind(unsigned int value);
+    PreparedStatement& Bind(uint64_t value);
 	PreparedStatement& Bind(int value);
 	PreparedStatement& Bind(float value);
 	PreparedStatement& Bind(double value);

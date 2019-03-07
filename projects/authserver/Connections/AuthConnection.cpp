@@ -1,7 +1,7 @@
 /*
 # MIT License
 
-# Copyright(c) 2018 NovusCore
+# Copyright(c) 2018-2019 NovusCore
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files(the "Software"), to deal
@@ -22,31 +22,30 @@
 # SOFTWARE.
 */
 
-#include "AuthSession.h"
+#include "AuthConnection.h"
 #include <Networking\ByteBuffer.h>
-#include <Database\DatabaseConnector.h>
 
-std::unordered_map<uint8_t, AuthMessageHandler> AuthSession::InitMessageHandlers()
+std::unordered_map<uint8_t, AuthMessageHandler> AuthConnection::InitMessageHandlers()
 {
     std::unordered_map<uint8_t, AuthMessageHandler> messageHandlers;
 
-    messageHandlers[AUTH_CHALLENGE]             =   { STATUS_CHALLENGE,         4,                              1,   &AuthSession::HandleCommandChallenge };
-    messageHandlers[AUTH_PROOF]                 =   { STATUS_PROOF,             sizeof(cAuthLogonProof),        1,   &AuthSession::HandleCommandProof };
-    messageHandlers[AUTH_RECONNECT_CHALLENGE]   =   { STATUS_CHALLENGE,         4,                              1,   &AuthSession::HandleCommandReconnectChallenge };
-    messageHandlers[AUTH_RECONNECT_PROOF]       =   { STATUS_RECONNECT_PROOF,   sizeof(cAuthReconnectProof),    1,   &AuthSession::HandleCommandReconnectProof };
-    messageHandlers[AUTH_GAMESERVER_LIST]       =   { STATUS_AUTHED,            5,                              3,   &AuthSession::HandleCommandGameServerList };
+    messageHandlers[AUTH_CHALLENGE]             =   { STATUS_CHALLENGE,         4,                              1,   &AuthConnection::HandleCommandChallenge };
+    messageHandlers[AUTH_PROOF]                 =   { STATUS_PROOF,             sizeof(cAuthLogonProof),        1,   &AuthConnection::HandleCommandProof };
+    messageHandlers[AUTH_RECONNECT_CHALLENGE]   =   { STATUS_CHALLENGE,         4,                              1,   &AuthConnection::HandleCommandReconnectChallenge };
+    messageHandlers[AUTH_RECONNECT_PROOF]       =   { STATUS_RECONNECT_PROOF,   sizeof(cAuthReconnectProof),    1,   &AuthConnection::HandleCommandReconnectProof };
+    messageHandlers[AUTH_GAMESERVER_LIST]       =   { STATUS_AUTHED,            5,                              3,   &AuthConnection::HandleCommandGameServerList };
 
     return messageHandlers;
 }
-std::unordered_map<uint8_t, AuthMessageHandler> const MessageHandlers = AuthSession::InitMessageHandlers();
+std::unordered_map<uint8_t, AuthMessageHandler> const MessageHandlers = AuthConnection::InitMessageHandlers();
 
-bool AuthSession::Start()
+bool AuthConnection::Start()
 {
     AsyncRead();
     return true;
 }
 
-void AuthSession::HandleRead()
+void AuthConnection::HandleRead()
 {
     Common::ByteBuffer& byteBuffer = GetByteBuffer();
     ResetPacketsReadThisRead();
@@ -109,41 +108,39 @@ void AuthSession::HandleRead()
     AsyncRead();
 }
 
-bool AuthSession::HandleCommandChallenge()
+bool AuthConnection::HandleCommandChallenge()
 {
     _status = STATUS_CLOSED;
 
     cAuthLogonChallenge* logonChallenge = reinterpret_cast<cAuthLogonChallenge*>(GetByteBuffer().GetReadPointer());
-
     std::string login((char const*)logonChallenge->username_pointer, logonChallenge->username_length);
+    username = login;
 
+    PreparedStatement stmt("SELECT salt,verifier FROM accounts WHERE username={s};");
+    stmt.Bind(username);
+    DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, stmt, [this](amy::result_set& results, DatabaseConnector& connector) { HandleCommandChallengeCallback(results); });
+    
+    return true;
+}
+void AuthConnection::HandleCommandChallengeCallback(amy::result_set& results)
+{
     Common::ByteBuffer pkt;
-    pkt.Write(uint8_t(0));//AUTH_LOGON_CHALLENGE);
-    pkt.Write(uint8_t(0x00));
+    pkt.Write<uint8_t>(0);//AUTH_LOGON_CHALLENGE);
+    pkt.Write<uint8_t>(0);
 
-    // Check if account exist in DB if so, grab v and s
-    std::shared_ptr<DatabaseConnector> connector;
-    if (!DatabaseConnector::Borrow(DATABASE_TYPE::AUTHSERVER, connector)) { return false; }
-
-    PreparedStatement sql("SELECT v,s FROM accounts WHERE name={s};");
-    sql.Bind(login);
-
-    amy::result_set results;
-    if (connector->Query(sql, results) && results.affected_rows() != 1)
+    // Make sure the account exist.
+    if (results.affected_rows() != 1)
     {
-        pkt.Write(0x04); //WOW_FAILED
+        pkt.Write<uint8_t>(0x04); //WOW_FAILED
         Send(pkt);
-        return true;
+        return;
     }
 
-    username = login;
-    std::string databaseV = results[0][0].as<amy::sql_varchar>(); //"18CA3F48A75E879D83959E12AFEEA682A8C8EADC20582107F3721F8AE44400CD";
-    std::string databaseS = results[0][1].as<amy::sql_varchar>(); //"C55B9889E9CC8DE96F8A3D0B2D54C6B39AEF58E2C50C816660E7FB77802E760B";
+    std::string dbSalt = results[0][0].as<amy::sql_varchar>();
+    std::string dbVerifier = results[0][1].as<amy::sql_varchar>();
 
-    // We should generate s,v here if they aren't found in the database
-
-    s.Hex2BN(databaseS.c_str());
-    v.Hex2BN(databaseV.c_str());
+    s.Hex2BN(dbSalt.c_str());
+    v.Hex2BN(dbVerifier.c_str());
 
     b.Rand(19 * 8);
     BigNumber gen = g.ModExponential(b, N);
@@ -155,25 +152,23 @@ bool AuthSession::HandleCommandChallenge()
     _unkNum.Rand(16 * 8);
 
     /* Check Build Version Here */
-    pkt.Write(0x00); // WOW_SUCCESSS
+    pkt.Write<uint8_t>(0x00); // WOW_SUCCESSS
     _status = STATUS_PROOF;
 
     pkt.Append(B.BN2BinArray(32).get(), 32);
-    pkt.Write(1);
+    pkt.Write<uint8_t>(1);
     pkt.Append(g.BN2BinArray(1).get(), 1);
-    pkt.Write(32);
+    pkt.Write<uint8_t>(32);
     pkt.Append(N.BN2BinArray(32).get(), 32);
     pkt.Append(s.BN2BinArray(int32_t(0x20)).get(), size_t(0x20));   // 32 bytes (SRP_6_S)
     pkt.Append(_unkNum.BN2BinArray(16).get(), 16);
-    
-    //uint8 securityFlags = 0;
-    pkt.Write(0);
 
+    //uint8 securityFlags = 0;
+    pkt.Write<uint8_t>(0);
     Send(pkt);
-    return true;
 }
 
-bool AuthSession::HandleCommandProof()
+bool AuthConnection::HandleCommandProof()
 {
     _status = STATUS_CLOSED;
 
@@ -252,64 +247,61 @@ bool AuthSession::HandleCommandProof()
     M.Bin2BN(sha.GetData(), sha.GetLength());
     if (!memcmp(M.BN2BinArray(sha.GetLength()).get(), logonProof->M1, 20))
     {
-        printf("Proof Matches\n");
         // Finish SRP6 and send the final result to the client
         sha.Init();
         sha.UpdateHashForBn(3, &A, &M, &K);
         sha.Finish();
 
+        uint8_t proofM2[20];
+        memcpy(proofM2, sha.GetData(), 20);
+
         // Update Database with SessionKey
+        PreparedStatement stmt("UPDATE accounts SET sessionkey={s} WHERE username={s};");
+        stmt.Bind(K.BN2Hex());
+        stmt.Bind(username);
+        DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, stmt, [this, proofM2](amy::result_set& results, DatabaseConnector& connector)
+        {
+            Common::ByteBuffer packet;
+            sAuthLogonProof proof;
 
-        std::shared_ptr<DatabaseConnector> connector;
-        if (!DatabaseConnector::Borrow(DATABASE_TYPE::AUTHSERVER, connector)) { return false; }
+            memcpy(proof.M2, proofM2, 20);
+            proof.cmd = AUTH_PROOF;
+            proof.error = 0;
+            proof.AccountFlags = 0x00800000;    // 0x01 = GM, 0x08 = Trial, 0x00800000 = Pro pass (arena tournament)
+            proof.SurveyId = 0;
+            proof.unk3 = 0;
 
-        PreparedStatement sql("UPDATE accounts SET k={s} WHERE name={s};");
-        sql.Bind(K.BN2Hex());
-        sql.Bind(username);
-        if (!connector->Execute(sql)) { return false; }
+            packet.Resize(sizeof(proof));
+            std::memcpy(packet.data(), &proof, sizeof(proof));
+            packet.WriteBytes(sizeof(proof));
 
-        Common::ByteBuffer packet;
-        sAuthLogonProof proof;
-
-        memcpy(proof.M2, sha.GetData(), 20);
-        proof.cmd = AUTH_PROOF;
-        proof.error = 0;
-        proof.AccountFlags = 0x00800000;    // 0x01 = GM, 0x08 = Trial, 0x00800000 = Pro pass (arena tournament)
-        proof.SurveyId = 0;
-        proof.unk3 = 0;
-
-        packet.Resize(sizeof(proof));
-        std::memcpy(packet.data(), &proof, sizeof(proof));
-        packet.WriteBytes(sizeof(proof));
-
-        Send(packet);
-        _status = STATUS_AUTHED;
+            Send(packet);
+            _status = STATUS_AUTHED;
+        });
     }
     else
     {
-        printf("Proof Does not match\n");
-
         Common::ByteBuffer byteBuffer;
-        byteBuffer.Write(AUTH_PROOF);
-        byteBuffer.Write(4); // error
-        byteBuffer.Write(3); // AccountFlag
-        byteBuffer.Write(0);
+        byteBuffer.Write<uint8_t>(AUTH_PROOF);
+        byteBuffer.Write<uint8_t>(4); // error
+        byteBuffer.Write<uint8_t>(3); // AccountFlag
+        byteBuffer.Write<uint8_t>(0);
         Send(byteBuffer);
     }
 
     return true;
 }
 
-bool AuthSession::HandleCommandReconnectChallenge()
+bool AuthConnection::HandleCommandReconnectChallenge()
 {
     return false;
     /*Common::ByteBuffer pkt;
-    pkt.Write(AUTH_RECONNECT_CHALLENGE);
+    pkt.Write<uint8_t>(AUTH_RECONNECT_CHALLENGE);
 
     // Check if account exists
     if (login != username)
     {
-        pkt.Write(uint8_t(0x03)); //WOW_FAIL_UNKNOWN_ACCOUNT);
+        pkt.Write<uint8_t>(uint8_t(0x03)); //WOW_FAIL_UNKNOWN_ACCOUNT);
         Send(pkt);
         return true;
     }
@@ -317,7 +309,7 @@ bool AuthSession::HandleCommandReconnectChallenge()
     _reconnectProof.Rand(16 * 8);
     _status = STATUS_RECONNECT_PROOF;
     
-    pkt.Write(0); // WOW_SUCCESS
+    pkt.Write<uint8_t>(0); // WOW_SUCCESS
     pkt.Append(_reconnectProof.BN2BinArray(16).get(), 16);  // 16 bytes random
     uint64_t zeros = 0x00;
     pkt.Append((uint8_t*)&zeros, sizeof(zeros));                 // 8 bytes zeros
@@ -325,8 +317,7 @@ bool AuthSession::HandleCommandReconnectChallenge()
 
     Send(pkt);*/
 }
-
-bool AuthSession::HandleCommandReconnectProof()
+bool AuthConnection::HandleCommandReconnectProof()
 {
     _status = STATUS_CLOSED;
     cAuthReconnectProof* reconnectLogonProof = reinterpret_cast<cAuthReconnectProof*>(GetByteBuffer().GetReadPointer());
@@ -347,8 +338,8 @@ bool AuthSession::HandleCommandReconnectProof()
     {
         // Sending response
         Common::ByteBuffer pkt;
-        pkt.Write(AUTH_RECONNECT_PROOF);
-        pkt.Write(0x00);
+        pkt.Write<uint8_t>(AUTH_RECONNECT_PROOF);
+        pkt.Write<uint8_t>(0x00);
         uint16_t unk1 = 0x00;
         pkt.Append((uint8_t*)&unk1, sizeof(unk1));  // 2 bytes zeros
         Send(pkt);
@@ -359,55 +350,50 @@ bool AuthSession::HandleCommandReconnectProof()
     return false;
 }
 
-bool AuthSession::HandleCommandGameServerList()
+bool AuthConnection::HandleCommandGameServerList()
 {
-    Common::ByteBuffer bytebuffer = GetByteBuffer();
-    printf("HandleCommandGameServerList\n");
     _status = STATUS_WAITING_FOR_GAMESERVER;
 
+    Common::ByteBuffer bytebuffer = GetByteBuffer();
     Common::ByteBuffer pkt;
 
     uint16_t RealmListSize = 1;
     float population = 0;
 
     /* Test Packet */
-    pkt.Write(1); // Realm Type
-    pkt.Write(0); // Realm Locked (Only needed for clients TBC+)
-    pkt.Write(0); // Realm Flag
+    pkt.Write<uint8_t>(1); // Realm Type
+    pkt.Write<uint8_t>(0); // Realm Locked (Only needed for clients TBC+)
+    pkt.Write<uint8_t>(0); // Realm Flag
 
-    pkt.Write("[NovusCore] Internal Realm"); // Realm Name
-    pkt.Write("127.0.0.1:8085"); // Realm IP/Port
-    pkt.Append((uint8_t*)&population, sizeof(population)); // Realm Population Level
+    pkt.WriteString("[NovusCore] Internal Realm"); // Realm Name
+    pkt.WriteString("127.0.0.1:8000"); // Realm IP/Port
+    pkt.Write<float>(population); // Realm Population Level
 
-    pkt.Write(9); // Characters Count
-    pkt.Write(1); // Timezone
-    pkt.Write(1); // Realm Id
+    pkt.Write<uint8_t>(9); // Characters Count
+    pkt.Write<uint8_t>(1); // Timezone
+    pkt.Write<uint8_t>(1); // Realm Id
     
     // (Only needed for clients TBC+)
-    /*pkt.Write(3); // Major Version
-    pkt.Write(3); // Minor Version
-    pkt.Write(5); // Bugfix Version
+    /*pkt.Write<uint8_t>(3); // Major Version
+    pkt.Write<uint8_t>(3); // Minor Version
+    pkt.Write<uint8_t>(5); // Bugfix Version
     uint16_t build = 12340;
     pkt.Append((uint8_t*)&build, sizeof(build)); // Build*/
     
 
     // (Only needed for clients TBC+)
-    pkt.Write(0x10); // Unk1
-    pkt.Write(0x00); // Unk2
+    pkt.Write<uint8_t>(0x10); // Unk1
+    pkt.Write<uint8_t>(0x00); // Unk2
 
     Common::ByteBuffer RealmListSizeBuffer;
-
-    uint32_t unk1 = 0;
-    RealmListSizeBuffer.Append((uint8_t*)&unk1, sizeof(unk1));
-
-    uint16_t realmsCount = RealmListSize;
-    RealmListSizeBuffer.Append((uint8_t*)&realmsCount, sizeof(realmsCount));
+    RealmListSizeBuffer.Write<uint32_t>(0);
+    RealmListSizeBuffer.Write<uint16_t>(RealmListSize);
 
     Common::ByteBuffer hdr;
-    hdr.Write(AUTH_GAMESERVER_LIST);
+    hdr.Write<uint8_t>(AUTH_GAMESERVER_LIST);
     
     uint16_t combinedSize = pkt.GetActualSize() + RealmListSizeBuffer.GetActualSize();
-    hdr.Append((uint8_t*)&combinedSize, sizeof(combinedSize));
+    hdr.Write<uint16_t>(combinedSize);
     hdr.Append(RealmListSizeBuffer);
     hdr.Append(pkt);
     Send(hdr);
@@ -416,16 +402,3 @@ bool AuthSession::HandleCommandGameServerList()
 
     return true;
 }
-
-/*
-void AsyncRead()
-{
-    if (!IsOpen())
-    return;
-
-    _readBuffer.Normalize();
-    _readBuffer.EnsureFreeSpace();
-    _socket.async_read_some(boost::asio::buffer(_readBuffer.GetWritePointer(), _readBuffer.GetRemainingSpace()),
-    std::bind(&Socket<T>::ReadHandlerInternal, this->shared_from_this(), std::placeholders::_1, std::placeholders::_2));
-}
-*/

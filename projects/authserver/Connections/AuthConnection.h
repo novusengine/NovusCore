@@ -1,7 +1,7 @@
 /*
 # MIT License
 
-# Copyright(c) 2018 NovusCore
+# Copyright(c) 2018-2019 NovusCore
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files(the "Software"), to deal
@@ -27,6 +27,7 @@
 #include <Networking\BaseSocket.h>
 #include <Cryptography\BigNumber.h>
 #include <Cryptography\SHA1.h>
+#include <Database\DatabaseConnector.h>
 #include <unordered_map>
 
 enum AuthCommand
@@ -105,12 +106,12 @@ struct cAuthReconnectProof
 #pragma pack(pop)
 
 struct AuthMessageHandler;
-class AuthSession : public Common::BaseSocket
+class AuthConnection : public Common::BaseSocket
 {
 public:
     static std::unordered_map<uint8_t, AuthMessageHandler> InitMessageHandlers();
 
-    AuthSession(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), _status(STATUS_CHALLENGE), username(), packetsReadThisRead(17)
+    AuthConnection(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), _status(STATUS_CHALLENGE), username(), packetsReadThisRead(17)
     { 
         N.Hex2BN("894B645E89E1535BBDAD5B8B290650530801B18EBFBF5E8FAB3C82872A3E9BB7");
         g.SetUInt32(7);
@@ -122,6 +123,8 @@ public:
     void HandleRead() override;
 
     bool HandleCommandChallenge();
+    void HandleCommandChallengeCallback(amy::result_set& results);
+
     bool HandleCommandReconnectChallenge();
     bool HandleCommandProof();
     bool HandleCommandReconnectProof();
@@ -156,6 +159,6 @@ struct AuthMessageHandler
     AuthStatus status;
     size_t packetSize;
     uint8_t maxPacketsPerRead;
-    bool (AuthSession::*handler)();
+    bool (AuthConnection::*handler)();
 };
 #pragma pack(pop)

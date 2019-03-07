@@ -1,7 +1,7 @@
 /*
 # MIT License
 
-# Copyright(c) 2018 NovusCore
+# Copyright(c) 2018-2019 NovusCore
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files(the "Software"), to deal
@@ -23,50 +23,51 @@
 */
 #pragma once
 
-#include <Networking/TcpServer.h>
-#include "Session\AuthSession.h"
+#include <Networking\TcpServer.h>
+#include "../Connections/NovusConnection.h"
 
-class AuthSocketHandler : Common::TcpServer<AuthSession>
+class NovusConnectionHandler : public Common::TcpServer
 {
 public:
-    AuthSocketHandler(asio::io_service& io_service, int port) : Common::TcpServer<AuthSession>(io_service, port), _ioService(io_service) { }
-
-    void Start()
+    NovusConnectionHandler(asio::io_service& io_service, int port) : Common::TcpServer(io_service, port) { _instance = this; }
+    static NovusConnection* GetConnection()
     {
-        _workerThread = new Common::WorkerThread<AuthSession>();
-        _workerThread->_thread = std::thread(Common::WorkerThreadMain<Common::WorkerThread<AuthSession>, AuthSession>, _workerThread);
+        static int loadDistributionId = 0;
 
-        StartListening();
+        if (_instance->_connections.size() == 0)
+            return nullptr;
+
+        if (loadDistributionId >= _instance->_connections.size())
+            loadDistributionId = _instance->_connections.size() - 1;
+        
+        NovusConnection* connection = reinterpret_cast<NovusConnection*>(_instance->_connections.at(loadDistributionId));
+        loadDistributionId = (loadDistributionId + 1) % _instance->_connections.size();
+
+        return connection;
     }
 
-    uint16_t GetPort()
-    {
-        return _port;
-    }
 private:
+    static NovusConnectionHandler* _instance;
     void StartListening() override
     {
         asio::ip::tcp::socket* socket = new asio::ip::tcp::socket(_ioService);
-        _acceptor.async_accept(*socket, std::bind(&AuthSocketHandler::HandleNewConnection, this, socket, std::placeholders::_1));
+        _acceptor.async_accept(*socket, std::bind(&NovusConnectionHandler::HandleNewConnection, this, socket, std::placeholders::_1));
     }
 
     void HandleNewConnection(asio::ip::tcp::socket* socket, const asio::error_code& error_code) override
     {
         if (!error_code)
         {
-            printf("Client Connected\n");
             _workerThread->_mutex.lock();
 
             socket->non_blocking(true);
-            AuthSession* authSession = new AuthSession(socket);
-            authSession->Start();
+            NovusConnection* connection = new NovusConnection(socket);
+            connection->Start();
 
-            _workerThread->_sessions.push_back(authSession);
+            _connections.push_back(connection);
             _workerThread->_mutex.unlock();
         }
 
         StartListening();
     }
-
-    asio::io_service& _ioService;
 };

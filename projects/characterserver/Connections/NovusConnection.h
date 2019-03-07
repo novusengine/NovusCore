@@ -1,7 +1,7 @@
 /*
 # MIT License
 
-# Copyright(c) 2018 NovusCore
+# Copyright(c) 2018-2019 NovusCore
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files(the "Software"), to deal
@@ -30,34 +30,35 @@
 #include <Cryptography\StreamCrypto.h>
 #include <unordered_map>
 
-enum RelayCommand
+enum NovusCommand
 {
-    RELAY_CHALLENGE     = 0x00,
-    RELAY_PROOF         = 0x01
+    NOVUS_CHALLENGE         = 0x00,
+    NOVUS_PROOF             = 0x01,
+    NOVUS_FOWARDPACKET      = 0x02
 };
-enum RelayStatus
+enum NovusStatus
 {
-    RELAYSTATUS_CHALLENGE   = 0,
-    RELAYSTATUS_PROOF       = 1,
-    RELAYSTATUS_AUTHED      = 2,
-    RELAYSTATUS_CLOSED      = 3
+    NOVUSSTATUS_CHALLENGE   = 0x0,
+    NOVUSSTATUS_PROOF       = 0x1,
+    NOVUSSTATUS_AUTHED      = 0x2,
+    NOVUSSTATUS_CLOSED      = 0x3
 };
 
 #pragma pack(push, 1)
-struct sRelayChallenge
+struct sNovusChallenge
 {
     uint8_t command;
     uint8_t K[32];
 };
 #pragma pack(pop)
 
-struct RelayMessageHandler;
-class RelayNodeConnection : Common::BaseSocket
+struct NovusMessageHandler;
+class NovusConnection : Common::BaseSocket
 {
 public:
-    static std::unordered_map<uint8_t, RelayMessageHandler> InitMessageHandlers();
+    static std::unordered_map<uint8_t, NovusMessageHandler> InitMessageHandlers();
 
-    RelayNodeConnection(asio::ip::tcp::socket* socket, std::string address, uint16_t port) : Common::BaseSocket(socket), _status(RELAYSTATUS_CHALLENGE), _crypto(), _address(address), _port(port)
+    NovusConnection(asio::ip::tcp::socket* socket, std::string address, uint16_t port) : Common::BaseSocket(socket), _status(NOVUSSTATUS_CHALLENGE), _crypto(), _address(address), _port(port)
     { 
         _crypto = new StreamCrypto();
         _key = new BigNumber();
@@ -68,8 +69,11 @@ public:
 
     bool HandleCommandChallenge();
     bool HandleCommandProof();
+    bool HandleCommandForwardPacket();
 
-    RelayStatus _status;
+    void SendPacket(Common::ByteBuffer& packet);
+
+    NovusStatus _status;
 private:
     std::string _address;
     uint16_t _port;
@@ -79,10 +83,10 @@ private:
 };
 
 #pragma pack(push, 1)
-struct RelayMessageHandler
+struct NovusMessageHandler
 {
-    RelayStatus status;
+    NovusStatus status;
     size_t packetSize;
-    bool (RelayNodeConnection::*handler)();
+    bool (NovusConnection::*handler)();
 };
 #pragma pack(pop)

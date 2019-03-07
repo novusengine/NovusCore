@@ -1,7 +1,7 @@
 /*
 # MIT License
 
-# Copyright(c) 2018 NovusCore
+# Copyright(c) 2018-2019 NovusCore
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files(the "Software"), to deal
@@ -22,33 +22,35 @@
 # SOFTWARE.
 */
 
-#include "AuthSocketHandler.h"
-#include "NodeSocketHandler.h"
 #include <Config\ConfigHandler.h>
 #include <Database\DatabaseConnector.h>
 
+#include "ConnectionHandlers/ClientAuthConnectionHandler.h"
+#include "ConnectionHandlers/RelayNodeConnectionHandler.h"
+
 int main()
 {
+    asio::io_service io_service(2);
     if (!ConfigHandler::Setup("authserver_configuration.json"))
     {
         std::getchar();
         return 0;
     }
-    DatabaseConnector::Setup("127.0.0.1", "root", "");
+    DatabaseConnector::Setup("127.0.0.1", "root", "ascent");
 
-    asio::io_service io_service(2);
-    AuthSocketHandler server(io_service, ConfigHandler::GetOption<uint16_t>("port", 3724));
-    NodeSocketHandler nodeServer(io_service, ConfigHandler::GetOption<uint16_t>("nodeport", 8000));
-    nodeServer.Start();
-    server.Start();
+    ClientAuthConnectionHandler clientAuthConnectionHandler(io_service, ConfigHandler::GetOption<uint16_t>("port", 3724));
+    RelayNodeConnectionHandler relayNodeConnectionHandler(io_service, ConfigHandler::GetOption<uint16_t>("nodeport", 9000));
+    
+    clientAuthConnectionHandler.Start();
+    relayNodeConnectionHandler.Start();
 
     std::thread run_thread([&]
     {
         io_service.run();
     });
 
-    std::cout << "Server Node Instance running on port: " << nodeServer.GetPort() << std::endl;
-    std::cout << "Server Auth Instance running on port: " << server.GetPort() << std::endl;
+    std::cout << "Authserver Instance running on port: " << clientAuthConnectionHandler.GetPort() << std::endl;
+    std::cout << "Authserver Node Instance running on port: " << relayNodeConnectionHandler.GetPort() << std::endl;
     std::getchar();
 
     return 0;

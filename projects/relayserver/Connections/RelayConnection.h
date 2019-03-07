@@ -1,7 +1,7 @@
 /*
 # MIT License
 
-# Copyright(c) 2018 NovusCore
+# Copyright(c) 2018-2019 NovusCore
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files(the "Software"), to deal
@@ -27,19 +27,23 @@
 #include <Networking\BaseSocket.h>
 #include <Networking\Opcode\Opcode.h>
 #include <Cryptography\StreamCrypto.h>
+#include <Cryptography\BigNumber.h>
+#include <Cryptography\SHA1.h>
 #include <random>
 
-class RelaySocket : public Common::BaseSocket
+class RelayConnection : public Common::BaseSocket
 {
 public:
-    RelaySocket(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), username(), _headerBuffer(), _packetBuffer()
+    RelayConnection(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), accountGuid(0), accountName(), _headerBuffer(), _packetBuffer()
     {
         _seed = (uint32_t)rand();
         _headerBuffer.Resize(sizeof(Common::ClientPacketHeader));
+        sessionKey = new BigNumber();
     }
 
     bool Start() override;
     void HandleRead() override;
+    void SendPacket(Common::ByteBuffer& buffer, Common::Opcode opcode);
 
     bool HandleHeaderRead();
     bool HandlePacketRead();
@@ -50,7 +54,11 @@ public:
     inline void convert(char *val)
     {
         std::swap(*val, *(val + T - 1));
+        convert<T - 2>(val + 1);
     }
+
+    template<> inline void convert<0>(char *) { }
+    template<> inline void convert<1>(char *) { } // ignore central byte
 
     inline void apply(uint16_t *val)
     {
@@ -58,7 +66,10 @@ public:
     }
     inline void EndianConvertReverse(uint16_t& val) { apply(&val); }
 
-    std::string username;
+    uint64_t accountGuid;
+    uint64_t characterGuid;
+    std::string accountName;
+    BigNumber* sessionKey;
 
     Common::ByteBuffer _headerBuffer;
     Common::ByteBuffer _packetBuffer;

@@ -1,7 +1,7 @@
 /*
 # MIT License
 
-# Copyright(c) 2018 NovusCore
+# Copyright(c) 2018-2019 NovusCore
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files(the "Software"), to deal
@@ -24,30 +24,29 @@
 #pragma once
 
 #include <asio.hpp>
+#include "BaseSocket.h"
 
 namespace Common
 {
-    template <class T>
     struct WorkerThread
     {
         std::thread _thread;
         std::mutex _mutex;
-        std::vector<T*> _sessions;
+        std::vector<Common::BaseSocket*>* _connections;
     };
 
-    template <class T, class S>
-    void WorkerThreadMain(T* thread)
+    static void WorkerThreadMain(WorkerThread* thread)
     {
         while (true)
         {
             thread->_mutex.lock();
             // Remove closed sessions
-            if (thread->_sessions.size() > 0)
+            if (thread->_connections->size() > 0)
             {
-                thread->_sessions.erase(std::remove_if(thread->_sessions.begin(), thread->_sessions.end(), [](S* session)
+                thread->_connections->erase(std::remove_if(thread->_connections->begin(), thread->_connections->end(), [](Common::BaseSocket* connection)
                 {
-                    return session->IsClosed();
-                }), thread->_sessions.end());
+                    return connection->IsClosed();
+                }), thread->_connections->end());
             }
 
             thread->_mutex.unlock();
@@ -55,18 +54,30 @@ namespace Common
         }
     }
 
-    template <class T>
     class TcpServer
     {
     public:
-        TcpServer(asio::io_service& io_service, int port) : _acceptor(io_service, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port)), _port(port) { }
+        TcpServer(asio::io_service& io_service, int port) : _acceptor(io_service, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port)), _ioService(io_service), _workerThread(new WorkerThread())
+        {
+            _workerThread->_connections = &_connections;
+            _workerThread->_thread = std::thread(WorkerThreadMain, _workerThread);
+        }
 
+        void Start()
+        {
+            StartListening();
+        }
+        uint16_t GetPort()
+        {
+            return _acceptor.local_endpoint().port();
+        }
     protected:
         virtual void StartListening() = 0;
         virtual void HandleNewConnection(asio::ip::tcp::socket* socket, const asio::error_code& error) = 0;
 
-        Common::WorkerThread<T>* _workerThread;
+        std::vector<BaseSocket*> _connections;
+        WorkerThread* _workerThread;
         asio::ip::tcp::acceptor _acceptor;
-        uint16_t _port;
+        asio::io_service& _ioService;
     };
 }

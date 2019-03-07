@@ -21,7 +21,8 @@
 # SOFTWARE.
 
 # Include Project Directories
-add_subdirectory(authserver)
 add_subdirectory(common)
+add_subdirectory(authserver)
 add_subdirectory(relayserver)
+add_subdirectory(characterserver)
 add_subdirectory(worldserver)

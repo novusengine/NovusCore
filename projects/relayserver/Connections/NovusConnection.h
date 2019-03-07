@@ -1,7 +1,7 @@
 /*
 # MIT License
 
-# Copyright(c) 2018 NovusCore
+# Copyright(c) 2018-2019 NovusCore
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files(the "Software"), to deal
@@ -30,21 +30,22 @@
 #include <Cryptography\StreamCrypto.h>
 #include <unordered_map>
 
-enum NodeCommand
+enum NovusCommand
 {
-    NODE_CHALLENGE              = 0x00,
-    NODE_PROOF                  = 0x01
+    NOVUS_CHALLENGE         = 0x00,
+    NOVUS_PROOF             = 0x01,
+    NOVUS_FOWARDPACKET      = 0x02
 };
-enum NodeStatus
+enum NovusStatus
 {
-    NODESTATUS_CHALLENGE        = 0,
-    NODESTATUS_PROOF            = 1,
-    NODESTATUS_AUTHED           = 2,
-    NODESTATUS_CLOSED           = 3
+    NOVUSSTATUS_CHALLENGE   = 0x0,
+    NOVUSSTATUS_PROOF       = 0x1,
+    NOVUSSTATUS_AUTHED      = 0x2,
+    NOVUSSTATUS_CLOSED      = 0x3
 };
 
 #pragma pack(push, 1)
-struct cNodeChallenge
+struct cNovusChallenge
 {
     uint8_t     command;
     uint8_t     type;
@@ -53,13 +54,13 @@ struct cNodeChallenge
 };
 #pragma pack(pop)
 
-struct NodeMessageHandler;
-class NodeSession : public Common::BaseSocket
+struct NovusMessageHandler;
+class NovusConnection : public Common::BaseSocket
 {
 public:
-    static std::unordered_map<uint8_t, NodeMessageHandler> InitMessageHandlers();
+    static std::unordered_map<uint8_t, NovusMessageHandler> InitMessageHandlers();
 
-    NodeSession(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), _status(NODESTATUS_CHALLENGE), _crypto(), _type(255)
+    NovusConnection(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), _status(NOVUSSTATUS_CHALLENGE), _crypto(), _type(255)
     {
         _crypto = new StreamCrypto();
         _key = new BigNumber();
@@ -71,20 +72,21 @@ public:
 
     bool HandleCommandChallenge();
     bool HandleCommandProof();
+    bool HandleCommandForwardPacket();
 
-    NodeStatus _status;
+    NovusStatus _status;
     uint8_t _type;
+    StreamCrypto* _crypto;
 
     private:
-    StreamCrypto* _crypto;
     BigNumber* _key;
 };
 
 #pragma pack(push, 1)
-struct NodeMessageHandler
+struct NovusMessageHandler
 {
-    NodeStatus status;
+    NovusStatus status;
     size_t packetSize;
-    bool (NodeSession::*handler)();
+    bool (NovusConnection::*handler)();
 };
 #pragma pack(pop)

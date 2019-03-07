@@ -191,7 +191,7 @@ bool DatabaseConnector::Query(std::string sql, amy::result_set& results)
 
 	if (error)
 	{
-		std::cout << error.message() << "\n";
+		std::cout << _connector->error_message(error) << "\n";
 		assert(false);
 		return false;
 	}
