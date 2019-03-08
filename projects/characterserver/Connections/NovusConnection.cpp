@@ -333,16 +333,16 @@ bool NovusConnection::HandleCommandForwardPacket()
             stmt.Bind(guid);
             DatabaseConnector::QueryAsync(DATABASE_TYPE::CHARSERVER, stmt, [this, accountGuid, guid](amy::result_set& results, DatabaseConnector& connector)
             {
-                Common::ByteBuffer* packetResponse = new Common::ByteBuffer();
-                packetResponse->Write<uint8_t>(NOVUS_FOWARDPACKET);
-                packetResponse->Write<uint64_t>(accountGuid);
-                packetResponse->Write<uint16_t>(Common::Opcode::SMSG_CHAR_DELETE);
+                Common::ByteBuffer packetResponse;
+                packetResponse.Write<uint8_t>(NOVUS_FOWARDPACKET);
+                packetResponse.Write<uint64_t>(accountGuid);
+                packetResponse.Write<uint16_t>(Common::Opcode::SMSG_CHAR_DELETE);
 
                 // Char doesn't exist
                 if (results.affected_rows() == 0)
                 {
-                    packetResponse->Write<uint8_t>(72); // CHAR_DELETE_FAILED
-                    SendPacket(*packetResponse);
+                    packetResponse.Write<uint8_t>(72); // CHAR_DELETE_FAILED
+                    SendPacket(packetResponse);
                     return;
                 }
 
@@ -350,25 +350,22 @@ bool NovusConnection::HandleCommandForwardPacket()
                 uint64_t characterAccountGuid = results[0][0].as<amy::sql_bigint_unsigned>();
                 if (accountGuid != characterAccountGuid)
                 {
-                    packetResponse->Write<uint8_t>(72); // CHAR_DELETE_FAILED
-                    SendPacket(*packetResponse);
+                    packetResponse.Write<uint8_t>(72); // CHAR_DELETE_FAILED
+                    SendPacket(packetResponse);
                     return;
                 }
 
-                PreparedStatement stmt("DELETE FROM characters WHERE guid={u};");
-                stmt.Bind(guid);
-                DatabaseConnector::QueryAsync(DATABASE_TYPE::CHARSERVER, stmt, [this, packetResponse, guid](amy::result_set& results, DatabaseConnector& connector)
-                {
-                    PreparedStatement stmt("DELETE FROM character_visual_data WHERE guid={u};");
-                    stmt.Bind(guid);
-                    DatabaseConnector::QueryAsync(DATABASE_TYPE::CHARSERVER, stmt, [this, packetResponse](amy::result_set& results, DatabaseConnector& connector)
-                    {
-                        packetResponse->Write<uint8_t>(71); // CHAR_DELETE_SUCCESS
-                        SendPacket(*packetResponse);
+                PreparedStatement characterBaseData("DELETE FROM characters WHERE guid={u};");
+                characterBaseData.Bind(guid);
 
-                        delete packetResponse;
-                    });
-                });
+                PreparedStatement characterVisualData("DELETE FROM character_visual_data WHERE guid={u};");
+                characterVisualData.Bind(guid);
+
+                connector.Execute(characterBaseData);
+                connector.Execute(characterVisualData);
+
+                packetResponse.Write<uint8_t>(71); // CHAR_DELETE_SUCCESS
+                SendPacket(packetResponse);
             });
 
             break;
