@@ -25,6 +25,116 @@
 #include "AuthConnection.h"
 #include <Networking\ByteBuffer.h>
 
+#pragma pack(push, 1)
+struct cAuthLogonChallenge
+{
+    uint8_t   command;
+    uint8_t   error;
+    uint16_t  size;
+    uint8_t   gamename[4];
+    uint8_t   version1;
+    uint8_t   version2;
+    uint8_t   version3;
+    uint16_t  build;
+    uint8_t   platform[4];
+    uint8_t   os[4];
+    uint8_t   country[4];
+    uint32_t  timezone_bias;
+    uint32_t  ip;
+    uint8_t   username_length;
+    uint8_t   username_pointer[1];
+};
+
+struct sAuthLogonChallengeHeader
+{
+    uint8_t  command;
+    uint8_t  error;
+    uint8_t  result;
+
+    void AddTo(Common::ByteBuffer& buffer)
+    {
+        buffer.Append((uint8_t*)this, sizeof(sAuthLogonChallengeHeader));
+    }
+};
+
+struct sAuthLogonChallengeData
+{
+    uint8_t b[32];
+    uint8_t unk1;
+    uint8_t g;
+    uint8_t unk2;
+    uint8_t n[32];
+    uint8_t s[32];
+    uint8_t version_challenge[16];
+    uint8_t security_flags;
+
+    void AddTo(Common::ByteBuffer& buffer)
+    {
+        buffer.Append((uint8_t*)this, sizeof(sAuthLogonChallengeData));
+    }
+
+    void Append(uint8_t* dest, const uint8_t* src, size_t size)
+    {
+        std::memcpy(dest, src, size);
+    }
+};
+
+struct cAuthLogonProof
+{
+    uint8_t   command;
+    uint8_t   A[32];
+    uint8_t   M1[20];
+    uint8_t   crc_hash[20];
+    uint8_t   number_of_keys;
+    uint8_t   securityFlags;
+};
+
+struct sAuthLogonProof
+{
+    uint8_t   cmd;
+    uint8_t   error;
+    uint8_t   M2[20];
+    uint32_t  AccountFlags;
+    uint32_t  SurveyId;
+    uint16_t  LoginFlags;
+};
+
+struct cAuthReconnectProof
+{
+    uint8_t   cmd;
+    uint8_t   R1[16];
+    uint8_t   R2[20];
+    uint8_t   R3[20];
+    uint8_t   number_of_keys;
+};
+
+struct sAuthLogonGameListData
+{
+    uint8_t     Type;
+    uint8_t     Locked;
+    uint8_t     Flags;
+    std::string Name;
+    std::string Address;
+    float       Population;
+    uint8_t     Characters;
+    uint8_t     Timezone;
+    uint8_t     Id;
+
+    void AddTo(Common::ByteBuffer& buffer)
+    {
+        buffer << Type;
+        buffer << Locked;
+        buffer << Flags;
+        buffer.WriteString(Name);
+        buffer.WriteString(Address);
+        buffer << Population;
+        buffer << Characters;
+        buffer << Timezone;
+        buffer << Id;
+    }
+};
+#pragma pack(pop)
+
 std::array<uint8_t, 16> VersionChallenge = { { 0xBA, 0xA3, 0x1E, 0x99, 0xA0, 0x0B, 0x21, 0x57, 0xFC, 0x37, 0x3F, 0xB3, 0x69, 0xCD, 0xD2, 0xF1 } };
 std::unordered_map<uint8_t, AuthMessageHandler> AuthConnection::InitMessageHandlers()
 {
@@ -134,7 +244,7 @@ void AuthConnection::HandleCommandChallengeCallback(amy::result_set& results)
     // Make sure the account exist.
     if (results.affected_rows() != 1)
     {
-        header.result = 0x04; // WOW_FAIL_UNKNOWN_ACCOUNT
+        header.result = AUTH_FAIL_UNKNOWN_ACCOUNT;
         header.AddTo(response);
         Send(response);
         return;
@@ -159,7 +269,7 @@ void AuthConnection::HandleCommandChallengeCallback(amy::result_set& results)
 
     
     _status = STATUS_PROOF;
-    header.result = 0x00;// WOW_SUCCESSS
+    header.result = AUTH_SUCCESS;
     header.AddTo(response);
 
     sAuthLogonChallengeData data;
@@ -279,9 +389,9 @@ bool AuthConnection::HandleCommandProof()
             memcpy(proof.M2, proofM2, 20);
             proof.cmd = AUTH_PROOF;
             proof.error = 0;
-            proof.AccountFlags = 0x04;    // 0x01 = GM, 0x08 = Trial, 0x00800000 = Pro pass (arena tournament)
+            proof.AccountFlags = 0x00;    // 0x01 = GM, 0x08 = Trial, 0x00800000 = Pro pass (arena tournament)
             proof.SurveyId = 0;
-            proof.LoginFlags = 0x01; // Has Account Message
+            proof.LoginFlags = 0x00;
 
             packet.Resize(sizeof(proof));
             std::memcpy(packet.data(), &proof, sizeof(proof));
@@ -295,7 +405,7 @@ bool AuthConnection::HandleCommandProof()
     {
         Common::ByteBuffer byteBuffer;
         byteBuffer.Write<uint8_t>(AUTH_PROOF);
-        byteBuffer.Write<uint8_t>(4); // error
+        byteBuffer.Write<uint8_t>(AUTH_FAIL_UNKNOWN_ACCOUNT); // error
         byteBuffer.Write<uint16_t>(0); // AccountFlag
         Send(byteBuffer);
     }

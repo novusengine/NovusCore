@@ -55,115 +55,56 @@ enum AuthStatus
     STATUS_CLOSED                   = 5 
 };
 
-#pragma pack(push, 1)
-struct cAuthLogonChallenge
+enum AuthResult
 {
-    uint8_t   command;
-    uint8_t   error;
-    uint16_t  size;
-    uint8_t   gamename[4];
-    uint8_t   version1;
-    uint8_t   version2;
-    uint8_t   version3;
-    uint16_t  build;
-    uint8_t   platform[4];
-    uint8_t   os[4];
-    uint8_t   country[4];
-    uint32_t  timezone_bias;
-    uint32_t  ip;
-    uint8_t   username_length;
-    uint8_t   username_pointer[1];
+    AUTH_SUCCESS                                  = 0x00,
+    AUTH_FAIL_BANNED                              = 0x03,
+    AUTH_FAIL_UNKNOWN_ACCOUNT                     = 0x04,
+    AUTH_FAIL_INCORRECT_PASSWORD                  = 0x05,
+    AUTH_FAIL_ALREADY_ONLINE                      = 0x06,
+    AUTH_FAIL_NO_TIME                             = 0x07,
+    AUTH_FAIL_DB_BUSY                             = 0x08,
+    AUTH_FAIL_VERSION_INVALID                     = 0x09,
+    AUTH_FAIL_VERSION_UPDATE                      = 0x0A,
+    AUTH_FAIL_INVALID_SERVER                      = 0x0B,
+    AUTH_FAIL_SUSPENDED                           = 0x0C,
+    AUTH_FAIL_FAIL_NOACCESS                       = 0x0D,
+    AUTH_SUCCESS_SURVEY                           = 0x0E,
+    AUTH_FAIL_PARENTCONTROL                       = 0x0F,
+    AUTH_FAIL_LOCKED_ENFORCED                     = 0x10,
+    AUTH_FAIL_TRIAL_ENDED                         = 0x11,
+    AUTH_FAIL_USE_BATTLENET                       = 0x12,
+    AUTH_FAIL_ANTI_INDULGENCE                     = 0x13,
+    AUTH_FAIL_EXPIRED                             = 0x14,
+    AUTH_FAIL_NO_GAME_ACCOUNT                     = 0x15,
+    AUTH_FAIL_CHARGEBACK                          = 0x16,
+    AUTH_FAIL_INTERNET_GAME_ROOM_WITHOUT_BNET     = 0x17,
+    AUTH_FAIL_GAME_ACCOUNT_LOCKED                 = 0x18,
+    AUTH_FAIL_UNLOCKABLE_LOCK                     = 0x19,
+    AUTH_FAIL_CONVERSION_REQUIRED                 = 0x20,
+    AUTH_FAIL_DISCONNECTED                        = 0xFF
 };
 
-struct sAuthLogonChallengeHeader
+enum LoginResult
 {
-    uint8_t  command;
-    uint8_t  error;
-    uint8_t  result;
-
-    void AddTo(Common::ByteBuffer& buffer)
-    {
-        buffer.Append((uint8_t*)this, sizeof(sAuthLogonChallengeHeader));
-    }
+    LOGIN_OK                                     = 0x00,
+    LOGIN_FAILED                                 = 0x01,
+    LOGIN_FAILED2                                = 0x02,
+    LOGIN_BANNED                                 = 0x03,
+    LOGIN_UNKNOWN_ACCOUNT                        = 0x04,
+    LOGIN_UNKNOWN_ACCOUNT3                       = 0x05,
+    LOGIN_ALREADYONLINE                          = 0x06,
+    LOGIN_NOTIME                                 = 0x07,
+    LOGIN_DBBUSY                                 = 0x08,
+    LOGIN_BADVERSION                             = 0x09,
+    LOGIN_DOWNLOAD_FILE                          = 0x0A,
+    LOGIN_FAILED3                                = 0x0B,
+    LOGIN_SUSPENDED                              = 0x0C,
+    LOGIN_FAILED4                                = 0x0D,
+    LOGIN_CONNECTED                              = 0x0E,
+    LOGIN_PARENTALCONTROL                        = 0x0F,
+    LOGIN_LOCKED_ENFORCED                        = 0x10
 };
-
-struct sAuthLogonChallengeData
-{
-    uint8_t b[32];
-    uint8_t unk1;
-    uint8_t g;
-    uint8_t unk2;
-    uint8_t n[32];
-    uint8_t s[32];
-    uint8_t version_challenge[16];
-    uint8_t security_flags;
-
-    void AddTo(Common::ByteBuffer& buffer)
-    {
-        buffer.Append((uint8_t*)this, sizeof(sAuthLogonChallengeData));
-    }
-
-    void Append(uint8_t* dest, const uint8_t* src, size_t size)
-    {
-        std::memcpy(dest, src, size);
-    }
-};
-
-struct cAuthLogonProof
-{
-    uint8_t   command;
-    uint8_t   A[32];
-    uint8_t   M1[20];
-    uint8_t   crc_hash[20];
-    uint8_t   number_of_keys;
-    uint8_t   securityFlags;
-};
-
-struct sAuthLogonProof
-{
-    uint8_t   cmd;
-    uint8_t   error;
-    uint8_t   M2[20];
-    uint32_t  AccountFlags;
-    uint32_t  SurveyId;
-    uint16_t  LoginFlags;
-};
-
-struct cAuthReconnectProof
-{
-    uint8_t   cmd;
-    uint8_t   R1[16];
-    uint8_t   R2[20];
-    uint8_t   R3[20];
-    uint8_t   number_of_keys;
-};
-
-struct sAuthLogonGameListData
-{
-    uint8_t     Type;
-    uint8_t     Locked;
-    uint8_t     Flags;
-    std::string Name;
-    std::string Address;
-    float       Population;
-    uint8_t     Characters;
-    uint8_t     Timezone;
-    uint8_t     Id;
-
-    void AddTo(Common::ByteBuffer& buffer)
-    {
-        buffer << Type;
-        buffer << Locked;
-        buffer << Flags;
-        buffer.WriteString(Name);
-        buffer.WriteString(Address);
-        buffer << Population;
-        buffer << Characters;
-        buffer << Timezone;
-        buffer << Id;
-    }
-};
-#pragma pack(pop)
 
 struct AuthMessageHandler;
 class AuthConnection : public Common::BaseSocket
