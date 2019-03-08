@@ -75,6 +75,40 @@ struct cAuthLogonChallenge
     uint8_t   username_pointer[1];
 };
 
+struct sAuthLogonChallengeHeader
+{
+    uint8_t  command;
+    uint8_t  error;
+    uint8_t  result;
+
+    void AddTo(Common::ByteBuffer& buffer)
+    {
+        buffer.Append((uint8_t*)this, sizeof(sAuthLogonChallengeHeader));
+    }
+};
+
+struct sAuthLogonChallengeData
+{
+    uint8_t b[32];
+    uint8_t unk1;
+    uint8_t g;
+    uint8_t unk2;
+    uint8_t n[32];
+    uint8_t s[32];
+    uint8_t version_challenge[16];
+    uint8_t security_flags;
+
+    void AddTo(Common::ByteBuffer& buffer)
+    {
+        buffer.Append((uint8_t*)this, sizeof(sAuthLogonChallengeData));
+    }
+
+    void Append(uint8_t* dest, const uint8_t* src, size_t size)
+    {
+        std::memcpy(dest, src, size);
+    }
+};
+
 struct cAuthLogonProof
 {
     uint8_t   command;
@@ -92,7 +126,7 @@ struct sAuthLogonProof
     uint8_t   M2[20];
     uint32_t  AccountFlags;
     uint32_t  SurveyId;
-    uint16_t  unk3;
+    uint16_t  LoginFlags;
 };
 
 struct cAuthReconnectProof
@@ -102,6 +136,32 @@ struct cAuthReconnectProof
     uint8_t   R2[20];
     uint8_t   R3[20];
     uint8_t   number_of_keys;
+};
+
+struct sAuthLogonGameListData
+{
+    uint8_t     Type;
+    uint8_t     Locked;
+    uint8_t     Flags;
+    std::string Name;
+    std::string Address;
+    float       Population;
+    uint8_t     Characters;
+    uint8_t     Timezone;
+    uint8_t     Id;
+
+    void AddTo(Common::ByteBuffer& buffer)
+    {
+        buffer << Type;
+        buffer << Locked;
+        buffer << Flags;
+        buffer.WriteString(Name);
+        buffer.WriteString(Address);
+        buffer << Population;
+        buffer << Characters;
+        buffer << Timezone;
+        buffer << Id;
+    }
 };
 #pragma pack(pop)
 

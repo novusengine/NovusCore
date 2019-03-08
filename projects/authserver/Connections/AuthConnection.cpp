@@ -25,6 +25,7 @@
 #include "AuthConnection.h"
 #include <Networking\ByteBuffer.h>
 
+std::array<uint8_t, 16> VersionChallenge = { { 0xBA, 0xA3, 0x1E, 0x99, 0xA0, 0x0B, 0x21, 0x57, 0xFC, 0x37, 0x3F, 0xB3, 0x69, 0xCD, 0xD2, 0xF1 } };
 std::unordered_map<uint8_t, AuthMessageHandler> AuthConnection::InitMessageHandlers()
 {
     std::unordered_map<uint8_t, AuthMessageHandler> messageHandlers;
@@ -124,15 +125,18 @@ bool AuthConnection::HandleCommandChallenge()
 }
 void AuthConnection::HandleCommandChallengeCallback(amy::result_set& results)
 {
-    Common::ByteBuffer pkt;
-    pkt.Write<uint8_t>(0);//AUTH_LOGON_CHALLENGE);
-    pkt.Write<uint8_t>(0);
+    Common::ByteBuffer response;
+
+    sAuthLogonChallengeHeader header;
+    header.command = AUTH_CHALLENGE;
+    header.error = 0;
 
     // Make sure the account exist.
     if (results.affected_rows() != 1)
     {
-        pkt.Write<uint8_t>(0x04); //WOW_FAILED
-        Send(pkt);
+        header.result = 0x04; // WOW_FAIL_UNKNOWN_ACCOUNT
+        header.AddTo(response);
+        Send(response);
         return;
     }
 
@@ -148,24 +152,32 @@ void AuthConnection::HandleCommandChallengeCallback(amy::result_set& results)
 
     assert(gen.GetBytes() <= 32);
 
-    BigNumber _unkNum;
-    _unkNum.Rand(16 * 8);
+    /* Check Wow Client Build Version Here */
+    {
 
-    /* Check Build Version Here */
-    pkt.Write<uint8_t>(0x00); // WOW_SUCCESSS
+    }
+
+    
     _status = STATUS_PROOF;
+    header.result = 0x00;// WOW_SUCCESSS
+    header.AddTo(response);
 
-    pkt.Append(B.BN2BinArray(32).get(), 32);
-    pkt.Write<uint8_t>(1);
-    pkt.Append(g.BN2BinArray(1).get(), 1);
-    pkt.Write<uint8_t>(32);
-    pkt.Append(N.BN2BinArray(32).get(), 32);
-    pkt.Append(s.BN2BinArray(int32_t(0x20)).get(), size_t(0x20));   // 32 bytes (SRP_6_S)
-    pkt.Append(_unkNum.BN2BinArray(16).get(), 16);
+    sAuthLogonChallengeData data;
+    data.Append(data.b, B.BN2BinArray(32).get(), 32);
+    data.unk1 = 1;
+    data.g = g.BN2BinArray(32).get()[0];
+    data.unk2 = 32;
+    data.Append(data.n, N.BN2BinArray(32).get(), 32);
+    data.Append(data.s, s.BN2BinArray(32).get(), 32); // 32 bytes (SRP_6_S)
+    data.Append(data.version_challenge, VersionChallenge.data(), VersionChallenge.size());
+    data.security_flags = 0;
+    data.AddTo(response);
 
-    //uint8 securityFlags = 0;
-    pkt.Write<uint8_t>(0);
-    Send(pkt);
+    /*
+        We should check here if we need to handle security flags
+    */
+
+    Send(response);
 }
 
 bool AuthConnection::HandleCommandProof()
@@ -267,9 +279,9 @@ bool AuthConnection::HandleCommandProof()
             memcpy(proof.M2, proofM2, 20);
             proof.cmd = AUTH_PROOF;
             proof.error = 0;
-            proof.AccountFlags = 0x00800000;    // 0x01 = GM, 0x08 = Trial, 0x00800000 = Pro pass (arena tournament)
+            proof.AccountFlags = 0x04;    // 0x01 = GM, 0x08 = Trial, 0x00800000 = Pro pass (arena tournament)
             proof.SurveyId = 0;
-            proof.unk3 = 0;
+            proof.LoginFlags = 0x01; // Has Account Message
 
             packet.Resize(sizeof(proof));
             std::memcpy(packet.data(), &proof, sizeof(proof));
@@ -284,8 +296,7 @@ bool AuthConnection::HandleCommandProof()
         Common::ByteBuffer byteBuffer;
         byteBuffer.Write<uint8_t>(AUTH_PROOF);
         byteBuffer.Write<uint8_t>(4); // error
-        byteBuffer.Write<uint8_t>(3); // AccountFlag
-        byteBuffer.Write<uint8_t>(0);
+        byteBuffer.Write<uint16_t>(0); // AccountFlag
         Send(byteBuffer);
     }
 
@@ -354,51 +365,44 @@ bool AuthConnection::HandleCommandGameServerList()
 {
     _status = STATUS_WAITING_FOR_GAMESERVER;
 
-    Common::ByteBuffer bytebuffer = GetByteBuffer();
-    Common::ByteBuffer pkt;
+    DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, "SELECT id, name, address, type, flags, timezone, population FROM realms;", [this](amy::result_set& results, DatabaseConnector& connector)
+    {
+        Common::ByteBuffer realmBuffer;
+        for (auto row : results)
+        {
+            sAuthLogonGameListData realmData;
+            realmData.Id = row[0].as<amy::sql_tinyint_unsigned>();
+            realmData.Name = row[1].as<amy::sql_varchar>();
+            realmData.Address = row[2].as<amy::sql_varchar>();
+            realmData.Type = row[3].as<amy::sql_tinyint_unsigned>();
+            realmData.Flags = row[4].as<amy::sql_tinyint_unsigned>();
+            realmData.Timezone = row[5].as<amy::sql_tinyint_unsigned>();
+            realmData.Population = row[6].as<amy::sql_float>();
+            realmData.Characters = 2;
+            realmData.Locked = 0;
 
-    uint16_t RealmListSize = 1;
-    float population = 0;
+            realmData.AddTo(realmBuffer);
+        }
 
-    /* Test Packet */
-    pkt.Write<uint8_t>(1); // Realm Type
-    pkt.Write<uint8_t>(0); // Realm Locked (Only needed for clients TBC+)
-    pkt.Write<uint8_t>(0); // Realm Flag
+        // (Only needed for clients TBC+)
+        realmBuffer.Write<uint8_t>(0x10); // Unk1
+        realmBuffer.Write<uint8_t>(0x00); // Unk2
 
-    pkt.WriteString("[NovusCore] Internal Realm"); // Realm Name
-    pkt.WriteString("127.0.0.1:8000"); // Realm IP/Port
-    pkt.Write<float>(population); // Realm Population Level
+        Common::ByteBuffer RealmListSizeBuffer;
+        RealmListSizeBuffer.Write<uint32_t>(0);
+        RealmListSizeBuffer.Write<uint16_t>((uint16_t)results.affected_rows());
 
-    pkt.Write<uint8_t>(9); // Characters Count
-    pkt.Write<uint8_t>(1); // Timezone
-    pkt.Write<uint8_t>(1); // Realm Id
-    
-    // (Only needed for clients TBC+)
-    /*pkt.Write<uint8_t>(3); // Major Version
-    pkt.Write<uint8_t>(3); // Minor Version
-    pkt.Write<uint8_t>(5); // Bugfix Version
-    uint16_t build = 12340;
-    pkt.Append((uint8_t*)&build, sizeof(build)); // Build*/
-    
+        Common::ByteBuffer hdr;
+        hdr.Write<uint8_t>(AUTH_GAMESERVER_LIST);
 
-    // (Only needed for clients TBC+)
-    pkt.Write<uint8_t>(0x10); // Unk1
-    pkt.Write<uint8_t>(0x00); // Unk2
+        uint16_t combinedSize = realmBuffer.size() + RealmListSizeBuffer.size();
+        hdr.Write<uint16_t>(combinedSize);
+        hdr.Append(RealmListSizeBuffer);
+        hdr.Append(realmBuffer);
+        Send(hdr);
 
-    Common::ByteBuffer RealmListSizeBuffer;
-    RealmListSizeBuffer.Write<uint32_t>(0);
-    RealmListSizeBuffer.Write<uint16_t>(RealmListSize);
-
-    Common::ByteBuffer hdr;
-    hdr.Write<uint8_t>(AUTH_GAMESERVER_LIST);
-    
-    uint16_t combinedSize = pkt.GetActualSize() + RealmListSizeBuffer.GetActualSize();
-    hdr.Write<uint16_t>(combinedSize);
-    hdr.Append(RealmListSizeBuffer);
-    hdr.Append(pkt);
-    Send(hdr);
-
-    _status = STATUS_AUTHED;
+        _status = STATUS_AUTHED;
+    });
 
     return true;
 }
