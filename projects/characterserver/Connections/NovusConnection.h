@@ -58,7 +58,7 @@ class NovusConnection : Common::BaseSocket
 public:
     static std::unordered_map<uint8_t, NovusMessageHandler> InitMessageHandlers();
 
-    NovusConnection(asio::ip::tcp::socket* socket, std::string address, uint16_t port) : Common::BaseSocket(socket), _status(NOVUSSTATUS_CHALLENGE), _crypto(), _address(address), _port(port)
+    NovusConnection(asio::ip::tcp::socket* socket, std::string address, uint16_t port, uint8_t realmId) : Common::BaseSocket(socket), _status(NOVUSSTATUS_CHALLENGE), _crypto(), _address(address), _port(port), _realmId(realmId)
     { 
         _crypto = new StreamCrypto();
         _key = new BigNumber();
@@ -77,6 +77,7 @@ public:
 private:
     std::string _address;
     uint16_t _port;
+    uint8_t _realmId;
 
     StreamCrypto* _crypto;
     BigNumber* _key;

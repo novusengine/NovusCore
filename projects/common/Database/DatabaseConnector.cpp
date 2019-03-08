@@ -57,12 +57,32 @@ bool DatabaseConnector::Borrow(DATABASE_TYPE type, std::shared_ptr<DatabaseConne
 	return true;
 }
 
+void DatabaseConnector::Borrow(DATABASE_TYPE type, std::function<void(std::shared_ptr<DatabaseConnector>& connector)> const& func)
+{
+    if (_host == "INVALID")
+    {
+        std::cerr << "ERROR: Failed to connect to MySQL Server, please initialize with DatabaseConnector::Setup!\n";
+        assert(false);
+        return;
+    }
+
+    // If we are out of connectors, create one!
+    if (_connectorPools[type].empty())
+    {
+        DatabaseConnector* newConnector = new DatabaseConnector();
+        newConnector->_Connect(type);
+        _connectorPools[type].add(std::unique_ptr<DatabaseConnector>(newConnector));
+    }
+
+    func(std::shared_ptr<DatabaseConnector>(_connectorPools[type].acquire()));
+    return;
+}
+
 // Static Asyncs
 void DatabaseConnector::QueryAsync(DATABASE_TYPE type, std::string sql, std::function<void(amy::result_set& result, DatabaseConnector& connector)> const& func)
 {
 	_asyncJobQueue.emplace(type, sql, func);
 }
-
 void DatabaseConnector::ExecuteAsync(DATABASE_TYPE type, std::string sql)
 {
 	_asyncJobQueue.emplace(type, sql, nullptr);

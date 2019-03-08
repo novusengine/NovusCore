@@ -47,6 +47,22 @@ PreparedStatement& PreparedStatement::Bind(unsigned int value)
 
     return *this;
 }
+PreparedStatement& PreparedStatement::Bind(uint8_t value)
+{
+    size_t replacePos = _statement.find("{u}");
+
+    if (replacePos != std::string::npos)
+    {
+        _statement.replace(replacePos, 3, std::to_string(value));
+    }
+    else
+    {
+        std::cout << "Error: Could not find token {u} in statement: " << _statement << std::endl;
+        assert(false);
+    }
+
+    return *this;
+}
 PreparedStatement& PreparedStatement::Bind(uint64_t value)
 {
     size_t replacePos = _statement.find("{u}");

@@ -78,14 +78,15 @@ public:
 
 	// Static Connector creation
 	static bool Create(DATABASE_TYPE type, std::unique_ptr<DatabaseConnector>& out);
-	static bool Borrow(DATABASE_TYPE type, std::shared_ptr<DatabaseConnector>& out);
+    static bool Borrow(DATABASE_TYPE type, std::shared_ptr<DatabaseConnector>& out);
+    static void Borrow(DATABASE_TYPE type, std::function<void(std::shared_ptr<DatabaseConnector>& connector)> const& func);
 
 	// Async main function
 	static void AsyncSQLThreadMain();
 
 	// Static Async functions
-	static void QueryAsync(DATABASE_TYPE type, std::string sql, std::function<void(amy::result_set& results, DatabaseConnector& connector)> const& func);
-	static void ExecuteAsync(DATABASE_TYPE type, std::string sql);
+    static void QueryAsync(DATABASE_TYPE type, std::string sql, std::function<void(amy::result_set& results, DatabaseConnector& connector)> const& func);
+    static void ExecuteAsync(DATABASE_TYPE type, std::string sql);
 
 	static void QueryAsync(DATABASE_TYPE type, PreparedStatement statement, std::function<void(amy::result_set& results, DatabaseConnector& connector)> const& func) { QueryAsync(type, statement.Get(), func); }
 	static void ExecuteAsync(DATABASE_TYPE type, PreparedStatement statement) { ExecuteAsync(type, statement.Get()); }

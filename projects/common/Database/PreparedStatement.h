@@ -37,12 +37,13 @@ class PreparedStatement
 public:
 	PreparedStatement(std::string statement);
 
+    PreparedStatement& Bind(uint8_t value);
 	PreparedStatement& Bind(std::string value);
     PreparedStatement& Bind(unsigned int value);
-    PreparedStatement& Bind(uint64_t value);
 	PreparedStatement& Bind(int value);
 	PreparedStatement& Bind(float value);
 	PreparedStatement& Bind(double value);
+    PreparedStatement& Bind(uint64_t value);
 
 	bool Verify();
 	std::string Get();

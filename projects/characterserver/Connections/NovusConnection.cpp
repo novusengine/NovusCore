@@ -31,9 +31,9 @@ std::unordered_map<uint8_t, NovusMessageHandler> NovusConnection::InitMessageHan
 {
     std::unordered_map<uint8_t, NovusMessageHandler> messageHandlers;
 
-    messageHandlers[NOVUS_CHALLENGE]    =   { NOVUSSTATUS_CHALLENGE,    sizeof(sNovusChallenge),    &NovusConnection::HandleCommandChallenge        };
-    messageHandlers[NOVUS_PROOF]        =   { NOVUSSTATUS_PROOF,        1,                          &NovusConnection::HandleCommandProof            };
-    messageHandlers[NOVUS_FOWARDPACKET] =   { NOVUSSTATUS_AUTHED,       11,                         &NovusConnection::HandleCommandForwardPacket    };
+    messageHandlers[NOVUS_CHALLENGE] = { NOVUSSTATUS_CHALLENGE,    sizeof(sNovusChallenge),    &NovusConnection::HandleCommandChallenge };
+    messageHandlers[NOVUS_PROOF] = { NOVUSSTATUS_PROOF,        1,                          &NovusConnection::HandleCommandProof };
+    messageHandlers[NOVUS_FOWARDPACKET] = { NOVUSSTATUS_AUTHED,       11,                         &NovusConnection::HandleCommandForwardPacket };
 
     return messageHandlers;
 }
@@ -45,8 +45,6 @@ bool NovusConnection::Start()
     {
         _socket->connect(asio::ip::tcp::endpoint(asio::ip::address::from_string(_address), _port));
 
-        AsyncRead();
-
         /* NODE_CHALLENGE */
         Common::ByteBuffer packet(6);
 
@@ -57,6 +55,7 @@ bool NovusConnection::Start()
         uint16_t build = 12340;
         packet.Append((uint8_t*)&build, sizeof(build)); // Build
 
+        AsyncRead();
         Send(packet);
         return true;
     }
@@ -154,225 +153,238 @@ bool NovusConnection::HandleCommandForwardPacket()
 
     switch ((Common::Opcode)clientOpcode)
     {
-        case Common::Opcode::CMSG_READY_FOR_ACCOUNT_DATA_TIMES:
-        {
-            /* Packet Structure */
-            // UInt32:  Server Time (time(nullptr))
-            // UInt8:   Unknown Byte Value
-            // UInt32:  Mask for the account data fields
+    case Common::Opcode::CMSG_READY_FOR_ACCOUNT_DATA_TIMES:
+    {
+        /* Packet Structure */
+        // UInt32:  Server Time (time(nullptr))
+        // UInt8:   Unknown Byte Value
+        // UInt32:  Mask for the account data fields
 
+        Common::ByteBuffer packetResponse;
+        packetResponse.Write<uint8_t>(NOVUS_FOWARDPACKET);
+        packetResponse.Write<uint64_t>(accountGuid);
+        packetResponse.Write<uint16_t>(Common::Opcode::SMSG_ACCOUNT_DATA_TIMES);
+
+        packetResponse.Write<uint32_t>((uint32_t)time(nullptr));
+        packetResponse.Write<uint8_t>(1);
+        packetResponse.Write<uint32_t>(0x15);
+
+        SendPacket(packetResponse);
+        break;
+    }
+    case Common::Opcode::CMSG_REALM_SPLIT:
+    {
+        std::string split_date = "01/01/01";
+        uint32_t unk = 0;
+        _packetBuffer.Read(&unk, 4);
+
+        Common::ByteBuffer packetResponse;
+        packetResponse.Write<uint8_t>(NOVUS_FOWARDPACKET);
+        packetResponse.Write<uint64_t>(accountGuid);
+        packetResponse.Write<uint16_t>(Common::Opcode::SMSG_REALM_SPLIT);
+
+        packetResponse.Write<uint32_t>(unk);
+        packetResponse.Write<uint32_t>(0x0); // split states: 0x0 realm normal, 0x1 realm split, 0x2 realm split pending
+        packetResponse.WriteString(split_date);
+
+        SendPacket(packetResponse);
+        break;
+    }
+    case Common::Opcode::CMSG_CHAR_ENUM:
+    {
+        PreparedStatement stmt("SELECT characters.guid, characters.name, characters.race, characters.class, characters.gender, character_visual_data.skin, character_visual_data.face, character_visual_data.hair_style, character_visual_data.hair_color, character_visual_data.facial_style, characters.level, characters.zone_id, characters.map_id, characters.coordinate_x, characters.coordinate_y, characters.coordinate_z FROM characters INNER JOIN character_visual_data ON characters.guid=character_visual_data.guid WHERE characters.account={u};");
+        stmt.Bind(accountGuid);
+        DatabaseConnector::QueryAsync(DATABASE_TYPE::CHARSERVER, stmt, [this, accountGuid, clientOpcode](amy::result_set& results, DatabaseConnector& connector)
+        {
             Common::ByteBuffer packetResponse;
             packetResponse.Write<uint8_t>(NOVUS_FOWARDPACKET);
             packetResponse.Write<uint64_t>(accountGuid);
-            packetResponse.Write<uint16_t>(Common::Opcode::SMSG_ACCOUNT_DATA_TIMES);
+            packetResponse.Write<uint16_t>(Common::Opcode::SMSG_CHAR_ENUM);
 
-            packetResponse.Write<uint32_t>((uint32_t)time(nullptr));
-            packetResponse.Write<uint8_t>(1);
-            packetResponse.Write<uint32_t>(0x15);
+            // Number of characters
+            packetResponse.Write<uint8_t>((uint8_t)results.affected_rows());
+
+            /* Template for loading a character */
+            for (auto& row : results)
+            {
+                packetResponse.Write<uint64_t>(row[0].as<amy::sql_int_unsigned>()); // Guid
+                packetResponse.WriteString(row[1].as<amy::sql_varchar>()); // Name
+                packetResponse.Write<uint8_t>(row[2].as<amy::sql_tinyint_unsigned>()); // Race
+                packetResponse.Write<uint8_t>(row[3].as<amy::sql_tinyint_unsigned>()); // Class
+                packetResponse.Write<uint8_t>(row[4].as<amy::sql_tinyint_unsigned>()); // Gender
+
+                packetResponse.Write<uint8_t>(row[5].as<amy::sql_tinyint_unsigned>()); // Skin
+                packetResponse.Write<uint8_t>(row[6].as<amy::sql_tinyint_unsigned>()); // Face
+                packetResponse.Write<uint8_t>(row[7].as<amy::sql_tinyint_unsigned>()); // Hairstyle
+                packetResponse.Write<uint8_t>(row[8].as<amy::sql_tinyint_unsigned>()); // Haircolor
+                packetResponse.Write<uint8_t>(row[9].as<amy::sql_tinyint_unsigned>()); // Facialstyle
+
+                packetResponse.Write<uint8_t>(row[10].as<amy::sql_tinyint_unsigned>()); // Level
+                packetResponse.Write<uint32_t>(row[11].as<amy::sql_tinyint_unsigned>()); // Zone Id
+                packetResponse.Write<uint32_t>(row[12].as<amy::sql_tinyint_unsigned>()); // Map Id
+
+                packetResponse.Write<float>(row[13].as<amy::sql_float>()); // X
+                packetResponse.Write<float>(row[14].as<amy::sql_float>()); // Y
+                packetResponse.Write<float>(row[15].as<amy::sql_float>()); // Z
+
+                packetResponse.Write<uint32_t>(0); // Guild Id
+
+                packetResponse.Write<uint32_t>(0); // Character Flags
+                packetResponse.Write<uint32_t>(0); // characterCustomize Flag
+
+                packetResponse.Write<uint8_t>(1); // First Login (Here we should probably do a playerTime check to determin if its the player's first login)
+
+                packetResponse.Write<uint32_t>(22234);  // Pet Display Id
+                packetResponse.Write<uint32_t>(5);  // Pet Level
+                packetResponse.Write<uint32_t>(1);  // Pet Family
+
+                uint32_t equipmentDataNull = 0;
+                for (int i = 0; i < 23; ++i)
+                {
+                    packetResponse.Write<uint32_t>(equipmentDataNull);
+                    packetResponse.Write<uint8_t>(0);
+                    packetResponse.Write<uint32_t>(equipmentDataNull);
+                }
+            }
 
             SendPacket(packetResponse);
-            break;
-        }
-        case Common::Opcode::CMSG_REALM_SPLIT:
-        {
-            std::string split_date = "01/01/01";
-            uint32_t unk = 0;
-            _packetBuffer.Read(&unk, 4);
+        });
+        break;
+    }
+    case Common::Opcode::CMSG_CHAR_CREATE:
+    {
+        std::string charName;
+        uint8_t charRace;
+        uint8_t charClass;
+        uint8_t charGender;
+        uint8_t charSkin;
+        uint8_t charFace;
+        uint8_t charHairStyle;
+        uint8_t charHairColor;
+        uint8_t charFacialStyle;
+        uint8_t charOutfitId;
 
+        _packetBuffer.Read(charName);
+        _packetBuffer.Read(&charRace, 1);
+        _packetBuffer.Read(&charClass, 1);
+        _packetBuffer.Read(&charGender, 1);
+        _packetBuffer.Read(&charSkin, 1);
+        _packetBuffer.Read(&charFace, 1);
+        _packetBuffer.Read(&charHairStyle, 1);
+        _packetBuffer.Read(&charHairColor, 1);
+        _packetBuffer.Read(&charFacialStyle, 1);
+        _packetBuffer.Read(&charOutfitId, 1);
+
+        PreparedStatement stmt("SELECT name FROM characters WHERE name={s};");
+        stmt.Bind(charName);
+        DatabaseConnector::QueryAsync(DATABASE_TYPE::CHARSERVER, stmt, [this, accountGuid, charName, charRace, charClass, charGender, charSkin, charFace, charHairStyle, charHairColor, charFacialStyle](amy::result_set& results, DatabaseConnector& connector)
+        {
             Common::ByteBuffer packetResponse;
             packetResponse.Write<uint8_t>(NOVUS_FOWARDPACKET);
             packetResponse.Write<uint64_t>(accountGuid);
-            packetResponse.Write<uint16_t>(Common::Opcode::SMSG_REALM_SPLIT);
+            packetResponse.Write<uint16_t>(Common::Opcode::SMSG_CHAR_CREATE);
 
-            packetResponse.Write<uint32_t>(unk);
-            packetResponse.Write<uint32_t>(0x0); // split states: 0x0 realm normal, 0x1 realm split, 0x2 realm split pending
-            packetResponse.WriteString(split_date);
+            if (results.affected_rows() > 0)
+            {
+                packetResponse.Write<uint8_t>(50); // CHAR_CREATE_NAME_IN_USE
+                SendPacket(packetResponse);
+                return;
+            }
 
+            PreparedStatement characterBaseData("INSERT INTO characters(account, name, race, gender, class, map_id, zone_id, coordinate_x, coordinate_y, coordinate_z) VALUES({u}, {s}, {u}, {u}, {u}, {i}, {i}, {f}, {f}, {f});");
+            characterBaseData.Bind(accountGuid);
+            characterBaseData.Bind(charName);
+            characterBaseData.Bind(charRace);
+            characterBaseData.Bind(charGender);
+            characterBaseData.Bind(charClass);
+            characterBaseData.Bind(0);
+            characterBaseData.Bind(12);
+            characterBaseData.Bind(-8949.950195f);
+            characterBaseData.Bind(-132.492996f);
+            characterBaseData.Bind(83.531197f);
+
+            PreparedStatement characterVisualData("INSERT INTO character_visual_data(guid, skin, face, facial_style, hair_style, hair_color) VALUES(LAST_INSERT_ID(), {u}, {u}, {u}, {u}, {u});");
+            characterVisualData.Bind(charSkin);
+            characterVisualData.Bind(charFace);
+            characterVisualData.Bind(charFacialStyle);
+            characterVisualData.Bind(charHairStyle);
+            characterVisualData.Bind(charHairColor);
+
+            // This needs to be non-async as we rely on LAST_INSERT_ID() to retrieve the character's guid
+            connector.Execute(characterBaseData);
+            connector.Execute(characterVisualData);
+
+            DatabaseConnector::Borrow(DATABASE_TYPE::AUTHSERVER, [this, accountGuid](std::shared_ptr<DatabaseConnector>& connector)
+            {
+                PreparedStatement realmCharacterCount("INSERT INTO realm_characters(account, realmid, characters) VALUES({u}, {u}, 1) ON DUPLICATE KEY UPDATE characters = characters + 1;");
+                realmCharacterCount.Bind(accountGuid);
+                realmCharacterCount.Bind(_realmId);
+                connector->Execute(realmCharacterCount);
+            });
+
+            packetResponse.Write<uint8_t>(47); // CHAR_CREATE_SUCCESS
             SendPacket(packetResponse);
-            break;
-        }
-        case Common::Opcode::CMSG_CHAR_ENUM:
+        });
+
+        break;
+    }
+    case Common::Opcode::CMSG_CHAR_DELETE:
+    {
+        uint64_t guid;
+        _packetBuffer.Read(&guid, 8);
+
+        PreparedStatement stmt("SELECT account FROM characters WHERE guid={u};");
+        stmt.Bind(guid);
+        DatabaseConnector::QueryAsync(DATABASE_TYPE::CHARSERVER, stmt, [this, accountGuid, guid](amy::result_set& results, DatabaseConnector& connector)
         {
-            PreparedStatement stmt("SELECT characters.guid, characters.name, characters.race, characters.class, characters.gender, character_visual_data.skin, character_visual_data.face, character_visual_data.hair_style, character_visual_data.hair_color, character_visual_data.facial_style, characters.level, characters.zone_id, characters.map_id, characters.coordinate_x, characters.coordinate_y, characters.coordinate_z FROM characters INNER JOIN character_visual_data ON characters.guid=character_visual_data.guid WHERE characters.account={u};");
-            stmt.Bind(accountGuid);
-            DatabaseConnector::QueryAsync(DATABASE_TYPE::CHARSERVER, stmt, [this, accountGuid, clientOpcode](amy::result_set& results, DatabaseConnector& connector)
+            Common::ByteBuffer packetResponse;
+            packetResponse.Write<uint8_t>(NOVUS_FOWARDPACKET);
+            packetResponse.Write<uint64_t>(accountGuid);
+            packetResponse.Write<uint16_t>(Common::Opcode::SMSG_CHAR_DELETE);
+
+            // Char doesn't exist
+            if (results.affected_rows() == 0)
             {
-                Common::ByteBuffer packetResponse;
-                packetResponse.Write<uint8_t>(NOVUS_FOWARDPACKET);
-                packetResponse.Write<uint64_t>(accountGuid);
-                packetResponse.Write<uint16_t>(Common::Opcode::SMSG_CHAR_ENUM);
-
-                // Number of characters
-                packetResponse.Write<uint8_t>(results.affected_rows());
-
-                /* Template for loading a character */
-                for (auto& row : results)
-                {
-                    uint32_t lowGuid = row[0].as<amy::sql_int_unsigned>();
-                    uint64_t actualGuid = uint64_t(lowGuid) | uint64_t(0x0000) << 48;
-
-                    packetResponse.Write<uint64_t>(actualGuid); // Guid
-                    packetResponse.WriteString(row[1].as<amy::sql_varchar>()); // Name
-                    packetResponse.Write<uint8_t>(row[2].as<amy::sql_tinyint_unsigned>()); // Race
-                    packetResponse.Write<uint8_t>(row[3].as<amy::sql_tinyint_unsigned>()); // Class
-                    packetResponse.Write<uint8_t>(row[4].as<amy::sql_tinyint_unsigned>()); // Gender
-
-                    packetResponse.Write<uint8_t>(row[5].as<amy::sql_tinyint_unsigned>()); // Skin
-                    packetResponse.Write<uint8_t>(row[6].as<amy::sql_tinyint_unsigned>()); // Face
-                    packetResponse.Write<uint8_t>(row[7].as<amy::sql_tinyint_unsigned>()); // Hairstyle
-                    packetResponse.Write<uint8_t>(row[8].as<amy::sql_tinyint_unsigned>()); // Haircolor
-                    packetResponse.Write<uint8_t>(row[9].as<amy::sql_tinyint_unsigned>()); // Facialstyle
-
-                    packetResponse.Write<uint8_t>(row[10].as<amy::sql_tinyint_unsigned>()); // Level
-                    packetResponse.Write<uint32_t>(row[11].as<amy::sql_tinyint_unsigned>()); // Zone Id
-                    packetResponse.Write<uint32_t>(row[12].as<amy::sql_tinyint_unsigned>()); // Map Id
-
-                    packetResponse.Write<float>(row[13].as<amy::sql_float>()); // X
-                    packetResponse.Write<float>(row[14].as<amy::sql_float>()); // Y
-                    packetResponse.Write<float>(row[15].as<amy::sql_float>()); // Z
-
-                    packetResponse.Write<uint32_t>(0); // Guild Id
-
-                    packetResponse.Write<uint32_t>(0); // Character Flags
-                    packetResponse.Write<uint32_t>(0); // characterCustomize Flag
-
-                    packetResponse.Write<uint8_t>(1); // First Login (Here we should probably do a playerTime check to determin if its the player's first login)
-
-                    packetResponse.Write<uint32_t>(22234);  // Pet Display Id
-                    packetResponse.Write<uint32_t>(5);  // Pet Level
-                    packetResponse.Write<uint32_t>(1);  // Pet Family
-
-                    uint32_t equipmentDataNull = 0;
-                    for (int i = 0; i < 23; ++i)
-                    {
-                        packetResponse.Write<uint32_t>(equipmentDataNull);
-                        packetResponse.Write<uint8_t>(0);
-                        packetResponse.Write<uint32_t>(equipmentDataNull);
-                    }
-                }
-
+                packetResponse.Write<uint8_t>(72); // CHAR_DELETE_FAILED
                 SendPacket(packetResponse);
-            });
-            break;
-        }
-        case Common::Opcode::CMSG_CHAR_CREATE:
-        {
-            std::string charName;
-            uint8_t charRace;
-            uint8_t charClass;
-            uint8_t charGender;
-            uint8_t charSkin;
-            uint8_t charFace;
-            uint8_t charHairStyle;
-            uint8_t charHairColor;
-            uint8_t charFacialStyle;
-            uint8_t charOutfitId;
+                return;
+            }
 
-            _packetBuffer.Read(charName);
-            _packetBuffer.Read(&charRace, 1);
-            _packetBuffer.Read(&charClass, 1);
-            _packetBuffer.Read(&charGender, 1);
-            _packetBuffer.Read(&charSkin, 1);
-            _packetBuffer.Read(&charFace, 1);
-            _packetBuffer.Read(&charHairStyle, 1);
-            _packetBuffer.Read(&charHairColor, 1);
-            _packetBuffer.Read(&charFacialStyle, 1);
-            _packetBuffer.Read(&charOutfitId, 1);
-
-            PreparedStatement stmt("SELECT name FROM characters WHERE name={s};");
-            stmt.Bind(charName);
-            DatabaseConnector::QueryAsync(DATABASE_TYPE::CHARSERVER, stmt, [this, accountGuid, charName, charRace, charClass, charGender, charSkin, charFace, charHairStyle, charHairColor, charFacialStyle](amy::result_set& results, DatabaseConnector& connector)
+            // Prevent deleting other player's characters
+            uint64_t characterAccountGuid = results[0][0].as<amy::sql_bigint_unsigned>();
+            if (accountGuid != characterAccountGuid)
             {
-                Common::ByteBuffer packetResponse;
-                packetResponse.Write<uint8_t>(NOVUS_FOWARDPACKET);
-                packetResponse.Write<uint64_t>(accountGuid);
-                packetResponse.Write<uint16_t>(Common::Opcode::SMSG_CHAR_CREATE);
-
-                if (results.affected_rows() > 0)
-                {
-                    packetResponse.Write<uint8_t>(50); // CHAR_CREATE_NAME_IN_USE
-                    SendPacket(packetResponse);
-                    return;
-                }
-
-                PreparedStatement characterBaseData("INSERT INTO characters(account, name, race, gender, class, map_id, zone_id, coordinate_x, coordinate_y, coordinate_z) VALUES({u}, {s}, {i}, {i}, {i}, {i}, {i}, {f}, {f}, {f});");
-                characterBaseData.Bind(accountGuid);
-                characterBaseData.Bind(charName);
-                characterBaseData.Bind(charRace);
-                characterBaseData.Bind(charGender);
-                characterBaseData.Bind(charClass);
-                characterBaseData.Bind(0);
-                characterBaseData.Bind(12);
-                characterBaseData.Bind(-8949.950195f);
-                characterBaseData.Bind(-132.492996f);
-                characterBaseData.Bind(83.531197f);
-
-                PreparedStatement characterVisualData("INSERT INTO character_visual_data(guid, skin, face, facial_style, hair_style, hair_color) VALUES(LAST_INSERT_ID(), {i}, {i}, {i}, {i}, {i});");
-                characterVisualData.Bind(charSkin);
-                characterVisualData.Bind(charFace);
-                characterVisualData.Bind(charFacialStyle);
-                characterVisualData.Bind(charHairStyle);
-                characterVisualData.Bind(charHairColor);
-
-                // This needs to be non-async as we rely on LAST_INSERT_ID() to retrieve the character's guid
-                connector.Execute(characterBaseData);
-                connector.Execute(characterVisualData);
-
-                packetResponse.Write<uint8_t>(47); // CHAR_CREATE_SUCCESS
+                packetResponse.Write<uint8_t>(72); // CHAR_DELETE_FAILED
                 SendPacket(packetResponse);
+                return;
+            }
+
+            PreparedStatement characterBaseData("DELETE FROM characters WHERE guid={u};");
+            characterBaseData.Bind(guid);
+
+            PreparedStatement characterVisualData("DELETE FROM character_visual_data WHERE guid={u};");
+            characterVisualData.Bind(guid);
+
+            connector.Execute(characterBaseData);
+            connector.Execute(characterVisualData);
+
+            DatabaseConnector::Borrow(DATABASE_TYPE::AUTHSERVER, [this, accountGuid](std::shared_ptr<DatabaseConnector>& connector)
+            {
+                PreparedStatement realmCharacterCount("UPDATE realm_characters SET characters=characters-1 WHERE account={u} and realmid={u};");
+                realmCharacterCount.Bind(accountGuid);
+                realmCharacterCount.Bind(_realmId);
+                connector->Execute(realmCharacterCount);
             });
 
-            break;
-        }
-        case Common::Opcode::CMSG_CHAR_DELETE:
-        {
-            uint64_t guid;
-            _packetBuffer.Read(&guid, 8);
+            packetResponse.Write<uint8_t>(71); // CHAR_DELETE_SUCCESS
+            SendPacket(packetResponse);
+        });
 
-            PreparedStatement stmt("SELECT account FROM characters WHERE guid={u};");
-            stmt.Bind(guid);
-            DatabaseConnector::QueryAsync(DATABASE_TYPE::CHARSERVER, stmt, [this, accountGuid, guid](amy::result_set& results, DatabaseConnector& connector)
-            {
-                Common::ByteBuffer packetResponse;
-                packetResponse.Write<uint8_t>(NOVUS_FOWARDPACKET);
-                packetResponse.Write<uint64_t>(accountGuid);
-                packetResponse.Write<uint16_t>(Common::Opcode::SMSG_CHAR_DELETE);
-
-                // Char doesn't exist
-                if (results.affected_rows() == 0)
-                {
-                    packetResponse.Write<uint8_t>(72); // CHAR_DELETE_FAILED
-                    SendPacket(packetResponse);
-                    return;
-                }
-
-                // Prevent deleting other player's characters
-                uint64_t characterAccountGuid = results[0][0].as<amy::sql_bigint_unsigned>();
-                if (accountGuid != characterAccountGuid)
-                {
-                    packetResponse.Write<uint8_t>(72); // CHAR_DELETE_FAILED
-                    SendPacket(packetResponse);
-                    return;
-                }
-
-                PreparedStatement characterBaseData("DELETE FROM characters WHERE guid={u};");
-                characterBaseData.Bind(guid);
-
-                PreparedStatement characterVisualData("DELETE FROM character_visual_data WHERE guid={u};");
-                characterVisualData.Bind(guid);
-
-                connector.Execute(characterBaseData);
-                connector.Execute(characterVisualData);
-
-                packetResponse.Write<uint8_t>(71); // CHAR_DELETE_SUCCESS
-                SendPacket(packetResponse);
-            });
-
-            break;
-        }
-        default:
-            std::cout << "Received Unhandled opcode" << std::endl << std::endl;
-            break;
+        break;
+    }
+    default:
+        std::cout << "Received Unhandled opcode" << std::endl << std::endl;
+        break;
     }
 
     return true;

@@ -40,68 +40,6 @@ namespace Common
         }
         virtual ~ByteBuffer() { }
 
-        ByteBuffer &operator<<(uint8_t value)
-        {
-            Write<uint8_t>(value);
-            return *this;
-        }
-
-        ByteBuffer &operator<<(uint16_t value)
-        {
-            Write<uint16_t>(value);
-            return *this;
-        }
-
-        ByteBuffer &operator<<(uint32_t value)
-        {
-            Write<uint32_t>(value);
-            return *this;
-        }
-
-        ByteBuffer &operator<<(uint64_t value)
-        {
-            Write<uint64_t>(value);
-            return *this;
-        }
-
-        // signed as in 2e complement
-        ByteBuffer &operator<<(int8_t value)
-        {
-            Write<int8_t>(value);
-            return *this;
-        }
-
-        ByteBuffer &operator<<(int16_t value)
-        {
-            Write<int16_t>(value);
-            return *this;
-        }
-
-        ByteBuffer &operator<<(int32_t value)
-        {
-            Write<int32_t>(value);
-            return *this;
-        }
-
-        ByteBuffer &operator<<(int64_t value)
-        {
-            Write<int64_t>(value);
-            return *this;
-        }
-
-        // floating points
-        ByteBuffer &operator<<(float value)
-        {
-            Write<float>(value);
-            return *this;
-        }
-
-        ByteBuffer &operator<<(double value)
-        {
-            Write<double>(value);
-            return *this;
-        }
-
         void ReadPackedGUID(uint64_t& guid)
         {
             guid = 0;
@@ -145,20 +83,6 @@ namespace Common
             memcpy(destination, &_bufferData[_readPos], length);
             _readPos += length;
         }
-
-        char Read(size_t position)
-        {
-            char val = *((char const*)&_bufferData[position]);
-            return val;
-        }
-
-        char Read()
-        {
-            char r = Read(_readPos);
-            _readPos += sizeof(char);
-            return r;
-        }
-
         void Read(std::string& value)
         {
             value.clear();
@@ -170,14 +94,16 @@ namespace Common
                 value += c;
             }
         }
-
-        void Write(void const* data, std::size_t size)
+        char Read(size_t position)
         {
-            if (size)
-            {
-                memcpy(GetWritePointer(), data, size);
-                WriteBytes(size);
-            }
+            char val = *((char const*)&_bufferData[position]);
+            return val;
+        }
+        char Read()
+        {
+            char r = Read(_readPos);
+            _readPos += sizeof(char);
+            return r;
         }
 
         void WriteString(const std::string& value)
@@ -186,7 +112,14 @@ namespace Common
                 Append((uint8_t const*)value.c_str(), len);
             Write<uint8_t>(0);
         }
-
+        void Write(void const* data, std::size_t size)
+        {
+            if (size)
+            {
+                memcpy(GetWritePointer(), data, size);
+                WriteBytes(size);
+            }
+        }
         template <typename T>
         void Write(T const value)
         {
@@ -201,7 +134,6 @@ namespace Common
         {
             std::memcpy(&_bufferData[position], src, content);
         }
-
 
         void Append(ByteBuffer const& buffer)
         {

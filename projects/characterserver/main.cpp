@@ -38,7 +38,7 @@ int main()
     srand((uint32_t)time(NULL));
 
     asio::io_service io_service(2);
-    NovusConnection novusConnection(new asio::ip::tcp::socket(io_service), ConfigHandler::GetOption<std::string>("relayserverip", "127.0.0.1"), ConfigHandler::GetOption<uint16_t>("relayserverport", 8085));
+    NovusConnection novusConnection(new asio::ip::tcp::socket(io_service), ConfigHandler::GetOption<std::string>("relayserverip", "127.0.0.1"), ConfigHandler::GetOption<uint16_t>("relayserverport", 10000), ConfigHandler::GetOption<uint8_t>("realmId", 1));
 
     if (!novusConnection.Start())
     {

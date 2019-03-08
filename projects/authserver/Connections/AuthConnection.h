@@ -138,6 +138,7 @@ public:
     AuthStatus _status;
 
     std::string username;
+    uint32_t accountGuid;
 
     void ResetPacketsReadThisRead() 
     { 
