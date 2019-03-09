@@ -87,7 +87,7 @@ void BigNumber::Bin2BN(uint8_t const* data, int32_t size)
 std::unique_ptr<uint8_t[]> BigNumber::BN2BinArray(size_t size, bool littleEndian)
 {
     int numBytes = GetBytes();
-    int neededSize = (size >= numBytes) ? size : numBytes;
+    int neededSize = ((int)size >= numBytes) ? (int)size : numBytes;
 
     uint8_t* array = new uint8_t[neededSize];
 
@@ -107,7 +107,7 @@ std::unique_ptr<uint8_t[]> BigNumber::BN2BinArray(size_t size, bool littleEndian
 
 void BigNumber::Rand(size_t bits)
 {
-    BN_rand(_bigNum, bits, 0, 1);
+    BN_rand(_bigNum, (int)bits, 0, 1);
 }
 BigNumber BigNumber::Exponential(BigNumber const& bigNum)
 {

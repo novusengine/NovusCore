@@ -44,7 +44,7 @@ void HMAC_CONTEXT_CLEANUP(HMAC_CTX* context)
 HMACH::HMACH(size_t size, uint8_t* seed)
 {
     _HMAC_CONTEXT = HMAC_CTX_INIT();
-    HMAC_Init_ex(_HMAC_CONTEXT, seed, size, EVP_sha1(), nullptr);
+    HMAC_Init_ex(_HMAC_CONTEXT, seed, (int)size, EVP_sha1(), nullptr);
     memset(_data, 0, sizeof(_data));
 }
 

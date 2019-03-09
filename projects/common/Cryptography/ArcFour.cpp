@@ -28,7 +28,7 @@ ArcFour::ArcFour(size_t size) : _CIPHER_CONTEXT(EVP_CIPHER_CTX_new())
 {
     EVP_CIPHER_CTX_init(_CIPHER_CONTEXT);
     EVP_EncryptInit_ex(_CIPHER_CONTEXT, EVP_rc4(), nullptr, nullptr, nullptr);
-    EVP_CIPHER_CTX_set_key_length(_CIPHER_CONTEXT, size);
+    EVP_CIPHER_CTX_set_key_length(_CIPHER_CONTEXT, (int)size);
 }
 
 ArcFour::ArcFour(uint8_t* seed, size_t size) : _CIPHER_CONTEXT(EVP_CIPHER_CTX_new())
@@ -36,7 +36,7 @@ ArcFour::ArcFour(uint8_t* seed, size_t size) : _CIPHER_CONTEXT(EVP_CIPHER_CTX_ne
     EVP_CIPHER_CTX_init(_CIPHER_CONTEXT);
 
     EVP_EncryptInit_ex(_CIPHER_CONTEXT, EVP_rc4(), nullptr, nullptr, nullptr);
-    EVP_CIPHER_CTX_set_key_length(_CIPHER_CONTEXT, size);
+    EVP_CIPHER_CTX_set_key_length(_CIPHER_CONTEXT, (int)size);
     EVP_EncryptInit_ex(_CIPHER_CONTEXT, nullptr, nullptr, seed, nullptr);
 }
 
@@ -53,6 +53,6 @@ void ArcFour::Setup(uint8_t* seed)
 void ArcFour::UpdateEncryption(size_t size, uint8_t* data)
 {
     int out = 0;
-    EVP_EncryptUpdate(_CIPHER_CONTEXT, data, &out, data, size);
+    EVP_EncryptUpdate(_CIPHER_CONTEXT, data, &out, data, (int)size);
     EVP_EncryptFinal_ex(_CIPHER_CONTEXT, data, &out);
 }
