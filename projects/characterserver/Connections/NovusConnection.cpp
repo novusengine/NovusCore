@@ -404,7 +404,7 @@ bool NovusConnection::HandleCommandForwardPacket()
         }
         case Common::Opcode::CMSG_CHAR_DELETE:
         {
-            uint64_t guid;
+            uint64_t guid = 0;
             _packetBuffer.Read<uint64_t>(guid);
 
             PreparedStatement stmt("SELECT account FROM characters WHERE guid={u};");
