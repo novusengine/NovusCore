@@ -26,6 +26,8 @@ add_executable(worldserver)
 set(WORLDSERVER_MAIN
     "${CMAKE_CURRENT_LIST_DIR}/main.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/NodeSocketHandler.h"
+    "${CMAKE_CURRENT_LIST_DIR}/WorldServerHandler.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/WorldServerHandler.h"
 )
 set(WORLDSERVER_WORLDSOCKET
 "${CMAKE_CURRENT_LIST_DIR}/Socket/NodeSocket.h"

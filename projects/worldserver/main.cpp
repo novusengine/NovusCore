@@ -1,8 +1,19 @@
 #include <iostream>
+#include <chrono>
+#include <future>
+#include <algorithm>
 
 #include <Config\ConfigHandler.h>
 #include <Database/DatabaseConnector.h>
 #include <Utils/DebugHandler.h>
+
+#include "WorldServerHandler.h"
+
+std::string GetLineFromCin() {
+	std::string line;
+	std::getline(std::cin, line);
+	return line;
+}
 
 int main()
 {
@@ -79,5 +90,59 @@ int main()
 			<< std::endl;
 	}
 
+	WorldServerHandler worldServerHandler;
+	worldServerHandler.Start();
+
+	auto future = std::async(std::launch::async, GetLineFromCin);
+	while (true)
+	{
+		Message message;
+		bool shouldExit = false;
+		while (worldServerHandler.TryGetMessage(message))
+		{
+			if (message.code == MSG_OUT_EXIT_CONFIRM)
+			{
+				shouldExit = true;
+				break;
+			}
+			if (message.code == MSG_OUT_PRINT)
+			{
+				std::cout << *message.message << std::endl;
+				delete message.message;
+			}
+		}
+
+		if (shouldExit)
+			break;
+
+		if (future.wait_for(std::chrono::milliseconds(50)) == std::future_status::ready) 
+		{
+			std::string command = future.get();
+			std::transform(command.begin(), command.end(), command.begin(), ::tolower); // Convert command to lowercase
+
+			if (command == "ping")
+			{
+				Message pingMessage;
+				pingMessage.code = MSG_IN_PING;
+				worldServerHandler.PassMessage(pingMessage);
+			}
+			else if (command == "quit" || command == "q" || command == "exit")
+			{
+				Message exitMessage;
+				exitMessage.code = MSG_IN_EXIT;
+				worldServerHandler.PassMessage(exitMessage);
+				std::cout << "Shutting down!" << std::endl;
+			}
+			future = std::async(std::launch::async, GetLineFromCin);
+		}
+	}
+
+	std::string message = "--- Thank you for flying with NovusCore, press enter to exit --- ";
+	for (int i = 0; i < message.size()-1; i++)
+		std::cout << "-";
+	std::cout << std::endl << message << std::endl;
+	for (int i = 0; i < message.size()-1; i++)
+		std::cout << "-";
+	std::cout << std::endl;
 	return 0;
 }
