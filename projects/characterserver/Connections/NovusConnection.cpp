@@ -464,8 +464,6 @@ bool NovusConnection::HandleCommandForwardPacket()
             packetHeader.command = NOVUS_FOWARDPACKET;
             packetHeader.account = header->account;
 
-            uint32_t serverTime = (uint32_t)time(nullptr);
-
             uint64_t playerGuid = 0;
             _packetBuffer.Read<uint64_t>(playerGuid);
 
@@ -484,15 +482,13 @@ bool NovusConnection::HandleCommandForwardPacket()
             SendPacket(verifyWorld);
 
 
-
-
             /* SMSG_ACCOUNT_DATA_TIMES */
             Common::ByteBuffer accountDataForwardPacket;
             Common::ByteBuffer accountDataTimes;
             packetHeader.opcode = Common::Opcode::SMSG_ACCOUNT_DATA_TIMES;
 
             uint32_t mask = 0xEA;
-            accountDataTimes.Write<uint32_t>(serverTime);
+            accountDataTimes.Write<uint32_t>((uint32_t)time(nullptr));
             accountDataTimes.Write<uint8_t>(1); // bitmask blocks count
             accountDataTimes.Write<uint32_t>(mask); // PER_CHARACTER_CACHE_MASK
 
@@ -505,10 +501,7 @@ bool NovusConnection::HandleCommandForwardPacket()
             packetHeader.size = (uint16_t)accountDataTimes.GetActualSize();
             packetHeader.AddTo(accountDataForwardPacket);
             accountDataForwardPacket.Append(accountDataTimes);
-
             SendPacket(accountDataForwardPacket);
-
-
 
 
             /* SMSG_FEATURE_SYSTEM_STATUS */
@@ -520,8 +513,6 @@ bool NovusConnection::HandleCommandForwardPacket()
             featureSystemStatus.Write<uint8_t>(2);
             featureSystemStatus.Write<uint8_t>(0);
             SendPacket(featureSystemStatus);
-
-
 
 
             /* SMSG_MOTD */
@@ -536,10 +527,7 @@ bool NovusConnection::HandleCommandForwardPacket()
             packetHeader.size = (uint16_t)motd.GetActualSize();
             packetHeader.AddTo(motdForwardPacket);
             motdForwardPacket.Append(motd);
-
             SendPacket(motdForwardPacket);
-
-
 
 
             /* SMSG_LEARNED_DANCE_MOVES */
@@ -551,8 +539,6 @@ bool NovusConnection::HandleCommandForwardPacket()
             learnedDanceMoves.Write<uint32_t>(0);
             learnedDanceMoves.Write<uint32_t>(0);
             SendPacket(learnedDanceMoves);
-
-
 
 
             /* SMSG_ACTION_BUTTONS */
@@ -569,8 +555,6 @@ bool NovusConnection::HandleCommandForwardPacket()
             SendPacket(actionButtons);
 
 
-
-
             /* SMSG_LOGIN_SETTIMESPEED */
             Common::ByteBuffer loginSetTimeSpeed;
             packetHeader.opcode = Common::Opcode::SMSG_LOGIN_SETTIMESPEED;
@@ -578,7 +562,7 @@ bool NovusConnection::HandleCommandForwardPacket()
             packetHeader.AddTo(loginSetTimeSpeed);
 
             tm lt;
-            time_t const tmpServerTime = serverTime;
+            time_t const tmpServerTime = time(nullptr);
             localtime_s(&lt, &tmpServerTime);
 
             loginSetTimeSpeed.Write<uint32_t>(((lt.tm_year - 100) << 24 | lt.tm_mon << 20 | (lt.tm_mday - 1) << 14 | lt.tm_wday << 11 | lt.tm_hour << 6 | lt.tm_min));
