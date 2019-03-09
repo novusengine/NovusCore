@@ -43,18 +43,13 @@ bool RelayAuthNodeConnection::Start()
         _socket->connect(asio::ip::tcp::endpoint(asio::ip::address::from_string(_address), _port));
 
         /* NODE_CHALLENGE */
-        Common::ByteBuffer packet(6);
-
-        packet.Write<uint8_t>(0); // Command
-        packet.Write<uint8_t>(0); // Type
-        uint16_t version = 335;
-        packet.Append((uint8_t*)&version, sizeof(version)); // Version
-        uint16_t build = 12340;
-        packet.Append((uint8_t*)&build, sizeof(build)); // Build
-
-        Send(packet);
+        Common::ByteBuffer packet(5);
+        packet.Write<uint8_t>(0);       // Command
+        packet.Write<uint16_t>(335);    // Version
+        packet.Write<uint16_t>(12340);  // Build
 
         AsyncRead();
+        Send(packet);
         return true;
     }
     catch (asio::system_error error)
@@ -110,7 +105,6 @@ void RelayAuthNodeConnection::HandleRead()
 
 bool RelayAuthNodeConnection::HandleCommandChallenge()
 {
-    std::cout << "Received RelayChallenge" << std::endl;
     _status = RELAYSTATUS_CLOSED;
     sRelayChallenge* relayChallenge = reinterpret_cast<sRelayChallenge*>(GetByteBuffer().GetReadPointer());
 
@@ -129,7 +123,6 @@ bool RelayAuthNodeConnection::HandleCommandChallenge()
 
 bool RelayAuthNodeConnection::HandleCommandProof()
 {
-    std::cout << "Received RelayProof" << std::endl;
     _status = RELAYSTATUS_AUTHED;
 
 

@@ -32,7 +32,7 @@ std::unordered_map<uint8_t, NovusMessageHandler> NovusConnection::InitMessageHan
 
     messageHandlers[NOVUS_CHALLENGE]             =   { NOVUSSTATUS_CHALLENGE,         sizeof(cNovusChallenge),  &NovusConnection::HandleCommandChallenge        };
     messageHandlers[NOVUS_PROOF]                 =   { NOVUSSTATUS_PROOF,             1,                        &NovusConnection::HandleCommandProof            };
-    messageHandlers[NOVUS_FOWARDPACKET]          =   { NOVUSSTATUS_AUTHED,            1,                        &NovusConnection::HandleCommandForwardPacket    };
+    messageHandlers[NOVUS_FOWARDPACKET]          =   { NOVUSSTATUS_AUTHED,            9,                        &NovusConnection::HandleCommandForwardPacket    };
 
     return messageHandlers;
 }
@@ -46,43 +46,91 @@ bool NovusConnection::Start()
 
 void NovusConnection::HandleRead()
 {
-    Common::ByteBuffer& byteBuffer = GetByteBuffer();
+    Common::ByteBuffer& buffer = GetByteBuffer();
 
-    while (byteBuffer.GetActualSize())
+    bool isDecrypted = false;
+    while (buffer.GetActualSize())
     {
         // Decrypt data post CHALLENGE Status
-        if (_status == NOVUSSTATUS_PROOF || _status == NOVUSSTATUS_AUTHED)
+        if (!isDecrypted && (_status == NOVUSSTATUS_PROOF || _status == NOVUSSTATUS_AUTHED))
         {
-            _crypto->Decrypt(byteBuffer.GetReadPointer(), byteBuffer.GetActualSize());
+            _crypto->Decrypt(buffer.GetReadPointer(), buffer.GetActualSize());
+            isDecrypted = true;
         }
-        uint8_t command = byteBuffer.GetDataPointer()[0];
+        uint8_t command = buffer.GetDataPointer()[0];
 
         auto itr = MessageHandlers.find(command);
         if (itr == MessageHandlers.end())
         {
             std::cout << "Received HandleRead with no MessageHandler to respond." << std::endl;
-            byteBuffer.Clean();
+            buffer.Clean();
             break;
         }
 
-        // Client attempted incorrect auth step
         if (_status != itr->second.status)
         {
             Close(asio::error::shut_down);
             return;
         }
 
-        uint16_t size = uint16_t(itr->second.packetSize);
-        if (byteBuffer.GetActualSize() < size)
-            break;
-
-        if (!(*this.*itr->second.handler)())
+        if (command == NOVUS_FOWARDPACKET)
         {
-            Close(asio::error::shut_down);
-            return;
-        }
+            // Check if we should read header
+            if (_headerBuffer.GetSpaceLeft() > 0)
+            {
+                size_t headerSize = std::min(buffer.GetActualSize(), _headerBuffer.GetSpaceLeft());
+                _headerBuffer.Write(buffer.GetReadPointer(), headerSize);
+                buffer.ReadBytes(headerSize);
 
-        byteBuffer.ReadBytes(byteBuffer.GetActualSize());
+                if (_headerBuffer.GetSpaceLeft() > 0)
+                {
+                    // Wait until we have the entire header
+                    assert(buffer.GetActualSize() == 0);
+                    break;
+                }
+
+                /* Read Header */
+                NovusHeader* header = reinterpret_cast<NovusHeader*>(_headerBuffer.GetReadPointer());
+                _packetBuffer.Resize(header->size);
+                _packetBuffer.ResetPos();
+            }
+
+            // We have a header, now check the packet data
+            if (_packetBuffer.GetSpaceLeft() > 0)
+            {
+                std::size_t packetSize = std::min(buffer.GetActualSize(), _packetBuffer.GetSpaceLeft());
+                _packetBuffer.Write(buffer.GetReadPointer(), packetSize);
+                buffer.ReadBytes(packetSize);
+
+                if (_packetBuffer.GetSpaceLeft() > 0)
+                {
+                    // Wait until we have all of the packet data
+                    assert(buffer.GetActualSize() == 0);
+                    break;
+                }
+            }
+
+            if (!HandleCommandForwardPacket())
+            {
+                Close(asio::error::shut_down);
+                return;
+            }
+            _headerBuffer.ResetPos();
+        }
+        else
+        {
+            uint16_t size = uint16_t(itr->second.packetSize);
+            if (buffer.GetActualSize() < size)
+                break;
+
+            if (!(*this.*itr->second.handler)())
+            {
+                Close(asio::error::shut_down);
+                return;
+            }
+
+            buffer.ReadBytes(size);
+        }
     }
 
     AsyncRead();
@@ -95,8 +143,6 @@ bool NovusConnection::HandleCommandChallenge()
 
     if (novusChallenge->version == 335 && novusChallenge->build == 12340)
     {
-        _type = novusChallenge->type;
-
         Common::ByteBuffer packet;
         packet.Write<uint8_t>(NOVUS_CHALLENGE);
         packet.Append(_key->BN2BinArray(32).get(), 32);
@@ -124,23 +170,16 @@ bool NovusConnection::HandleCommandProof()
 
 bool NovusConnection::HandleCommandForwardPacket()
 {
-    Common::ByteBuffer& byteBuffer = GetByteBuffer();
-    byteBuffer.ReadBytes(1); // Skip NovusCommand
+    NovusHeader* header = reinterpret_cast<NovusHeader*>(_headerBuffer.GetReadPointer());
+    std::cout << "Received opcode: 0x" << std::hex << std::uppercase << header->opcode << std::endl;
 
-    uint64_t accountGuid = 0;
-    uint16_t clientOpcode = 0;
-    byteBuffer.Read(&accountGuid, 8);
-    byteBuffer.Read(&clientOpcode, 2);
-
-    std::cout << "Received HandleCommandForwardPacket(" << accountGuid << "," << clientOpcode << "," << byteBuffer.GetActualSize() << ")" << std::endl;
-
-    if (RelayConnection* playerConnection = ClientRelayConnectionHandler::GetConnectionByAccountGuid(accountGuid))
+    if (RelayConnection* playerConnection = ClientRelayConnectionHandler::GetConnectionByAccountGuid(header->account))
     {
         Common::ByteBuffer packetBuffer;
-        packetBuffer.Append(byteBuffer.GetReadPointer(), byteBuffer.GetActualSize());
-        playerConnection->SendPacket(packetBuffer, Common::Opcode(clientOpcode));
+        packetBuffer.Append(_packetBuffer.GetReadPointer(), _packetBuffer.GetActualSize());
+        playerConnection->SendPacket(packetBuffer, Common::Opcode(header->opcode));
     }
-    std::cout << std::endl;
+    //std::cout << std::endl;
 
     return true;
 }

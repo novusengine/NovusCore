@@ -38,7 +38,7 @@ public:
             return nullptr;
 
         if (loadDistributionId >= _instance->_connections.size())
-            loadDistributionId = _instance->_connections.size() - 1;
+            loadDistributionId = int(_instance->_connections.size() - 1);
         
         NovusConnection* connection = reinterpret_cast<NovusConnection*>(_instance->_connections.at(loadDistributionId));
         loadDistributionId = (loadDistributionId + 1) % _instance->_connections.size();

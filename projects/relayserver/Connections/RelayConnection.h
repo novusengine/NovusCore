@@ -31,10 +31,40 @@
 #include <Cryptography\SHA1.h>
 #include <random>
 
+#pragma pack(push, 1)
+struct cAuthSessionData
+{
+    uint32_t build;
+    uint32_t loginServerId;
+    std::string accountName;
+    uint32_t loginServerType;
+    uint32_t localChallenge;
+    uint32_t regionId;
+    uint32_t battlegroupId;
+    uint32_t realmId;
+    uint64_t dosResponse;
+    uint8_t  digest[SHA_DIGEST_LENGTH];
+
+    void Read(Common::ByteBuffer& buffer)
+    {
+        buffer.Read<uint32_t>(build);
+        buffer.Read<uint32_t>(loginServerId);
+        buffer.Read(accountName);
+        buffer.Read<uint32_t>(loginServerType);
+        buffer.Read<uint32_t>(localChallenge);
+        buffer.Read<uint32_t>(regionId);
+        buffer.Read<uint32_t>(battlegroupId);
+        buffer.Read<uint32_t>(realmId);
+        buffer.Read<uint64_t>(dosResponse);
+        buffer.Read(&digest, 20);
+    }
+};
+#pragma pack(pop)
+
 class RelayConnection : public Common::BaseSocket
 {
 public:
-    RelayConnection(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), accountGuid(0), accountName(), _headerBuffer(), _packetBuffer()
+    RelayConnection(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), account(0), _headerBuffer(), _packetBuffer()
     {
         _seed = (uint32_t)rand();
         _headerBuffer.Resize(sizeof(Common::ClientPacketHeader));
@@ -66,9 +96,9 @@ public:
     }
     inline void EndianConvertReverse(uint16_t& val) { apply(&val); }
 
-    uint64_t accountGuid;
+    uint32_t account;
     uint64_t characterGuid;
-    std::string accountName;
+    cAuthSessionData sessionData;
     BigNumber* sessionKey;
 
     Common::ByteBuffer _headerBuffer;

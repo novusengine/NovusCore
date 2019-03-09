@@ -30,7 +30,7 @@ class ClientRelayConnectionHandler : public Common::TcpServer
 {
 public:
     ClientRelayConnectionHandler(asio::io_service& io_service, int port) : Common::TcpServer(io_service, port) { _instance = this; }
-    static RelayConnection* GetConnectionByAccountGuid(uint64_t accountGuid)
+    static RelayConnection* GetConnectionByAccountGuid(uint64_t account)
     {
         if (_instance->_connections.size() == 0)
             return nullptr;
@@ -38,7 +38,7 @@ public:
         for (auto itr : _instance->_connections)
         {
             RelayConnection* conn = reinterpret_cast<RelayConnection*>(itr);
-            if (conn->accountGuid == accountGuid && !conn->IsClosed())
+            if (conn->account == account && !conn->IsClosed())
                 return conn;
         }
 

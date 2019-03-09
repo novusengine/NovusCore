@@ -58,27 +58,13 @@ namespace Common
             }
         }
 
+        template <typename T>
+        void Read(T& destination)
+        {
+            destination = *((T const*)&_bufferData[_readPos]);
+            _readPos += sizeof(T);
+        }
         void Read(void* destination, size_t length)
-        {
-            memcpy(destination, &_bufferData[_readPos], length);
-            _readPos += length;
-        }
-        void Read(uint8_t* destination, size_t length)
-        {
-            memcpy(destination, &_bufferData[_readPos], length);
-            _readPos += length;
-        }
-        void Read(uint16_t* destination, size_t length)
-        {
-            memcpy(destination, &_bufferData[_readPos], length);
-            _readPos += length;
-        }
-        void Read(uint32_t* destination, size_t length)
-        {
-            memcpy(destination, &_bufferData[_readPos], length);
-            _readPos += length;
-        }
-        void Read(uint64_t* destination, size_t length)
         {
             memcpy(destination, &_bufferData[_readPos], length);
             _readPos += length;
@@ -94,16 +80,16 @@ namespace Common
                 value += c;
             }
         }
-        char Read(size_t position)
-        {
-            char val = *((char const*)&_bufferData[position]);
-            return val;
-        }
         char Read()
         {
             char r = Read(_readPos);
             _readPos += sizeof(char);
             return r;
+        }
+        char Read(size_t position)
+        {
+            char val = *((char const*)&_bufferData[position]);
+            return val;
         }
 
         void WriteString(const std::string& value)

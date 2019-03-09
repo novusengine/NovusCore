@@ -47,7 +47,6 @@ enum AuthNodeStatus
 struct AuthNodeChallenge
 {
     uint8_t     command;
-    uint8_t     type;
     uint16_t    version;
     uint16_t    build;
 };
@@ -59,7 +58,7 @@ class AuthNodeConnection : public Common::BaseSocket
 public:
     static std::unordered_map<uint8_t, AuthNodeMessageHandler> InitMessageHandlers();
 
-    AuthNodeConnection(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), _status(NODESTATUS_CHALLENGE), _crypto(), _type(255)
+    AuthNodeConnection(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), _status(NODESTATUS_CHALLENGE), _crypto()
     {
         _crypto = new StreamCrypto();
         _key = new BigNumber();
@@ -73,7 +72,6 @@ public:
     bool HandleCommandProof();
 
     AuthNodeStatus _status;
-    uint8_t _type;
 
     private:
     StreamCrypto* _crypto;

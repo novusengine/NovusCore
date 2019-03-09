@@ -29,27 +29,73 @@
 
 #include "../ConnectionHandlers/NovusConnectionHandler.h"
 
-using namespace std::chrono;
-static const steady_clock::time_point ApplicationStartTime = steady_clock::now();
+enum AuthResponse
+{
+    AUTH_OK                                                = 12,
+    AUTH_FAILED                                            = 13,
+    AUTH_REJECT                                            = 14,
+    AUTH_BAD_SERVER_PROOF                                  = 15,
+    AUTH_UNAVAILABLE                                       = 16,
+    AUTH_SYSTEM_ERROR                                      = 17,
+    AUTH_BILLING_ERROR                                     = 18,
+    AUTH_BILLING_EXPIRED                                   = 19,
+    AUTH_VERSION_MISMATCH                                  = 20,
+    AUTH_UNKNOWN_ACCOUNT                                   = 21,
+    AUTH_INCORRECT_PASSWORD                                = 22,
+    AUTH_SESSION_EXPIRED                                   = 23,
+    AUTH_SERVER_SHUTTING_DOWN                              = 24,
+    AUTH_ALREADY_LOGGING_IN                                = 25,
+    AUTH_LOGIN_SERVER_NOT_FOUND                            = 26,
+    AUTH_WAIT_QUEUE                                        = 27,
+    AUTH_BANNED                                            = 28,
+    AUTH_ALREADY_ONLINE                                    = 29,
+    AUTH_NO_TIME                                           = 30,
+    AUTH_DB_BUSY                                           = 31,
+    AUTH_SUSPENDED                                         = 32,
+    AUTH_PARENTAL_CONTROL                                  = 33,
+    AUTH_LOCKED_ENFORCED                                   = 34
+};
+
+#pragma pack(push, 1)
+struct sAuthChallenge
+{
+    uint32_t unk;
+    uint32_t authSeed;
+
+    uint8_t seed1[16];
+    uint8_t seed2[16];
+
+    void AddTo(Common::ByteBuffer& buffer)
+    {
+        buffer.Append((uint8_t*)this, sizeof(sAuthChallenge));
+    }
+
+    void Append(uint8_t* dest, const uint8_t* src, size_t size)
+    {
+        std::memcpy(dest, src, size);
+    }
+};
+#pragma pack(pop)
 
 bool RelayConnection::Start()
 {
     AsyncRead();
 
-    /* SMSG_AUTH_CHALLENGE */
-    Common::ByteBuffer authChallenge(37);
-    authChallenge.Write<uint32_t>(1); // Unk
-    authChallenge.Write<uint32_t>(_seed);
+    BigNumber seed1;
+    seed1.Rand(16 * 8);
 
-    BigNumber s1;
-    s1.Rand(16 * 8);
-    authChallenge.Append(s1.BN2BinArray(16).get(), 16);
+    BigNumber seed2;
+    seed2.Rand(16 * 8);
 
-    BigNumber s2;
-    s2.Rand(16 * 8);
-    authChallenge.Append(s2.BN2BinArray(16).get(), 16);
+    Common::ByteBuffer authPacket;
+    sAuthChallenge challenge;
+    challenge.unk = 1;
+    challenge.authSeed = _seed;
+    challenge.Append(challenge.seed1, seed1.BN2BinArray(32).get(), 16);
+    challenge.Append(challenge.seed2, seed2.BN2BinArray(32).get(), 16);
+    challenge.AddTo(authPacket);
 
-    SendPacket(authChallenge, Common::Opcode::SMSG_AUTH_CHALLENGE);
+    SendPacket(authPacket, Common::Opcode::SMSG_AUTH_CHALLENGE);
     return true;
 }
 
@@ -59,22 +105,21 @@ void RelayConnection::HandleRead()
 
     while (buffer.GetActualSize() > 0)
     {
+        // Check if we should read header
         if (_headerBuffer.GetSpaceLeft() > 0)
         {
-            // need to receive the header
-            std::size_t readHeaderSize = std::min(buffer.GetActualSize(), _headerBuffer.GetSpaceLeft());
-            _headerBuffer.Write(buffer.GetReadPointer(), readHeaderSize);
-            buffer.ReadBytes(readHeaderSize);
+            size_t headerSize = std::min(buffer.GetActualSize(), _headerBuffer.GetSpaceLeft());
+            _headerBuffer.Write(buffer.GetReadPointer(), headerSize);
+            buffer.ReadBytes(headerSize);
 
             if (_headerBuffer.GetSpaceLeft() > 0)
             {
-                // Couldn't receive the whole header this time.
+                // Wait until we have the entire header
                 assert(buffer.GetActualSize() == 0);
                 break;
             }
 
-            // We just nice new header
-            //std::cout << "Just new header" << std::endl;
+            // Handle newly received header
             if (!HandleHeaderRead())
             {
                 Close(asio::error::shut_down);
@@ -82,22 +127,22 @@ void RelayConnection::HandleRead()
             }
         }
 
-        // We have full read header, now check the data payload
+        // We have a header, now check the packet data
         if (_packetBuffer.GetSpaceLeft() > 0)
         {
-            // need more data in the payload
-            std::size_t readDataSize = std::min(buffer.GetActualSize(), _packetBuffer.GetSpaceLeft());
-            _packetBuffer.Write(buffer.GetReadPointer(), readDataSize);
-            buffer.ReadBytes(readDataSize);
+            size_t packetSize = std::min(buffer.GetActualSize(), _packetBuffer.GetSpaceLeft());
+            _packetBuffer.Write(buffer.GetReadPointer(), packetSize);
+            buffer.ReadBytes(packetSize);
 
             if (_packetBuffer.GetSpaceLeft() > 0)
             {
-                // Couldn't receive the whole data this time.
+                // Wait until we have all of the packet data
                 assert(buffer.GetActualSize() == 0);
                 break;
             }
         }
 
+        // Handle newly received packet
         if (!HandlePacketRead())
         {
             Close(asio::error::shut_down);
@@ -141,30 +186,29 @@ bool RelayConnection::HandlePacketRead()
     {
         case Common::Opcode::CMSG_PING:
         {
-            std::cout << "CMSG_PING Opcode: 0x" << std::uppercase << std::hex << opcode << std::dec << "(" << opcode << ")" << std::endl;
-
             Common::ByteBuffer pong(4);
             pong.Write<uint32_t>(0);
             SendPacket(pong, Common::Opcode::SMSG_PONG);
             break;
         }
         case Common::Opcode::CMSG_KEEP_ALIVE:
-            std::cout << "CMSG_KEEP_ALIVE Opcode: 0x" << std::uppercase << std::hex << opcode << std::dec << "(" << opcode << ")" << std::endl;
             break;
         case Common::Opcode::CMSG_AUTH_SESSION:
-            std::cout << "CMSG_AUTH_SESSION Opcode: 0x" << std::uppercase << std::hex << opcode << std::dec << "(" << opcode << ")" << std::endl;
             HandleAuthSession();
             break;
         default:
-            std::cout << "Forwarding Opcode: 0x" << std::uppercase << std::hex << opcode << std::dec << "(" << opcode << ")" << std::endl;
+            //std::cout << "Forwarding Opcode: 0x" << std::uppercase << std::hex << opcode << std::dec << "(" << opcode << ")" << std::endl;
             if (NovusConnection* characterServer = NovusConnectionHandler::GetConnection())
             {
                 Common::ByteBuffer forwardedPacket;
 
                 // Write the base novus structure for the packet
-                forwardedPacket.Write<uint8_t>(NOVUS_FOWARDPACKET);
-                forwardedPacket.Write<uint64_t>(accountGuid);
-                forwardedPacket.Write<uint16_t>(opcode);
+                NovusHeader packetHeader;
+                packetHeader.command = NOVUS_FOWARDPACKET;
+                packetHeader.account = account;
+                packetHeader.opcode = opcode;
+                packetHeader.size = _packetBuffer.GetActualSize();
+                packetHeader.AddTo(forwardedPacket);
 
                 // Add packet content (Append while make sure we only write if there is content)
                 forwardedPacket.Append(_packetBuffer);
@@ -194,42 +238,23 @@ void RelayConnection::SendPacket(Common::ByteBuffer& packet, Common::Opcode opco
 
 void RelayConnection::HandleAuthSession()
 {
-    uint32_t Build = 0;
-    uint32_t LoginServerID = 0;
-    std::string Account;
-    uint32_t LoginServerType = 0;
-    uint32_t LocalChallenge = 0;
-    uint32_t RegionID = 0;
-    uint32_t BattlegroupID = 0;
-    uint32_t RealmID = 0;
-    uint64_t DosResponse = 0;
-    uint8_t Digest[SHA_DIGEST_LENGTH] = {};
-    Common::ByteBuffer AddonInfo;
+    /* Read AuthSession Data */
+    sessionData.Read(_packetBuffer);
 
-    _packetBuffer.Read(&Build, 4);
-    _packetBuffer.Read(&LoginServerID, 4);
-    _packetBuffer.Read(Account);
-    _packetBuffer.Read(&LoginServerType, 4);
-    _packetBuffer.Read(&LocalChallenge, 4);
-    _packetBuffer.Read(&RegionID, 4);
-    _packetBuffer.Read(&BattlegroupID, 4);
-    _packetBuffer.Read(&RealmID, 4);
-    _packetBuffer.Read(&DosResponse, 8);
-    _packetBuffer.Read(&Digest, 20);
+    Common::ByteBuffer AddonInfo;
     AddonInfo.Append(_packetBuffer.data() + _packetBuffer._readPos, _packetBuffer.size() - _packetBuffer._readPos);
 
-    // Make sure the account exist.
     PreparedStatement stmt("SELECT guid, sessionKey FROM accounts WHERE username={s};");
-    stmt.Bind(Account);
-    DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, stmt, [this, Account, LocalChallenge, Digest](amy::result_set& results, DatabaseConnector& connector)
+    stmt.Bind(sessionData.accountName);
+    DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, stmt, [this](amy::result_set& results, DatabaseConnector& connector)
     {
+        // Make sure the account exist.
         if (results.affected_rows() != 1)
         {
             Close(asio::error::interrupted);
             return;
         }
-        accountGuid = results[0][0].as<amy::sql_bigint_unsigned>();
-        accountName = Account;
+        account = results[0][0].as<amy::sql_int_unsigned>();
 
         // We need to try to use the session key that we have, if we don't the client won't be able to read the auth response error.
         sessionKey->Hex2BN(results[0][1].as<amy::sql_varchar>().c_str());
@@ -237,30 +262,31 @@ void RelayConnection::HandleAuthSession()
 
         SHA1Hasher sha;
         uint32_t t = 0;
-        sha.UpdateHash(accountName);
+        sha.UpdateHash(sessionData.accountName);
         sha.UpdateHash((uint8_t*)&t, 4);
-        sha.UpdateHash((uint8_t*)&LocalChallenge, 4);
+        sha.UpdateHash((uint8_t*)&sessionData.localChallenge, 4);
         sha.UpdateHash((uint8_t*)&_seed, 4);
         sha.UpdateHashForBn(1, sessionKey);
         sha.Finish();
 
-        if (memcmp(sha.GetData(), Digest, SHA_DIGEST_LENGTH) != 0)
+        if (memcmp(sha.GetData(), sessionData.digest, SHA_DIGEST_LENGTH) != 0)
         {
-            std::cout << "Keys does not match" << std::endl;
-            // BAD BAD WOLF, SCREEEETCH
             Close(asio::error::interrupted);
             return;
         }
 
-        Common::ByteBuffer packet(1);
-        packet.Write<uint8_t>(12);
+        /* SMSG_AUTH_RESPONSE */
+        Common::ByteBuffer packet(1 + 4 + 1 + 4 + 1);
+        packet.Write<uint8_t>(AUTH_OK);
+        packet.Write<uint32_t>(0);
+        packet.Write<uint8_t>(0);
+        packet.Write<uint32_t>(0);
+        packet.Write<uint8_t>(2); // Expansion
         SendPacket(packet, Common::Opcode::SMSG_AUTH_RESPONSE);
-        std::cout << "SMSG_AUTH_RESPONSE" << std::endl;
 
         Common::ByteBuffer clientCache(4);
         clientCache.Write<uint32_t>(0);
         SendPacket(clientCache, Common::Opcode::SMSG_CLIENTCACHE_VERSION);
-        std::cout << "SMSG_CLIENTCACHE_VERSION" << std::endl;
 
         // Tutorial Flags : REQUIRED
         Common::ByteBuffer tutorialFlags(4 * 8);
@@ -268,7 +294,6 @@ void RelayConnection::HandleAuthSession()
             tutorialFlags.Write<uint32_t>(0xFF);
 
         SendPacket(tutorialFlags, Common::Opcode::SMSG_TUTORIAL_FLAGS);
-        std::cout << "SMSG_TUTORIAL_FLAGS" << std::endl;
 
     });
 }

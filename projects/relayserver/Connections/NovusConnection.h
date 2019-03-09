@@ -48,9 +48,29 @@ enum NovusStatus
 struct cNovusChallenge
 {
     uint8_t     command;
-    uint8_t     type;
     uint16_t    version;
     uint16_t    build;
+};
+
+struct NovusHeader
+{
+    uint8_t     command;
+    uint32_t    account;
+    uint16_t    opcode;
+    uint16_t    size;
+
+    void Read(Common::ByteBuffer& buffer)
+    {
+        buffer.Read<uint8_t>(command);
+        buffer.Read<uint32_t>(account);
+        buffer.Read<uint16_t>(opcode);
+        buffer.Read<uint16_t>(size);
+    }
+
+    void AddTo(Common::ByteBuffer& buffer)
+    {
+        buffer.Append((uint8_t*)this, sizeof(NovusHeader));
+    }
 };
 #pragma pack(pop)
 
@@ -60,11 +80,13 @@ class NovusConnection : public Common::BaseSocket
 public:
     static std::unordered_map<uint8_t, NovusMessageHandler> InitMessageHandlers();
 
-    NovusConnection(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), _status(NOVUSSTATUS_CHALLENGE), _crypto(), _type(255)
+    NovusConnection(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), _status(NOVUSSTATUS_CHALLENGE), _crypto(), _headerBuffer(), _packetBuffer()
     {
         _crypto = new StreamCrypto();
         _key = new BigNumber();
         _key->Rand(16 * 8);
+
+        _headerBuffer.Resize(sizeof(NovusHeader));
     }
 
     bool Start() override;
@@ -75,11 +97,13 @@ public:
     bool HandleCommandForwardPacket();
 
     NovusStatus _status;
-    uint8_t _type;
     StreamCrypto* _crypto;
 
     private:
     BigNumber* _key;
+
+    Common::ByteBuffer _headerBuffer;
+    Common::ByteBuffer _packetBuffer;
 };
 
 #pragma pack(push, 1)

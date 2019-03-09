@@ -88,14 +88,11 @@ void AuthNodeConnection::HandleRead()
 
 bool AuthNodeConnection::HandleCommandChallenge()
 {
-    std::cout << "Received NodeChallenge" << std::endl;
     _status = NODESTATUS_CLOSED;
     AuthNodeChallenge* authNodeChallenge = reinterpret_cast<AuthNodeChallenge*>(GetByteBuffer().GetReadPointer());
 
     if (authNodeChallenge->version == 335 && authNodeChallenge->build == 12340)
     {
-        _type = authNodeChallenge->type;
-
         Common::ByteBuffer packet;
         packet.Write<uint8_t>(NODE_CHALLENGE);
         packet.Append(_key->BN2BinArray(32).get(), 32);
@@ -111,7 +108,6 @@ bool AuthNodeConnection::HandleCommandChallenge()
 
 bool AuthNodeConnection::HandleCommandProof()
 {
-    std::cout << "Received NodeProof" << std::endl;
     _status = NODESTATUS_AUTHED;
 
     Common::ByteBuffer packet;

@@ -50,6 +50,55 @@ struct sNovusChallenge
     uint8_t command;
     uint8_t K[32];
 };
+
+struct NovusHeader
+{
+    uint8_t     command;
+    uint32_t    account;
+    uint16_t    opcode;
+    uint16_t    size;
+
+    void Read(Common::ByteBuffer& buffer)
+    {
+        buffer.Read<uint8_t>(command);
+        buffer.Read<uint32_t>(account);
+        buffer.Read<uint16_t>(opcode);
+        buffer.Read<uint16_t>(size);
+    }
+
+    void AddTo(Common::ByteBuffer& buffer)
+    {
+        buffer.Append((uint8_t*)this, sizeof(NovusHeader));
+    }
+};
+
+struct cCharacterCreateData
+{
+    std::string charName;
+    uint8_t charRace;
+    uint8_t charClass;
+    uint8_t charGender;
+    uint8_t charSkin;
+    uint8_t charFace;
+    uint8_t charHairStyle;
+    uint8_t charHairColor;
+    uint8_t charFacialStyle;
+    uint8_t charOutfitId;
+
+    void Read(Common::ByteBuffer& buffer)
+    {
+        buffer.Read(charName);
+        buffer.Read<uint8_t>(charRace);
+        buffer.Read<uint8_t>(charClass);
+        buffer.Read<uint8_t>(charGender);
+        buffer.Read<uint8_t>(charSkin);
+        buffer.Read<uint8_t>(charFace);
+        buffer.Read<uint8_t>(charHairStyle);
+        buffer.Read<uint8_t>(charHairColor);
+        buffer.Read<uint8_t>(charFacialStyle);
+        buffer.Read<uint8_t>(charOutfitId);
+    }
+};
 #pragma pack(pop)
 
 struct NovusMessageHandler;
@@ -58,10 +107,12 @@ class NovusConnection : Common::BaseSocket
 public:
     static std::unordered_map<uint8_t, NovusMessageHandler> InitMessageHandlers();
 
-    NovusConnection(asio::ip::tcp::socket* socket, std::string address, uint16_t port, uint8_t realmId) : Common::BaseSocket(socket), _status(NOVUSSTATUS_CHALLENGE), _crypto(), _address(address), _port(port), _realmId(realmId)
+    NovusConnection(asio::ip::tcp::socket* socket, std::string address, uint16_t port, uint8_t realmId) : Common::BaseSocket(socket), _status(NOVUSSTATUS_CHALLENGE), _crypto(), _address(address), _port(port), _realmId(realmId), _headerBuffer(), _packetBuffer()
     { 
         _crypto = new StreamCrypto();
         _key = new BigNumber();
+
+        _headerBuffer.Resize(sizeof(NovusHeader));
     }
 
     bool Start() override;
@@ -81,6 +132,9 @@ private:
 
     StreamCrypto* _crypto;
     BigNumber* _key;
+
+    Common::ByteBuffer _headerBuffer;
+    Common::ByteBuffer _packetBuffer;
 };
 
 #pragma pack(push, 1)
