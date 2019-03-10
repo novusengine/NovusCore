@@ -1,5 +1,7 @@
 #include "WorldServerHandler.h"
+#include <Utils/Timer.h>
 #include <thread>
+#include <iostream>
 
 
 // Systems
@@ -47,7 +49,8 @@ void WorldServerHandler::Stop()
 	PassMessage(message);
 }
 
-
+// TODO: Move this to config file
+#define TARGET_TICK_RATE 30.0f
 
 void WorldServerHandler::Run()
 {
@@ -58,10 +61,29 @@ void WorldServerHandler::Run()
 		_componentRegistry->assign<PositionComponent>(entity, 0u, i * 1.f, i * 1.f, i * 1.f, i * 1.f);
 	}
 
+	Timer timer;
 	while (true)
 	{
-		if (!Update(1.0f))
+		f32 deltaTime = timer.GetDeltaTime();
+		timer.Tick();
+		
+		if (!Update(deltaTime))
 			break;
+
+		// Wait for tick rate, this might be an overkill implementation but it has the least amount of stuttering I've ever found - MPursche
+		f32 targetDelta = 1.0f / TARGET_TICK_RATE;
+		for (deltaTime = timer.GetDeltaTime(); deltaTime < targetDelta; deltaTime = timer.GetDeltaTime())
+		{
+			f32 remaining = targetDelta - deltaTime;
+			if (remaining < 2.0f)
+			{
+				std::this_thread::yield();
+			}
+			else
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			}
+		}
 	}
 
 	// Clean up stuff here
@@ -73,6 +95,11 @@ void WorldServerHandler::Run()
 
 bool WorldServerHandler::Update(f32 deltaTime)
 {
+	Message updateMessage;
+	updateMessage.code = MSG_OUT_PRINT;
+	updateMessage.message = new std::string("Updated!");
+	_outputQueue.push(updateMessage);
+
 	Message message;
 	while (_inputQueue.try_pop(message))
 	{
