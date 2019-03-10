@@ -1,6 +1,6 @@
 # MIT License
 
-# Copyright (c) 2018 NovusCore
+# Copyright (c) 2018-2019 NovusCore
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,31 +21,16 @@
 # SOFTWARE.
 
 project(characterserver VERSION 1.0.0 DESCRIPTION "characterserver for NovusCore")
-add_executable(characterserver)
 
-set(CHARACTERSERVER_MAIN
-    "${CMAKE_CURRENT_LIST_DIR}/main.cpp"
-)
-set(CHARACTERSERVER_CONNECTIONS
-    "${CMAKE_CURRENT_LIST_DIR}/Connections/NovusConnection.h"
-    "${CMAKE_CURRENT_LIST_DIR}/Connections/NovusConnection.cpp"
-)
-
+file(GLOB_RECURSE CHARACTERSERVER_FILES "*.cpp" "*.h")
 set(CHARACTERSERVER_DEPENDENCIES
     "../common/Dependencies/amy"
     "../common/Dependencies/json"
     "${ZLIB_INCLUDE_DIRS}"
 )
 
-source_group(" " FILES ${CHARACTERSERVER_MAIN})
-source_group(Connections FILES ${CHARACTERSERVER_CONNECTIONS})
-
-target_sources(characterserver
-    PRIVATE
-    ${CHARACTERSERVER_MAIN}
-    ${CHARACTERSERVER_CONNECTIONS}
-)
-
+add_executable(characterserver ${CHARACTERSERVER_FILES})
+find_assign_files(${CHARACTERSERVER_FILES})
 
 # Set VERSION & FOLDER Property
 set_target_properties(characterserver PROPERTIES VERSION ${PROJECT_VERSION})

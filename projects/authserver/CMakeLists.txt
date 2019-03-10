@@ -1,6 +1,6 @@
 # MIT License
 
-# Copyright (c) 2018 NovusCore
+# Copyright (c) 2018-2019 NovusCore
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,37 +21,15 @@
 # SOFTWARE.
 
 project(authserver VERSION 1.0.0 DESCRIPTION "Authserver for NovusCore")
-add_executable(authserver)
 
-set(AUTHSERVER_MAIN
-    "${CMAKE_CURRENT_LIST_DIR}/main.cpp"
-)
-set(AUTHSERVER_CONNECTIONS
-    "${CMAKE_CURRENT_LIST_DIR}/Connections/AuthConnection.h"
-    "${CMAKE_CURRENT_LIST_DIR}/Connections/AuthConnection.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/Connections/AuthNodeConnection.h"
-    "${CMAKE_CURRENT_LIST_DIR}/Connections/AuthNodeConnection.cpp"
-)
-set(AUTHSERVER_CONNECTIONHANDLERS
-    "${CMAKE_CURRENT_LIST_DIR}/ConnectionHandlers/ClientAuthConnectionHandler.h"
-    "${CMAKE_CURRENT_LIST_DIR}/ConnectionHandlers/RelayNodeConnectionHandler.h"
-)
-
+file(GLOB_RECURSE AUTHSERVER_FILES "*.cpp" "*.h")
 set(AUTHSERVER_DEPENDENCIES
     "../common/Dependencies/amy"
     "../common/Dependencies/json"
 )
 
-source_group(" " FILES ${AUTHSERVER_MAIN})
-source_group(Connections FILES ${AUTHSERVER_CONNECTIONS})
-source_group(ConnectionHandlers FILES ${AUTHSERVER_CONNECTIONHANDLERS})
-
-target_sources(authserver
-    PRIVATE
-    ${AUTHSERVER_MAIN}
-    ${AUTHSERVER_CONNECTIONS}
-    ${AUTHSERVER_CONNECTIONHANDLERS}
-)
+add_executable(authserver ${AUTHSERVER_FILES})
+find_assign_files(${AUTHSERVER_FILES})
 
 # Set VERSION & FOLDER Property
 set_target_properties(authserver PROPERTIES VERSION ${PROJECT_VERSION})

@@ -1,6 +1,6 @@
 # MIT License
 
-# Copyright (c) 2018 NovusCore
+# Copyright (c) 2018-2019 NovusCore
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,41 +21,16 @@
 # SOFTWARE.
 
 project(relayserver VERSION 1.0.0 DESCRIPTION "relayserver for NovusCore")
-add_executable(relayserver)
 
-set(RELAYSERVER_MAIN
-    "${CMAKE_CURRENT_LIST_DIR}/main.cpp"
-)
-set(RELAYSERVER_CONNECTIONS
-    "${CMAKE_CURRENT_LIST_DIR}/Connections/RelayConnection.h"
-    "${CMAKE_CURRENT_LIST_DIR}/Connections/RelayConnection.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/Connections/NovusConnection.h"
-    "${CMAKE_CURRENT_LIST_DIR}/Connections/NovusConnection.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/Connections/RelayAuthNodeConnection.h"
-    "${CMAKE_CURRENT_LIST_DIR}/Connections/RelayAuthNodeConnection.cpp"
-)
-set(RELAYSERVER_CONNECTIONHANDLERS
-    "${CMAKE_CURRENT_LIST_DIR}/ConnectionHandlers/ClientRelayConnectionHandler.h"
-    "${CMAKE_CURRENT_LIST_DIR}/ConnectionHandlers/NovusConnectionHandler.h"
-)
-
+file(GLOB_RECURSE RELAYSERVER_FILES "*.cpp" "*.h")
 set(RELAYSERVER_DEPENDENCIES
     "../common/Dependencies/amy"
     "../common/Dependencies/json"
     "${ZLIB_INCLUDE_DIRS}"
 )
 
-source_group(" " FILES ${RELAYSERVER_MAIN})
-source_group(Connections FILES ${RELAYSERVER_CONNECTIONS})
-source_group(ConnectionHandlers FILES ${RELAYSERVER_CONNECTIONHANDLERS})
-
-target_sources(relayserver
-    PRIVATE
-    ${RELAYSERVER_MAIN}
-    ${RELAYSERVER_CONNECTIONS}
-    ${RELAYSERVER_CONNECTIONHANDLERS}
-)
-
+add_executable(relayserver ${RELAYSERVER_FILES})
+find_assign_files(${RELAYSERVER_FILES})
 
 # Set VERSION & FOLDER Property
 set_target_properties(relayserver PROPERTIES VERSION ${PROJECT_VERSION})

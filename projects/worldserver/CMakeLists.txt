@@ -1,6 +1,6 @@
 # MIT License
 
-# Copyright (c) 2018 NovusCore
+# Copyright (c) 2018-2019 NovusCore
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,41 +21,15 @@
 # SOFTWARE.
 
 project(worldserver VERSION 1.0.0 DESCRIPTION "Worldserver for NovusCore")
-add_executable(worldserver)
 
-set(WORLDSERVER_MAIN
-    "${CMAKE_CURRENT_LIST_DIR}/main.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/NodeSocketHandler.h"
-    "${CMAKE_CURRENT_LIST_DIR}/WorldServerHandler.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/WorldServerHandler.h"
-    "${CMAKE_CURRENT_LIST_DIR}/ConsoleCommands.h"
-    "${CMAKE_CURRENT_LIST_DIR}/Message.h"
-)
-set(WORLDSERVER_WORLDSOCKET
-"${CMAKE_CURRENT_LIST_DIR}/Socket/NodeSocket.h"
-"${CMAKE_CURRENT_LIST_DIR}/Socket/NodeSocket.cpp"
-)
-set(WORLDSERVER_COMMANDS
-    "${CMAKE_CURRENT_LIST_DIR}/ConsoleCommands/PingCommand.h"
-    "${CMAKE_CURRENT_LIST_DIR}/ConsoleCommands/QuitCommand.H"
-)
-
+file(GLOB_RECURSE WORLDSERVER_FILES "*.cpp" "*.h")
 set(WORLDSERVER_DEPENDENCIES
     "../common/Dependencies/amy"
     "../common/Dependencies/json"
 )
 
-source_group(" " FILES ${WORLDSERVER_MAIN})
-source_group(Socket FILES ${WORLDSERVER_WORLDSOCKET})
-source_group(ConsoleCommands FILES ${WORLDSERVER_COMMANDS})
-
-target_sources(worldserver
-    PRIVATE
-    ${WORLDSERVER_MAIN}
-    ${WORLDSERVER_WORLDSOCKET}
-    ${WORLDSERVER_COMMANDS}
-)
-
+add_executable(worldserver ${WORLDSERVER_FILES})
+find_assign_files(${WORLDSERVER_FILES})
 
 # Set VERSION & FOLDER Property
 set_target_properties(worldserver PROPERTIES VERSION ${PROJECT_VERSION})

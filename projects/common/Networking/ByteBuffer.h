@@ -64,6 +64,11 @@ namespace Common
             destination = *((T const*)&_bufferData[_readPos]);
             _readPos += sizeof(T);
         }
+        template <typename T>
+        T ReadAt(size_t position)
+        {
+            return *((T const*)&_bufferData[position]);
+        }
         void Read(void* destination, size_t length)
         {
             memcpy(destination, &_bufferData[_readPos], length);
@@ -102,7 +107,7 @@ namespace Common
         {
             if (size)
             {
-                memcpy(GetWritePointer(), data, size);
+                std::memcpy(&_bufferData[_writePos], data, size);
                 WriteBytes(size);
             }
         }
@@ -111,6 +116,13 @@ namespace Common
         {
             Append((uint8_t*)&value, sizeof(value));
         }
+        template <typename T>
+        void WriteAt(T const value, size_t position)
+        {
+            assert(_bufferData.size() > position);
+            std::memcpy(&_bufferData[position], (uint8_t*)&value, sizeof(T));
+        }
+
         template <typename T>
         void Replace(size_t position, T Value)
         {
