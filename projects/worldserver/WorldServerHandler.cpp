@@ -1,6 +1,9 @@
 #include "WorldServerHandler.h"
-
 #include <thread>
+
+
+// Systems
+#include "ECS/Systems/ClientUpdateSystem.h"
 
 WorldServerHandler::WorldServerHandler()
 	: _isRunning(false)
@@ -44,8 +47,17 @@ void WorldServerHandler::Stop()
 	PassMessage(message);
 }
 
+
+
 void WorldServerHandler::Run()
 {
+	_componentRegistry = new entt::registry<u32>();
+	// Temporary for now, don't worry
+	for (u32 i = 0; i < 10; ++i) {
+		auto entity = _componentRegistry->create();
+		_componentRegistry->assign<PositionComponent>(entity, 0u, i * 1.f, i * 1.f, i * 1.f, i * 1.f);
+	}
+
 	while (true)
 	{
 		if (!Update(1.0f))
@@ -59,7 +71,7 @@ void WorldServerHandler::Run()
 	_outputQueue.push(exitMessage);
 }
 
-bool WorldServerHandler::Update(float deltaTime)
+bool WorldServerHandler::Update(f32 deltaTime)
 {
 	Message message;
 	while (_inputQueue.try_pop(message))
@@ -78,5 +90,12 @@ bool WorldServerHandler::Update(float deltaTime)
 			_outputQueue.push(pongMessage);
 		}
 	}
+
+	UpdateSystems(deltaTime);
 	return true;
+}
+
+void WorldServerHandler::UpdateSystems(f32 deltaTime)
+{
+	ClientUpdateSystem::Update(deltaTime, *_componentRegistry);
 }

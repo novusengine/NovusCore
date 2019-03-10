@@ -1,6 +1,8 @@
 #pragma once
+#include <NovusTypes.h>
 #include "Utils/ConcurrentQueue.h"
 #include "Message.h"
+#include <entt.hpp>
 
 enum InputMessages
 {
@@ -28,11 +30,13 @@ public:
 
 private:
 	void Run();
-	bool Update(float deltaTime);
+	bool Update(f32 deltaTime);
+	void UpdateSystems(f32 deltaTime);
 
 private:
 	bool _isRunning;
 
 	ConcurrentQueue<Message> _inputQueue;
 	ConcurrentQueue<Message> _outputQueue;
+	entt::registry<u32>* _componentRegistry;
 };
