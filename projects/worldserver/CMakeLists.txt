@@ -28,10 +28,16 @@ set(WORLDSERVER_MAIN
     "${CMAKE_CURRENT_LIST_DIR}/NodeSocketHandler.h"
     "${CMAKE_CURRENT_LIST_DIR}/WorldServerHandler.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/WorldServerHandler.h"
+    "${CMAKE_CURRENT_LIST_DIR}/ConsoleCommands.h"
+    "${CMAKE_CURRENT_LIST_DIR}/Message.h"
 )
 set(WORLDSERVER_WORLDSOCKET
 "${CMAKE_CURRENT_LIST_DIR}/Socket/NodeSocket.h"
 "${CMAKE_CURRENT_LIST_DIR}/Socket/NodeSocket.cpp"
+)
+set(WORLDSERVER_COMMANDS
+    "${CMAKE_CURRENT_LIST_DIR}/ConsoleCommands/PingCommand.h"
+    "${CMAKE_CURRENT_LIST_DIR}/ConsoleCommands/QuitCommand.H"
 )
 
 set(WORLDSERVER_DEPENDENCIES
@@ -41,11 +47,13 @@ set(WORLDSERVER_DEPENDENCIES
 
 source_group(" " FILES ${WORLDSERVER_MAIN})
 source_group(Socket FILES ${WORLDSERVER_WORLDSOCKET})
+source_group(ConsoleCommands FILES ${WORLDSERVER_COMMANDS})
 
 target_sources(worldserver
     PRIVATE
     ${WORLDSERVER_MAIN}
     ${WORLDSERVER_WORLDSOCKET}
+    ${WORLDSERVER_COMMANDS}
 )
 
 
