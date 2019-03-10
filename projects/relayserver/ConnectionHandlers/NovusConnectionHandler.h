@@ -30,20 +30,42 @@ class NovusConnectionHandler : public Common::TcpServer
 {
 public:
     NovusConnectionHandler(asio::io_service& io_service, int port) : Common::TcpServer(io_service, port) { _instance = this; }
-    static NovusConnection* GetConnection()
+    static NovusConnection* GetCharacterConnection()
     {
         static int loadDistributionId = 0;
 
         if (_instance->_connections.size() == 0)
             return nullptr;
 
-        if (loadDistributionId >= _instance->_connections.size())
+        /*if (loadDistributionId >= _instance->_connections.size())
             loadDistributionId = int(_instance->_connections.size() - 1);
         
         NovusConnection* connection = reinterpret_cast<NovusConnection*>(_instance->_connections.at(loadDistributionId));
-        loadDistributionId = (loadDistributionId + 1) % _instance->_connections.size();
+        loadDistributionId = (loadDistributionId + 1) % _instance->_connections.size();*/
 
-        return connection;
+        for (auto itr : _instance->_connections)
+        {
+            NovusConnection* conn = reinterpret_cast<NovusConnection*>(itr);
+            if (conn->_type == 0 && !conn->IsClosed())
+                return conn;
+        }
+
+        return nullptr;
+    }
+
+    static NovusConnection* GetWorldConnection(uint8_t id)
+    {
+        if (_instance->_connections.size() == 0)
+            return nullptr;
+
+        for (auto itr : _instance->_connections)
+        {
+            NovusConnection* conn = reinterpret_cast<NovusConnection*>(itr);
+            if (conn->_type == 1 && conn->_id == id && !conn->IsClosed())
+                return conn;
+        }
+
+        return nullptr;
     }
 
 private:

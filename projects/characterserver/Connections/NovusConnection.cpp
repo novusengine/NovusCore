@@ -27,6 +27,9 @@
 #include <Networking\Opcode\Opcode.h>
 #include <Database\DatabaseConnector.h>
 
+#include <bitset>
+#include <zlib.h>
+
 enum CharacterResponses
 {    
     CHAR_CREATE_IN_PROGRESS                                = 46,
@@ -81,8 +84,9 @@ bool NovusConnection::Start()
         _socket->connect(asio::ip::tcp::endpoint(asio::ip::address::from_string(_address), _port));
 
         /* NODE_CHALLENGE */
-        Common::ByteBuffer packet(5);
+        Common::ByteBuffer packet(6);
         packet.Write<uint8_t>(0);       // Command
+        packet.Write<uint8_t>(0);       // Type
         packet.Write<uint16_t>(335);    // Version
         packet.Write<uint16_t>(12340);  // Build
 
@@ -241,6 +245,32 @@ bool NovusConnection::HandleCommandForwardPacket()
             forwardPacket.Write<uint32_t>(0x15);
 
             SendPacket(forwardPacket);
+            break;
+        }
+        case Common::Opcode::CMSG_UPDATE_ACCOUNT_DATA:
+        {
+            uint32_t type, timestamp, decompressedSize;
+            _packetBuffer.Read(&type, 4);
+            _packetBuffer.Read(&timestamp, 4);
+            _packetBuffer.Read(&decompressedSize, 4);
+
+            if (type > 8)
+            {
+                std::cout << "Bad Type." << std::endl;
+                break;
+            }
+
+            NovusHeader packetHeader;
+            packetHeader.command = NOVUS_FOWARDPACKET;
+            packetHeader.account = header->account;
+            packetHeader.opcode = Common::Opcode::SMSG_UPDATE_ACCOUNT_DATA_COMPLETE;
+            packetHeader.size = 8;
+            Common::ByteBuffer updateAccountDataComplete(9 + 4 + 4);
+            packetHeader.AddTo(updateAccountDataComplete);
+
+            updateAccountDataComplete.Write<uint32_t>(type);
+            updateAccountDataComplete.Write<uint32_t>(0);
+            SendPacket(updateAccountDataComplete);
             break;
         }
         case Common::Opcode::CMSG_REALM_SPLIT:
@@ -457,123 +487,9 @@ bool NovusConnection::HandleCommandForwardPacket()
                 SendPacket(forwardPacket);
             });
             break;
-        }
-        case Common::Opcode::CMSG_PLAYER_LOGIN:
-        {
-            NovusHeader packetHeader;
-            packetHeader.command = NOVUS_FOWARDPACKET;
-            packetHeader.account = header->account;
-
-            uint64_t playerGuid = 0;
-            _packetBuffer.Read<uint64_t>(playerGuid);
-
-
-            /* SMSG_LOGIN_VERIFY_WORLD */
-            Common::ByteBuffer verifyWorld;
-            packetHeader.opcode = Common::Opcode::SMSG_LOGIN_VERIFY_WORLD;
-            packetHeader.size = 4 + (4 * 4);
-            packetHeader.AddTo(verifyWorld);
-
-            verifyWorld.Write<uint32_t>(0); // Map (0 == Eastern Kingdom) & Elwynn Forest (Zone is 12) & Northshire (Area is 9)
-            verifyWorld.Write<float>(-8949.950195f);
-            verifyWorld.Write<float>(-132.492996f);
-            verifyWorld.Write<float>(83.531197f);
-            verifyWorld.Write<float>(0.0f);
-            SendPacket(verifyWorld);
-
-
-            /* SMSG_ACCOUNT_DATA_TIMES */
-            Common::ByteBuffer accountDataForwardPacket;
-            Common::ByteBuffer accountDataTimes;
-            packetHeader.opcode = Common::Opcode::SMSG_ACCOUNT_DATA_TIMES;
-
-            uint32_t mask = 0xEA;
-            accountDataTimes.Write<uint32_t>((uint32_t)time(nullptr));
-            accountDataTimes.Write<uint8_t>(1); // bitmask blocks count
-            accountDataTimes.Write<uint32_t>(mask); // PER_CHARACTER_CACHE_MASK
-
-            for (uint32_t i = 0; i < 8; ++i)
-            {
-                if (mask & (1 << i))
-                    accountDataTimes.Write<uint32_t>(0);
-            }
-
-            packetHeader.size = (uint16_t)accountDataTimes.GetActualSize();
-            packetHeader.AddTo(accountDataForwardPacket);
-            accountDataForwardPacket.Append(accountDataTimes);
-            SendPacket(accountDataForwardPacket);
-
-
-            /* SMSG_FEATURE_SYSTEM_STATUS */
-            Common::ByteBuffer featureSystemStatus;
-            packetHeader.opcode = Common::Opcode::SMSG_FEATURE_SYSTEM_STATUS;
-            packetHeader.size = 1 + 1;
-            packetHeader.AddTo(featureSystemStatus);
-
-            featureSystemStatus.Write<uint8_t>(2);
-            featureSystemStatus.Write<uint8_t>(0);
-            SendPacket(featureSystemStatus);
-
-
-            /* SMSG_MOTD */
-            Common::ByteBuffer motdForwardPacket;
-            Common::ByteBuffer motd;
-            packetHeader.opcode = Common::Opcode::SMSG_MOTD;
-            packetHeader.AddTo(motd);
-
-            motd.Write<uint32_t>(1);
-            motd.WriteString("Welcome");
-
-            packetHeader.size = (uint16_t)motd.GetActualSize();
-            packetHeader.AddTo(motdForwardPacket);
-            motdForwardPacket.Append(motd);
-            SendPacket(motdForwardPacket);
-
-
-            /* SMSG_LEARNED_DANCE_MOVES */
-            Common::ByteBuffer learnedDanceMoves;
-            packetHeader.opcode = Common::Opcode::SMSG_LEARNED_DANCE_MOVES;
-            packetHeader.size = 4 + 4;
-            packetHeader.AddTo(learnedDanceMoves);
-
-            learnedDanceMoves.Write<uint32_t>(0);
-            learnedDanceMoves.Write<uint32_t>(0);
-            SendPacket(learnedDanceMoves);
-
-
-            /* SMSG_ACTION_BUTTONS */
-            Common::ByteBuffer actionButtons;
-            packetHeader.opcode = Common::Opcode::SMSG_ACTION_BUTTONS;
-            packetHeader.size = 1 + (4 * 144);
-            packetHeader.AddTo(actionButtons);
-
-            actionButtons.Write<uint8_t>(1);
-            for (uint8_t button = 0; button < 144; ++button)
-            {
-                actionButtons.Write<uint32_t>(0);
-            }
-            SendPacket(actionButtons);
-
-
-            /* SMSG_LOGIN_SETTIMESPEED */
-            Common::ByteBuffer loginSetTimeSpeed;
-            packetHeader.opcode = Common::Opcode::SMSG_LOGIN_SETTIMESPEED;
-            packetHeader.size = 4 + 4 + 4;
-            packetHeader.AddTo(loginSetTimeSpeed);
-
-            tm lt;
-            time_t const tmpServerTime = time(nullptr);
-            localtime_s(&lt, &tmpServerTime);
-
-            loginSetTimeSpeed.Write<uint32_t>(((lt.tm_year - 100) << 24 | lt.tm_mon << 20 | (lt.tm_mday - 1) << 14 | lt.tm_wday << 11 | lt.tm_hour << 6 | lt.tm_min));
-            loginSetTimeSpeed.Write<float>(0.01666667f);
-            loginSetTimeSpeed.Write<uint32_t>(0);
-            SendPacket(loginSetTimeSpeed);
-
-            break;
-        }
+        }     
         default:
-            std::cout << "Could not handled opcode: 0x" << std::hex << std::uppercase << header->opcode << std::endl << std::endl;
+            std::cout << "Could not handled opcode: 0x" << std::hex << std::uppercase << header->opcode << std::endl;
             break;
     }
 

@@ -64,7 +64,7 @@ struct cAuthSessionData
 class RelayConnection : public Common::BaseSocket
 {
 public:
-    RelayConnection(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), account(0), _headerBuffer(), _packetBuffer()
+    RelayConnection(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), account(0), worldId(255), _headerBuffer(), _packetBuffer()
     {
         _seed = (uint32_t)rand();
         _headerBuffer.Resize(sizeof(Common::ClientPacketHeader));
@@ -101,6 +101,7 @@ public:
     cAuthSessionData sessionData;
     BigNumber* sessionKey;
 
+    uint8_t worldId;
     Common::ByteBuffer _headerBuffer;
     Common::ByteBuffer _packetBuffer;
 

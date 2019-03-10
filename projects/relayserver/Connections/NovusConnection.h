@@ -48,6 +48,7 @@ enum NovusStatus
 struct cNovusChallenge
 {
     uint8_t     command;
+    uint8_t     type;
     uint16_t    version;
     uint16_t    build;
 };
@@ -80,7 +81,7 @@ class NovusConnection : public Common::BaseSocket
 public:
     static std::unordered_map<uint8_t, NovusMessageHandler> InitMessageHandlers();
 
-    NovusConnection(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), _status(NOVUSSTATUS_CHALLENGE), _crypto(), _headerBuffer(), _packetBuffer()
+    NovusConnection(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), _status(NOVUSSTATUS_CHALLENGE), _crypto(), _id(255), _type(255), _headerBuffer(), _packetBuffer()
     {
         _crypto = new StreamCrypto();
         _key = new BigNumber();
@@ -99,6 +100,8 @@ public:
     NovusStatus _status;
     StreamCrypto* _crypto;
 
+    uint8_t _id;
+    uint8_t _type;
     private:
     BigNumber* _key;
 

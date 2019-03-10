@@ -27,6 +27,7 @@ set(WORLDSERVER_DEPENDENCIES
     "../common/Dependencies/amy"
     "../common/Dependencies/json"
     "${CMAKE_CURRENT_LIST_DIR}/Dependencies/Entt"
+    "${ZLIB_INCLUDE_DIRS}"
 )
 
 add_executable(worldserver ${WORLDSERVER_FILES})

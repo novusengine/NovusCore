@@ -1,0 +1,9 @@
+{
+    "network": {
+        "port": 8000,
+        "nodeport": 10000,
+        "authserverip": "127.0.0.1",
+        "authservernodeport": 9000
+    }
+
+}

@@ -1,0 +1,7 @@
+{
+    "network": {
+        "port": 3724,
+        "nodeport": 9000
+    }
+
+}

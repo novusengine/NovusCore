@@ -7,6 +7,8 @@
 #include <Database/DatabaseConnector.h>
 #include <Utils/DebugHandler.h>
 
+#include "Connections\NovusConnection.h"
+
 #include "WorldServerHandler.h"
 #include "Message.h"
 
@@ -20,11 +22,11 @@ std::string GetLineFromCin() {
 
 int main()
 {
-	/*if (!ConfigHandler::Setup("worldserver_configuration.json"))
+	if (!ConfigHandler::Setup("worldserver_configuration.json"))
 	{
 		std::getchar();
 		return 0;
-	}*/
+	}
 	InitDebugger(PROGRAM_TYPE::World);
 
 	/*NC_LOG_MESSAGE("This is a message");
@@ -33,7 +35,22 @@ int main()
 	NC_LOG_ERROR("This is a error");
 	NC_LOG_FATAL("This is a fatal error");*/
 
-	DatabaseConnector::Setup("127.0.0.1", "root", "");
+	DatabaseConnector::Setup("127.0.0.1", "root", "ascent");
+
+    asio::io_service io_service(2);
+    NovusConnection novusConnection(new asio::ip::tcp::socket(io_service), ConfigHandler::GetOption<std::string>("relayserverip", "127.0.0.1"), ConfigHandler::GetOption<uint16_t>("relayserverport", 10000), ConfigHandler::GetOption<uint8_t>("realmId", 1));
+
+    if (!novusConnection.Start())
+    {
+        std::getchar();
+        return 0;
+    }
+    std::cout << "Worldserver established node connection to Relayserver." << std::endl;
+
+    std::thread run_thread([&]
+    {
+        io_service.run();
+    });
 
 	ConsoleCommandHandler consoleCommandHandler;
 

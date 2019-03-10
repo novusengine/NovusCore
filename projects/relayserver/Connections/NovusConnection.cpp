@@ -149,6 +149,11 @@ bool NovusConnection::HandleCommandChallenge()
         _crypto->SetupServer(_key);
 
         _status = NOVUSSTATUS_PROOF;
+        _type = novusChallenge->type;
+
+        if (_type == 1)
+            _id = 1;
+
         Send(packet);
         return true;
     }
