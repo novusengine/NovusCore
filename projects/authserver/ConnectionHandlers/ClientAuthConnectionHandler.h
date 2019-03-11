@@ -53,6 +53,4 @@ private:
 
         StartListening();
     }
-
-
 };

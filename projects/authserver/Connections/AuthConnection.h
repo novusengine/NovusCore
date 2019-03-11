@@ -29,6 +29,7 @@
 #include <Cryptography\SHA1.h>
 #include <Database\DatabaseConnector.h>
 #include <unordered_map>
+#include <NovusTypes.h>
 
 enum AuthCommand
 {
@@ -110,7 +111,7 @@ struct AuthMessageHandler;
 class AuthConnection : public Common::BaseSocket
 {
 public:
-    static std::unordered_map<uint8_t, AuthMessageHandler> InitMessageHandlers();
+    static std::unordered_map<u8, AuthMessageHandler> InitMessageHandlers();
 
     AuthConnection(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), _status(STATUS_CHALLENGE), username(), packetsReadThisRead(17)
     { 
@@ -138,11 +139,11 @@ public:
     AuthStatus _status;
 
     std::string username;
-    uint32_t accountGuid;
+    u32 accountGuid;
 
     void ResetPacketsReadThisRead() 
     { 
-        for (uint8_t i = 0; i < 4; ++i)
+        for (u8 i = 0; i < 4; ++i)
         {
             packetsReadThisRead[i] = 0;
 
@@ -152,7 +153,7 @@ public:
             }
         }
     }
-    std::vector<uint8_t> packetsReadThisRead;
+    std::vector<u8> packetsReadThisRead;
 };
 
 #pragma pack(push, 1)
@@ -160,7 +161,7 @@ struct AuthMessageHandler
 {
     AuthStatus status;
     size_t packetSize;
-    uint8_t maxPacketsPerRead;
+    u8 maxPacketsPerRead;
     bool (AuthConnection::*handler)();
 };
 #pragma pack(pop)

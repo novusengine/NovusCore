@@ -59,8 +59,8 @@ int main()
     }
 
     asio::io_service io_service(2);
-    ClientAuthConnectionHandler clientAuthConnectionHandler(io_service, ConfigHandler::GetOption<uint16_t>("port", 3724));
-    RelayNodeConnectionHandler relayNodeConnectionHandler(io_service, ConfigHandler::GetOption<uint16_t>("nodeport", 9000));
+    ClientAuthConnectionHandler clientAuthConnectionHandler(io_service, ConfigHandler::GetOption<u16>("port", 3724));
+    RelayNodeConnectionHandler relayNodeConnectionHandler(io_service, ConfigHandler::GetOption<u16>("nodeport", 9000));
     
     clientAuthConnectionHandler.Start();
     relayNodeConnectionHandler.Start();

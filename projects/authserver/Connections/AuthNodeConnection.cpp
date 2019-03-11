@@ -25,16 +25,16 @@
 #include "AuthNodeConnection.h"
 #include <Networking\ByteBuffer.h>
 
-std::unordered_map<uint8_t, AuthNodeMessageHandler> AuthNodeConnection::InitMessageHandlers()
+std::unordered_map<u8, AuthNodeMessageHandler> AuthNodeConnection::InitMessageHandlers()
 {
-    std::unordered_map<uint8_t, AuthNodeMessageHandler> messageHandlers;
+    std::unordered_map<u8, AuthNodeMessageHandler> messageHandlers;
 
-    messageHandlers[NODE_CHALLENGE]             =   { NODESTATUS_CHALLENGE,         sizeof(AuthNodeChallenge),    &AuthNodeConnection::HandleCommandChallenge };
-    messageHandlers[NODE_PROOF]                 =   { NODESTATUS_PROOF,             1,                         &AuthNodeConnection::HandleCommandProof     };
+    messageHandlers[NODE_CHALLENGE]             =   { NODESTATUS_CHALLENGE,         sizeof(AuthNodeChallenge),  &AuthNodeConnection::HandleCommandChallenge };
+    messageHandlers[NODE_PROOF]                 =   { NODESTATUS_PROOF,             1,                          &AuthNodeConnection::HandleCommandProof     };
 
     return messageHandlers;
 }
-std::unordered_map<uint8_t, AuthNodeMessageHandler> const MessageHandlers = AuthNodeConnection::InitMessageHandlers();
+std::unordered_map<u8, AuthNodeMessageHandler> const MessageHandlers = AuthNodeConnection::InitMessageHandlers();
 
 bool AuthNodeConnection::Start()
 {
@@ -53,7 +53,7 @@ void AuthNodeConnection::HandleRead()
         {
             _crypto->Decrypt(byteBuffer.GetReadPointer(), byteBuffer.GetActualSize());
         }
-        uint8_t command = byteBuffer.GetDataPointer()[0];
+        u8 command = byteBuffer.GetDataPointer()[0];
 
         auto itr = MessageHandlers.find(command);
         if (itr == MessageHandlers.end())
@@ -70,7 +70,7 @@ void AuthNodeConnection::HandleRead()
             return;
         }
 
-        uint16_t size = uint16_t(itr->second.packetSize);
+        u16 size = u16(itr->second.packetSize);
         if (byteBuffer.GetActualSize() < size)
             break;
 
@@ -94,7 +94,7 @@ bool AuthNodeConnection::HandleCommandChallenge()
     if (authNodeChallenge->version == 335 && authNodeChallenge->build == 12340)
     {
         Common::ByteBuffer packet;
-        packet.Write<uint8_t>(NODE_CHALLENGE);
+        packet.Write<u8>(NODE_CHALLENGE);
         packet.Append(_key->BN2BinArray(32).get(), 32);
         _crypto->SetupServer(_key);
 
@@ -111,7 +111,7 @@ bool AuthNodeConnection::HandleCommandProof()
     _status = NODESTATUS_AUTHED;
 
     Common::ByteBuffer packet;
-    packet.Write<uint8_t>(NODE_PROOF);
+    packet.Write<u8>(NODE_PROOF);
     _crypto->Encrypt(packet.GetReadPointer(), packet.GetActualSize());
     
     Send(packet);

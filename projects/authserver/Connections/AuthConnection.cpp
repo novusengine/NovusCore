@@ -28,52 +28,52 @@
 #pragma pack(push, 1)
 struct cAuthLogonChallenge
 {
-    uint8_t   command;
-    uint8_t   error;
-    uint16_t  size;
-    uint8_t   gamename[4];
-    uint8_t   version1;
-    uint8_t   version2;
-    uint8_t   version3;
-    uint16_t  build;
-    uint8_t   platform[4];
-    uint8_t   os[4];
-    uint8_t   country[4];
-    uint32_t  timezone_bias;
-    uint32_t  ip;
-    uint8_t   username_length;
-    uint8_t   username_pointer[1];
+    u8   command;
+    u8   error;
+    u16  size;
+    u8   gamename[4];
+    u8   version1;
+    u8   version2;
+    u8   version3;
+    u16  build;
+    u8   platform[4];
+    u8   os[4];
+    u8   country[4];
+    u32  timezone_bias;
+    u32  ip;
+    u8   username_length;
+    u8   username_pointer[1];
 };
 
 struct sAuthLogonChallengeHeader
 {
-    uint8_t  command;
-    uint8_t  error;
-    uint8_t  result;
+    u8  command;
+    u8  error;
+    u8  result;
 
     void AddTo(Common::ByteBuffer& buffer)
     {
-        buffer.Append((uint8_t*)this, sizeof(sAuthLogonChallengeHeader));
+        buffer.Append((u8*)this, sizeof(sAuthLogonChallengeHeader));
     }
 };
 
 struct sAuthLogonChallengeData
 {
-    uint8_t b[32];
-    uint8_t unk1;
-    uint8_t g;
-    uint8_t unk2;
-    uint8_t n[32];
-    uint8_t s[32];
-    uint8_t version_challenge[16];
-    uint8_t security_flags;
+    u8 b[32];
+    u8 unk1;
+    u8 g;
+    u8 unk2;
+    u8 n[32];
+    u8 s[32];
+    u8 version_challenge[16];
+    u8 security_flags;
 
     void AddTo(Common::ByteBuffer& buffer)
     {
-        buffer.Append((uint8_t*)this, sizeof(sAuthLogonChallengeData));
+        buffer.Append((u8*)this, sizeof(sAuthLogonChallengeData));
     }
 
-    void Append(uint8_t* dest, const uint8_t* src, size_t size)
+    void Append(u8* dest, const u8* src, size_t size)
     {
         std::memcpy(dest, src, size);
     }
@@ -81,66 +81,66 @@ struct sAuthLogonChallengeData
 
 struct cAuthLogonProof
 {
-    uint8_t   command;
-    uint8_t   A[32];
-    uint8_t   M1[20];
-    uint8_t   crc_hash[20];
-    uint8_t   number_of_keys;
-    uint8_t   securityFlags;
+    u8   command;
+    u8   A[32];
+    u8   M1[20];
+    u8   crc_hash[20];
+    u8   number_of_keys;
+    u8   securityFlags;
 };
 
 struct sAuthLogonProof
 {
-    uint8_t   cmd;
-    uint8_t   error;
-    uint8_t   M2[20];
-    uint32_t  AccountFlags;
-    uint32_t  SurveyId;
-    uint16_t  LoginFlags;
+    u8   cmd;
+    u8   error;
+    u8   M2[20];
+    u32  AccountFlags;
+    u32  SurveyId;
+    u16  LoginFlags;
 };
 
 struct cAuthReconnectProof
 {
-    uint8_t   cmd;
-    uint8_t   R1[16];
-    uint8_t   R2[20];
-    uint8_t   R3[20];
-    uint8_t   number_of_keys;
+    u8   cmd;
+    u8   R1[16];
+    u8   R2[20];
+    u8   R3[20];
+    u8   number_of_keys;
 };
 
 struct sAuthLogonGameListData
 {
-    uint8_t     Type;
-    uint8_t     Locked;
-    uint8_t     Flags;
+    u8     Type;
+    u8     Locked;
+    u8     Flags;
     std::string Name;
     std::string Address;
-    float       Population;
-    uint8_t     Characters;
-    uint8_t     Timezone;
-    uint8_t     Id;
+    f32       Population;
+    u8     Characters;
+    u8     Timezone;
+    u8     Id;
 
     void AddTo(Common::ByteBuffer& buffer)
     {
-        buffer.Write<uint8_t>(Type);
-        buffer.Write<uint8_t>(Locked);
-        buffer.Write<uint8_t>(Flags);
+        buffer.Write<u8>(Type);
+        buffer.Write<u8>(Locked);
+        buffer.Write<u8>(Flags);
         buffer.WriteString(Name);
         buffer.WriteString(Address);
-        buffer.Write<float>(Population);
-        buffer.Write<uint8_t>(Characters);
-        buffer.Write<uint8_t>(Timezone);
-        buffer.Write<uint8_t>(Id);
+        buffer.Write<f32>(Population);
+        buffer.Write<u8>(Characters);
+        buffer.Write<u8>(Timezone);
+        buffer.Write<u8>(Id);
     }
 };
 #pragma pack(pop)
 
-std::array<uint8_t, 16> VersionChallenge = { { 0xBA, 0xA3, 0x1E, 0x99, 0xA0, 0x0B, 0x21, 0x57, 0xFC, 0x37, 0x3F, 0xB3, 0x69, 0xCD, 0xD2, 0xF1 } };
+std::array<u8, 16> VersionChallenge = { { 0xBA, 0xA3, 0x1E, 0x99, 0xA0, 0x0B, 0x21, 0x57, 0xFC, 0x37, 0x3F, 0xB3, 0x69, 0xCD, 0xD2, 0xF1 } };
 #define MAX_REALM_COUNT 256
 
-std::unordered_map<uint8_t, AuthMessageHandler> AuthConnection::InitMessageHandlers()
+std::unordered_map<u8, AuthMessageHandler> AuthConnection::InitMessageHandlers()
 {
-    std::unordered_map<uint8_t, AuthMessageHandler> messageHandlers;
+    std::unordered_map<u8, AuthMessageHandler> messageHandlers;
 
     messageHandlers[AUTH_CHALLENGE]             = { STATUS_CHALLENGE,         4,                              1,   &AuthConnection::HandleCommandChallenge          };
     messageHandlers[AUTH_PROOF]                 = { STATUS_PROOF,             sizeof(cAuthLogonProof),        1,   &AuthConnection::HandleCommandProof              };
@@ -150,7 +150,7 @@ std::unordered_map<uint8_t, AuthMessageHandler> AuthConnection::InitMessageHandl
 
     return messageHandlers;
 }
-std::unordered_map<uint8_t, AuthMessageHandler> const MessageHandlers = AuthConnection::InitMessageHandlers();
+std::unordered_map<u8, AuthMessageHandler> const MessageHandlers = AuthConnection::InitMessageHandlers();
 
 bool AuthConnection::Start()
 {
@@ -165,7 +165,7 @@ void AuthConnection::HandleRead()
 
     while (byteBuffer.GetActualSize())
     {
-        uint8_t command = byteBuffer.GetDataPointer()[0];
+        u8 command = byteBuffer.GetDataPointer()[0];
 
         auto itr = MessageHandlers.find(command);
         if (itr == MessageHandlers.end())
@@ -191,7 +191,7 @@ void AuthConnection::HandleRead()
             ++packetsReadThisRead[command];
         }
 
-        uint16_t size = uint16_t(itr->second.packetSize);
+        u16 size = u16(itr->second.packetSize);
         if (byteBuffer.GetActualSize() < size)
             break;
 
@@ -313,29 +313,29 @@ bool AuthConnection::HandleCommandProof()
     u.Bin2BN(sha.GetData(), 20);
     BigNumber S = (A * (v.ModExponential(u, N))).ModExponential(b, N);
 
-    uint8_t t[32];
-    uint8_t t1[16];
+    u8 t[32];
+    u8 t1[16];
     memcpy(t, S.BN2BinArray(32).get(), 32);
 
-    for (int i = 0; i < 16; ++i)
+    for (i32 i = 0; i < 16; ++i)
         t1[i] = t[i * 2];
 
     sha.Init();
     sha.UpdateHash(t1, 16);
     sha.Finish();
 
-    uint8_t vK[40];
-    for (int i = 0; i < 20; ++i)
+    u8 vK[40];
+    for (i32 i = 0; i < 20; ++i)
         vK[i * 2] = sha.GetData()[i];
 
-    for (int i = 0; i < 16; ++i)
+    for (i32 i = 0; i < 16; ++i)
         t1[i] = t[i * 2 + 1];
 
     sha.Init();
     sha.UpdateHash(t1, 16);
     sha.Finish();
 
-    for (int i = 0; i < 20; ++i)
+    for (i32 i = 0; i < 20; ++i)
         vK[i * 2 + 1] = sha.GetData()[i];
     K.Bin2BN(vK, 40);
 
@@ -343,13 +343,13 @@ bool AuthConnection::HandleCommandProof()
     sha.UpdateHashForBn(1, &N);
     sha.Finish();
 
-    uint8_t hash[20];
+    u8 hash[20];
     memcpy(hash, sha.GetData(), 20);
     sha.Init();
     sha.UpdateHashForBn(1, &g);
     sha.Finish();
 
-    for (int i = 0; i < 20; ++i)
+    for (i32 i = 0; i < 20; ++i)
         hash[i] ^= sha.GetData()[i];
 
     sha.Init();
@@ -358,7 +358,7 @@ bool AuthConnection::HandleCommandProof()
 
     BigNumber t3;
     t3.Bin2BN(hash, 20);
-    uint8_t t4[SHA_DIGEST_LENGTH];
+    u8 t4[SHA_DIGEST_LENGTH];
     memcpy(t4, sha.GetData(), SHA_DIGEST_LENGTH);
 
     sha.Init();
@@ -376,7 +376,7 @@ bool AuthConnection::HandleCommandProof()
         sha.UpdateHashForBn(3, &A, &M, &K);
         sha.Finish();
 
-        uint8_t proofM2[20];
+        u8 proofM2[20];
         memcpy(proofM2, sha.GetData(), 20);
 
         // Update Database with SessionKey
@@ -406,9 +406,9 @@ bool AuthConnection::HandleCommandProof()
     else
     {
         Common::ByteBuffer byteBuffer;
-        byteBuffer.Write<uint8_t>(AUTH_PROOF);
-        byteBuffer.Write<uint8_t>(AUTH_FAIL_UNKNOWN_ACCOUNT); // error
-        byteBuffer.Write<uint16_t>(0); // AccountFlag
+        byteBuffer.Write<u8>(AUTH_PROOF);
+        byteBuffer.Write<u8>(AUTH_FAIL_UNKNOWN_ACCOUNT); // error
+        byteBuffer.Write<u16>(0); // AccountFlag
         Send(byteBuffer);
     }
 
@@ -419,12 +419,12 @@ bool AuthConnection::HandleCommandReconnectChallenge()
 {
     return false;
     /*Common::ByteBuffer pkt;
-    pkt.Write<uint8_t>(AUTH_RECONNECT_CHALLENGE);
+    pkt.Write<u8>(AUTH_RECONNECT_CHALLENGE);
 
     // Check if account exists
     if (login != username)
     {
-        pkt.Write<uint8_t>(uint8_t(0x03)); //WOW_FAIL_UNKNOWN_ACCOUNT);
+        pkt.Write<u8>(u8(0x03)); //WOW_FAIL_UNKNOWN_ACCOUNT);
         Send(pkt);
         return true;
     }
@@ -432,11 +432,11 @@ bool AuthConnection::HandleCommandReconnectChallenge()
     _reconnectProof.Rand(16 * 8);
     _status = STATUS_RECONNECT_PROOF;
 
-    pkt.Write<uint8_t>(0); // WOW_SUCCESS
+    pkt.Write<u8>(0); // WOW_SUCCESS
     pkt.Append(_reconnectProof.BN2BinArray(16).get(), 16);  // 16 bytes random
-    uint64_t zeros = 0x00;
-    pkt.Append((uint8_t*)&zeros, sizeof(zeros));                 // 8 bytes zeros
-    pkt.Append((uint8_t*)&zeros, sizeof(zeros));                 // 8 bytes zeros
+    u64 zeros = 0x00;
+    pkt.Append((u8*)&zeros, sizeof(zeros));                 // 8 bytes zeros
+    pkt.Append((u8*)&zeros, sizeof(zeros));                 // 8 bytes zeros
 
     Send(pkt);*/
 }
@@ -461,10 +461,10 @@ bool AuthConnection::HandleCommandReconnectProof()
     {
         // Sending response
         Common::ByteBuffer pkt;
-        pkt.Write<uint8_t>(AUTH_RECONNECT_PROOF);
-        pkt.Write<uint8_t>(0x00);
-        uint16_t unk1 = 0x00;
-        pkt.Append((uint8_t*)&unk1, sizeof(unk1));  // 2 bytes zeros
+        pkt.Write<u8>(AUTH_RECONNECT_PROOF);
+        pkt.Write<u8>(0x00);
+        u16 unk1 = 0x00;
+        pkt.Append((u8*)&unk1, sizeof(unk1));  // 2 bytes zeros
         Send(pkt);
         _status = STATUS_AUTHED;
         return true;
@@ -479,7 +479,7 @@ bool AuthConnection::HandleCommandGameServerList()
 
     DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, "SELECT id, name, address, type, flags, timezone, population FROM realms;", [this](amy::result_set& results, DatabaseConnector& connector)
     {
-        std::vector<uint8_t> realmCharacterData(MAX_REALM_COUNT);
+        std::vector<u8> realmCharacterData(MAX_REALM_COUNT);
         std::fill(realmCharacterData.begin(), realmCharacterData.end(), 0);
 
         std::shared_ptr<DatabaseConnector> borrowedConnector;
@@ -514,18 +514,18 @@ bool AuthConnection::HandleCommandGameServerList()
         }
 
         // (Only needed for clients TBC+)
-        realmBuffer.Write<uint8_t>(0x10); // Unk1
-        realmBuffer.Write<uint8_t>(0x00); // Unk2
+        realmBuffer.Write<u8>(0x10); // Unk1
+        realmBuffer.Write<u8>(0x00); // Unk2
 
         Common::ByteBuffer RealmListSizeBuffer;
-        RealmListSizeBuffer.Write<uint32_t>(0);
-        RealmListSizeBuffer.Write<uint16_t>((uint16_t)results.affected_rows());
+        RealmListSizeBuffer.Write<u32>(0);
+        RealmListSizeBuffer.Write<u16>((u16)results.affected_rows());
 
         Common::ByteBuffer hdr;
-        hdr.Write<uint8_t>(AUTH_GAMESERVER_LIST);
+        hdr.Write<u8>(AUTH_GAMESERVER_LIST);
 
-        uint16_t combinedSize = realmBuffer.size() + RealmListSizeBuffer.size();
-        hdr.Write<uint16_t>(combinedSize);
+        u16 combinedSize = realmBuffer.size() + RealmListSizeBuffer.size();
+        hdr.Write<u16>(combinedSize);
         hdr.Append(RealmListSizeBuffer);
         hdr.Append(realmBuffer);
         Send(hdr);

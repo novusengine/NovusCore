@@ -29,6 +29,7 @@
 #include <Cryptography\SHA1.h>
 #include <Cryptography\StreamCrypto.h>
 #include <unordered_map>
+#include <NovusTypes.h>
 
 enum AuthNodeCommand
 {
@@ -46,9 +47,9 @@ enum AuthNodeStatus
 #pragma pack(push, 1)
 struct AuthNodeChallenge
 {
-    uint8_t     command;
-    uint16_t    version;
-    uint16_t    build;
+    u8     command;
+    u16    version;
+    u16    build;
 };
 #pragma pack(pop)
 
@@ -56,7 +57,7 @@ struct AuthNodeMessageHandler;
 class AuthNodeConnection : public Common::BaseSocket
 {
 public:
-    static std::unordered_map<uint8_t, AuthNodeMessageHandler> InitMessageHandlers();
+    static std::unordered_map<u8, AuthNodeMessageHandler> InitMessageHandlers();
 
     AuthNodeConnection(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), _status(NODESTATUS_CHALLENGE), _crypto()
     {
