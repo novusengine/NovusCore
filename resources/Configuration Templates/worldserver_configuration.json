@@ -1,10 +1,12 @@
 {
+    "general": {
+        "tickRate": 30
+    },
     "network": {
         "port": 0,
         "relayserverip": "127.0.0.1",
         "relayserverport": 10000
     },
-
     "world": {
         "realmId": 1
     }
