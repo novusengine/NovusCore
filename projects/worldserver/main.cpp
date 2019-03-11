@@ -22,7 +22,7 @@ std::string GetLineFromCin() {
 
 int main()
 {
-    InitDebugger(PROGRAM_TYPE::World);
+    //InitDebugger(PROGRAM_TYPE::World);
 
     /* Load Database Config Handler for server */
     if (!ConfigHandler::Load("database_configuration.json"))

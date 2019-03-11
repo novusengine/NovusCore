@@ -181,7 +181,8 @@ bool NovusConnection::HandleCommandForwardPacket()
     if (RelayConnection* playerConnection = ClientRelayConnectionHandler::GetConnectionByAccountGuid(header->account))
     {
         Common::ByteBuffer packetBuffer;
-        packetBuffer.Append(_packetBuffer.GetReadPointer(), _packetBuffer.GetActualSize());
+        if (header->size > 0)
+            packetBuffer.Append(_packetBuffer.GetReadPointer(), header->size);
         playerConnection->SendPacket(packetBuffer, Common::Opcode(header->opcode));
     }
     //std::cout << std::endl;

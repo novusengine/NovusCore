@@ -23,12 +23,10 @@
 */
 #pragma once
 
-#include <string>
-#include <fstream>
-
-#if defined(WIN32) && !defined(Release)
 #include <Windows.h>
-#endif
+#include <string>
+#include <cassert>
+#include "../NovusTypes.h"
 
 enum PROGRAM_TYPE
 {
@@ -38,52 +36,82 @@ enum PROGRAM_TYPE
 	World
 };
 
-#ifndef Release
-// Forward declaration
-class DatabaseConnector; 
+#define NC_LOG_MESSAGE(message, ...) if (!DebugHandler::isInitialized) { DebugHandler::Initialize(); } \
+DebugHandler::Print(message, __VA_ARGS__);
+
+#define NC_LOG_WARNING(message, ...) if (!DebugHandler::isInitialized) { DebugHandler::Initialize(); } \
+DebugHandler::PrintWarning(message, __VA_ARGS__);
+
+#define NC_LOG_DEPRECATED(message, ...) if (!DebugHandler::isInitialized) { DebugHandler::Initialize(); } \
+DebugHandler::PrintDeprecated(message, __VA_ARGS__);
+
+#define NC_LOG_ERROR(message, ...) if (!DebugHandler::isInitialized) { DebugHandler::Initialize(); } \
+DebugHandler::PrintError(message, __VA_ARGS__);
+
+#define NC_LOG_FATAL(message, ...) if (!DebugHandler::isInitialized) { DebugHandler::Initialize(); } \
+DebugHandler::PrintFatal(message, __VA_ARGS__);
+
+#define NC_LOG_SUCCESS(message, ...) if (!DebugHandler::isInitialized) { DebugHandler::Initialize(); } \
+DebugHandler::PrintSuccess(message, __VA_ARGS__);
 
 class DebugHandler
 {
 public:
-	static void Init(PROGRAM_TYPE type);
+    static bool isInitialized;
+    static void Initialize();
 
-	static void PrintMessage(std::string msg, const char* file, const char* func, size_t line);
-	static void PrintDeprecated(std::string msg, const char* file, const char* func, size_t line);
-	static void PrintWarning(std::string msg, const char* file, const char* func, size_t line);
-	static void PrintError(std::string msg, const char* file, const char* func, size_t line);
-	static void PrintFatal(std::string msg, const char* file, const char* func, size_t line);
+    template <typename... Args>
+    static void Print(std::string message, Args... args)
+    {
+        //PrintColor("[Message]: ", 15);
+        PrintColor(message + "\n", 7, args...);
+    }
+
+    template <typename... Args>
+    static void PrintWarning(std::string message, Args... args)
+    {
+        PrintColor("[Warning]: ", 14);
+        PrintColor(message + "\n", 7, args...);
+    }
+
+    template <typename... Args>
+    static void PrintDeprecated(std::string message, Args... args)
+    {
+        PrintColor("[Deprecated]: ", 14);
+        PrintColor(message + "\n", 7, args...);
+    }
+
+    template <typename... Args>
+    static void PrintError(std::string message, Args... args)
+    {
+        PrintColor("[Error]: ", 12);
+        PrintColor(message + "\n", 7, args...);
+    }
+
+    template <typename... Args>
+    static void PrintFatal(std::string message, Args... args)
+    {
+        PrintColor("[Fatal]: ", 12);
+        PrintColor(message + "\n", 7, args...);
+        assert(false);
+    }
+
+    template <typename... Args>
+    static void PrintSuccess(std::string message, Args... args)
+    {
+        PrintColor("[Success]: ", 10);
+        PrintColor(message + "\n", 7, args...);
+    }
+
 private:
+    template <typename... Args>
+    static void PrintColor(std::string message, u8 color, Args... args)
+    {
+        SetConsoleTextAttribute(_handle, color);
+        printf(message.c_str(), args...);
+        SetConsoleTextAttribute(_handle, _defaultColor);
+    }
 
-#ifdef WIN32
-	static HANDLE hConsole;
-#endif
-	static size_t _debugLevel;
-	
-	static bool _logToDB;
-	static std::unique_ptr<DatabaseConnector> _logDB;
-
-	static bool _logToFile;
-	static std::ofstream _logFile;
+    static u32 _defaultColor;
+    static HANDLE _handle;
 };
-#endif
-
-inline void InitDebugger(PROGRAM_TYPE type)
-{
-#ifndef Release
-	DebugHandler::Init(type);
-#endif
-}
-
-#ifndef Release
-	#define NC_LOG_MESSAGE(msg) DebugHandler::PrintMessage(msg, __FILE__, __func__, __LINE__)
-	#define NC_LOG_DEPRECATED(msg) DebugHandler::PrintDeprecated(msg, __FILE__, __func__, __LINE__)
-	#define NC_LOG_WARNING(msg) DebugHandler::PrintWarning(msg, __FILE__, __func__, __LINE__)
-	#define NC_LOG_ERROR(msg) DebugHandler::PrintError(msg, __FILE__, __func__, __LINE__)
-	#define NC_LOG_FATAL(msg) DebugHandler::PrintFatal(msg, __FILE__, __func__, __LINE__)
-#else
-	#define NC_LOG_MESSAGE(msg) ((void)0)
-	#define NC_LOG_DEPRECATED(msg) ((void)0)
-	#define NC_LOG_WARNING(msg) ((void)0)
-	#define NC_LOG_ERROR(msg) ((void)0)
-	#define NC_LOG_FATAL(msg) ((void)0)
-#endif

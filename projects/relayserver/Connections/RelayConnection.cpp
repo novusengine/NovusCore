@@ -58,6 +58,19 @@ enum AuthResponse
     AUTH_LOCKED_ENFORCED                                   = 34
 };
 
+enum EnterWorldResults
+{
+    ENTER_FAILED                                = 0x00,
+    ENTER_FAILED_WORLDSERVER_DOWN               = 0x01,
+    ENTER_FAILED_CHARACTER_WITH_NAME_EXISTS     = 0x02,
+    ENTER_FAILED_NO_INSTANCE_SERVER_AVAILABLE   = 0x03,
+    ENTER_FAILED_RACE_CLASS_UNAVAILABLE         = 0x04,
+    ENTER_FAILED_CHARACTER_NOT_FOUND            = 0x05,
+    ENTER_FAILED_CHARACTER_UPDATE_IN_PROGRESS   = 0x06,
+    ENTER_FAILED_LOCKED_NO_GAMETIME             = 0x07,
+    ENTER_FAILED_CANT_LOGIN_REMOTELY            = 0x08,
+};
+
 #pragma pack(push, 1)
 struct sAuthChallenge
 {
@@ -243,6 +256,21 @@ bool RelayConnection::HandlePacketRead()
 
                     worldServer->_crypto->Encrypt(forwardedPacket.GetReadPointer(), forwardedPacket.GetActualSize());
                     worldServer->Send(forwardedPacket);
+                }
+                else
+                {
+                    if (opcode == Common::Opcode::CMSG_LOGOUT_REQUEST)
+                    {
+                        Common::ByteBuffer logoutRequest(0);
+                        SendPacket(logoutRequest, Common::Opcode::SMSG_LOGOUT_COMPLETE);
+                    }
+                    else
+                    {
+                        // Inform player the worldserver is down
+                        Common::ByteBuffer loginFailed(1);
+                        loginFailed.Write<u8>(ENTER_FAILED_WORLDSERVER_DOWN);
+                        SendPacket(loginFailed, Common::Opcode::SMSG_CHARACTER_LOGIN_FAILED);
+                    }
                 }
             }
 

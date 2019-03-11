@@ -1,5 +1,5 @@
-#include <iostream>
 #include "DatabaseConnector.h"
+#include <iostream>
 #include <amy/placeholders.hpp>
 
 std::vector<std::string> DatabaseConnector::_hosts(DATABASE_TYPE::COUNT);
@@ -49,7 +49,7 @@ bool DatabaseConnector::Borrow(DATABASE_TYPE type, std::shared_ptr<DatabaseConne
     if (!_initialized)
 	{
 		std::cerr << "ERROR: Failed to connect to MySQL Server, please initialize with DatabaseConnector::Setup!\n";
-		assert(false);
+		//assert(false);
 		return false;
 	}
 
@@ -71,7 +71,7 @@ void DatabaseConnector::Borrow(DATABASE_TYPE type, std::function<void(std::share
     if (!_initialized)
     {
         std::cerr << "ERROR: Failed to connect to MySQL Server, please initialize with DatabaseConnector::Setup!\n";
-        assert(false);
+        //assert(false);
         return;
     }
 
@@ -109,7 +109,7 @@ void DatabaseConnector::AsyncSQLThreadMain()
 		if (!DatabaseConnector::Create((DATABASE_TYPE)i, connectors[i]))
 		{
 			std::cout << "Connecting to database failed!\n";
-			assert(false);
+			//assert(false);
 		}
 	}
 	
@@ -176,7 +176,7 @@ bool DatabaseConnector::_Connect(DATABASE_TYPE type)
 	catch(amy::system_error error)
 	{
 		std::cout << "ERROR: "<< error.what() << "\n";
-		assert(false);
+		//assert(false);
 		return false;
 	}
 }
@@ -189,7 +189,7 @@ bool DatabaseConnector::Execute(std::string sql)
 	if (error)
 	{
 		std::cout << error.message() << "\n";
-		assert(false);
+		//assert(false);
 		return false;
 	}
 
@@ -204,7 +204,7 @@ bool DatabaseConnector::Query(std::string sql, amy::result_set& results)
 	if (error)
 	{
 		std::cout << _connector->error_message(error) << "\n";
-		assert(false);
+		//assert(false);
 		return false;
 	}
 

@@ -254,7 +254,6 @@ void NovusConnection::HandleRead()
 {
     Common::ByteBuffer& buffer = GetByteBuffer();
 
-    std::cout << "ANTHING AT ALL" << std::endl;
     bool isDecrypted = false;
     while (buffer.GetActualSize())
     {
@@ -497,7 +496,7 @@ bool NovusConnection::HandleCommandForwardPacket()
             SetFieldValue<u32>(OBJECT_FIELD_TYPE, 0x19); // Object Type Player (Player, Unit, Object)
             SetFieldValue<f32>(OBJECT_FIELD_SCALE_X, 1.0f); // Object Type Player (Player, Unit, Object)
             
-            SetFieldValue<u8>(UNIT_FIELD_BYTES_0, 1, 0);
+            SetFieldValue<u8>(UNIT_FIELD_BYTES_0, 4, 0);
             SetFieldValue<u8>(UNIT_FIELD_BYTES_0, 1, 1);
             SetFieldValue<u8>(UNIT_FIELD_BYTES_0, 1, 2);
             SetFieldValue<u8>(UNIT_FIELD_BYTES_0, 1, 3);
@@ -526,7 +525,7 @@ bool NovusConnection::HandleCommandForwardPacket()
             SetFieldValue<u32>(UNIT_FIELD_RANGEDATTACKTIME, 0);
             SetFieldValue<f32>(UNIT_FIELD_BOUNDINGRADIUS, 0.208000f);
             SetFieldValue<f32>(UNIT_FIELD_COMBATREACH, 1.5f);
-            SetFieldValue<u32>(UNIT_FIELD_DISPLAYID, 50);
+            SetFieldValue<u32>(UNIT_FIELD_DISPLAYID, 56);
             SetFieldValue<u32>(UNIT_FIELD_NATIVEDISPLAYID, 50);
             SetFieldValue<u32>(UNIT_FIELD_MOUNTDISPLAYID, 0);
             SetFieldValue<f32>(UNIT_FIELD_MINDAMAGE, 9.007143f);
@@ -852,6 +851,21 @@ bool NovusConnection::HandleCommandForwardPacket()
 
             timeSync.Write<u32>(0);
             SendPacket(timeSync);
+            break;
+        }
+        case Common::Opcode::CMSG_LOGOUT_REQUEST:
+        {
+            NovusHeader packetHeader;
+            packetHeader.command = NOVUS_FOWARDPACKET;
+            packetHeader.account = header->account;
+            packetHeader.opcode = Common::Opcode::SMSG_LOGOUT_COMPLETE;
+            packetHeader.size = 0;
+
+            Common::ByteBuffer logoutRequest(0);
+            packetHeader.AddTo(logoutRequest);
+
+            SendPacket(logoutRequest);
+
             break;
         }
         default:

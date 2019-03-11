@@ -26,7 +26,7 @@ bool ConfigHandler::Load(std::string configFileName)
         return false;
     }
 
-    NC_LOG_MESSAGE("Successfully loaded config file: '" + configFileName);
+    NC_LOG_SUCCESS("Loaded config file: '" + configFileName);
 	return true;
 }
 

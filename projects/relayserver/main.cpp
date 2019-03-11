@@ -36,7 +36,7 @@ ClientRelayConnectionHandler*   ClientRelayConnectionHandler::_instance = nullpt
 int main()
 {
     /* Initialize Debug Handler */
-    InitDebugger(PROGRAM_TYPE::Relay);
+    //InitDebugger(PROGRAM_TYPE::Relay);
 
     /* Load Database Config Handler for server */
     if (!ConfigHandler::Load("database_configuration.json"))

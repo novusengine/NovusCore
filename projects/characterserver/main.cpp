@@ -31,7 +31,7 @@
 int main()
 {
     /* Initialize Debug Handler */
-    InitDebugger(PROGRAM_TYPE::Char);
+    //InitDebugger(PROGRAM_TYPE::Char);
 
     /* Load Database Config Handler for server */
     if (!ConfigHandler::Load("database_configuration.json"))

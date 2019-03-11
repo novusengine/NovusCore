@@ -32,7 +32,7 @@
 int main()
 {
     /* Initialize Debug Handler */
-    InitDebugger(PROGRAM_TYPE::Auth);
+    //InitDebugger(PROGRAM_TYPE::Char);
 
     /* Load Database Config Handler for server */
     if (!ConfigHandler::Load("database_configuration.json"))
@@ -71,13 +71,8 @@ int main()
         io_service.run();
     });
 
-    std::stringstream ss;
-    ss << "Authserver Instance running on port: " << clientAuthConnectionHandler.GetPort();
-    NC_LOG_MESSAGE(ss.str());
-
-    std::stringstream _ss;
-    _ss << "Authserver Node Instance running on port: " << relayNodeConnectionHandler.GetPort();
-    NC_LOG_MESSAGE(_ss.str());
+    NC_LOG_SUCCESS("Authserver Instance running on port: %u", clientAuthConnectionHandler.GetPort());
+    NC_LOG_SUCCESS("Authserver Node Instance running on port: %u", relayNodeConnectionHandler.GetPort());
 
     std::getchar();
     return 0;
