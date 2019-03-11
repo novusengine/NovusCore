@@ -27,11 +27,12 @@
 #include <cstring>
 #include <algorithm>
 #include <memory>
+#include "../NovusTypes.h"
 
 BigNumber::BigNumber() : _bigNum(BN_new()) { }
 
 BigNumber::BigNumber(BigNumber const& bigNum) : _bigNum(BN_dup(bigNum._bigNum)) { }
-BigNumber::BigNumber(uint32_t val) : _bigNum(BN_new())
+BigNumber::BigNumber(u32 val) : _bigNum(BN_new())
 {
     SetUInt32(val);
 }
@@ -40,19 +41,19 @@ BigNumber::~BigNumber()
     BN_free(_bigNum);
 }
 
-void BigNumber::SetUInt32(uint32_t val)
+void BigNumber::SetUInt32(u32 val)
 {
     BN_set_word(_bigNum, val);
 }
-void BigNumber::SetUInt64(uint64_t val)
+void BigNumber::SetUInt64(u64 val)
 {
-    SetUInt32((uint32_t)(val >> 32));
+    SetUInt32((u32)(val >> 32));
     BN_lshift(_bigNum, _bigNum, 32);
-    SetUInt32((uint32_t)(val & 0xFFFFFFFF));
+    SetUInt32((u32)(val & 0xFFFFFFFF));
 }
-uint32_t BigNumber::GetUInt32()
+u32 BigNumber::GetUInt32()
 {
-    return (uint32_t)BN_get_word(_bigNum);
+    return (u32)BN_get_word(_bigNum);
 }
 
 std::string BigNumber::BN2Hex() const
@@ -73,9 +74,9 @@ void BigNumber::Hex2BN(char const* str)
 {
     BN_hex2bn(&_bigNum, str);
 }
-void BigNumber::Bin2BN(uint8_t const* data, int32_t size)
+void BigNumber::Bin2BN(u8 const* data, i32 size)
 {
-    uint8_t* array = new uint8_t[size];
+    u8* array = new u8[size];
 
     for (int i = 0; i < size; i++)
         array[i] = data[size - 1 - i];
@@ -84,12 +85,12 @@ void BigNumber::Bin2BN(uint8_t const* data, int32_t size)
 
     delete[] array;
 }
-std::unique_ptr<uint8_t[]> BigNumber::BN2BinArray(size_t size, bool littleEndian)
+std::unique_ptr<u8[]> BigNumber::BN2BinArray(size_t size, bool littleEndian)
 {
     int numBytes = GetBytes();
     int neededSize = ((int)size >= numBytes) ? (int)size : numBytes;
 
-    uint8_t* array = new uint8_t[neededSize];
+    u8* array = new u8[neededSize];
 
     // Zero Fill remaining bytes if needed size is greater than the length of BigNumber
     if (neededSize > numBytes)
@@ -101,7 +102,7 @@ std::unique_ptr<uint8_t[]> BigNumber::BN2BinArray(size_t size, bool littleEndian
     if (littleEndian)
         std::reverse(array, array + numBytes);
 
-    std::unique_ptr<uint8_t[]> ret(array);
+    std::unique_ptr<u8[]> ret(array);
     return ret;
 }
 
@@ -140,7 +141,7 @@ bool BigNumber::IsNegative() const
 {
     return BN_is_negative(_bigNum);
 }
-int32_t BigNumber::GetBytes(void)
+i32 BigNumber::GetBytes(void)
 {
     return BN_num_bytes(_bigNum);
 }

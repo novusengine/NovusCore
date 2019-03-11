@@ -25,6 +25,7 @@
 
 #include <string>
 #include <openssl/sha.h>
+#include "../NovusTypes.h"
 
 class BigNumber;
 
@@ -36,18 +37,18 @@ public:
 
     void UpdateHashForBn(size_t size, BigNumber* bigNumber0, ...);
 
-    void UpdateHash(const uint8_t* data, size_t size);
+    void UpdateHash(const u8* data, size_t size);
     void UpdateHash(const std::string& str);
 
     void Init();
     void Finish();
 
-    uint8_t* GetData(void) { return _data; }
+    u8* GetData(void) { return _data; }
     int GetLength(void) const { return SHA_DIGEST_LENGTH; }
 
 private:
     SHA_CTX _state;
-    uint8_t _data[SHA_DIGEST_LENGTH];
+    u8 _data[SHA_DIGEST_LENGTH];
 };
 
 /// Returns SHA1 hash from hex string.

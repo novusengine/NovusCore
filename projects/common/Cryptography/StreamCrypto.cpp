@@ -25,19 +25,19 @@ StreamCrypto::StreamCrypto() : _cDecrypt(20), _sEncrypt(20), _valid(false) { }
 
 void StreamCrypto::SetupClient(BigNumber* key)
 {
-    uint8_t cEncryptionKey[16] = { 0xC2, 0xB3, 0x72, 0x3C, 0xC6, 0xAE, 0xD9, 0xB5, 0x34, 0x3C, 0x53, 0xEE, 0x2F, 0x43, 0x67, 0xCE };
-    HMACH cEncryptionHMAC(16, (uint8_t*)cEncryptionKey);
-    uint8_t* eHash = cEncryptionHMAC.CalculateHash(key);
+    u8 cEncryptionKey[16] = { 0xC2, 0xB3, 0x72, 0x3C, 0xC6, 0xAE, 0xD9, 0xB5, 0x34, 0x3C, 0x53, 0xEE, 0x2F, 0x43, 0x67, 0xCE };
+    HMACH cEncryptionHMAC(16, (u8*)cEncryptionKey);
+    u8* eHash = cEncryptionHMAC.CalculateHash(key);
 
-    uint8_t sDecryptionKey[16] = { 0xCC, 0x98, 0xAE, 0x04, 0xE8, 0x97, 0xEA, 0xCA, 0x12, 0xDD, 0xC0, 0x93, 0x42, 0x91, 0x53, 0x57 };
-    HMACH sDecryptHMAC(16, (uint8_t*)sDecryptionKey);
-    uint8_t* dHash = sDecryptHMAC.CalculateHash(key);
+    u8 sDecryptionKey[16] = { 0xCC, 0x98, 0xAE, 0x04, 0xE8, 0x97, 0xEA, 0xCA, 0x12, 0xDD, 0xC0, 0x93, 0x42, 0x91, 0x53, 0x57 };
+    HMACH sDecryptHMAC(16, (u8*)sDecryptionKey);
+    u8* dHash = sDecryptHMAC.CalculateHash(key);
 
     _sEncrypt.Setup(eHash);
     _cDecrypt.Setup(dHash);
 
     // Drop first 1024 bytes, as WoW uses ARC4-drop1024.
-    uint8_t dropBuffer[1024];
+    u8 dropBuffer[1024];
 
     memset(dropBuffer, 0, 1024);
     _sEncrypt.UpdateEncryption(1024, dropBuffer);
@@ -49,19 +49,19 @@ void StreamCrypto::SetupClient(BigNumber* key)
 }
 void StreamCrypto::SetupServer(BigNumber* key)
 {
-    uint8_t sEncryptionKey[16] = { 0xCC, 0x98, 0xAE, 0x04, 0xE8, 0x97, 0xEA, 0xCA, 0x12, 0xDD, 0xC0, 0x93, 0x42, 0x91, 0x53, 0x57 };
-    HMACH sEncryptionHMAC(16, (uint8_t*)sEncryptionKey);
-    uint8_t* eHash = sEncryptionHMAC.CalculateHash(key);
+    u8 sEncryptionKey[16] = { 0xCC, 0x98, 0xAE, 0x04, 0xE8, 0x97, 0xEA, 0xCA, 0x12, 0xDD, 0xC0, 0x93, 0x42, 0x91, 0x53, 0x57 };
+    HMACH sEncryptionHMAC(16, (u8*)sEncryptionKey);
+    u8* eHash = sEncryptionHMAC.CalculateHash(key);
 
-    uint8_t cDecryptionKey[16] = { 0xC2, 0xB3, 0x72, 0x3C, 0xC6, 0xAE, 0xD9, 0xB5, 0x34, 0x3C, 0x53, 0xEE, 0x2F, 0x43, 0x67, 0xCE };
-    HMACH cDecryptHMAC(16, (uint8_t*)cDecryptionKey);
-    uint8_t* dHash = cDecryptHMAC.CalculateHash(key);
+    u8 cDecryptionKey[16] = { 0xC2, 0xB3, 0x72, 0x3C, 0xC6, 0xAE, 0xD9, 0xB5, 0x34, 0x3C, 0x53, 0xEE, 0x2F, 0x43, 0x67, 0xCE };
+    HMACH cDecryptHMAC(16, (u8*)cDecryptionKey);
+    u8* dHash = cDecryptHMAC.CalculateHash(key);
 
     _sEncrypt.Setup(eHash);
     _cDecrypt.Setup(dHash);
 
     // Drop first 1024 bytes, as WoW uses ARC4-drop1024.
-    uint8_t dropBuffer[1024];
+    u8 dropBuffer[1024];
 
     memset(dropBuffer, 0, 1024);
     _sEncrypt.UpdateEncryption(1024, dropBuffer);
@@ -72,7 +72,7 @@ void StreamCrypto::SetupServer(BigNumber* key)
     _valid = true;
 }
 
-void StreamCrypto::Decrypt(uint8_t* data, size_t size)
+void StreamCrypto::Decrypt(u8* data, size_t size)
 {
     if (!_valid)
         return;
@@ -80,7 +80,7 @@ void StreamCrypto::Decrypt(uint8_t* data, size_t size)
     _cDecrypt.UpdateEncryption(size, data);
 }
 
-void StreamCrypto::Encrypt(uint8_t* data, size_t size)
+void StreamCrypto::Encrypt(u8* data, size_t size)
 {
     if (!_valid)
         return;

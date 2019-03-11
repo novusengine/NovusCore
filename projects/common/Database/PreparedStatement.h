@@ -24,26 +24,27 @@
 #pragma once
 
 #include <string>
+#include "../NovusTypes.h"
 
 // Valid type/tokens
 // {s} - std::string
 // {i} - int
 // {u} - unsigned int
-// {f} - float
-// {d} - double
+// {f} - f32
+// {d} - f64
 
 class PreparedStatement
 {
 public:
 	PreparedStatement(std::string statement);
 
-    PreparedStatement& Bind(uint8_t value);
+    PreparedStatement& Bind(u8 value);
 	PreparedStatement& Bind(std::string value);
     PreparedStatement& Bind(unsigned int value);
 	PreparedStatement& Bind(int value);
-	PreparedStatement& Bind(float value);
-	PreparedStatement& Bind(double value);
-    PreparedStatement& Bind(uint64_t value);
+	PreparedStatement& Bind(f32 value);
+	PreparedStatement& Bind(f64 value);
+    PreparedStatement& Bind(u64 value);
 
 	bool Verify();
 	std::string Get();

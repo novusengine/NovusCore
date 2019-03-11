@@ -25,6 +25,7 @@
 
 #include <memory>
 #include <string>
+#include "../NovusTypes.h"
 
 struct bignum_st;
 
@@ -33,18 +34,18 @@ class BigNumber
 public:
     BigNumber();
     BigNumber(BigNumber const& bn);
-    BigNumber(uint32_t);
+    BigNumber(u32);
     ~BigNumber();
 
-    void SetUInt32(uint32_t);
-    void SetUInt64(uint64_t);
-    uint32_t GetUInt32();
+    void SetUInt32(u32);
+    void SetUInt64(u64);
+    u32 GetUInt32();
 
     std::string BN2Hex() const;
     std::string BN2Dec() const;
     void Hex2BN(char const* string);
-    void Bin2BN(uint8_t const* data, int32_t size);
-    std::unique_ptr<uint8_t[]> BN2BinArray(size_t size = 0, bool littleEndian = true);
+    void Bin2BN(u8 const* data, i32 size);
+    std::unique_ptr<u8[]> BN2BinArray(size_t size = 0, bool littleEndian = true);
 
     void Rand(size_t bits);
     BigNumber Exponential(BigNumber const&);
@@ -52,7 +53,7 @@ public:
 
     bool IsZero() const;
     bool IsNegative() const;
-    int32_t GetBytes(void);
+    i32 GetBytes(void);
 
     BigNumber& operator=(BigNumber const& bigNum);
     BigNumber operator+=(BigNumber const& bigNum);

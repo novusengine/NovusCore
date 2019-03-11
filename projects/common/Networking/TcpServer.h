@@ -67,7 +67,7 @@ namespace Common
         {
             StartListening();
         }
-        uint16_t GetPort()
+        u16 GetPort()
         {
             return _acceptor.local_endpoint().port();
         }

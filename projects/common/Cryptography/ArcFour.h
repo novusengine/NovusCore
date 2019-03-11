@@ -24,16 +24,17 @@
 #pragma once
 #include <openssl/evp.h>
 #include <stdint.h>
+#include "../NovusTypes.h"
 
 class ArcFour 
 {
     public:
         ArcFour(size_t size);
-        ArcFour(uint8_t* seed, size_t size);
+        ArcFour(u8* seed, size_t size);
         ~ArcFour();
 
-        void Setup(uint8_t* seed);
-        void UpdateEncryption(size_t size, uint8_t* data);
+        void Setup(u8* seed);
+        void UpdateEncryption(size_t size, u8* data);
 
     private:
         EVP_CIPHER_CTX* _CIPHER_CONTEXT;

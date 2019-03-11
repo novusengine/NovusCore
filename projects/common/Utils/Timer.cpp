@@ -29,13 +29,13 @@ void Timer::Reset()
 f32 Timer::GetLifeTime()
 {
 	std::chrono::time_point<Clock> now = Clock::now();
-	std::chrono::duration<float> lifeTime = now - _startTime;
+	std::chrono::duration<f32> lifeTime = now - _startTime;
 	return lifeTime.count();
 }
 
 f32 Timer::GetDeltaTime()
 {
 	std::chrono::time_point<Clock> now = Clock::now();
-	std::chrono::duration<float> delta = now - _lastTick;
+	std::chrono::duration<f32> delta = now - _lastTick;
 	return delta.count();
 }

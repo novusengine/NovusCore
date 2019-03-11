@@ -33,7 +33,7 @@
 SHA1Hasher::SHA1Hasher()
 {
     SHA1_Init(&_state);
-    memset(_data, 0, SHA_DIGEST_LENGTH * sizeof(uint8_t));
+    memset(_data, 0, SHA_DIGEST_LENGTH * sizeof(u8));
 }
 SHA1Hasher::~SHA1Hasher()
 {
@@ -49,13 +49,13 @@ void SHA1Hasher::Finish(void)
     SHA1_Final(_data, &_state);
 }
 
-void SHA1Hasher::UpdateHash(const uint8_t* data, size_t size)
+void SHA1Hasher::UpdateHash(const u8* data, size_t size)
 {
     SHA1_Update(&_state, data, size);
 }
 void SHA1Hasher::UpdateHash(const std::string& string)
 {
-    UpdateHash((uint8_t const*)string.c_str(), string.length());
+    UpdateHash((u8 const*)string.c_str(), string.length());
 }
 void SHA1Hasher::UpdateHashForBn(size_t size, BigNumber* bigNumber0, ...)
 {

@@ -41,7 +41,7 @@ void HMAC_CONTEXT_CLEANUP(HMAC_CTX* context)
     delete context;
 }
 
-HMACH::HMACH(size_t size, uint8_t* seed)
+HMACH::HMACH(size_t size, u8* seed)
 {
     _HMAC_CONTEXT = HMAC_CTX_INIT();
     HMAC_Init_ex(_HMAC_CONTEXT, seed, (int)size, EVP_sha1(), nullptr);
@@ -55,23 +55,23 @@ HMACH::~HMACH()
 
 void HMACH::UpdateHash(std::string const& string)
 {
-    HMAC_Update(_HMAC_CONTEXT, reinterpret_cast<uint8_t const*>(string.c_str()), string.length());
+    HMAC_Update(_HMAC_CONTEXT, reinterpret_cast<u8 const*>(string.c_str()), string.length());
 }
 
-void HMACH::UpdateHash(uint8_t const* data, size_t size)
+void HMACH::UpdateHash(u8 const* data, size_t size)
 {
     HMAC_Update(_HMAC_CONTEXT, data, size);
 }
 
 void HMACH::Finish()
 {
-    uint32_t size = 0;
+    u32 size = 0;
     HMAC_Final(_HMAC_CONTEXT, _data, &size);
 
     assert(size == SHA_DIGEST_LENGTH);
 }
 
-uint8_t* HMACH::CalculateHash(BigNumber* bigNumber)
+u8* HMACH::CalculateHash(BigNumber* bigNumber)
 {
     HMAC_Update(_HMAC_CONTEXT, bigNumber->BN2BinArray().get(), bigNumber->GetBytes());
     

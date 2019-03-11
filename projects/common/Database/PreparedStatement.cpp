@@ -47,7 +47,7 @@ PreparedStatement& PreparedStatement::Bind(unsigned int value)
 
     return *this;
 }
-PreparedStatement& PreparedStatement::Bind(uint8_t value)
+PreparedStatement& PreparedStatement::Bind(u8 value)
 {
     size_t replacePos = _statement.find("{u}");
 
@@ -63,7 +63,7 @@ PreparedStatement& PreparedStatement::Bind(uint8_t value)
 
     return *this;
 }
-PreparedStatement& PreparedStatement::Bind(uint64_t value)
+PreparedStatement& PreparedStatement::Bind(u64 value)
 {
     size_t replacePos = _statement.find("{u}");
 
@@ -97,7 +97,7 @@ PreparedStatement& PreparedStatement::Bind(int value)
 	return *this;
 }
 
-PreparedStatement& PreparedStatement::Bind(float value)
+PreparedStatement& PreparedStatement::Bind(f32 value)
 {
 	size_t replacePos = _statement.find("{f}");
 
@@ -114,7 +114,7 @@ PreparedStatement& PreparedStatement::Bind(float value)
 	return *this;
 }
 
-PreparedStatement& PreparedStatement::Bind(double value)
+PreparedStatement& PreparedStatement::Bind(f64 value)
 {
 	size_t replacePos = _statement.find("{d}");
 

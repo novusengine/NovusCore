@@ -6,14 +6,14 @@ namespace Common
 #pragma pack(push, 1)
     struct ClientPacketHeader
     {
-        uint16_t size;
-        uint32_t command;
+        u16 size;
+        u32 command;
     };
     struct ServerPacketHeader
     {
-        ServerPacketHeader(uint32_t size, uint16_t command) : size(size)
+        ServerPacketHeader(u32 size, u16 command) : size(size)
         {
-            uint8_t index = 0;
+            u8 index = 0;
 
             if (BigPacket())
             {
@@ -26,7 +26,7 @@ namespace Common
             headerArray[index++] = 0xFF & (command >> 8);
         }
 
-        uint8_t GetLength()
+        u8 GetLength()
         {
             return 2 + (BigPacket() ? 3 : 2);
         }
@@ -36,8 +36,8 @@ namespace Common
             return size > 0x7FFF;
         }
 
-        const uint32_t size;
-        uint8_t headerArray[5];
+        const u32 size;
+        u8 headerArray[5];
     };
 #pragma pack(pop)
 
@@ -906,7 +906,7 @@ namespace Common
         CMSG_LFG_LEAVE                                  = 0x35D,
         CMSG_SEARCH_LFG_JOIN                            = 0x35E,
         CMSG_SEARCH_LFG_LEAVE                           = 0x35F,
-        SMSG_UPDATE_LFG_LIST                            = 0x360,    // uint32, uint32, if (uint8) { uint32 count, for (count) { uint64} }, uint32 count2, uint32, for (count2) { uint64, uint32 flags, if (flags & 0x2) {string}, if (flags & 0x10) {for (3) uint8}, if (flags & 0x80) {uint64, uint32}}, uint32 count3, uint32, for (count3) {uint64, uint32 flags, if (flags & 0x1) {uint8, uint8, uint8, for (3) uint8, uint32, uint32, uint32, uint32, uint32, uint32, float, float, uint32, uint32, uint32, uint32, uint32, float, uint32, uint32, uint32, uint32, uint32, uint32}, if (flags&0x2) string, if (flags&0x4) uint8, if (flags&0x8) uint64, if (flags&0x10) uint8, if (flags&0x20) uint32, if (flags&0x40) uint8, if (flags& 0x80) {uint64, uint32}}
+        SMSG_UPDATE_LFG_LIST                            = 0x360,    // uint32, uint32, if (uint8) { uint32 count, for (count) { uint64} }, uint32 count2, uint32, for (count2) { uint64, uint32 flags, if (flags & 0x2) {string}, if (flags & 0x10) {for (3) uint8}, if (flags & 0x80) {uint64, uint32}}, uint32 count3, uint32, for (count3) {uint64, uint32 flags, if (flags & 0x1) {uint8, uint8, uint8, for (3) uint8, uint32, uint32, uint32, uint32, uint32, uint32, f32, f32, uint32, uint32, uint32, uint32, uint32, f32, uint32, uint32, uint32, uint32, uint32, uint32}, if (flags&0x2) string, if (flags&0x4) uint8, if (flags&0x8) uint64, if (flags&0x10) uint8, if (flags&0x20) uint32, if (flags&0x40) uint8, if (flags& 0x80) {uint64, uint32}}
         SMSG_LFG_PROPOSAL_UPDATE                        = 0x361,    // uint32, uint8, uint32, uint32, uint8, for (uint8) {uint32, uint8, uint8, uint8, uint8}
         CMSG_LFG_PROPOSAL_RESULT                        = 0x362,
         SMSG_LFG_ROLE_CHECK_UPDATE                      = 0x363,    // uint32, uint8, for (uint8) uint32, uint8, for (uint8) { uint64, uint8, uint32, uint8, }
@@ -1249,7 +1249,7 @@ namespace Common
         CMSG_ITEM_REFUND                                = 0x4B4, // lua: ContainerRefundItemPurchase
         SMSG_ITEM_REFUND_RESULT                         = 0x4B5,
         CMSG_CORPSE_MAP_POSITION_QUERY                  = 0x4B6, // uint32
-        SMSG_CORPSE_MAP_POSITION_QUERY_RESPONSE         = 0x4B7, // 3*float+float
+        SMSG_CORPSE_MAP_POSITION_QUERY_RESPONSE         = 0x4B7, // 3*f32+f32
         CMSG_UNUSED5                                    = 0x4B8,
         CMSG_UNUSED6                                    = 0x4B9,
         CMSG_CALENDAR_EVENT_SIGNUP                      = 0x4BA, // uint64

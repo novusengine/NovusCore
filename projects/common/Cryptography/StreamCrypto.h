@@ -31,8 +31,8 @@ class StreamCrypto
         StreamCrypto();
         void SetupClient(BigNumber* key);
         void SetupServer(BigNumber* key);
-        void Decrypt(uint8_t* data, size_t size);
-        void Encrypt(uint8_t* data, size_t size);
+        void Decrypt(u8* data, size_t size);
+        void Encrypt(u8* data, size_t size);
 
         bool IsValid() const { return _valid; }
 
