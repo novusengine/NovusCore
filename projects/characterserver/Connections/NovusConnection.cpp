@@ -65,9 +65,9 @@ enum CharacterResponses
     CHAR_DELETE_FAILED_ARENA_CAPTAIN                       = 75,
 };
 
-std::unordered_map<uint8_t, NovusMessageHandler> NovusConnection::InitMessageHandlers()
+std::unordered_map<u8, NovusMessageHandler> NovusConnection::InitMessageHandlers()
 {
-    std::unordered_map<uint8_t, NovusMessageHandler> messageHandlers;
+    std::unordered_map<u8, NovusMessageHandler> messageHandlers;
 
     messageHandlers[NOVUS_CHALLENGE]    = { NOVUSSTATUS_CHALLENGE,    sizeof(sNovusChallenge),  &NovusConnection::HandleCommandChallenge };
     messageHandlers[NOVUS_PROOF]        = { NOVUSSTATUS_PROOF,        1,                        &NovusConnection::HandleCommandProof };
@@ -75,7 +75,7 @@ std::unordered_map<uint8_t, NovusMessageHandler> NovusConnection::InitMessageHan
 
     return messageHandlers;
 }
-std::unordered_map<uint8_t, NovusMessageHandler> const MessageHandlers = NovusConnection::InitMessageHandlers();
+std::unordered_map<u8, NovusMessageHandler> const MessageHandlers = NovusConnection::InitMessageHandlers();
 
 bool NovusConnection::Start()
 {
@@ -85,10 +85,10 @@ bool NovusConnection::Start()
 
         /* NODE_CHALLENGE */
         Common::ByteBuffer packet(6);
-        packet.Write<uint8_t>(0);       // Command
-        packet.Write<uint8_t>(0);       // Type
-        packet.Write<uint16_t>(335);    // Version
-        packet.Write<uint16_t>(12340);  // Build
+        packet.Write<u8>(0);       // Command
+        packet.Write<u8>(0);       // Type
+        packet.Write<u16>(335);    // Version
+        packet.Write<u16>(12340);  // Build
 
         AsyncRead();
         Send(packet);
@@ -115,7 +115,7 @@ void NovusConnection::HandleRead()
             isDecrypted = true;
         }
 
-        uint8_t command = buffer.GetDataPointer()[0];
+        u8 command = buffer.GetDataPointer()[0];
 
         auto itr = MessageHandlers.find(command);
         if (itr == MessageHandlers.end())
@@ -177,7 +177,7 @@ void NovusConnection::HandleRead()
         }
         else
         {
-            uint16_t size = uint16_t(itr->second.packetSize);
+            u16 size = u16(itr->second.packetSize);
             if (buffer.GetActualSize() < size)
                 break;
 
@@ -204,7 +204,7 @@ bool NovusConnection::HandleCommandChallenge()
 
     /* Send fancy encrypted packet here */
     Common::ByteBuffer packet;
-    packet.Write<uint8_t>(NOVUS_PROOF); // RELAY_PROOF
+    packet.Write<u8>(NOVUS_PROOF); // RELAY_PROOF
     _crypto->Encrypt(packet.GetReadPointer(), packet.GetActualSize());
     _status = NOVUSSTATUS_PROOF;
 
@@ -240,16 +240,16 @@ bool NovusConnection::HandleCommandForwardPacket()
             packetHeader.size = 4 + 1 + 4;
             packetHeader.AddTo(forwardPacket);
 
-            forwardPacket.Write<uint32_t>((uint32_t)time(nullptr));
-            forwardPacket.Write<uint8_t>(1);
-            forwardPacket.Write<uint32_t>(0x15);
+            forwardPacket.Write<u32>((u32)time(nullptr));
+            forwardPacket.Write<u8>(1);
+            forwardPacket.Write<u32>(0x15);
 
             SendPacket(forwardPacket);
             break;
         }
         case Common::Opcode::CMSG_UPDATE_ACCOUNT_DATA:
         {
-            uint32_t type, timestamp, decompressedSize;
+            u32 type, timestamp, decompressedSize;
             _packetBuffer.Read(&type, 4);
             _packetBuffer.Read(&timestamp, 4);
             _packetBuffer.Read(&decompressedSize, 4);
@@ -268,8 +268,8 @@ bool NovusConnection::HandleCommandForwardPacket()
             Common::ByteBuffer updateAccountDataComplete(9 + 4 + 4);
             packetHeader.AddTo(updateAccountDataComplete);
 
-            updateAccountDataComplete.Write<uint32_t>(type);
-            updateAccountDataComplete.Write<uint32_t>(0);
+            updateAccountDataComplete.Write<u32>(type);
+            updateAccountDataComplete.Write<u32>(0);
             SendPacket(updateAccountDataComplete);
             break;
         }
@@ -279,8 +279,8 @@ bool NovusConnection::HandleCommandForwardPacket()
             Common::ByteBuffer realmSplit;
 
             std::string split_date = "01/01/01";
-            uint32_t unk = 0;
-            _packetBuffer.Read<uint32_t>(unk);
+            u32 unk = 0;
+            _packetBuffer.Read<u32>(unk);
 
 
             NovusHeader packetHeader;
@@ -288,8 +288,8 @@ bool NovusConnection::HandleCommandForwardPacket()
             packetHeader.account = header->account;
             packetHeader.opcode = Common::Opcode::SMSG_REALM_SPLIT;
 
-            realmSplit.Write<uint32_t>(unk);
-            realmSplit.Write<uint32_t>(0x0); // split states: 0x0 realm normal, 0x1 realm split, 0x2 realm split pending
+            realmSplit.Write<u32>(unk);
+            realmSplit.Write<u32>(0x0); // split states: 0x0 realm normal, 0x1 realm split, 0x2 realm split pending
             realmSplit.WriteString(split_date);
 
             packetHeader.size = realmSplit.GetActualSize();
@@ -314,48 +314,48 @@ bool NovusConnection::HandleCommandForwardPacket()
                 packetHeader.opcode = Common::Opcode::SMSG_CHAR_ENUM;
 
                 // Number of characters
-                charEnum.Write<uint8_t>((uint8_t)results.affected_rows());
+                charEnum.Write<u8>((u8)results.affected_rows());
 
                 /* Template for loading a character */
                 for (auto& row : results)
                 {
-                    charEnum.Write<uint64_t>(row[0].as<amy::sql_int_unsigned>()); // Guid
+                    charEnum.Write<u64>(row[0].as<amy::sql_int_unsigned>()); // Guid
                     charEnum.WriteString(row[1].as<amy::sql_varchar>()); // Name
-                    charEnum.Write<uint8_t>(row[2].as<amy::sql_tinyint_unsigned>()); // Race
-                    charEnum.Write<uint8_t>(row[3].as<amy::sql_tinyint_unsigned>()); // Class
-                    charEnum.Write<uint8_t>(row[4].as<amy::sql_tinyint_unsigned>()); // Gender
+                    charEnum.Write<u8>(row[2].as<amy::sql_tinyint_unsigned>()); // Race
+                    charEnum.Write<u8>(row[3].as<amy::sql_tinyint_unsigned>()); // Class
+                    charEnum.Write<u8>(row[4].as<amy::sql_tinyint_unsigned>()); // Gender
 
-                    charEnum.Write<uint8_t>(row[5].as<amy::sql_tinyint_unsigned>()); // Skin
-                    charEnum.Write<uint8_t>(row[6].as<amy::sql_tinyint_unsigned>()); // Face
-                    charEnum.Write<uint8_t>(row[7].as<amy::sql_tinyint_unsigned>()); // Hairstyle
-                    charEnum.Write<uint8_t>(row[8].as<amy::sql_tinyint_unsigned>()); // Haircolor
-                    charEnum.Write<uint8_t>(row[9].as<amy::sql_tinyint_unsigned>()); // Facialstyle
+                    charEnum.Write<u8>(row[5].as<amy::sql_tinyint_unsigned>()); // Skin
+                    charEnum.Write<u8>(row[6].as<amy::sql_tinyint_unsigned>()); // Face
+                    charEnum.Write<u8>(row[7].as<amy::sql_tinyint_unsigned>()); // Hairstyle
+                    charEnum.Write<u8>(row[8].as<amy::sql_tinyint_unsigned>()); // Haircolor
+                    charEnum.Write<u8>(row[9].as<amy::sql_tinyint_unsigned>()); // Facialstyle
 
-                    charEnum.Write<uint8_t>(row[10].as<amy::sql_tinyint_unsigned>()); // Level
-                    charEnum.Write<uint32_t>(row[11].as<amy::sql_tinyint_unsigned>()); // Zone Id
-                    charEnum.Write<uint32_t>(row[12].as<amy::sql_tinyint_unsigned>()); // Map Id
+                    charEnum.Write<u8>(row[10].as<amy::sql_tinyint_unsigned>()); // Level
+                    charEnum.Write<u32>(row[11].as<amy::sql_tinyint_unsigned>()); // Zone Id
+                    charEnum.Write<u32>(row[12].as<amy::sql_tinyint_unsigned>()); // Map Id
 
-                    charEnum.Write<float>(row[13].as<amy::sql_float>()); // X
-                    charEnum.Write<float>(row[14].as<amy::sql_float>()); // Y
-                    charEnum.Write<float>(row[15].as<amy::sql_float>()); // Z
+                    charEnum.Write<f32>(row[13].as<amy::sql_float>()); // X
+                    charEnum.Write<f32>(row[14].as<amy::sql_float>()); // Y
+                    charEnum.Write<f32>(row[15].as<amy::sql_float>()); // Z
 
-                    charEnum.Write<uint32_t>(0); // Guild Id
+                    charEnum.Write<u32>(0); // Guild Id
 
-                    charEnum.Write<uint32_t>(0); // Character Flags
-                    charEnum.Write<uint32_t>(0); // characterCustomize Flag
+                    charEnum.Write<u32>(0); // Character Flags
+                    charEnum.Write<u32>(0); // characterCustomize Flag
 
-                    charEnum.Write<uint8_t>(1); // First Login (Here we should probably do a playerTime check to determin if its the player's first login)
+                    charEnum.Write<u8>(1); // First Login (Here we should probably do a playerTime check to determin if its the player's first login)
 
-                    charEnum.Write<uint32_t>(22234); // Pet Display Id
-                    charEnum.Write<uint32_t>(5);  // Pet Level
-                    charEnum.Write<uint32_t>(1);  // Pet Family
+                    charEnum.Write<u32>(22234); // Pet Display Id
+                    charEnum.Write<u32>(5);  // Pet Level
+                    charEnum.Write<u32>(1);  // Pet Family
 
-                    uint32_t equipmentDataNull = 0;
-                    for (int i = 0; i < 23; ++i)
+                    u32 equipmentDataNull = 0;
+                    for (i32 i = 0; i < 23; ++i)
                     {
-                        charEnum.Write<uint32_t>(equipmentDataNull);
-                        charEnum.Write<uint8_t>(0);
-                        charEnum.Write<uint32_t>(equipmentDataNull);
+                        charEnum.Write<u32>(equipmentDataNull);
+                        charEnum.Write<u8>(0);
+                        charEnum.Write<u32>(equipmentDataNull);
                     }
                 }
 
@@ -387,7 +387,7 @@ bool NovusConnection::HandleCommandForwardPacket()
 
                 if (results.affected_rows() > 0)
                 {
-                    forwardPacket.Write<uint8_t>(CHAR_CREATE_NAME_IN_USE);
+                    forwardPacket.Write<u8>(CHAR_CREATE_NAME_IN_USE);
                     SendPacket(forwardPacket);
                     delete createData;
                     return;
@@ -424,7 +424,7 @@ bool NovusConnection::HandleCommandForwardPacket()
                     connector->Execute(realmCharacterCount);
                 });
 
-                forwardPacket.Write<uint8_t>(CHAR_CREATE_SUCCESS);
+                forwardPacket.Write<u8>(CHAR_CREATE_SUCCESS);
                 SendPacket(forwardPacket);
 
                 delete createData;
@@ -434,8 +434,8 @@ bool NovusConnection::HandleCommandForwardPacket()
         }
         case Common::Opcode::CMSG_CHAR_DELETE:
         {
-            uint64_t guid = 0;
-            _packetBuffer.Read<uint64_t>(guid);
+            u64 guid = 0;
+            _packetBuffer.Read<u64>(guid);
 
             PreparedStatement stmt("SELECT account FROM characters WHERE guid={u};");
             stmt.Bind(guid);
@@ -452,16 +452,16 @@ bool NovusConnection::HandleCommandForwardPacket()
                 // Char doesn't exist
                 if (results.affected_rows() == 0)
                 {
-                    forwardPacket.Write<uint8_t>(CHAR_DELETE_FAILED);
+                    forwardPacket.Write<u8>(CHAR_DELETE_FAILED);
                     SendPacket(forwardPacket);
                     return;
                 }
 
                 // Prevent deleting other player's characters
-                uint64_t characterAccountGuid = results[0][0].as<amy::sql_bigint_unsigned>();
+                u64 characterAccountGuid = results[0][0].as<amy::sql_bigint_unsigned>();
                 if (header->account != characterAccountGuid)
                 {
-                    forwardPacket.Write<uint8_t>(CHAR_DELETE_FAILED);
+                    forwardPacket.Write<u8>(CHAR_DELETE_FAILED);
                     SendPacket(forwardPacket);
                     return;
                 }
@@ -483,7 +483,7 @@ bool NovusConnection::HandleCommandForwardPacket()
                     connector->Execute(realmCharacterCount);
                 });
 
-                forwardPacket.Write<uint8_t>(CHAR_DELETE_SUCCESS); 
+                forwardPacket.Write<u8>(CHAR_DELETE_SUCCESS); 
                 SendPacket(forwardPacket);
             });
             break;
