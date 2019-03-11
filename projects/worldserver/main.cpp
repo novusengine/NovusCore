@@ -49,7 +49,7 @@ int main()
 	}
 
     asio::io_service io_service(2);
-    NovusConnection novusConnection(new asio::ip::tcp::socket(io_service), ConfigHandler::GetOption<std::string>("relayserverip", "127.0.0.1"), ConfigHandler::GetOption<uint16_t>("relayserverport", 10000), ConfigHandler::GetOption<uint8_t>("realmId", 1));
+    NovusConnection novusConnection(new asio::ip::tcp::socket(io_service), ConfigHandler::GetOption<std::string>("relayserverip", "127.0.0.1"), ConfigHandler::GetOption<u16>("relayserverport", 10000), ConfigHandler::GetOption<u8>("realmId", 1));
 
     if (!novusConnection.Start())
     {
@@ -57,7 +57,7 @@ int main()
         return 0;
     }
 
-    srand((uint32_t)time(NULL));
+    srand((u32)time(NULL));
     std::thread run_thread([&]
     {
         io_service.run();
@@ -67,7 +67,7 @@ int main()
 
 	ConsoleCommandHandler consoleCommandHandler;
 
-	WorldServerHandler worldServerHandler(ConfigHandler::GetOption<float>("tickRate", 30));
+	WorldServerHandler worldServerHandler(ConfigHandler::GetOption<f32>("tickRate", 30));
 	worldServerHandler.Start();
 
 	auto future = std::async(std::launch::async, GetLineFromCin);

@@ -38,7 +38,7 @@ template <size_t size>
 class UpdateMask
 {
 public:
-    UpdateMask(uint32_t valuesCount)
+    UpdateMask(u32 valuesCount)
     {
         Reset();
 
@@ -46,15 +46,15 @@ public:
         _blockCount = (valuesCount + CLIENT_UPDATE_MASK_BITS - 1) / CLIENT_UPDATE_MASK_BITS;
     }
 
-    void SetBit(uint32_t index)
+    void SetBit(u32 index)
     {
         _bits.set(index);
     }
-    void UnsetBit(uint32_t index)
+    void UnsetBit(u32 index)
     {
         _bits.reset(index);
     }
-    bool IsSet(uint32_t index)
+    bool IsSet(u32 index)
     {
         return _bits.test(index);
     }
@@ -65,26 +65,26 @@ public:
 
     void AddTo(Common::ByteBuffer& buffer)
     {
-        uint32_t maskPart = 0;
-        for (uint32_t i = 0; i < GetBlocks() * 32; i++)
+        u32 maskPart = 0;
+        for (u32 i = 0; i < GetBlocks() * 32; i++)
         {
             if (IsSet(i))
                 maskPart |= 1 << i % 32;
 
             if ((i + 1) % 32 == 0)
             {
-                buffer.Write<uint32_t>(maskPart);
+                buffer.Write<u32>(maskPart);
                 maskPart = 0;
             }
         }
     }
 
-    uint32_t GetFields() { return _fieldCount; }
-    uint32_t GetBlocks() { return _blockCount; }
+    u32 GetFields() { return _fieldCount; }
+    u32 GetBlocks() { return _blockCount; }
 
 private:
-    uint32_t _fieldCount;
-    uint32_t _blockCount;
+    u32 _fieldCount;
+    u32 _blockCount;
     std::bitset<size> _bits;
 };
 
@@ -102,23 +102,23 @@ public:
     bool Build(Common::ByteBuffer& packet)
     {
         Common::ByteBuffer buffer(4 + data._writePos);
-        buffer.Write<uint32_t>(blockCount);
+        buffer.Write<u32>(blockCount);
 
         buffer.Append(data);
         size_t pSize = buffer._writePos;
 
         if (pSize > 100)
         {
-            uint32_t destsize = compressBound((uLong)pSize);
-            packet.Resize(destsize + sizeof(uint32_t));
+            u32 destsize = compressBound((uLong)pSize);
+            packet.Resize(destsize + sizeof(u32));
             packet._writePos = packet.size();
 
-            packet.Replace<uint32_t>(0, (uint32_t)pSize);
-            Compress(const_cast<uint8_t*>(packet.data()) + sizeof(uint32_t), &destsize, (void*)buffer.data(), (int)pSize);
+            packet.Replace<u32>(0, (u32)pSize);
+            Compress(const_cast<u8*>(packet.data()) + sizeof(u32), &destsize, (void*)buffer.data(), (int)pSize);
             if (destsize == 0)
                 return false;
 
-            packet.Resize(destsize + sizeof(uint32_t));
+            packet.Resize(destsize + sizeof(u32));
             packet._writePos = packet.size();
         }
         else
@@ -132,10 +132,10 @@ public:
     }
 
 private:
-    uint32_t blockCount;
+    u32 blockCount;
     Common::ByteBuffer data;
 
-    void Compress(void* dst, uint32_t *dst_size, void* src, int src_size)
+    void Compress(void* dst, u32 *dst_size, void* src, int src_size)
     {
         z_stream c_stream;
 
@@ -201,22 +201,22 @@ private:
 static UpdateMask<1344> updateMask(PLAYER_END);
 static Common::ByteBuffer playerFields(PLAYER_END * 4);
 
-void SetGuidValue(uint16_t index, uint64_t value)
+void SetGuidValue(u16 index, u64 value)
 {
-    playerFields.WriteAt<uint64_t>(value, index * 4);
+    playerFields.WriteAt<u64>(value, index * 4);
     updateMask.SetBit(index);
     updateMask.SetBit(index + 1);
 }
 template <typename T>
-void SetFieldValue(uint16_t index, T value, uint8_t offset = 0)
+void SetFieldValue(u16 index, T value, u8 offset = 0)
 {
     playerFields.WriteAt<T>(value, (index * 4) + offset);
     updateMask.SetBit(index);
 }
 
-std::unordered_map<uint8_t, NovusMessageHandler> NovusConnection::InitMessageHandlers()
+std::unordered_map<u8, NovusMessageHandler> NovusConnection::InitMessageHandlers()
 {
-    std::unordered_map<uint8_t, NovusMessageHandler> messageHandlers;
+    std::unordered_map<u8, NovusMessageHandler> messageHandlers;
 
     messageHandlers[NOVUS_CHALLENGE]    = { NOVUSSTATUS_CHALLENGE,    sizeof(sNovusChallenge),  &NovusConnection::HandleCommandChallenge };
     messageHandlers[NOVUS_PROOF]        = { NOVUSSTATUS_PROOF,        1,                        &NovusConnection::HandleCommandProof };
@@ -224,7 +224,7 @@ std::unordered_map<uint8_t, NovusMessageHandler> NovusConnection::InitMessageHan
 
     return messageHandlers;
 }
-std::unordered_map<uint8_t, NovusMessageHandler> const MessageHandlers = NovusConnection::InitMessageHandlers();
+std::unordered_map<u8, NovusMessageHandler> const MessageHandlers = NovusConnection::InitMessageHandlers();
 
 bool NovusConnection::Start()
 {
@@ -234,10 +234,10 @@ bool NovusConnection::Start()
 
         /* NODE_CHALLENGE */
         Common::ByteBuffer packet(6);
-        packet.Write<uint8_t>(0);       // Command
-        packet.Write<uint8_t>(1);       // Type
-        packet.Write<uint16_t>(335);    // Version
-        packet.Write<uint16_t>(12340);  // Build
+        packet.Write<u8>(0);       // Command
+        packet.Write<u8>(1);       // Type
+        packet.Write<u16>(335);    // Version
+        packet.Write<u16>(12340);  // Build
 
         AsyncRead();
         Send(packet);
@@ -265,7 +265,7 @@ void NovusConnection::HandleRead()
             isDecrypted = true;
         }
 
-        uint8_t command = buffer.GetDataPointer()[0];
+        u8 command = buffer.GetDataPointer()[0];
 
         auto itr = MessageHandlers.find(command);
         if (itr == MessageHandlers.end())
@@ -327,7 +327,7 @@ void NovusConnection::HandleRead()
         }
         else
         {
-            uint16_t size = uint16_t(itr->second.packetSize);
+            u16 size = u16(itr->second.packetSize);
             if (buffer.GetActualSize() < size)
                 break;
 
@@ -354,7 +354,7 @@ bool NovusConnection::HandleCommandChallenge()
 
     /* Send fancy encrypted packet here */
     Common::ByteBuffer packet;
-    packet.Write<uint8_t>(NOVUS_PROOF); // RELAY_PROOF
+    packet.Write<u8>(NOVUS_PROOF); // RELAY_PROOF
     _crypto->Encrypt(packet.GetReadPointer(), packet.GetActualSize());
     _status = NOVUSSTATUS_PROOF;
 
@@ -386,8 +386,8 @@ bool NovusConnection::HandleCommandForwardPacket()
             playerFields.Resize(PLAYER_END * 4);
             updateMask.Reset();
 
-            uint64_t playerGuid = 0;
-            _packetBuffer.Read<uint64_t>(playerGuid);
+            u64 playerGuid = 0;
+            _packetBuffer.Read<u64>(playerGuid);
 
 
             /* SMSG_LOGIN_VERIFY_WORLD */
@@ -396,11 +396,11 @@ bool NovusConnection::HandleCommandForwardPacket()
             packetHeader.size = 4 + (4 * 4);
             packetHeader.AddTo(verifyWorld);
 
-            verifyWorld.Write<uint32_t>(0); // Map (0 == Eastern Kingdom) & Elwynn Forest (Zone is 12) & Northshire (Area is 9)
-            verifyWorld.Write<float>(-8949.950195f);
-            verifyWorld.Write<float>(-132.492996f);
-            verifyWorld.Write<float>(83.531197f);
-            verifyWorld.Write<float>(0.0f);
+            verifyWorld.Write<u32>(0); // Map (0 == Eastern Kingdom) & Elwynn Forest (Zone is 12) & Northshire (Area is 9)
+            verifyWorld.Write<f32>(-8949.950195f);
+            verifyWorld.Write<f32>(-132.492996f);
+            verifyWorld.Write<f32>(83.531197f);
+            verifyWorld.Write<f32>(0.0f);
             SendPacket(verifyWorld);
 
 
@@ -409,18 +409,18 @@ bool NovusConnection::HandleCommandForwardPacket()
             Common::ByteBuffer accountDataTimes;
             packetHeader.opcode = Common::Opcode::SMSG_ACCOUNT_DATA_TIMES;
 
-            uint32_t mask = 0xEA;
-            accountDataTimes.Write<uint32_t>((uint32_t)time(nullptr));
-            accountDataTimes.Write<uint8_t>(1); // bitmask blocks count
-            accountDataTimes.Write<uint32_t>(mask); // PER_CHARACTER_CACHE_MASK
+            u32 mask = 0xEA;
+            accountDataTimes.Write<u32>((u32)time(nullptr));
+            accountDataTimes.Write<u8>(1); // bitmask blocks count
+            accountDataTimes.Write<u32>(mask); // PER_CHARACTER_CACHE_MASK
 
-            for (uint32_t i = 0; i < 8; ++i)
+            for (u32 i = 0; i < 8; ++i)
             {
                 if (mask & (1 << i))
-                    accountDataTimes.Write<uint32_t>(0);
+                    accountDataTimes.Write<u32>(0);
             }
 
-            packetHeader.size = (uint16_t)accountDataTimes.GetActualSize();
+            packetHeader.size = (u16)accountDataTimes.GetActualSize();
             packetHeader.AddTo(accountDataForwardPacket);
             accountDataForwardPacket.Append(accountDataTimes);
             SendPacket(accountDataForwardPacket);
@@ -432,8 +432,8 @@ bool NovusConnection::HandleCommandForwardPacket()
             packetHeader.size = 1 + 1;
             packetHeader.AddTo(featureSystemStatus);
 
-            featureSystemStatus.Write<uint8_t>(2);
-            featureSystemStatus.Write<uint8_t>(0);
+            featureSystemStatus.Write<u8>(2);
+            featureSystemStatus.Write<u8>(0);
             SendPacket(featureSystemStatus);
 
 
@@ -443,10 +443,10 @@ bool NovusConnection::HandleCommandForwardPacket()
             packetHeader.opcode = Common::Opcode::SMSG_MOTD;
             packetHeader.AddTo(motd);
 
-            motd.Write<uint32_t>(1);
+            motd.Write<u32>(1);
             motd.WriteString("Welcome");
 
-            packetHeader.size = (uint16_t)motd.GetActualSize();
+            packetHeader.size = (u16)motd.GetActualSize();
             packetHeader.AddTo(motdForwardPacket);
             motdForwardPacket.Append(motd);
             SendPacket(motdForwardPacket);
@@ -458,8 +458,8 @@ bool NovusConnection::HandleCommandForwardPacket()
             packetHeader.size = 4 + 4;
             packetHeader.AddTo(learnedDanceMoves);
 
-            learnedDanceMoves.Write<uint32_t>(0);
-            learnedDanceMoves.Write<uint32_t>(0);
+            learnedDanceMoves.Write<u32>(0);
+            learnedDanceMoves.Write<u32>(0);
             SendPacket(learnedDanceMoves);
 
 
@@ -469,10 +469,10 @@ bool NovusConnection::HandleCommandForwardPacket()
             packetHeader.size = 1 + (4 * 144);
             packetHeader.AddTo(actionButtons);
 
-            actionButtons.Write<uint8_t>(1);
-            for (uint8_t button = 0; button < 144; ++button)
+            actionButtons.Write<u8>(1);
+            for (u8 button = 0; button < 144; ++button)
             {
-                actionButtons.Write<uint32_t>(0);
+                actionButtons.Write<u32>(0);
             }
             SendPacket(actionButtons);
 
@@ -487,153 +487,153 @@ bool NovusConnection::HandleCommandForwardPacket()
             time_t const tmpServerTime = time(nullptr);
             localtime_s(&lt, &tmpServerTime);
 
-            loginSetTimeSpeed.Write<uint32_t>(((lt.tm_year - 100) << 24 | lt.tm_mon << 20 | (lt.tm_mday - 1) << 14 | lt.tm_wday << 11 | lt.tm_hour << 6 | lt.tm_min));
-            loginSetTimeSpeed.Write<float>(0.01666667f);
-            loginSetTimeSpeed.Write<uint32_t>(0);
+            loginSetTimeSpeed.Write<u32>(((lt.tm_year - 100) << 24 | lt.tm_mon << 20 | (lt.tm_mday - 1) << 14 | lt.tm_wday << 11 | lt.tm_hour << 6 | lt.tm_min));
+            loginSetTimeSpeed.Write<f32>(0.01666667f);
+            loginSetTimeSpeed.Write<u32>(0);
             SendPacket(loginSetTimeSpeed);
 
             /* SMSG_UPDATE_OBJECT */
             SetGuidValue(OBJECT_FIELD_GUID, playerGuid);
-            SetFieldValue<uint32_t>(OBJECT_FIELD_TYPE, 0x19); // Object Type Player (Player, Unit, Object)
-            SetFieldValue<float>(OBJECT_FIELD_SCALE_X, 1.0f); // Object Type Player (Player, Unit, Object)
+            SetFieldValue<u32>(OBJECT_FIELD_TYPE, 0x19); // Object Type Player (Player, Unit, Object)
+            SetFieldValue<f32>(OBJECT_FIELD_SCALE_X, 1.0f); // Object Type Player (Player, Unit, Object)
             
-            SetFieldValue<uint8_t>(UNIT_FIELD_BYTES_0, 1, 0);
-            SetFieldValue<uint8_t>(UNIT_FIELD_BYTES_0, 1, 1);
-            SetFieldValue<uint8_t>(UNIT_FIELD_BYTES_0, 1, 2);
-            SetFieldValue<uint8_t>(UNIT_FIELD_BYTES_0, 1, 3);
-            SetFieldValue<uint32_t>(UNIT_FIELD_HEALTH, 60);
-            SetFieldValue<uint32_t>(UNIT_FIELD_POWER1, 0);
-            SetFieldValue<uint32_t>(UNIT_FIELD_POWER2, 0);
-            SetFieldValue<uint32_t>(UNIT_FIELD_POWER3, 100);
-            SetFieldValue<uint32_t>(UNIT_FIELD_POWER4, 100);
-            SetFieldValue<uint32_t>(UNIT_FIELD_POWER5, 0);
-            SetFieldValue<uint32_t>(UNIT_FIELD_POWER6, 8);
-            SetFieldValue<uint32_t>(UNIT_FIELD_POWER7, 1000);
-            SetFieldValue<uint32_t>(UNIT_FIELD_MAXHEALTH, 60);
-            SetFieldValue<uint32_t>(UNIT_FIELD_MAXPOWER1, 0);
-            SetFieldValue<uint32_t>(UNIT_FIELD_MAXPOWER2, 1000);
-            SetFieldValue<uint32_t>(UNIT_FIELD_MAXPOWER3, 100);
-            SetFieldValue<uint32_t>(UNIT_FIELD_MAXPOWER4, 100);
-            SetFieldValue<uint32_t>(UNIT_FIELD_MAXPOWER5, 0);
-            SetFieldValue<uint32_t>(UNIT_FIELD_MAXPOWER6, 8);
-            SetFieldValue<uint32_t>(UNIT_FIELD_MAXPOWER7, 1000);
-            SetFieldValue<uint32_t>(UNIT_FIELD_LEVEL, 80);
-            SetFieldValue<uint32_t>(UNIT_FIELD_FACTIONTEMPLATE, 1);
-            SetFieldValue<uint32_t>(UNIT_FIELD_FLAGS, 0x00000008);
-            SetFieldValue<uint32_t>(UNIT_FIELD_FLAGS_2, 0x00000800);
-            SetFieldValue<uint32_t>(UNIT_FIELD_BASEATTACKTIME + 0, 2900);
-            SetFieldValue<uint32_t>(UNIT_FIELD_BASEATTACKTIME + 1, 2000);
-            SetFieldValue<uint32_t>(UNIT_FIELD_RANGEDATTACKTIME, 0);
-            SetFieldValue<float>(UNIT_FIELD_BOUNDINGRADIUS, 0.208000f);
-            SetFieldValue<float>(UNIT_FIELD_COMBATREACH, 1.5f);
-            SetFieldValue<uint32_t>(UNIT_FIELD_DISPLAYID, 50);
-            SetFieldValue<uint32_t>(UNIT_FIELD_NATIVEDISPLAYID, 50);
-            SetFieldValue<uint32_t>(UNIT_FIELD_MOUNTDISPLAYID, 0);
-            SetFieldValue<float>(UNIT_FIELD_MINDAMAGE, 9.007143f);
-            SetFieldValue<float>(UNIT_FIELD_MAXDAMAGE, 11.007143f);
-            SetFieldValue<float>(UNIT_FIELD_MINOFFHANDDAMAGE, 0);
-            SetFieldValue<float>(UNIT_FIELD_MAXOFFHANDDAMAGE, 0);
-            SetFieldValue<uint32_t>(UNIT_FIELD_BYTES_1, 0);
-            SetFieldValue<float>(UNIT_MOD_CAST_SPEED, 1);
+            SetFieldValue<u8>(UNIT_FIELD_BYTES_0, 1, 0);
+            SetFieldValue<u8>(UNIT_FIELD_BYTES_0, 1, 1);
+            SetFieldValue<u8>(UNIT_FIELD_BYTES_0, 1, 2);
+            SetFieldValue<u8>(UNIT_FIELD_BYTES_0, 1, 3);
+            SetFieldValue<u32>(UNIT_FIELD_HEALTH, 60);
+            SetFieldValue<u32>(UNIT_FIELD_POWER1, 0);
+            SetFieldValue<u32>(UNIT_FIELD_POWER2, 0);
+            SetFieldValue<u32>(UNIT_FIELD_POWER3, 100);
+            SetFieldValue<u32>(UNIT_FIELD_POWER4, 100);
+            SetFieldValue<u32>(UNIT_FIELD_POWER5, 0);
+            SetFieldValue<u32>(UNIT_FIELD_POWER6, 8);
+            SetFieldValue<u32>(UNIT_FIELD_POWER7, 1000);
+            SetFieldValue<u32>(UNIT_FIELD_MAXHEALTH, 60);
+            SetFieldValue<u32>(UNIT_FIELD_MAXPOWER1, 0);
+            SetFieldValue<u32>(UNIT_FIELD_MAXPOWER2, 1000);
+            SetFieldValue<u32>(UNIT_FIELD_MAXPOWER3, 100);
+            SetFieldValue<u32>(UNIT_FIELD_MAXPOWER4, 100);
+            SetFieldValue<u32>(UNIT_FIELD_MAXPOWER5, 0);
+            SetFieldValue<u32>(UNIT_FIELD_MAXPOWER6, 8);
+            SetFieldValue<u32>(UNIT_FIELD_MAXPOWER7, 1000);
+            SetFieldValue<u32>(UNIT_FIELD_LEVEL, 80);
+            SetFieldValue<u32>(UNIT_FIELD_FACTIONTEMPLATE, 1);
+            SetFieldValue<u32>(UNIT_FIELD_FLAGS, 0x00000008);
+            SetFieldValue<u32>(UNIT_FIELD_FLAGS_2, 0x00000800);
+            SetFieldValue<u32>(UNIT_FIELD_BASEATTACKTIME + 0, 2900);
+            SetFieldValue<u32>(UNIT_FIELD_BASEATTACKTIME + 1, 2000);
+            SetFieldValue<u32>(UNIT_FIELD_RANGEDATTACKTIME, 0);
+            SetFieldValue<f32>(UNIT_FIELD_BOUNDINGRADIUS, 0.208000f);
+            SetFieldValue<f32>(UNIT_FIELD_COMBATREACH, 1.5f);
+            SetFieldValue<u32>(UNIT_FIELD_DISPLAYID, 50);
+            SetFieldValue<u32>(UNIT_FIELD_NATIVEDISPLAYID, 50);
+            SetFieldValue<u32>(UNIT_FIELD_MOUNTDISPLAYID, 0);
+            SetFieldValue<f32>(UNIT_FIELD_MINDAMAGE, 9.007143f);
+            SetFieldValue<f32>(UNIT_FIELD_MAXDAMAGE, 11.007143f);
+            SetFieldValue<f32>(UNIT_FIELD_MINOFFHANDDAMAGE, 0);
+            SetFieldValue<f32>(UNIT_FIELD_MAXOFFHANDDAMAGE, 0);
+            SetFieldValue<u32>(UNIT_FIELD_BYTES_1, 0);
+            SetFieldValue<f32>(UNIT_MOD_CAST_SPEED, 1);
 
             /* 3 individual for loops would make some for nice cache improvements :') */
             for (int i = 0; i < 5; i++)
             {
-                SetFieldValue<uint32_t>(UNIT_FIELD_STAT0 + i, 20);
-                SetFieldValue<int32_t>(UNIT_FIELD_POSSTAT0 + i, 0);
-                SetFieldValue<int32_t>(UNIT_FIELD_NEGSTAT0 + i, 0);
+                SetFieldValue<u32>(UNIT_FIELD_STAT0 + i, 20);
+                SetFieldValue<i32>(UNIT_FIELD_POSSTAT0 + i, 0);
+                SetFieldValue<i32>(UNIT_FIELD_NEGSTAT0 + i, 0);
             }
 
             for (int i = 0; i < 7; i++)
             {
-                SetFieldValue<uint32_t>(UNIT_FIELD_RESISTANCES + i, 0);
-                SetFieldValue<int32_t>(UNIT_FIELD_RESISTANCEBUFFMODSPOSITIVE + i, 0);
-                SetFieldValue<int32_t>(UNIT_FIELD_RESISTANCEBUFFMODSNEGATIVE + i, 0);
+                SetFieldValue<u32>(UNIT_FIELD_RESISTANCES + i, 0);
+                SetFieldValue<i32>(UNIT_FIELD_RESISTANCEBUFFMODSPOSITIVE + i, 0);
+                SetFieldValue<i32>(UNIT_FIELD_RESISTANCEBUFFMODSNEGATIVE + i, 0);
             }
-            SetFieldValue<uint32_t>(UNIT_FIELD_STAT0, 42);
+            SetFieldValue<u32>(UNIT_FIELD_STAT0, 42);
 
-            SetFieldValue<uint32_t>(UNIT_FIELD_BASE_MANA, 0);
-            SetFieldValue<uint32_t>(UNIT_FIELD_BASE_HEALTH, 20);
-            SetFieldValue<uint32_t>(UNIT_FIELD_BYTES_2, 0);
-            SetFieldValue<uint32_t>(UNIT_FIELD_ATTACK_POWER, 29);
-            SetFieldValue<uint32_t>(UNIT_FIELD_ATTACK_POWER_MODS, 0);
-            SetFieldValue<float>(UNIT_FIELD_ATTACK_POWER_MULTIPLIER, 1.0f);
-            SetFieldValue<uint32_t>(UNIT_FIELD_RANGED_ATTACK_POWER, 0);
-            SetFieldValue<uint32_t>(UNIT_FIELD_RANGED_ATTACK_POWER_MODS, 0);
-            SetFieldValue<float>(UNIT_FIELD_RANGED_ATTACK_POWER_MULTIPLIER, 1.0f);
-            SetFieldValue<float>(UNIT_FIELD_MINRANGEDDAMAGE, 0);
-            SetFieldValue<float>(UNIT_FIELD_MAXRANGEDDAMAGE, 0);
-            SetFieldValue<float>(UNIT_FIELD_HOVERHEIGHT, 1);
+            SetFieldValue<u32>(UNIT_FIELD_BASE_MANA, 0);
+            SetFieldValue<u32>(UNIT_FIELD_BASE_HEALTH, 20);
+            SetFieldValue<u32>(UNIT_FIELD_BYTES_2, 0);
+            SetFieldValue<u32>(UNIT_FIELD_ATTACK_POWER, 29);
+            SetFieldValue<u32>(UNIT_FIELD_ATTACK_POWER_MODS, 0);
+            SetFieldValue<f32>(UNIT_FIELD_ATTACK_POWER_MULTIPLIER, 1.0f);
+            SetFieldValue<u32>(UNIT_FIELD_RANGED_ATTACK_POWER, 0);
+            SetFieldValue<u32>(UNIT_FIELD_RANGED_ATTACK_POWER_MODS, 0);
+            SetFieldValue<f32>(UNIT_FIELD_RANGED_ATTACK_POWER_MULTIPLIER, 1.0f);
+            SetFieldValue<f32>(UNIT_FIELD_MINRANGEDDAMAGE, 0);
+            SetFieldValue<f32>(UNIT_FIELD_MAXRANGEDDAMAGE, 0);
+            SetFieldValue<f32>(UNIT_FIELD_HOVERHEIGHT, 1);
 
-            SetFieldValue<uint32_t>(PLAYER_FLAGS, 0);
-            SetFieldValue<uint8_t>(PLAYER_BYTES, 1, 0);
-            SetFieldValue<uint8_t>(PLAYER_BYTES, 1, 1);
-            SetFieldValue<uint8_t>(PLAYER_BYTES, 1, 2);
-            SetFieldValue<uint8_t>(PLAYER_BYTES, 1, 3);
-            SetFieldValue<uint8_t>(PLAYER_BYTES_2, 1, 0);
-            SetFieldValue<uint8_t>(PLAYER_BYTES_2, 0, 1);
-            SetFieldValue<uint8_t>(PLAYER_BYTES_2, 0, 2);
-            SetFieldValue<uint8_t>(PLAYER_BYTES_2, 3, 3);
-            SetFieldValue<uint8_t>(PLAYER_BYTES_3, 1, 0);
-            SetFieldValue<uint8_t>(PLAYER_BYTES_3, 0, 1);
-            SetFieldValue<uint8_t>(PLAYER_BYTES_3, 0, 2);
-            SetFieldValue<uint8_t>(PLAYER_BYTES_3, 0, 3);
+            SetFieldValue<u32>(PLAYER_FLAGS, 0);
+            SetFieldValue<u8>(PLAYER_BYTES, 1, 0);
+            SetFieldValue<u8>(PLAYER_BYTES, 1, 1);
+            SetFieldValue<u8>(PLAYER_BYTES, 1, 2);
+            SetFieldValue<u8>(PLAYER_BYTES, 1, 3);
+            SetFieldValue<u8>(PLAYER_BYTES_2, 1, 0);
+            SetFieldValue<u8>(PLAYER_BYTES_2, 0, 1);
+            SetFieldValue<u8>(PLAYER_BYTES_2, 0, 2);
+            SetFieldValue<u8>(PLAYER_BYTES_2, 3, 3);
+            SetFieldValue<u8>(PLAYER_BYTES_3, 1, 0);
+            SetFieldValue<u8>(PLAYER_BYTES_3, 0, 1);
+            SetFieldValue<u8>(PLAYER_BYTES_3, 0, 2);
+            SetFieldValue<u8>(PLAYER_BYTES_3, 0, 3);
 
-            for (uint8_t slot = 0; slot < 19; ++slot)
+            for (u8 slot = 0; slot < 19; ++slot)
             {
                 SetGuidValue(PLAYER_FIELD_INV_SLOT_HEAD + (slot * 2), 0);
 
-                SetFieldValue<uint32_t>(PLAYER_VISIBLE_ITEM_1_ENTRYID + (slot * 2), 0);
-                SetFieldValue<uint32_t>(PLAYER_VISIBLE_ITEM_1_ENCHANTMENT + (slot * 2), 0);
+                SetFieldValue<u32>(PLAYER_VISIBLE_ITEM_1_ENTRYID + (slot * 2), 0);
+                SetFieldValue<u32>(PLAYER_VISIBLE_ITEM_1_ENCHANTMENT + (slot * 2), 0);
             }
 
-            SetFieldValue<uint32_t>(PLAYER_XP, 0);
-            SetFieldValue<uint32_t>(PLAYER_NEXT_LEVEL_XP, 400);
+            SetFieldValue<u32>(PLAYER_XP, 0);
+            SetFieldValue<u32>(PLAYER_NEXT_LEVEL_XP, 400);
 
             for (int i = 0; i < 127; ++i)
             {
-                SetFieldValue<uint32_t>((PLAYER_SKILL_INFO_1_1 + ((i) * 3)), 0);
-                SetFieldValue<uint32_t>((PLAYER_SKILL_INFO_1_1 + ((i) * 3)) + 1, 0);
-                SetFieldValue<uint32_t>((PLAYER_SKILL_INFO_1_1 + ((i) * 3)) + 2, 0);
+                SetFieldValue<u32>((PLAYER_SKILL_INFO_1_1 + ((i) * 3)), 0);
+                SetFieldValue<u32>((PLAYER_SKILL_INFO_1_1 + ((i) * 3)) + 1, 0);
+                SetFieldValue<u32>((PLAYER_SKILL_INFO_1_1 + ((i) * 3)) + 2, 0);
             }
 
-            SetFieldValue<uint32_t>(PLAYER_CHARACTER_POINTS1, 0);
-            SetFieldValue<uint32_t>(PLAYER_CHARACTER_POINTS2, 2);
-            SetFieldValue<float>(PLAYER_BLOCK_PERCENTAGE, 4.0f);
-            SetFieldValue<float>(PLAYER_DODGE_PERCENTAGE, 4.0f);
-            SetFieldValue<float>(PLAYER_PARRY_PERCENTAGE, 4.0f);
-            SetFieldValue<float>(PLAYER_CRIT_PERCENTAGE, 4.0f);
-            SetFieldValue<float>(PLAYER_RANGED_CRIT_PERCENTAGE, 4.0f);
-            SetFieldValue<float>(PLAYER_OFFHAND_CRIT_PERCENTAGE, 4.0f);
+            SetFieldValue<u32>(PLAYER_CHARACTER_POINTS1, 0);
+            SetFieldValue<u32>(PLAYER_CHARACTER_POINTS2, 2);
+            SetFieldValue<f32>(PLAYER_BLOCK_PERCENTAGE, 4.0f);
+            SetFieldValue<f32>(PLAYER_DODGE_PERCENTAGE, 4.0f);
+            SetFieldValue<f32>(PLAYER_PARRY_PERCENTAGE, 4.0f);
+            SetFieldValue<f32>(PLAYER_CRIT_PERCENTAGE, 4.0f);
+            SetFieldValue<f32>(PLAYER_RANGED_CRIT_PERCENTAGE, 4.0f);
+            SetFieldValue<f32>(PLAYER_OFFHAND_CRIT_PERCENTAGE, 4.0f);
 
             for (int i = 0; i < 127; i++)
-                SetFieldValue<uint32_t>(PLAYER_EXPLORED_ZONES_1 + i, 0xFFFFFFFF);
+                SetFieldValue<u32>(PLAYER_EXPLORED_ZONES_1 + i, 0xFFFFFFFF);
 
-            SetFieldValue<int32_t>(PLAYER_REST_STATE_EXPERIENCE, 0);
-            SetFieldValue<uint32_t>(PLAYER_FIELD_COINAGE, 5000000);
+            SetFieldValue<i32>(PLAYER_REST_STATE_EXPERIENCE, 0);
+            SetFieldValue<u32>(PLAYER_FIELD_COINAGE, 5000000);
 
             for (int i = 0; i < 7; i++)
             {
-                SetFieldValue<int32_t>(PLAYER_FIELD_MOD_DAMAGE_DONE_POS + i, 0);
-                SetFieldValue<int32_t>(PLAYER_FIELD_MOD_DAMAGE_DONE_NEG + i, 0);
-                SetFieldValue<float>(PLAYER_FIELD_MOD_DAMAGE_DONE_PCT + i, 1.0f);
+                SetFieldValue<i32>(PLAYER_FIELD_MOD_DAMAGE_DONE_POS + i, 0);
+                SetFieldValue<i32>(PLAYER_FIELD_MOD_DAMAGE_DONE_NEG + i, 0);
+                SetFieldValue<f32>(PLAYER_FIELD_MOD_DAMAGE_DONE_PCT + i, 1.0f);
             }
 
-            SetFieldValue<int32_t>(PLAYER_FIELD_WATCHED_FACTION_INDEX, -1);
-            SetFieldValue<uint32_t>(PLAYER_FIELD_MAX_LEVEL, 80);
+            SetFieldValue<i32>(PLAYER_FIELD_WATCHED_FACTION_INDEX, -1);
+            SetFieldValue<u32>(PLAYER_FIELD_MAX_LEVEL, 80);
 
             for (int i = 0; i < 3; i++)
             {
-                SetFieldValue<float>(PLAYER_RUNE_REGEN_1 + i, 0.1f);
+                SetFieldValue<f32>(PLAYER_RUNE_REGEN_1 + i, 0.1f);
             }
 
             for (int i = 0; i < 5; i++)
             {
-                SetFieldValue<float>(PLAYER_FIELD_GLYPH_SLOTS_1 + i, float(21 + i));
+                SetFieldValue<f32>(PLAYER_FIELD_GLYPH_SLOTS_1 + i, f32(21 + i));
             }
 
-            uint8_t  updateType = 3; // UPDATETYPE_CREATE_OBJECT2
-            uint16_t updateFlags = 0x0000; // UPDATEFLAG_NONE
+            u8  updateType = 3; // UPDATETYPE_CREATE_OBJECT2
+            u16 updateFlags = 0x0000; // UPDATEFLAG_NONE
 
             // Correct & Checked Flags
             updateFlags |= 0x0001; // UPDATEFLAG_SELF
@@ -641,105 +641,105 @@ bool NovusConnection::HandleCommandForwardPacket()
             updateFlags |= 0x0040; // UPDATEFLAG_STATIONARY_POSITION
             
             Common::ByteBuffer buffer(500);
-            buffer.Write<uint8_t>(updateType);
+            buffer.Write<u8>(updateType);
             buffer.AppendGuid(playerGuid);
-            buffer.Write<uint8_t>(4); // TYPEID_PLAYER
+            buffer.Write<u8>(4); // TYPEID_PLAYER
 
             // BuildMovementUpdate(ByteBuffer* data, uint16 flags)
-            buffer.Write<uint16_t>(updateFlags);
+            buffer.Write<u16>(updateFlags);
 
             //if (updateFlags & 0x0020) If living
             {
-                uint32_t gameTimeMS = uint32_t(duration_cast<milliseconds>(steady_clock::now() - ApplicationStartTime).count());
+                u32 gameTimeMS = u32(duration_cast<milliseconds>(steady_clock::now() - ApplicationStartTime).count());
                 //std::cout << "Gametime MS: " << gameTimeMS << std::endl;
 
-                buffer.Write<uint32_t>(0x00); // MovementFlags
-                buffer.Write<uint16_t>(0x00); // Extra MovementFlags
-                buffer.Write<uint32_t>(gameTimeMS); // Game Time
+                buffer.Write<u32>(0x00); // MovementFlags
+                buffer.Write<u16>(0x00); // Extra MovementFlags
+                buffer.Write<u32>(gameTimeMS); // Game Time
                 // TaggedPosition<Position::XYZO>(pos);
-                buffer.Write<float>(-8949.950195f);
-                buffer.Write<float>(-132.492996f);
-                buffer.Write<float>(83.531197f);
-                buffer.Write<float>(0.0f);
+                buffer.Write<f32>(-8949.950195f);
+                buffer.Write<f32>(-132.492996f);
+                buffer.Write<f32>(83.531197f);
+                buffer.Write<f32>(0.0f);
 
                 // FallTime
-                buffer.Write<uint32_t>(0);
+                buffer.Write<u32>(0);
 
                 // Movement Speeds
-                buffer.Write<float>(2.5f); // MOVE_WALK
-                buffer.Write<float>(7.0f); // MOVE_RUN
-                buffer.Write<float>(4.5f); // MOVE_RUN_BACK
-                buffer.Write<float>(4.722222f); // MOVE_SWIM
-                buffer.Write<float>(2.5f); // MOVE_SWIM_BACK
-                buffer.Write<float>(7.0f); // MOVE_FLIGHT
-                buffer.Write<float>(4.5f); // MOVE_FLIGHT_BACK
-                buffer.Write<float>(3.141593f); // MOVE_TURN_RATE
-                buffer.Write<float>(3.141593f); // MOVE_PITCH_RATE
+                buffer.Write<f32>(2.5f); // MOVE_WALK
+                buffer.Write<f32>(7.0f); // MOVE_RUN
+                buffer.Write<f32>(4.5f); // MOVE_RUN_BACK
+                buffer.Write<f32>(4.722222f); // MOVE_SWIM
+                buffer.Write<f32>(2.5f); // MOVE_SWIM_BACK
+                buffer.Write<f32>(7.0f); // MOVE_FLIGHT
+                buffer.Write<f32>(4.5f); // MOVE_FLIGHT_BACK
+                buffer.Write<f32>(3.141593f); // MOVE_TURN_RATE
+                buffer.Write<f32>(3.141593f); // MOVE_PITCH_RATE
             }
 
             Common::ByteBuffer fieldBuffer;
             fieldBuffer.Resize(5304);
             UpdateMask<1344> updateMask(PLAYER_END);
 
-            uint16_t _fieldNotifyFlags = UF_FLAG_DYNAMIC;
+            u16 _fieldNotifyFlags = UF_FLAG_DYNAMIC;
 
-            uint32_t* flags = UnitUpdateFieldFlags;
-            uint32_t visibleFlag = UF_FLAG_PUBLIC;
+            u32* flags = UnitUpdateFieldFlags;
+            u32 visibleFlag = UF_FLAG_PUBLIC;
             visibleFlag |= UF_FLAG_PRIVATE;
 
-            for (uint16_t index = 0; index < PLAYER_END; ++index)
+            for (u16 index = 0; index < PLAYER_END; ++index)
             {
                 if (_fieldNotifyFlags & flags[index] || ((flags[index] & visibleFlag) & UF_FLAG_SPECIAL_INFO) 
-                    || ((updateType == 0 ? updateMask.IsSet(index) : playerFields.ReadAt<int32_t>(index * 4)) 
+                    || ((updateType == 0 ? updateMask.IsSet(index) : playerFields.ReadAt<i32>(index * 4)) 
                     && (flags[index] & visibleFlag)))
                 {
                     updateMask.SetBit(index);
 
                     if (index == UNIT_NPC_FLAGS)
                     {
-                        uint32_t appendValue = playerFields.ReadAt<uint32_t>(UNIT_NPC_FLAGS * 4);
+                        u32 appendValue = playerFields.ReadAt<u32>(UNIT_NPC_FLAGS * 4);
 
                         /*if (creature)
                             if (!target->CanSeeSpellClickOn(creature))
                                 appendValue &= ~UNIT_NPC_FLAG_SPELLCLICK;*/
 
-                        fieldBuffer.Write<uint32_t>(appendValue);
+                        fieldBuffer.Write<u32>(appendValue);
                     }
                     else if (index == UNIT_FIELD_AURASTATE)
                     {
                         // Check per caster aura states to not enable using a spell in client if specified aura is not by target
-                        uint32_t auraState = playerFields.ReadAt<uint32_t>(UNIT_FIELD_AURASTATE*4) &~(((1 << (14 - 1)) | (1 << (16 - 1))));
+                        u32 auraState = playerFields.ReadAt<u32>(UNIT_FIELD_AURASTATE*4) &~(((1 << (14 - 1)) | (1 << (16 - 1))));
 
-                        fieldBuffer.Write<uint32_t>(auraState);
+                        fieldBuffer.Write<u32>(auraState);
                     }
                     // Seems to be fixed already??
-                    // FIXME: Some values at server stored in float format but must be sent to client in uint32 format
+                    // FIXME: Some values at server stored in f32 format but must be sent to client in uint32 format
                     else if (index >= UNIT_FIELD_BASEATTACKTIME && index <= UNIT_FIELD_RANGEDATTACKTIME)
                     {
-                        // convert from float to uint32 and send
-                        fieldBuffer.Write<uint32_t>(uint32_t(playerFields.ReadAt<int32_t>(index*4)));
+                        // convert from f32 to uint32 and send
+                        fieldBuffer.Write<u32>(u32(playerFields.ReadAt<i32>(index*4)));
                     }
-                    // there are some (said float in TC, but all these are ints)int values which may be negative or can't get negative due to other checks
+                    // there are some (said f32 in TC, but all these are ints)int values which may be negative or can't get negative due to other checks
                     else if ((index >= UNIT_FIELD_NEGSTAT0 && index <= UNIT_FIELD_NEGSTAT4) ||
                         (index >= UNIT_FIELD_RESISTANCEBUFFMODSPOSITIVE && index <= (UNIT_FIELD_RESISTANCEBUFFMODSPOSITIVE + 6)) ||
                         (index >= UNIT_FIELD_RESISTANCEBUFFMODSNEGATIVE && index <= (UNIT_FIELD_RESISTANCEBUFFMODSNEGATIVE + 6)) ||
                         (index >= UNIT_FIELD_POSSTAT0 && index <= UNIT_FIELD_POSSTAT4))
                     {
-                        fieldBuffer.Write<uint32_t>(uint32_t(playerFields.ReadAt<int32_t>(index * 4)));
+                        fieldBuffer.Write<u32>(u32(playerFields.ReadAt<i32>(index * 4)));
                     }
                     // Gamemasters should be always able to select units - remove not selectable flag
                     else if (index == UNIT_FIELD_FLAGS)
                     {
-                        uint32_t appendValue = playerFields.ReadAt<uint32_t>(UNIT_FIELD_FLAGS * 4);
+                        u32 appendValue = playerFields.ReadAt<u32>(UNIT_FIELD_FLAGS * 4);
                         //if (target->IsGameMaster())
                             //appendValue &= ~UNIT_FLAG_NOT_SELECTABLE;
 
-                        fieldBuffer.Write<uint32_t>(appendValue);
+                        fieldBuffer.Write<u32>(appendValue);
                     }
                     // use modelid_a if not gm, _h if gm for CREATURE_FLAG_EXTRA_TRIGGER creatures
                     else if (index == UNIT_FIELD_DISPLAYID)
                     {
-                        uint32_t displayId = playerFields.ReadAt<uint32_t>(UNIT_FIELD_DISPLAYID * 4);
+                        u32 displayId = playerFields.ReadAt<u32>(UNIT_FIELD_DISPLAYID * 4);
                         /*if (creature)
                         {
                             CreatureTemplate const* cinfo = creature->GetCreatureTemplate();
@@ -759,12 +759,12 @@ bool NovusConnection::HandleCommandForwardPacket()
                                     displayId = cinfo->GetFirstVisibleModel();
                         }*/
 
-                        fieldBuffer.Write<uint32_t>(displayId);
+                        fieldBuffer.Write<u32>(displayId);
                     }
                     // hide lootable animation for unallowed players
                     else if (index == UNIT_DYNAMIC_FLAGS)
                     {
-                        uint32_t dynamicFlags = playerFields.ReadAt<uint32_t>(UNIT_DYNAMIC_FLAGS * 4) & ~(0x4 | 0x08); // UNIT_DYNFLAG_TAPPED | UNIT_DYNFLAG_TAPPED_BY_PLAYER
+                        u32 dynamicFlags = playerFields.ReadAt<u32>(UNIT_DYNAMIC_FLAGS * 4) & ~(0x4 | 0x08); // UNIT_DYNFLAG_TAPPED | UNIT_DYNFLAG_TAPPED_BY_PLAYER
 
                         /*if (creature)
                         {
@@ -784,7 +784,7 @@ bool NovusConnection::HandleCommandForwardPacket()
                             //if (!HasAuraTypeWithCaster(SPELL_AURA_MOD_STALKED, target->GetGUID()))
                                 //dynamicFlags &= ~UNIT_DYNFLAG_TRACK_UNIT;
 
-                        fieldBuffer.Write<uint32_t>(dynamicFlags);
+                        fieldBuffer.Write<u32>(dynamicFlags);
                     }
                     // FG: pretend that OTHER players in own group are friendly ("blue")
                     else if (index == UNIT_FIELD_BYTES_2 || index == UNIT_FIELD_FACTIONTEMPLATE)
@@ -810,13 +810,13 @@ bool NovusConnection::HandleCommandForwardPacket()
                     }
                     else
                     {
-                        // send in current format (float as float, uint32 as uint32)
+                        // send in current format (f32 as f32, uint32 as uint32)
                         fieldBuffer.Write(playerFields.GetDataPointer() + index * 4, 4);
                     }
                 }
             }
 
-            buffer.Write<uint8_t>(updateMask.GetBlocks());
+            buffer.Write<u8>(updateMask.GetBlocks());
             updateMask.AddTo(buffer);
             buffer.Append(fieldBuffer);
 
@@ -850,7 +850,7 @@ bool NovusConnection::HandleCommandForwardPacket()
             Common::ByteBuffer timeSync(9 + 4);
             packetHeader.AddTo(timeSync);
 
-            timeSync.Write<uint32_t>(0);
+            timeSync.Write<u32>(0);
             SendPacket(timeSync);
             break;
         }

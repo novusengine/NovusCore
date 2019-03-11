@@ -379,7 +379,7 @@ enum UpdatefieldFlags
     UF_FLAG_DYNAMIC = 0x100
 };
 
-static uint32_t UnitUpdateFieldFlags[PLAYER_END] =
+static u32 UnitUpdateFieldFlags[PLAYER_END] =
 {
     UF_FLAG_PUBLIC,                                         // OBJECT_FIELD_GUID
     UF_FLAG_PUBLIC,                                         // OBJECT_FIELD_GUID+1
@@ -1713,28 +1713,28 @@ static uint32_t UnitUpdateFieldFlags[PLAYER_END] =
 #pragma pack(push, 1)
 struct sNovusChallenge
 {
-    uint8_t command;
-    uint8_t K[32];
+    u8 command;
+    u8 K[32];
 };
 
 struct NovusHeader
 {
-    uint8_t     command;
-    uint32_t    account;
-    uint16_t    opcode;
-    uint16_t    size;
+    u8     command;
+    u32    account;
+    u16    opcode;
+    u16    size;
 
     void Read(Common::ByteBuffer& buffer)
     {
-        buffer.Read<uint8_t>(command);
-        buffer.Read<uint32_t>(account);
-        buffer.Read<uint16_t>(opcode);
-        buffer.Read<uint16_t>(size);
+        buffer.Read<u8>(command);
+        buffer.Read<u32>(account);
+        buffer.Read<u16>(opcode);
+        buffer.Read<u16>(size);
     }
 
     void AddTo(Common::ByteBuffer& buffer)
     {
-        buffer.Append((uint8_t*)this, sizeof(NovusHeader));
+        buffer.Append((u8*)this, sizeof(NovusHeader));
     }
 };
 
@@ -1744,9 +1744,9 @@ struct NovusMessageHandler;
 class NovusConnection : Common::BaseSocket
 {
 public:
-    static std::unordered_map<uint8_t, NovusMessageHandler> InitMessageHandlers();
+    static std::unordered_map<u8, NovusMessageHandler> InitMessageHandlers();
 
-    NovusConnection(asio::ip::tcp::socket* socket, std::string address, uint16_t port, uint8_t realmId) : Common::BaseSocket(socket), _status(NOVUSSTATUS_CHALLENGE), _crypto(), _address(address), _port(port), _realmId(realmId), _headerBuffer(), _packetBuffer()
+    NovusConnection(asio::ip::tcp::socket* socket, std::string address, u16 port, u8 realmId) : Common::BaseSocket(socket), _status(NOVUSSTATUS_CHALLENGE), _crypto(), _address(address), _port(port), _realmId(realmId), _headerBuffer(), _packetBuffer()
     { 
         _crypto = new StreamCrypto();
         _key = new BigNumber();
@@ -1766,8 +1766,8 @@ public:
     NovusStatus _status;
 private:
     std::string _address;
-    uint16_t _port;
-    uint8_t _realmId;
+    u16 _port;
+    u8 _realmId;
 
     StreamCrypto* _crypto;
     BigNumber* _key;

@@ -35,7 +35,7 @@ public:
 			return;
 
 		std::vector<std::string> splitCommand = SplitString(command);
-		uint32_t hashedCommand = detail::fnv1a_32(splitCommand[0].c_str(), splitCommand[0].size());
+		u32 hashedCommand = detail::fnv1a_32(splitCommand[0].c_str(), splitCommand[0].size());
 
 		auto commandHandler = commandHandlers.find(hashedCommand);
 		if (commandHandler != commandHandlers.end())
@@ -47,10 +47,10 @@ public:
 			NC_LOG_WARNING("Unhandled command: " + splitCommand[0]);
 	}
 private:
-	void RegisterCommand(uint32_t id, const std::function<void(WorldServerHandler&, std::vector<std::string>)>& handler)
+	void RegisterCommand(u32 id, const std::function<void(WorldServerHandler&, std::vector<std::string>)>& handler)
 	{
 		commandHandlers.insert_or_assign(id, handler);
 	}
 
-	std::map<uint16_t, std::function<void(WorldServerHandler&, std::vector<std::string>)>> commandHandlers = {};
+	std::map<u16, std::function<void(WorldServerHandler&, std::vector<std::string>)>> commandHandlers = {};
 };

@@ -19,7 +19,7 @@ enum OutputMessages
 class WorldServerHandler
 {
 public:
-	WorldServerHandler(float targetTickRate);
+	WorldServerHandler(f32 targetTickRate);
 	~WorldServerHandler();
 
 	void Start();
@@ -35,7 +35,7 @@ private:
 
 private:
 	bool _isRunning;
-    float _targetTickRate;
+    f32 _targetTickRate;
 
 	ConcurrentQueue<Message> _inputQueue;
 	ConcurrentQueue<Message> _outputQueue;

@@ -7,7 +7,7 @@
 // Systems
 #include "ECS/Systems/ClientUpdateSystem.h"
 
-WorldServerHandler::WorldServerHandler(float targetTickRate)
+WorldServerHandler::WorldServerHandler(f32 targetTickRate)
 	: _isRunning(false)
 	, _inputQueue(256)
 	, _outputQueue(256)
