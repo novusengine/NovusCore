@@ -67,7 +67,7 @@ int main()
 
 	ConsoleCommandHandler consoleCommandHandler;
 
-	WorldServerHandler worldServerHandler;
+	WorldServerHandler worldServerHandler(ConfigHandler::GetOption<float>("tickRate", 30));
 	worldServerHandler.Start();
 
 	auto future = std::async(std::launch::async, GetLineFromCin);
