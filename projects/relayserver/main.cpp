@@ -24,6 +24,7 @@
 
 #include <Config\ConfigHandler.h>
 #include <Database\DatabaseConnector.h>
+#include <Utils/DebugHandler.h>
 
 #include "Connections\NovusConnection.h"
 #include "Connections\RelayAuthNodeConnection.h"
@@ -34,19 +35,37 @@ NovusConnectionHandler*         NovusConnectionHandler::_instance       = nullpt
 ClientRelayConnectionHandler*   ClientRelayConnectionHandler::_instance = nullptr;
 int main()
 {
-    if (!ConfigHandler::Setup("relayserver_configuration.json"))
+    /* Initialize Debug Handler */
+    InitDebugger(PROGRAM_TYPE::Relay);
+
+    /* Load Database Config Handler for server */
+    if (!ConfigHandler::Load("database_configuration.json"))
     {
         std::getchar();
         return 0;
     }
-	DatabaseConnector::Setup("127.0.0.1", "root", "ascent");
-    srand((uint32_t)time(NULL));
+
+    /* Load Database Information here */
+    std::string hosts       [DATABASE_TYPE::COUNT]  = { ConfigHandler::GetOption<std::string>("auth_database_ip", "127.0.0.1"),         ConfigHandler::GetOption<std::string>("character_database_ip", "127.0.0.1"),        ConfigHandler::GetOption<std::string>("world_database_ip", "127.0.0.1"),        ConfigHandler::GetOption<std::string>("dbc_database_ip", "127.0.0.1") };   
+    u16 ports               [DATABASE_TYPE::COUNT]  = { ConfigHandler::GetOption<u16>("auth_database_port", 3306),                      ConfigHandler::GetOption<u16>("character_database_port", 3306),                     ConfigHandler::GetOption<u16>("world_database_port", 3306),                     ConfigHandler::GetOption<u16>("dbc_database_port", 3306) };   
+    std::string usernames   [DATABASE_TYPE::COUNT]  = { ConfigHandler::GetOption<std::string>("auth_database_user", "root"),            ConfigHandler::GetOption<std::string>("character_database_user", "root"),           ConfigHandler::GetOption<std::string>("world_database_user", "root"),           ConfigHandler::GetOption<std::string>("dbc_database_user", "root") };
+    std::string passwords   [DATABASE_TYPE::COUNT]  = { ConfigHandler::GetOption<std::string>("auth_database_password", ""),            ConfigHandler::GetOption<std::string>("character_database_password", ""),           ConfigHandler::GetOption<std::string>("world_database_password", ""),           ConfigHandler::GetOption<std::string>("dbc_database_password", "") };
+    std::string names       [DATABASE_TYPE::COUNT]  = { ConfigHandler::GetOption<std::string>("auth_database_name", "authserver"),      ConfigHandler::GetOption<std::string>("character_database_name", "charserver"),     ConfigHandler::GetOption<std::string>("world_database_name", "worldserver"),    ConfigHandler::GetOption<std::string>("dbc_database_name", "dbcdata") };
+    
+    /* Pass Database Information to Setup */
+    DatabaseConnector::Setup(hosts, ports, usernames, passwords, names);
+
+    /* Load Config Handler for server */
+    if (!ConfigHandler::Load("relayserver_configuration.json"))
+    {
+        std::getchar();
+        return 0;
+    }
 
     asio::io_service io_service(2);
-    ClientRelayConnectionHandler clientRelayConnectionHandler(io_service, ConfigHandler::GetOption<uint16_t>("port", 8000));
-    NovusConnectionHandler novusConnectionHandler(io_service, ConfigHandler::GetOption<uint16_t>("nodeport", 10000));
-    
-    RelayAuthNodeConnection relayAuthNodeConnection(new asio::ip::tcp::socket(io_service), ConfigHandler::GetOption<std::string>("authserverip", "127.0.0.1"), ConfigHandler::GetOption<uint16_t>("authservernodeport", 9000));
+    ClientRelayConnectionHandler    clientRelayConnectionHandler(io_service,    ConfigHandler::GetOption<uint16_t>("port", 8000));
+    NovusConnectionHandler          novusConnectionHandler(io_service,          ConfigHandler::GetOption<uint16_t>("nodeport", 10000));  
+    RelayAuthNodeConnection         relayAuthNodeConnection(new asio::ip::tcp::socket(io_service), ConfigHandler::GetOption<std::string>("authserverip", "127.0.0.1"), ConfigHandler::GetOption<uint16_t>("authservernodeport", 9000));
 
     if (!relayAuthNodeConnection.Start())
     {
@@ -56,14 +75,21 @@ int main()
     clientRelayConnectionHandler.Start();
     novusConnectionHandler.Start();
 
-    std::cout << "Relayserver Instance running on port: " << clientRelayConnectionHandler.GetPort() << std::endl;
-    std::cout << "Relayserver Node Instance running on port: " << novusConnectionHandler.GetPort() << std::endl;
-    std::cout << "Relayserver established node connection to Authserver." << std::endl;
-
+    srand((uint32_t)time(NULL));
     std::thread run_thread([&]
     {
         io_service.run();
     });
+
+    std::stringstream ss;
+    ss << "Relayserver Instance running on port: " << clientRelayConnectionHandler.GetPort();
+    NC_LOG_MESSAGE(ss.str());
+
+    std::stringstream _ss;
+    _ss << "Relayserver Node Instance running on port: " << novusConnectionHandler.GetPort();
+    NC_LOG_MESSAGE(_ss.str());
+
+    NC_LOG_MESSAGE("Relayserver established node connection to Authserver.");
 
     std::getchar();
 	return 0;

@@ -24,34 +24,61 @@
 
 #include <Config\ConfigHandler.h>
 #include <Database\DatabaseConnector.h>
+#include <Utils/DebugHandler.h>
 
 #include "ConnectionHandlers/ClientAuthConnectionHandler.h"
 #include "ConnectionHandlers/RelayNodeConnectionHandler.h"
 
 int main()
 {
-    asio::io_service io_service(2);
-    if (!ConfigHandler::Setup("authserver_configuration.json"))
+    /* Initialize Debug Handler */
+    InitDebugger(PROGRAM_TYPE::Auth);
+
+    /* Load Database Config Handler for server */
+    if (!ConfigHandler::Load("database_configuration.json"))
     {
         std::getchar();
         return 0;
     }
-    DatabaseConnector::Setup("127.0.0.1", "root", "ascent");
 
+    /* Load Database Information here */
+    std::string hosts       [DATABASE_TYPE::COUNT]  = { ConfigHandler::GetOption<std::string>("auth_database_ip", "127.0.0.1"),         ConfigHandler::GetOption<std::string>("character_database_ip", "127.0.0.1"),        ConfigHandler::GetOption<std::string>("world_database_ip", "127.0.0.1"),        ConfigHandler::GetOption<std::string>("dbc_database_ip", "127.0.0.1") };   
+    u16 ports               [DATABASE_TYPE::COUNT]  = { ConfigHandler::GetOption<u16>("auth_database_port", 3306),                      ConfigHandler::GetOption<u16>("character_database_port", 3306),                     ConfigHandler::GetOption<u16>("world_database_port", 3306),                     ConfigHandler::GetOption<u16>("dbc_database_port", 3306) };   
+    std::string usernames   [DATABASE_TYPE::COUNT]  = { ConfigHandler::GetOption<std::string>("auth_database_user", "root"),            ConfigHandler::GetOption<std::string>("character_database_user", "root"),           ConfigHandler::GetOption<std::string>("world_database_user", "root"),           ConfigHandler::GetOption<std::string>("dbc_database_user", "root") };
+    std::string passwords   [DATABASE_TYPE::COUNT]  = { ConfigHandler::GetOption<std::string>("auth_database_password", ""),            ConfigHandler::GetOption<std::string>("character_database_password", ""),           ConfigHandler::GetOption<std::string>("world_database_password", ""),           ConfigHandler::GetOption<std::string>("dbc_database_password", "") };
+    std::string names       [DATABASE_TYPE::COUNT]  = { ConfigHandler::GetOption<std::string>("auth_database_name", "authserver"),      ConfigHandler::GetOption<std::string>("character_database_name", "charserver"),     ConfigHandler::GetOption<std::string>("world_database_name", "worldserver"),    ConfigHandler::GetOption<std::string>("dbc_database_name", "dbcdata") };
+    
+    /* Pass Database Information to Setup */
+    DatabaseConnector::Setup(hosts, ports, usernames, passwords, names);
+
+    /* Load Config Handler for server */
+    if (!ConfigHandler::Load("authserver_configuration.json"))
+    {
+        std::getchar();
+        return 0;
+    }
+
+    asio::io_service io_service(2);
     ClientAuthConnectionHandler clientAuthConnectionHandler(io_service, ConfigHandler::GetOption<uint16_t>("port", 3724));
     RelayNodeConnectionHandler relayNodeConnectionHandler(io_service, ConfigHandler::GetOption<uint16_t>("nodeport", 9000));
     
     clientAuthConnectionHandler.Start();
     relayNodeConnectionHandler.Start();
 
+    srand((uint32_t)time(NULL));
     std::thread run_thread([&]
     {
         io_service.run();
     });
 
-    std::cout << "Authserver Instance running on port: " << clientAuthConnectionHandler.GetPort() << std::endl;
-    std::cout << "Authserver Node Instance running on port: " << relayNodeConnectionHandler.GetPort() << std::endl;
-    std::getchar();
+    std::stringstream ss;
+    ss << "Authserver Instance running on port: " << clientAuthConnectionHandler.GetPort();
+    NC_LOG_MESSAGE(ss.str());
 
+    std::stringstream _ss;
+    _ss << "Authserver Node Instance running on port: " << relayNodeConnectionHandler.GetPort();
+    NC_LOG_MESSAGE(_ss.str());
+
+    std::getchar();
     return 0;
 }

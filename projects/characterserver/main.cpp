@@ -24,18 +24,38 @@
 
 #include <Config\ConfigHandler.h>
 #include <Database\DatabaseConnector.h>
+#include <Utils/DebugHandler.h>
 
 #include "Connections\NovusConnection.h"
 
 int main()
 {
-    if (!ConfigHandler::Setup("characterserver_configuration.json"))
+    /* Initialize Debug Handler */
+    InitDebugger(PROGRAM_TYPE::Char);
+
+    /* Load Database Config Handler for server */
+    if (!ConfigHandler::Load("database_configuration.json"))
     {
         std::getchar();
         return 0;
     }
-	DatabaseConnector::Setup("127.0.0.1", "root", "ascent");
-    srand((uint32_t)time(NULL));
+
+    /* Load Database Information here */
+    std::string hosts       [DATABASE_TYPE::COUNT]  = { ConfigHandler::GetOption<std::string>("auth_database_ip", "127.0.0.1"),         ConfigHandler::GetOption<std::string>("character_database_ip", "127.0.0.1"),        ConfigHandler::GetOption<std::string>("world_database_ip", "127.0.0.1"),        ConfigHandler::GetOption<std::string>("dbc_database_ip", "127.0.0.1") };   
+    u16 ports               [DATABASE_TYPE::COUNT]  = { ConfigHandler::GetOption<u16>("auth_database_port", 3306),                      ConfigHandler::GetOption<u16>("character_database_port", 3306),                     ConfigHandler::GetOption<u16>("world_database_port", 3306),                     ConfigHandler::GetOption<u16>("dbc_database_port", 3306) };   
+    std::string usernames   [DATABASE_TYPE::COUNT]  = { ConfigHandler::GetOption<std::string>("auth_database_user", "127.0.0.1"),       ConfigHandler::GetOption<std::string>("character_database_user", "127.0.0.1"),      ConfigHandler::GetOption<std::string>("world_database_user", "127.0.0.1"),      ConfigHandler::GetOption<std::string>("dbc_database_user", "127.0.0.1") };  
+    std::string passwords   [DATABASE_TYPE::COUNT]  = { ConfigHandler::GetOption<std::string>("auth_database_password", "127.0.0.1"),   ConfigHandler::GetOption<std::string>("character_database_password", "127.0.0.1"),  ConfigHandler::GetOption<std::string>("world_database_password", "127.0.0.1"),  ConfigHandler::GetOption<std::string>("dbc_database_password", "127.0.0.1") };  
+    std::string names       [DATABASE_TYPE::COUNT]  = { ConfigHandler::GetOption<std::string>("auth_database_name", "127.0.0.1"),       ConfigHandler::GetOption<std::string>("character_database_name", "127.0.0.1"),      ConfigHandler::GetOption<std::string>("world_database_name", "127.0.0.1"),      ConfigHandler::GetOption<std::string>("dbc_database_name", "127.0.0.1") };
+    
+    /* Pass Database Information to Setup */
+    DatabaseConnector::Setup(hosts, ports, usernames, passwords, names);
+
+    /* Load Config Handler for server */
+    if (!ConfigHandler::Load("characterserver_configuration.json"))
+    {
+        std::getchar();
+        return 0;
+    }
 
     asio::io_service io_service(2);
     NovusConnection novusConnection(new asio::ip::tcp::socket(io_service), ConfigHandler::GetOption<std::string>("relayserverip", "127.0.0.1"), ConfigHandler::GetOption<uint16_t>("relayserverport", 10000), ConfigHandler::GetOption<uint8_t>("realmId", 1));
@@ -45,12 +65,14 @@ int main()
         std::getchar();
         return 0;
     }
-    std::cout << "Characterserver established node connection to Relayserver." << std::endl;
 
+    srand((uint32_t)time(NULL));
     std::thread run_thread([&]
     {
         io_service.run();
     });
+
+    NC_LOG_MESSAGE("Characterserver established node connection to Relayserver.");
 
     std::getchar();
 	return 0;

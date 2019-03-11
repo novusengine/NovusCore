@@ -1,0 +1,30 @@
+{
+    "auth_database": {
+        "auth_database_ip": "127.0.0.1",
+        "auth_database_port": 3306,
+        "auth_database_user": "root",
+        "auth_database_password": "",
+        "auth_database_name": "authserver"
+    },
+    "character_database": {
+        "character_database_ip": "127.0.0.1",
+        "character_database_port": 3306,
+        "character_database_user": "root",
+        "character_database_password": "",
+        "character_database_name": "charserver"
+    },
+    "world_database": {
+        "world_database_ip": "127.0.0.1",
+        "world_database_port": 3306,
+        "world_database_user": "root",
+        "world_database_password": "",
+        "world_database_name": "worldserver"
+    },
+    "dbc_database": {
+        "dbc_database_ip": "127.0.0.1",
+        "dbc_database_port": 3306,
+        "dbc_database_user": "root",
+        "dbc_database_password": "",
+        "dbc_database_name": "dbcdata"
+    }
+}

@@ -24,6 +24,7 @@
 
 #include "RelayAuthNodeConnection.h"
 #include "Networking\ByteBuffer.h"
+#include <Utils/DebugHandler.h>
 
 std::unordered_map<uint8_t, RelayMessageHandler> RelayAuthNodeConnection::InitMessageHandlers()
 {
@@ -54,7 +55,7 @@ bool RelayAuthNodeConnection::Start()
     }
     catch (asio::system_error error)
     {
-        std::cout << "ERROR: " << error.what() << std::endl;
+        NC_LOG_FATAL(error.what());
         return false;
     }
 }

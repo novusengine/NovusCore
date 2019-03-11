@@ -1,10 +1,10 @@
 #include "ConfigHandler.h"
+#include "../Utils/DebugHandler.h"
 
 std::string ConfigHandler::_configFileName;
 json ConfigHandler::_configFile;
-bool ConfigHandler::_isInitialized = false;
 
-bool ConfigHandler::Setup(std::string configFileName)
+bool ConfigHandler::Load(std::string configFileName)
 {
     _configFileName = configFileName;
 
@@ -16,18 +16,17 @@ bool ConfigHandler::Setup(std::string configFileName)
     }
     catch (nlohmann::detail::exception e)
     {
-        std::cerr << "ConfigHandler: Failed to initialize config file, " << configFileName << " could not be found!" << std::endl;
+        NC_LOG_FATAL("Could not find '" + configFileName + "' in directory. Press a key to exit.");
         return false;
     }
     
     if (_configFile.size() == 0)
     {
-        std::cerr << "ConfigHandler: Failed to initialize config file, found 0 configurations!" << std::endl;
+        NC_LOG_FATAL("Failed to initialize config file, found 0 configurations.");
         return false;
     }
 
-	_isInitialized = true;
-	std::cout << "Successfully initialized config file: " << _configFileName << std::endl;
+    NC_LOG_MESSAGE("Successfully loaded config file: '" + configFileName);
 	return true;
 }
 

@@ -2,18 +2,27 @@
 #include "DatabaseConnector.h"
 #include <amy/placeholders.hpp>
 
-std::string DatabaseConnector::_host = "INVALID";
-std::string DatabaseConnector::_username = "root";
-std::string DatabaseConnector::_password = "";
+std::vector<std::string> DatabaseConnector::_hosts(DATABASE_TYPE::COUNT);
+std::vector<std::string> DatabaseConnector::_usernames(DATABASE_TYPE::COUNT);
+std::vector<std::string> DatabaseConnector::_passwords(DATABASE_TYPE::COUNT);
+std::vector<std::string> DatabaseConnector::_names(DATABASE_TYPE::COUNT);
+std::vector<u16>         DatabaseConnector::_ports(DATABASE_TYPE::COUNT);
+bool                     DatabaseConnector::_initialized = false;
 SharedPool<DatabaseConnector> DatabaseConnector::_connectorPools[];
 ConcurrentQueue<AsyncSQLJob> DatabaseConnector::_asyncJobQueue(1024);
 
-// Initialization
-void DatabaseConnector::Setup(std::string host, std::string username, std::string password)
+void DatabaseConnector::Setup(std::string hosts[], u16 ports[], std::string usernames[], std::string passwords[], std::string names[])
 { 
-	_host = host; 
-	_username = username; 
-	_password = password;
+
+    for (i32 i = 0; i < DATABASE_TYPE::COUNT; i++)
+    {
+        _hosts[i]       = hosts[i];
+        _usernames[i]   = usernames[i];
+        _passwords[i]   = passwords[i];
+        _names[i]       = names[i];
+        _ports[i]       = ports[i];
+    }
+    _initialized = true;
 
 	// Create Async SQL thread
 	std::thread asyncThread(AsyncSQLThreadMain);
@@ -23,7 +32,7 @@ void DatabaseConnector::Setup(std::string host, std::string username, std::strin
 // Static Connector creation
 bool DatabaseConnector::Create(DATABASE_TYPE type, std::unique_ptr<DatabaseConnector>& out)
 {
-	if (_host == "INVALID")
+	if (!_initialized)
 	{
 		std::cerr << "ERROR: Failed to connect to MySQL Server, please initialize with DatabaseConnector::Setup!\n";
 		return false;
@@ -37,7 +46,7 @@ bool DatabaseConnector::Create(DATABASE_TYPE type, std::unique_ptr<DatabaseConne
 
 bool DatabaseConnector::Borrow(DATABASE_TYPE type, std::shared_ptr<DatabaseConnector>& out)
 {
-	if (_host == "INVALID")
+    if (!_initialized)
 	{
 		std::cerr << "ERROR: Failed to connect to MySQL Server, please initialize with DatabaseConnector::Setup!\n";
 		assert(false);
@@ -59,7 +68,7 @@ bool DatabaseConnector::Borrow(DATABASE_TYPE type, std::shared_ptr<DatabaseConne
 
 void DatabaseConnector::Borrow(DATABASE_TYPE type, std::function<void(std::shared_ptr<DatabaseConnector>& connector)> const& func)
 {
-    if (_host == "INVALID")
+    if (!_initialized)
     {
         std::cerr << "ERROR: Failed to connect to MySQL Server, please initialize with DatabaseConnector::Setup!\n";
         assert(false);
@@ -90,7 +99,6 @@ void DatabaseConnector::ExecuteAsync(DATABASE_TYPE type, std::string sql)
 
 void DatabaseConnector::AsyncSQLThreadMain()
 {
-	std::cout << "[SQL] Async SQL Thread has been created\n";
 	AsyncSQLJob job;
 	amy::result_set results;
 	size_t tries = 0;
@@ -157,28 +165,12 @@ DatabaseConnector::~DatabaseConnector()
 bool DatabaseConnector::_Connect(DATABASE_TYPE type)
 {
 	_type = type;
-
-	std::string db = "INVALID";
-
-	switch (_type)
-	{
-	case DATABASE_TYPE::AUTHSERVER:
-		db = "authserver";
-		break;
-	case DATABASE_TYPE::CHARSERVER:
-		db = "charserver";
-		break;
-	case DATABASE_TYPE::WORLDSERVER:
-		db = "worldserver";
-		break;
-	}
-
-	AMY_ASIO_NS::ip::tcp::endpoint endpoint(AMY_ASIO_NS::ip::address::from_string(_host), 3306);
+	AMY_ASIO_NS::ip::tcp::endpoint endpoint(AMY_ASIO_NS::ip::address::from_string(_hosts[_type]), _ports[_type]);
 	AMY_ASIO_NS::io_service io_service;
 	_connector = new amy::connector(io_service);
 	try
 	{
-		_connector->connect(endpoint, amy::auth_info(_username, _password), db, amy::default_flags);
+		_connector->connect(endpoint, amy::auth_info(_usernames[_type], _passwords[_type]), _names[_type], amy::default_flags);
 		return true;
 	}
 	catch(amy::system_error error)

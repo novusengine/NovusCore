@@ -32,12 +32,10 @@ using json = nlohmann::json;
 class ConfigHandler
 {
 public:
-    static bool Setup(std::string configFileName);
+    static bool Load(std::string configFileName);
 
     template<class T>
     static T GetOption(std::string optionName, T defaultValue);
-
-	static bool IsInitialized() { return _isInitialized; }
 
 	~ConfigHandler() {}
 private:
@@ -46,7 +44,6 @@ private:
 
 	static std::string _configFileName;
     static json _configFile;
-	static bool _isInitialized;
 };
 
 template<class T>

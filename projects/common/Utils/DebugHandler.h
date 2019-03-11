@@ -34,8 +34,8 @@ enum PROGRAM_TYPE
 {
 	Auth,
 	Relay,
-	World,
-	Char
+    Char,
+	World
 };
 
 #ifndef Release

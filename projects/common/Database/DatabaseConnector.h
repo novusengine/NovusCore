@@ -25,10 +25,12 @@
 
 #include <string>
 #include <functional>
+#include <vector>
 
 #include <amy/connector.hpp>
 #include "../Utils/SharedPool.h"
 #include "../Utils/ConcurrentQueue.h"
+#include "../NovusTypes.h"
 #include "PreparedStatement.h"
 
 enum DATABASE_TYPE
@@ -36,6 +38,7 @@ enum DATABASE_TYPE
 	AUTHSERVER,
 	CHARSERVER,
 	WORLDSERVER,
+    DBC,
 	COUNT
 };
 
@@ -74,7 +77,7 @@ class DatabaseConnector
 {
 public:
 	// Initialization
-	static void Setup(std::string host, std::string username, std::string password);
+    static void Setup(std::string hosts[], u16 ports[], std::string usernames[], std::string passwords[], std::string names[]);
 
 	// Static Connector creation
 	static bool Create(DATABASE_TYPE type, std::unique_ptr<DatabaseConnector>& out);
@@ -110,9 +113,12 @@ private:
 	DATABASE_TYPE _type;
 	amy::connector* _connector;
 
-	static std::string _host;
-    static std::string _username;
-    static std::string _password;
+	static std::vector<std::string>  _hosts;
+    static std::vector<std::string>  _usernames;
+    static std::vector<std::string>  _passwords;
+    static std::vector<std::string>  _names;
+    static std::vector<u16>          _ports;
+    static bool                      _initialized;
 
 	static SharedPool<DatabaseConnector> _connectorPools[DATABASE_TYPE::COUNT];
 	static std::thread* _asyncThread;

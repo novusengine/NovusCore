@@ -22,20 +22,31 @@ std::string GetLineFromCin() {
 
 int main()
 {
-	if (!ConfigHandler::Setup("worldserver_configuration.json"))
+    InitDebugger(PROGRAM_TYPE::World);
+
+    /* Load Database Config Handler for server */
+    if (!ConfigHandler::Load("database_configuration.json"))
+    {
+        std::getchar();
+        return 0;
+    }
+    
+    /* Load Database Information here */
+    std::string hosts       [DATABASE_TYPE::COUNT]  = { ConfigHandler::GetOption<std::string>("auth_database_ip", "127.0.0.1"),         ConfigHandler::GetOption<std::string>("character_database_ip", "127.0.0.1"),        ConfigHandler::GetOption<std::string>("world_database_ip", "127.0.0.1"),        ConfigHandler::GetOption<std::string>("dbc_database_ip", "127.0.0.1") };   
+    u16 ports               [DATABASE_TYPE::COUNT]  = { ConfigHandler::GetOption<u16>("auth_database_port", 3306),                      ConfigHandler::GetOption<u16>("character_database_port", 3306),                     ConfigHandler::GetOption<u16>("world_database_port", 3306),                     ConfigHandler::GetOption<u16>("dbc_database_port", 3306) };   
+    std::string usernames   [DATABASE_TYPE::COUNT]  = { ConfigHandler::GetOption<std::string>("auth_database_user", "root"),            ConfigHandler::GetOption<std::string>("character_database_user", "root"),           ConfigHandler::GetOption<std::string>("world_database_user", "root"),           ConfigHandler::GetOption<std::string>("dbc_database_user", "root") };
+    std::string passwords   [DATABASE_TYPE::COUNT]  = { ConfigHandler::GetOption<std::string>("auth_database_password", ""),            ConfigHandler::GetOption<std::string>("character_database_password", ""),           ConfigHandler::GetOption<std::string>("world_database_password", ""),           ConfigHandler::GetOption<std::string>("dbc_database_password", "") };
+    std::string names       [DATABASE_TYPE::COUNT]  = { ConfigHandler::GetOption<std::string>("auth_database_name", "authserver"),      ConfigHandler::GetOption<std::string>("character_database_name", "charserver"),     ConfigHandler::GetOption<std::string>("world_database_name", "worldserver"),    ConfigHandler::GetOption<std::string>("dbc_database_name", "dbcdata") };
+    
+    /* Pass Database Information to Setup */
+    DatabaseConnector::Setup(hosts, ports, usernames, passwords, names);
+
+    /* Load Config Handler for server */
+	if (!ConfigHandler::Load("worldserver_configuration.json"))
 	{
 		std::getchar();
 		return 0;
 	}
-	InitDebugger(PROGRAM_TYPE::World);
-
-	/*NC_LOG_MESSAGE("This is a message");
-	NC_LOG_DEPRECATED("This is a deprecation");
-	NC_LOG_WARNING("This is a warning");
-	NC_LOG_ERROR("This is a error");
-	NC_LOG_FATAL("This is a fatal error");*/
-
-	DatabaseConnector::Setup("127.0.0.1", "root", "ascent");
 
     asio::io_service io_service(2);
     NovusConnection novusConnection(new asio::ip::tcp::socket(io_service), ConfigHandler::GetOption<std::string>("relayserverip", "127.0.0.1"), ConfigHandler::GetOption<uint16_t>("relayserverport", 10000), ConfigHandler::GetOption<uint8_t>("realmId", 1));
@@ -45,12 +56,14 @@ int main()
         std::getchar();
         return 0;
     }
-    std::cout << "Worldserver established node connection to Relayserver." << std::endl;
 
+    srand((uint32_t)time(NULL));
     std::thread run_thread([&]
     {
         io_service.run();
     });
+
+    NC_LOG_MESSAGE("Worldserver established node connection to Relayserver.");
 
 	ConsoleCommandHandler consoleCommandHandler;
 
