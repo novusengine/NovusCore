@@ -26,9 +26,9 @@
 #include <Networking\ByteBuffer.h>
 #include "..\ConnectionHandlers\ClientRelayConnectionHandler.h"
 
-std::unordered_map<uint8_t, NovusMessageHandler> NovusConnection::InitMessageHandlers()
+std::unordered_map<u8, NovusMessageHandler> NovusConnection::InitMessageHandlers()
 {
-    std::unordered_map<uint8_t, NovusMessageHandler> messageHandlers;
+    std::unordered_map<u8, NovusMessageHandler> messageHandlers;
 
     messageHandlers[NOVUS_CHALLENGE]             =   { NOVUSSTATUS_CHALLENGE,         sizeof(cNovusChallenge),  &NovusConnection::HandleCommandChallenge        };
     messageHandlers[NOVUS_PROOF]                 =   { NOVUSSTATUS_PROOF,             1,                        &NovusConnection::HandleCommandProof            };
@@ -36,7 +36,7 @@ std::unordered_map<uint8_t, NovusMessageHandler> NovusConnection::InitMessageHan
 
     return messageHandlers;
 }
-std::unordered_map<uint8_t, NovusMessageHandler> const MessageHandlers = NovusConnection::InitMessageHandlers();
+std::unordered_map<u8, NovusMessageHandler> const MessageHandlers = NovusConnection::InitMessageHandlers();
 
 bool NovusConnection::Start()
 {
@@ -57,7 +57,7 @@ void NovusConnection::HandleRead()
             _crypto->Decrypt(buffer.GetReadPointer(), buffer.GetActualSize());
             isDecrypted = true;
         }
-        uint8_t command = buffer.GetDataPointer()[0];
+        u8 command = buffer.GetDataPointer()[0];
 
         auto itr = MessageHandlers.find(command);
         if (itr == MessageHandlers.end())
@@ -119,7 +119,7 @@ void NovusConnection::HandleRead()
         }
         else
         {
-            uint16_t size = uint16_t(itr->second.packetSize);
+            u16 size = u16(itr->second.packetSize);
             if (buffer.GetActualSize() < size)
                 break;
 
@@ -144,7 +144,7 @@ bool NovusConnection::HandleCommandChallenge()
     if (novusChallenge->version == 335 && novusChallenge->build == 12340)
     {
         Common::ByteBuffer packet;
-        packet.Write<uint8_t>(NOVUS_CHALLENGE);
+        packet.Write<u8>(NOVUS_CHALLENGE);
         packet.Append(_key->BN2BinArray(32).get(), 32);
         _crypto->SetupServer(_key);
 
@@ -166,7 +166,7 @@ bool NovusConnection::HandleCommandProof()
     _status = NOVUSSTATUS_AUTHED;
 
     Common::ByteBuffer packet;
-    packet.Write<uint8_t>(NOVUS_PROOF);
+    packet.Write<u8>(NOVUS_PROOF);
     _crypto->Encrypt(packet.GetReadPointer(), packet.GetActualSize());
     
     Send(packet);

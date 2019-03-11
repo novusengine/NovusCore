@@ -63,9 +63,9 @@ int main()
     }
 
     asio::io_service io_service(2);
-    ClientRelayConnectionHandler    clientRelayConnectionHandler(io_service,    ConfigHandler::GetOption<uint16_t>("port", 8000));
-    NovusConnectionHandler          novusConnectionHandler(io_service,          ConfigHandler::GetOption<uint16_t>("nodeport", 10000));  
-    RelayAuthNodeConnection         relayAuthNodeConnection(new asio::ip::tcp::socket(io_service), ConfigHandler::GetOption<std::string>("authserverip", "127.0.0.1"), ConfigHandler::GetOption<uint16_t>("authservernodeport", 9000));
+    ClientRelayConnectionHandler    clientRelayConnectionHandler(io_service,    ConfigHandler::GetOption<u16>("port", 8000));
+    NovusConnectionHandler          novusConnectionHandler(io_service,          ConfigHandler::GetOption<u16>("nodeport", 10000));  
+    RelayAuthNodeConnection         relayAuthNodeConnection(new asio::ip::tcp::socket(io_service), ConfigHandler::GetOption<std::string>("authserverip", "127.0.0.1"), ConfigHandler::GetOption<u16>("authservernodeport", 9000));
 
     if (!relayAuthNodeConnection.Start())
     {
@@ -75,7 +75,7 @@ int main()
     clientRelayConnectionHandler.Start();
     novusConnectionHandler.Start();
 
-    srand((uint32_t)time(NULL));
+    srand((u32)time(NULL));
     std::thread run_thread([&]
     {
         io_service.run();

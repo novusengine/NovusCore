@@ -34,28 +34,28 @@
 #pragma pack(push, 1)
 struct cAuthSessionData
 {
-    uint32_t build;
-    uint32_t loginServerId;
+    u32 build;
+    u32 loginServerId;
     std::string accountName;
-    uint32_t loginServerType;
-    uint32_t localChallenge;
-    uint32_t regionId;
-    uint32_t battlegroupId;
-    uint32_t realmId;
-    uint64_t dosResponse;
-    uint8_t  digest[SHA_DIGEST_LENGTH];
+    u32 loginServerType;
+    u32 localChallenge;
+    u32 regionId;
+    u32 battlegroupId;
+    u32 realmId;
+    u64 dosResponse;
+    u8  digest[SHA_DIGEST_LENGTH];
 
     void Read(Common::ByteBuffer& buffer)
     {
-        buffer.Read<uint32_t>(build);
-        buffer.Read<uint32_t>(loginServerId);
+        buffer.Read<u32>(build);
+        buffer.Read<u32>(loginServerId);
         buffer.Read(accountName);
-        buffer.Read<uint32_t>(loginServerType);
-        buffer.Read<uint32_t>(localChallenge);
-        buffer.Read<uint32_t>(regionId);
-        buffer.Read<uint32_t>(battlegroupId);
-        buffer.Read<uint32_t>(realmId);
-        buffer.Read<uint64_t>(dosResponse);
+        buffer.Read<u32>(loginServerType);
+        buffer.Read<u32>(localChallenge);
+        buffer.Read<u32>(regionId);
+        buffer.Read<u32>(battlegroupId);
+        buffer.Read<u32>(realmId);
+        buffer.Read<u64>(dosResponse);
         buffer.Read(&digest, 20);
     }
 };
@@ -66,7 +66,7 @@ class RelayConnection : public Common::BaseSocket
 public:
     RelayConnection(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), account(0), worldId(255), _headerBuffer(), _packetBuffer()
     {
-        _seed = (uint32_t)rand();
+        _seed = (u32)rand();
         _headerBuffer.Resize(sizeof(Common::ClientPacketHeader));
         sessionKey = new BigNumber();
     }
@@ -90,21 +90,21 @@ public:
     template<> inline void convert<0>(char *) { }
     template<> inline void convert<1>(char *) { } // ignore central byte
 
-    inline void apply(uint16_t *val)
+    inline void apply(u16 *val)
     {
-        convert<sizeof(uint16_t)>((char *)(val));
+        convert<sizeof(u16)>((char *)(val));
     }
-    inline void EndianConvertReverse(uint16_t& val) { apply(&val); }
+    inline void EndianConvertReverse(u16& val) { apply(&val); }
 
-    uint32_t account;
-    uint64_t characterGuid;
+    u32 account;
+    u64 characterGuid;
     cAuthSessionData sessionData;
     BigNumber* sessionKey;
 
-    uint8_t worldId;
+    u8 worldId;
     Common::ByteBuffer _headerBuffer;
     Common::ByteBuffer _packetBuffer;
 
-    uint32_t _seed;
+    u32 _seed;
     StreamCrypto _streamCrypto;
 };

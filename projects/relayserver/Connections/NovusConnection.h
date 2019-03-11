@@ -47,30 +47,30 @@ enum NovusStatus
 #pragma pack(push, 1)
 struct cNovusChallenge
 {
-    uint8_t     command;
-    uint8_t     type;
-    uint16_t    version;
-    uint16_t    build;
+    u8     command;
+    u8     type;
+    u16    version;
+    u16    build;
 };
 
 struct NovusHeader
 {
-    uint8_t     command;
-    uint32_t    account;
-    uint16_t    opcode;
-    uint16_t    size;
+    u8     command;
+    u32    account;
+    u16    opcode;
+    u16    size;
 
     void Read(Common::ByteBuffer& buffer)
     {
-        buffer.Read<uint8_t>(command);
-        buffer.Read<uint32_t>(account);
-        buffer.Read<uint16_t>(opcode);
-        buffer.Read<uint16_t>(size);
+        buffer.Read<u8>(command);
+        buffer.Read<u32>(account);
+        buffer.Read<u16>(opcode);
+        buffer.Read<u16>(size);
     }
 
     void AddTo(Common::ByteBuffer& buffer)
     {
-        buffer.Append((uint8_t*)this, sizeof(NovusHeader));
+        buffer.Append((u8*)this, sizeof(NovusHeader));
     }
 };
 #pragma pack(pop)
@@ -79,7 +79,7 @@ struct NovusMessageHandler;
 class NovusConnection : public Common::BaseSocket
 {
 public:
-    static std::unordered_map<uint8_t, NovusMessageHandler> InitMessageHandlers();
+    static std::unordered_map<u8, NovusMessageHandler> InitMessageHandlers();
 
     NovusConnection(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), _status(NOVUSSTATUS_CHALLENGE), _crypto(), _id(255), _type(255), _headerBuffer(), _packetBuffer()
     {
@@ -100,8 +100,8 @@ public:
     NovusStatus _status;
     StreamCrypto* _crypto;
 
-    uint8_t _id;
-    uint8_t _type;
+    u8 _id;
+    u8 _type;
     private:
     BigNumber* _key;
 

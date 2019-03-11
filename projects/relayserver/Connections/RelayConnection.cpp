@@ -61,18 +61,18 @@ enum AuthResponse
 #pragma pack(push, 1)
 struct sAuthChallenge
 {
-    uint32_t unk;
-    uint32_t authSeed;
+    u32 unk;
+    u32 authSeed;
 
-    uint8_t seed1[16];
-    uint8_t seed2[16];
+    u8 seed1[16];
+    u8 seed2[16];
 
     void AddTo(Common::ByteBuffer& buffer)
     {
-        buffer.Append((uint8_t*)this, sizeof(sAuthChallenge));
+        buffer.Append((u8*)this, sizeof(sAuthChallenge));
     }
 
-    void Append(uint8_t* dest, const uint8_t* src, size_t size)
+    void Append(u8* dest, const u8* src, size_t size)
     {
         std::memcpy(dest, src, size);
     }
@@ -189,7 +189,7 @@ bool RelayConnection::HandlePacketRead()
         case Common::Opcode::CMSG_PING:
         {
             Common::ByteBuffer pong(4);
-            pong.Write<uint32_t>(0);
+            pong.Write<u32>(0);
             SendPacket(pong, Common::Opcode::SMSG_PONG);
             break;
         }
@@ -276,27 +276,27 @@ void RelayConnection::HandleAuthSession()
 
     if (AddonInfo._readPos + 4 <= AddonInfo.size())
     {
-        uint32_t size;
+        u32 size;
         AddonInfo.Read(&size, 4);
 
         if (size > 0 && size < 0xFFFFF)
         {
             uLongf uSize = size;
-            uint32_t pos = (uint32_t)AddonInfo._readPos;
+            u32 pos = (u32)AddonInfo._readPos;
 
             Common::ByteBuffer addonInfo;
             addonInfo.Resize(size);
 
             if (uncompress(addonInfo.data(), &uSize, AddonInfo.data() + pos, AddonInfo.size() - pos) == Z_OK)
             {
-                uint32_t addonsCount;
+                u32 addonsCount;
                 addonInfo.Read(&addonsCount, 4);
 
-                for (uint32_t i = 0; i < addonsCount; ++i)
+                for (u32 i = 0; i < addonsCount; ++i)
                 {
                     std::string addonName;
-                    uint8_t enabled;
-                    uint32_t crc, unk1;
+                    u8 enabled;
+                    u32 crc, unk1;
 
                     if (addonInfo._readPos + 1 <= addonInfo.size())
                     {
@@ -327,11 +327,11 @@ void RelayConnection::HandleAuthSession()
         _streamCrypto.SetupServer(sessionKey);
 
         SHA1Hasher sha;
-        uint32_t t = 0;
+        u32 t = 0;
         sha.UpdateHash(sessionData.accountName);
-        sha.UpdateHash((uint8_t*)&t, 4);
-        sha.UpdateHash((uint8_t*)&sessionData.localChallenge, 4);
-        sha.UpdateHash((uint8_t*)&_seed, 4);
+        sha.UpdateHash((u8*)&t, 4);
+        sha.UpdateHash((u8*)&sessionData.localChallenge, 4);
+        sha.UpdateHash((u8*)&_seed, 4);
         sha.UpdateHashForBn(1, sessionKey);
         sha.Finish();
 
@@ -343,14 +343,14 @@ void RelayConnection::HandleAuthSession()
 
         /* SMSG_AUTH_RESPONSE */
         Common::ByteBuffer packet(1 + 4 + 1 + 4 + 1);
-        packet.Write<uint8_t>(AUTH_OK);
-        packet.Write<uint32_t>(0);
-        packet.Write<uint8_t>(0);
-        packet.Write<uint32_t>(0);
-        packet.Write<uint8_t>(2); // Expansion
+        packet.Write<u8>(AUTH_OK);
+        packet.Write<u32>(0);
+        packet.Write<u8>(0);
+        packet.Write<u32>(0);
+        packet.Write<u8>(2); // Expansion
         SendPacket(packet, Common::Opcode::SMSG_AUTH_RESPONSE);
 
-        std::map<std::string, uint32_t> addonMap;
+        std::map<std::string, u32> addonMap;
         addonMap.insert(std::make_pair("Blizzard_AchievementUI", 1276933997));
         addonMap.insert(std::make_pair("Blizzard_ArenaUI", 1276933997));
         addonMap.insert(std::make_pair("Blizzard_AuctionUI", 1276933997));
@@ -375,7 +375,7 @@ void RelayConnection::HandleAuthSession()
         addonMap.insert(std::make_pair("Blizzard_TradeSkillUI", 1276933997));
         addonMap.insert(std::make_pair("Blizzard_TrainerUI", 1276933997));
 
-        uint8_t addonPublicKey[256] =
+        u8 addonPublicKey[256] =
         {
             0xC3, 0x5B, 0x50, 0x84, 0xB9, 0x3E, 0x32, 0x42, 0x8C, 0xD0, 0xC7, 0x48, 0xFA, 0x0E, 0x5D, 0x54,
             0x5A, 0xA3, 0x0E, 0x14, 0xBA, 0x9E, 0x0D, 0xB9, 0x5D, 0x8B, 0xEE, 0xB6, 0x84, 0x93, 0x45, 0x75,
@@ -398,36 +398,36 @@ void RelayConnection::HandleAuthSession()
         Common::ByteBuffer addonInfo(4);
         for (auto addon : addonMap)
         {
-            addonInfo.Write<uint8_t>(2); // State
-            addonInfo.Write<uint8_t>(1); // UsePublicKeyOrCRC
+            addonInfo.Write<u8>(2); // State
+            addonInfo.Write<u8>(1); // UsePublicKeyOrCRC
 
             // if (UsePublicKeyOrCRC)
             {
-                uint8_t usepk = (addon.second != 1276933997);
-                addonInfo.Write<uint8_t>(usepk);
+                u8 usepk = (addon.second != 1276933997);
+                addonInfo.Write<u8>(usepk);
 
                 if (usepk)
                 {
                     std::cout << "Addon Mismatch (" << addon.first << "," << addon.second << ")" << std::endl;
                 }
 
-                addonInfo.Write<uint32_t>(0); // What does this mean?
+                addonInfo.Write<u32>(0); // What does this mean?
             }
 
-            addonInfo.Write<uint8_t>(0); // Uses URL
+            addonInfo.Write<u8>(0); // Uses URL
         }
 
-        addonInfo.Write<uint32_t>(0); // Size of banned addon list
+        addonInfo.Write<u32>(0); // Size of banned addon list
         SendPacket(addonInfo, Common::Opcode::SMSG_ADDON_INFO);
 
         Common::ByteBuffer clientCache(4);
-        clientCache.Write<uint32_t>(0);
+        clientCache.Write<u32>(0);
         SendPacket(clientCache, Common::Opcode::SMSG_CLIENTCACHE_VERSION);
 
         // Tutorial Flags : REQUIRED
         Common::ByteBuffer tutorialFlags(4 * 8);
         for (int i = 0; i < 8; i++)
-            tutorialFlags.Write<uint32_t>(0xFF);
+            tutorialFlags.Write<u32>(0xFF);
 
         SendPacket(tutorialFlags, Common::Opcode::SMSG_TUTORIAL_FLAGS);
         worldId = 1;

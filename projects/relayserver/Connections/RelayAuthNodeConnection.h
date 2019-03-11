@@ -47,8 +47,8 @@ enum RelayStatus
 #pragma pack(push, 1)
 struct sRelayChallenge
 {
-    uint8_t command;
-    uint8_t K[32];
+    u8 command;
+    u8 K[32];
 };
 #pragma pack(pop)
 
@@ -56,9 +56,9 @@ struct RelayMessageHandler;
 class RelayAuthNodeConnection : public Common::BaseSocket
 {
 public:
-    static std::unordered_map<uint8_t, RelayMessageHandler> InitMessageHandlers();
+    static std::unordered_map<u8, RelayMessageHandler> InitMessageHandlers();
 
-    RelayAuthNodeConnection(asio::ip::tcp::socket* socket, std::string address, uint16_t port) : Common::BaseSocket(socket), _status(RELAYSTATUS_CHALLENGE), _crypto(), _address(address), _port(port)
+    RelayAuthNodeConnection(asio::ip::tcp::socket* socket, std::string address, u16 port) : Common::BaseSocket(socket), _status(RELAYSTATUS_CHALLENGE), _crypto(), _address(address), _port(port)
     { 
         _crypto = new StreamCrypto();
         _key = new BigNumber();
@@ -73,7 +73,7 @@ public:
     RelayStatus _status;
 private:
     std::string _address;
-    uint16_t _port;
+    u16 _port;
 
     StreamCrypto* _crypto;
     BigNumber* _key;

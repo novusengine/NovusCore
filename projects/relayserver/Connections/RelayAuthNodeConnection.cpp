@@ -26,16 +26,16 @@
 #include "Networking\ByteBuffer.h"
 #include <Utils/DebugHandler.h>
 
-std::unordered_map<uint8_t, RelayMessageHandler> RelayAuthNodeConnection::InitMessageHandlers()
+std::unordered_map<u8, RelayMessageHandler> RelayAuthNodeConnection::InitMessageHandlers()
 {
-    std::unordered_map<uint8_t, RelayMessageHandler> messageHandlers;
+    std::unordered_map<u8, RelayMessageHandler> messageHandlers;
 
     messageHandlers[RELAY_CHALLENGE] =  { RELAYSTATUS_CHALLENGE,    sizeof(sRelayChallenge),    &RelayAuthNodeConnection::HandleCommandChallenge };
     messageHandlers[RELAY_PROOF]     =  { RELAYSTATUS_PROOF,        1,                          &RelayAuthNodeConnection::HandleCommandProof };
 
     return messageHandlers;
 }
-std::unordered_map<uint8_t, RelayMessageHandler> const MessageHandlers = RelayAuthNodeConnection::InitMessageHandlers();
+std::unordered_map<u8, RelayMessageHandler> const MessageHandlers = RelayAuthNodeConnection::InitMessageHandlers();
 
 bool RelayAuthNodeConnection::Start()
 {
@@ -45,9 +45,9 @@ bool RelayAuthNodeConnection::Start()
 
         /* NODE_CHALLENGE */
         Common::ByteBuffer packet(5);
-        packet.Write<uint8_t>(0);       // Command
-        packet.Write<uint16_t>(335);    // Version
-        packet.Write<uint16_t>(12340);  // Build
+        packet.Write<u8>(0);       // Command
+        packet.Write<u16>(335);    // Version
+        packet.Write<u16>(12340);  // Build
 
         AsyncRead();
         Send(packet);
@@ -71,7 +71,7 @@ void RelayAuthNodeConnection::HandleRead()
             _crypto->Decrypt(byteBuffer.GetReadPointer(), byteBuffer.GetActualSize());
         }
 
-        uint8_t command = byteBuffer.GetDataPointer()[0];
+        u8 command = byteBuffer.GetDataPointer()[0];
 
         auto itr = MessageHandlers.find(command);
         if (itr == MessageHandlers.end())
@@ -87,7 +87,7 @@ void RelayAuthNodeConnection::HandleRead()
             return;
         }
 
-        uint16_t size = uint16_t(itr->second.packetSize);
+        u16 size = u16(itr->second.packetSize);
         if (byteBuffer.GetActualSize() < size)
             break;
 
@@ -114,7 +114,7 @@ bool RelayAuthNodeConnection::HandleCommandChallenge()
 
     /* Send fancy encrypted packet here */
     Common::ByteBuffer packet;
-    packet.Write<uint8_t>(RELAY_PROOF); // RELAY_PROOF
+    packet.Write<u8>(RELAY_PROOF); // RELAY_PROOF
     _crypto->Encrypt(packet.GetReadPointer(), packet.GetActualSize());
     _status = RELAYSTATUS_PROOF;
 

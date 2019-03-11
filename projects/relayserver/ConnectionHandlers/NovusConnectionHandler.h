@@ -53,7 +53,7 @@ public:
         return nullptr;
     }
 
-    static NovusConnection* GetWorldConnection(uint8_t id)
+    static NovusConnection* GetWorldConnection(u8 id)
     {
         if (_instance->_connections.size() == 0)
             return nullptr;
