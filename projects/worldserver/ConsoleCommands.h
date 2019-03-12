@@ -44,7 +44,9 @@ public:
 			commandHandler->second(worldServerHandler, splitCommand);
 		}
 		else
-			NC_LOG_WARNING("Unhandled command: " + splitCommand[0]);
+		{
+			NC_LOG_WARNING("Unhandled command: " + command);
+		}
 	}
 private:
 	void RegisterCommand(u32 id, const std::function<void(WorldServerHandler&, std::vector<std::string>)>& handler)

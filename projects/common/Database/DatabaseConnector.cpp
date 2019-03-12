@@ -90,11 +90,19 @@ void DatabaseConnector::Borrow(DATABASE_TYPE type, std::function<void(std::share
 // Static Asyncs
 void DatabaseConnector::QueryAsync(DATABASE_TYPE type, std::string sql, std::function<void(amy::result_set& result, DatabaseConnector& connector)> const& func)
 {
-	_asyncJobQueue.emplace(type, sql, func);
+	AsyncSQLJob job;
+	job.type = type;
+	job.sql = sql;
+	job.func = func;
+	_asyncJobQueue.enqueue(job);
 }
 void DatabaseConnector::ExecuteAsync(DATABASE_TYPE type, std::string sql)
 {
-	_asyncJobQueue.emplace(type, sql, nullptr);
+	AsyncSQLJob job;
+	job.type = type;
+	job.sql = sql;
+	job.func = nullptr;
+	_asyncJobQueue.enqueue(job);
 }
 
 void DatabaseConnector::AsyncSQLThreadMain()
@@ -119,7 +127,7 @@ void DatabaseConnector::AsyncSQLThreadMain()
 	// This behavior should give us a good mix between short wait times and not consuming 100% of a CPU core.
 	while (true)
 	{
-		if (_asyncJobQueue.try_pop(job))
+		if (_asyncJobQueue.try_dequeue(job))
 		{
 			tries = 0;
 			

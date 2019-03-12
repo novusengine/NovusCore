@@ -22,12 +22,12 @@ WorldServerHandler::~WorldServerHandler()
 
 void WorldServerHandler::PassMessage(Message& message)
 {
-	_inputQueue.push(message);
+	_inputQueue.enqueue(message);
 }
 
 bool WorldServerHandler::TryGetMessage(Message& message)
 {
-	return _outputQueue.try_pop(message);
+	return _outputQueue.try_dequeue(message);
 }
 
 void WorldServerHandler::Start()
@@ -87,7 +87,7 @@ void WorldServerHandler::Run()
 
 	Message exitMessage;
 	exitMessage.code = MSG_OUT_EXIT_CONFIRM;
-	_outputQueue.push(exitMessage);
+	_outputQueue.enqueue(exitMessage);
 }
 
 bool WorldServerHandler::Update(f32 deltaTime)
@@ -99,7 +99,7 @@ bool WorldServerHandler::Update(f32 deltaTime)
 	_outputQueue.push(updateMessage);*/
 
 	Message message;
-	while (_inputQueue.try_pop(message))
+	while (_inputQueue.try_dequeue(message))
 	{
 		if (message.code == -1)
 			assert(false);
@@ -112,7 +112,7 @@ bool WorldServerHandler::Update(f32 deltaTime)
 			Message pongMessage;
 			pongMessage.code = MSG_OUT_PRINT;
 			pongMessage.message = new std::string("PONG!");
-			_outputQueue.push(pongMessage);
+			_outputQueue.enqueue(pongMessage);
 		}
 	}
 
