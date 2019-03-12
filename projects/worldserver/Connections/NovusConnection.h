@@ -29,6 +29,8 @@
 #include <Cryptography\BigNumber.h>
 #include <Cryptography\StreamCrypto.h>
 #include <unordered_map>
+#include <bitset>
+#include <zlib.h>
 
 enum NovusCommand
 {
@@ -1710,6 +1712,171 @@ static u32 UnitUpdateFieldFlags[PLAYER_END] =
 };
 
 
+#define CLIENT_UPDATE_MASK_BITS 32
+template <size_t size>
+class UpdateMask
+{
+public:
+    UpdateMask(u32 valuesCount)
+    {
+        Reset();
+
+        _fieldCount = valuesCount;
+        _blockCount = (valuesCount + CLIENT_UPDATE_MASK_BITS - 1) / CLIENT_UPDATE_MASK_BITS;
+    }
+
+    void SetBit(u32 index)
+    {
+        _bits.set(index);
+    }
+    void UnsetBit(u32 index)
+    {
+        _bits.reset(index);
+    }
+    bool IsSet(u32 index)
+    {
+        return _bits.test(index);
+    }
+    void Reset()
+    {
+        _bits.reset();
+    }
+
+    void AddTo(Common::ByteBuffer& buffer)
+    {
+        u32 maskPart = 0;
+        for (u32 i = 0; i < GetBlocks() * 32; i++)
+        {
+            if (IsSet(i))
+                maskPart |= 1 << i % 32;
+
+            if ((i + 1) % 32 == 0)
+            {
+                buffer.Write<u32>(maskPart);
+                maskPart = 0;
+            }
+        }
+    }
+
+    u32 GetFields() { return _fieldCount; }
+    u32 GetBlocks() { return _blockCount; }
+
+private:
+    u32 _fieldCount;
+    u32 _blockCount;
+    std::bitset<size> _bits;
+};
+
+class UpdateData
+{
+public:
+    UpdateData() : blockCount(0) { }
+
+    void AddBlock(Common::ByteBuffer const& block)
+    {
+        data.Append(block);
+        ++blockCount;
+    }
+
+    bool Build(Common::ByteBuffer& packet)
+    {
+        Common::ByteBuffer buffer(4 + data._writePos);
+        buffer.Write<u32>(blockCount);
+
+        buffer.Append(data);
+        size_t pSize = buffer._writePos;
+
+        if (pSize > 100)
+        {
+            u32 destsize = compressBound((uLong)pSize);
+            packet.Resize(destsize + sizeof(u32));
+            packet._writePos = packet.size();
+
+            packet.Replace<u32>(0, (u32)pSize);
+            Compress(const_cast<u8*>(packet.data()) + sizeof(u32), &destsize, (void*)buffer.data(), (int)pSize);
+            if (destsize == 0)
+                return false;
+
+            packet.Resize(destsize + sizeof(u32));
+            packet._writePos = packet.size();
+        }
+        else
+        {
+            packet.Append(buffer);
+            packet._writePos = packet.size();
+            /* This is not hit yet */
+        }
+
+        return true;
+    }
+
+private:
+    u32 blockCount;
+    Common::ByteBuffer data;
+
+    void Compress(void* dst, u32 *dst_size, void* src, int src_size)
+    {
+        z_stream c_stream;
+
+        c_stream.zalloc = (alloc_func)nullptr;
+        c_stream.zfree = (free_func)nullptr;
+        c_stream.opaque = (voidpf)nullptr;
+
+        // default Z_BEST_SPEED (1)
+        int z_res = deflateInit(&c_stream, 1); // 1 - 9 (9 Being best)
+        if (z_res != Z_OK)
+        {
+            std::cout << "Can't compress update packet (zlib: deflateInit) Error code: %i (%s)" << std::endl;
+            //TC_LOG_ERROR("misc", "Can't compress update packet (zlib: deflateInit) Error code: %i (%s)", z_res, zError(z_res));
+            *dst_size = 0;
+            return;
+        }
+
+        c_stream.next_out = (Bytef*)dst;
+        c_stream.avail_out = *dst_size;
+        c_stream.next_in = (Bytef*)src;
+        c_stream.avail_in = (uInt)src_size;
+
+        z_res = deflate(&c_stream, Z_NO_FLUSH);
+        if (z_res != Z_OK)
+        {
+            std::cout << "Can't compress update packet (zlib: deflate) Error code: %i (%s)" << std::endl;
+            //TC_LOG_ERROR("misc", "Can't compress update packet (zlib: deflate) Error code: %i (%s)", z_res, zError(z_res));
+            *dst_size = 0;
+            return;
+        }
+
+        if (c_stream.avail_in != 0)
+        {
+            std::cout << "Can't compress update packet (zlib: deflate not greedy)" << std::endl;
+            //TC_LOG_ERROR("misc", "Can't compress update packet (zlib: deflate not greedy)");
+            *dst_size = 0;
+            return;
+        }
+
+        z_res = deflate(&c_stream, Z_FINISH);
+        if (z_res != Z_STREAM_END)
+        {
+            std::cout << "Can't compress update packet (zlib: deflate should report Z_STREAM_END instead %i (%s)" << std::endl;
+            //TC_LOG_ERROR("misc", "Can't compress update packet (zlib: deflate should report Z_STREAM_END instead %i (%s)", z_res, zError(z_res));
+            *dst_size = 0;
+            return;
+        }
+
+        z_res = deflateEnd(&c_stream);
+        if (z_res != Z_OK)
+        {
+            std::cout << "Can't compress update packet (zlib: deflateEnd) Error code: %i (%s)" << std::endl;
+            //TC_LOG_ERROR("misc", "Can't compress update packet (zlib: deflateEnd) Error code: %i (%s)", z_res, zError(z_res));
+            *dst_size = 0;
+            return;
+        }
+
+        *dst_size = c_stream.total_out;
+    }
+};
+
+
 #pragma pack(push, 1)
 struct sNovusChallenge
 {
@@ -1740,18 +1907,20 @@ struct NovusHeader
 
 #pragma pack(pop)
 
+class WorldServerHandler;
 struct NovusMessageHandler;
 class NovusConnection : Common::BaseSocket
 {
 public:
     static std::unordered_map<u8, NovusMessageHandler> InitMessageHandlers();
 
-    NovusConnection(asio::ip::tcp::socket* socket, std::string address, u16 port, u8 realmId) : Common::BaseSocket(socket), _status(NOVUSSTATUS_CHALLENGE), _crypto(), _address(address), _port(port), _realmId(realmId), _headerBuffer(), _packetBuffer()
+    NovusConnection(WorldServerHandler* worldServerHandler, asio::ip::tcp::socket* socket, std::string address, u16 port, u8 realmId) : Common::BaseSocket(socket), _status(NOVUSSTATUS_CHALLENGE), _crypto(), _address(address), _port(port), _realmId(realmId), _headerBuffer(), _packetBuffer()
     { 
         _crypto = new StreamCrypto();
         _key = new BigNumber();
 
         _headerBuffer.Resize(sizeof(NovusHeader));
+        _worldServerHandler = worldServerHandler;
     }
 
     bool Start() override;
@@ -1774,6 +1943,7 @@ private:
 
     Common::ByteBuffer _headerBuffer;
     Common::ByteBuffer _packetBuffer;
+    WorldServerHandler* _worldServerHandler;
 };
 
 #pragma pack(push, 1)

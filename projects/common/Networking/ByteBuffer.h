@@ -25,6 +25,7 @@
 
 #include "../NovusTypes.h"
 #include <vector>
+#include <cassert>
 
 namespace Common
 {

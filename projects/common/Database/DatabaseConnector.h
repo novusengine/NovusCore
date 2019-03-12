@@ -53,21 +53,6 @@ struct AsyncSQLJob
 		func = nullptr;
 	}
 
-	AsyncSQLJob(DATABASE_TYPE inType, std::string inSql, std::function<void(amy::result_set&, DatabaseConnector&)> inFunc) noexcept // This is needed to use this struct in a ConcurrentQueue, 
-	{
-		type = inType;
-		sql = inSql;
-		func = inFunc;
-	}
-
-	AsyncSQLJob& operator=(AsyncSQLJob rhs) noexcept // This is needed to use this struct in a ConcurrentQueue
-	{
-		type = rhs.type;
-		sql = rhs.sql;
-		func = rhs.func;
-		return *this;
-	}
-
 	DATABASE_TYPE type;
 	std::string sql;
 	std::function<void(amy::result_set&, DatabaseConnector&)> func;

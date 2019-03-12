@@ -2,10 +2,13 @@
 #include <Utils/Timer.h>
 #include <thread>
 #include <iostream>
-
+#include <Networking/Opcode/Opcode.h>
 
 // Systems
+#include "ECS/Systems/ConnectionSystem.h"
 #include "ECS/Systems/ClientUpdateSystem.h"
+
+#include "Connections/NovusConnection.h"
 
 WorldServerHandler::WorldServerHandler(f32 targetTickRate)
 	: _isRunning(false)
@@ -114,6 +117,71 @@ bool WorldServerHandler::Update(f32 deltaTime)
 			pongMessage.message = new std::string("PONG!");
 			_outputQueue.enqueue(pongMessage);
 		}
+
+        if (message.code == MSG_IN_FOWARD_PACKET)
+        {
+            switch (Common::Opcode((u16)message.opcode))
+            {
+                case Common::Opcode::CMSG_SET_ACTIVE_MOVER:
+                {
+                    NovusHeader packetHeader;
+                    packetHeader.command = NOVUS_FOWARDPACKET;
+                    packetHeader.account = message.account;
+                    packetHeader.opcode = Common::Opcode::SMSG_TIME_SYNC_REQ;
+                    packetHeader.size = 4;
+
+                    Common::ByteBuffer timeSync(9 + 4);
+                    packetHeader.AddTo(timeSync);
+
+                    timeSync.Write<u32>(0);
+                    _novusConnection->SendPacket(timeSync);
+                    break;
+                }
+                case Common::Opcode::CMSG_PLAYER_LOGIN:
+                {
+                    u64 playerGuid = 0;
+                    message.packet.Read<u64>(playerGuid);
+
+                    auto entity = _componentRegistry->create();
+                    _componentRegistry->assign<ConnectionComponent>(entity, (u32)message.account, playerGuid, false);
+                    _componentRegistry->assign<PlayerConnectionData>(entity);
+                    _componentRegistry->assign<PositionComponent>(entity, 0u, 1.f, 1.f, 1.f, 1.f);
+
+                    break;
+                }
+                case Common::Opcode::CMSG_LOGOUT_REQUEST:
+                {
+
+                    Message defaultOpcodeMessage;
+                    defaultOpcodeMessage.code = MSG_OUT_PRINT;
+                    defaultOpcodeMessage.message = new std::string("Received LOGOUT REQUEST Opcode\n");
+                    _outputQueue.enqueue(defaultOpcodeMessage);
+
+                    NovusHeader packetHeader;
+                    packetHeader.command = NOVUS_FOWARDPACKET;
+                    packetHeader.account = message.account;
+                    packetHeader.opcode = Common::Opcode::SMSG_LOGOUT_COMPLETE;
+                    packetHeader.size = 0;
+
+                    Common::ByteBuffer logoutRequest(0);
+                    packetHeader.AddTo(logoutRequest);
+
+                    _novusConnection->SendPacket(logoutRequest);
+                    
+                    break;
+                }
+
+                default:
+                {
+                    Message defaultOpcodeMessage;
+                    defaultOpcodeMessage.code = MSG_OUT_PRINT;
+                    defaultOpcodeMessage.message = new std::string("Received Unhandled Opcode");
+                    _outputQueue.enqueue(defaultOpcodeMessage);
+                    break;
+                }
+
+            }
+        }
 	}
 
 	UpdateSystems(deltaTime);
@@ -123,4 +191,7 @@ bool WorldServerHandler::Update(f32 deltaTime)
 void WorldServerHandler::UpdateSystems(f32 deltaTime)
 {
 	ClientUpdateSystem::Update(deltaTime, *_componentRegistry);
+    
+    // Call last, Don't multithread this
+    ConnectionSystem::Update(deltaTime, *_novusConnection, *_componentRegistry);
 }

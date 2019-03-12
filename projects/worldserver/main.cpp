@@ -48,14 +48,17 @@ int main()
 		return 0;
 	}
 
-    asio::io_service io_service(2);
-    NovusConnection novusConnection(new asio::ip::tcp::socket(io_service), ConfigHandler::GetOption<std::string>("relayserverip", "127.0.0.1"), ConfigHandler::GetOption<u16>("relayserverport", 10000), ConfigHandler::GetOption<u8>("realmId", 1));
+    WorldServerHandler worldServerHandler(ConfigHandler::GetOption<f32>("tickRate", 30));
+    worldServerHandler.Start();
 
-    if (!novusConnection.Start())
+    asio::io_service io_service(2);
+    NovusConnection* novusConnection = new NovusConnection(&worldServerHandler, new asio::ip::tcp::socket(io_service), ConfigHandler::GetOption<std::string>("relayserverip", "127.0.0.1"), ConfigHandler::GetOption<u16>("relayserverport", 10000), ConfigHandler::GetOption<u8>("realmId", 1));
+    if (!novusConnection->Start())
     {
         std::getchar();
         return 0;
     }
+    worldServerHandler.SetNovusConnection(novusConnection);
 
     srand((u32)time(NULL));
     std::thread run_thread([&]
@@ -65,11 +68,7 @@ int main()
 
     NC_LOG_MESSAGE("Worldserver established node connection to Relayserver.");
 
-	ConsoleCommandHandler consoleCommandHandler;
-
-	WorldServerHandler worldServerHandler(ConfigHandler::GetOption<f32>("tickRate", 30));
-	worldServerHandler.Start();
-
+    ConsoleCommandHandler consoleCommandHandler;
 	auto future = std::async(std::launch::async, GetLineFromCin);
 	while (true)
 	{
@@ -110,5 +109,11 @@ int main()
 	for (int i = 0; i < message.size()-1; i++)
 		std::cout << "-";
 	std::cout << std::endl;
+
+    io_service.stop();
+    while (!io_service.stopped())
+    {
+        std::this_thread::yield();
+    }
 	return 0;
 }
