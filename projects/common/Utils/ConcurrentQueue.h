@@ -41,6 +41,10 @@ public:
 		for (size_t i = 0; i < capacity; ++i)
 		{
 			m_items[i].version = i;
+            if (std::is_fundamental<T>::value == false)
+            {
+                new (&(m_items[i].value)) T();
+            }
 		}
 	}
 
