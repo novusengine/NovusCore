@@ -24,3 +24,14 @@ You will find the developers to be active on the discord and always up for answe
 * [Asio](http://sourceforge.net/projects/asio/files/asio/1.12.1%20%28Stable%29/)
 * [OpenSSL 1.0.2q](http://slproweb.com/products/Win32OpenSSL.html)
 * [MySQL C Connector 5.6 (libmysqlcclient) or newer](https://dev.mysql.com/downloads/connector/c/)
+* [CMAKE 3.1 or newer](https://cmake.org/download/)
+
+
+### Libraries
+Here we include a honorable mention to all the libraries included directly into the source of NovusCore. You do not need to download these on your own, but we felt it was important to address these as without them, NovusCore would be a lot more time consuming to develop.
+* [Fast MPMC Queue](https://github.com/spectre1989/fast_mpmc_queue)
+* [Nlohmann Json](https://github.com/nlohmann/json/)
+* [Amy](https://github.com/liancheng/amy)
+* [Tracy Profiler](https://bitbucket.org/wolfpld/tracy/src/master/)
+* [Entt ECS](https://github.com/skypjack/entt)
+* [ZLIB](https://github.com/madler/zlib)
