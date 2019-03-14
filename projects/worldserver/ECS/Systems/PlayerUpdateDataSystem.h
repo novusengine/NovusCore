@@ -4,6 +4,7 @@
 #include <Networking/ByteBuffer.h>
 
 #include "../Connections/NovusConnection.h"
+#include "../Components/SingletonComponent.h"
 #include "../Components/ConnectionComponent.h"
 #include "../Components/PlayerUpdateDataComponent.h"
 
@@ -251,8 +252,12 @@ namespace PlayerUpdateDataSystem
         return tempBuffer;
     }
 
-    void Update(f32 deltaTime, WorldServerHandler& worldServerHandler, NovusConnection& novusConnection, entt::registry &registry)
+    void Update(entt::registry &registry)
     {
+		SingletonComponent& singleton = registry.get<SingletonComponent>(0);
+		NovusConnection& novusConnection = *singleton.connection;
+		WorldServerHandler& worldServerHandler = *singleton.worldServerHandler;
+
         auto view = registry.view<ConnectionComponent, PlayerUpdateDataComponent, PositionComponent>();
         auto subView = registry.view<ConnectionComponent, PlayerUpdateDataComponent, PositionComponent>();
 

@@ -4,11 +4,14 @@
 #include <iostream>
 #include <Networking/Opcode/Opcode.h>
 #include <tracy/Tracy.hpp>
+#include <taskflow/taskflow.hpp>
 
 // Systems
 #include "ECS/Systems/ConnectionSystem.h"
 #include "ECS/Systems/ClientUpdateSystem.h"
 #include "ECS/Systems/PlayerUpdateDataSystem.h"
+
+#include "ECS/Components/SingletonComponent.h"
 
 #include "Connections/NovusConnection.h"
 
@@ -26,6 +29,13 @@ WorldServerHandler::WorldServerHandler(f32 targetTickRate)
 WorldServerHandler::~WorldServerHandler()
 {
 
+}
+
+void WorldServerHandler::SetNovusConnection(NovusConnection* connection)
+{
+	_novusConnection = connection;
+	SingletonComponent& singletonComponent = _updateFramework.registry->get<SingletonComponent>(0);
+	singletonComponent.connection = _novusConnection;
 }
 
 void WorldServerHandler::PassMessage(Message& message)
@@ -57,9 +67,15 @@ void WorldServerHandler::Stop()
 	PassMessage(message);
 }
 
-void WorldServerHandler::Run()
+void WorldServerHandler::Run()	
 {
-	_componentRegistry = new entt::registry();
+	SetupUpdateFramework();
+
+	u32 entity = _updateFramework.registry->create();
+	SingletonComponent& singletonComponent = _updateFramework.registry->assign<SingletonComponent>(0);
+	singletonComponent.worldServerHandler = this;
+	singletonComponent.connection = _novusConnection;
+	singletonComponent.deltaTime = 1.0f;
 
 	Timer timer;
 	while (true)
@@ -91,7 +107,6 @@ void WorldServerHandler::Run()
 			}
 		}
 		
-
 		FrameMark
 	}
 
@@ -137,13 +152,13 @@ bool WorldServerHandler::Update(f32 deltaTime)
 					u64 playerGuid = 0;
 					message.packet.Read<u64>(playerGuid);
 
-					u32 entity = _componentRegistry->create();
-					_componentRegistry->assign<ConnectionComponent>(entity, u32(message.account), playerGuid, false);
-					_componentRegistry->assign<PlayerUpdateDataComponent>(entity);
-					_componentRegistry->assign<PositionComponent>(entity, 0u, -8949.950195f, -132.492996f, 83.531197f, 0.f);
-
-					ConnectionComponent& connection = _componentRegistry->get<ConnectionComponent>(entity);
+					
+					u32 entity = _updateFramework.registry->create();
+					ConnectionComponent& connection = _updateFramework.registry->assign<ConnectionComponent>(entity, u32(message.account), playerGuid, false);
 					connection.packets.push_back({ u32(message.opcode), false, message.packet });
+
+					_updateFramework.registry->assign<PlayerUpdateDataComponent>(entity);
+					_updateFramework.registry->assign<PositionComponent>(entity, 0u, -8949.950195f, -132.492996f, 83.531197f, 0.f);
 
 					_accountToEntityMap[message.account] = entity;
 				}
@@ -153,7 +168,7 @@ bool WorldServerHandler::Update(f32 deltaTime)
 					auto itr = _accountToEntityMap.find(message.account);
 					if (itr != _accountToEntityMap.end())
 					{
-						ConnectionComponent& connection = _componentRegistry->get<ConnectionComponent>(itr->second);
+						ConnectionComponent& connection = _updateFramework.registry->get<ConnectionComponent>(itr->second);
 						connection.packets.push_back({ u32(message.opcode), false, message.packet });
 					}
 				}
@@ -165,17 +180,46 @@ bool WorldServerHandler::Update(f32 deltaTime)
 	return true;
 }
 
+void WorldServerHandler::SetupUpdateFramework()
+{
+	_updateFramework.registry = new entt::registry();
+	_updateFramework.framework = new tf::Framework();
+
+	tf::Framework& framework = *_updateFramework.framework;
+	entt::registry& registry = *_updateFramework.registry;
+
+	tf::Task connectionSystemTask = framework.emplace([&registry]() {
+		ConnectionSystem::Update(registry);
+	});
+
+	tf::Task playerUpdateDataSystemTask = framework.emplace([&registry]() {
+		PlayerUpdateDataSystem::Update(registry);
+	});
+	playerUpdateDataSystemTask.gather(connectionSystemTask);
+
+	tf::Task clientUpdateSystemTask = framework.emplace([&registry]() {
+		ClientUpdateSystem::Update(registry);
+	});
+	clientUpdateSystemTask.gather(playerUpdateDataSystemTask);
+}
+
 void WorldServerHandler::UpdateSystems(f32 deltaTime)
 {
+	_updateFramework.registry->get<SingletonComponent>(0).deltaTime = deltaTime;
+
 	ZoneScopedNC("UpdateSystems", tracy::Color::Blue2)
+	tf::Taskflow taskflow;
+	taskflow.run(*_updateFramework.framework);
+	taskflow.wait_for_all();
+	
     /* No Multi threading on this call (Parallel is fine) */
-    ConnectionSystem::Update(deltaTime, *_novusConnection, *_componentRegistry);
+    //ConnectionSystem::Update(deltaTime, *_novusConnection, *_componentRegistry);
 
     /* Run Gameplay Systems */
 
     
     /* Run PlayerUpdateDataSystem to fill out PlayerUpdateData */
-    PlayerUpdateDataSystem::Update(deltaTime, *this, *_novusConnection, *_componentRegistry);
+    //PlayerUpdateDataSystem::Update(deltaTime, *this, *_novusConnection, *_componentRegistry);
     /* Run ClientUpdateSystem to send built PlayerUpdateData to players who need it */
-    ClientUpdateSystem::Update(deltaTime, *_componentRegistry);
+    //ClientUpdateSystem::Update(deltaTime, *_componentRegistry);
 }

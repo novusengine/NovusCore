@@ -15,5 +15,5 @@ namespace ConnectionSystem
         updateData.playerFields.WriteAt<T>(value, (index * 4) + offset);
         updateData.updateMask.SetBit(index);
     }
-    void Update(f32 deltaTime, NovusConnection& novusConnection, entt::registry &registry);
+    void Update(entt::registry &registry);
 }

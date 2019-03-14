@@ -7,7 +7,7 @@
 
 namespace ClientUpdateSystem
 {
-	void Update(f32 deltaTime, entt::registry &registry) 
+	void Update(entt::registry &registry) 
     {
 		/*auto view = registry.view<PositionComponent>();
 

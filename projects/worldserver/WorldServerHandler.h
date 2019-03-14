@@ -18,6 +18,17 @@ enum OutputMessages
 	MSG_OUT_PRINT
 };
 
+namespace tf
+{
+	class Framework;
+}
+
+struct FrameworkRegistryPair
+{
+	entt::registry* registry;
+	tf::Framework* framework;
+};
+
 class NovusConnection;
 class WorldServerHandler
 {
@@ -31,7 +42,7 @@ public:
 	void PassMessage(Message& message);
 	bool TryGetMessage(Message& message);
 
-    void SetNovusConnection(NovusConnection* novusConnection) { _novusConnection = novusConnection; }
+	void SetNovusConnection(NovusConnection* novusConnection);
 
     template <typename... Args>
     void PrintMessage(std::string message, Args... args)
@@ -50,6 +61,8 @@ private:
 	bool Update(f32 deltaTime);
 	void UpdateSystems(f32 deltaTime);
 
+	void SetupUpdateFramework();
+
 private:
 	bool _isRunning;
     f32 _targetTickRate;
@@ -58,5 +71,5 @@ private:
     std::unordered_map<u64, u32> _accountToEntityMap;
 	ConcurrentQueue<Message> _inputQueue;
 	ConcurrentQueue<Message> _outputQueue;
-	entt::registry* _componentRegistry;
+	FrameworkRegistryPair _updateFramework;
 };

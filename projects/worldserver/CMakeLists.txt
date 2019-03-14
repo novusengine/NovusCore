@@ -28,7 +28,8 @@ set(WORLDSERVER_DEPENDENCIES
     "../common/Dependencies/json"
     "${CMAKE_CURRENT_LIST_DIR}/Dependencies/Entt"
     "${ZLIB_INCLUDE_DIRS}"
-    "${CMAKE_SOURCE_DIR}/dep/TracyProfiler/"
+    "${CMAKE_SOURCE_DIR}/dep/TracyProfiler"
+    "${CMAKE_SOURCE_DIR}/dep/taskflow"
 )
 
 add_executable(worldserver ${WORLDSERVER_FILES})

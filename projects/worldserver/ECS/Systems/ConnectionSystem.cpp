@@ -1,5 +1,6 @@
 #include "ConnectionSystem.h"
 #include <Networking/Opcode/Opcode.h>
+#include "../Components/SingletonComponent.h"
 
 namespace ConnectionSystem
 {
@@ -12,8 +13,11 @@ namespace ConnectionSystem
         updateData.updateMask.SetBit(index + 1);
     }
 
-    void Update(f32 deltaTime, NovusConnection& novusConnection, entt::registry &registry)
+    void Update(entt::registry &registry)
     {
+		SingletonComponent& singleton = registry.get<SingletonComponent>(0);
+		NovusConnection& novusConnection = *singleton.connection;
+
         auto view = registry.view<ConnectionComponent, PlayerUpdateDataComponent, PositionComponent>();
         auto subView = registry.view<ConnectionComponent>();
 

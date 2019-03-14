@@ -53,12 +53,12 @@ int main()
 
     asio::io_service io_service(2);
     NovusConnection* novusConnection = new NovusConnection(&worldServerHandler, new asio::ip::tcp::socket(io_service), ConfigHandler::GetOption<std::string>("relayserverip", "127.0.0.1"), ConfigHandler::GetOption<u16>("relayserverport", 10000), ConfigHandler::GetOption<u8>("realmId", 1));
-    if (!novusConnection->Start())
+	if (!novusConnection->Start())
     {
         std::getchar();
         return 0;
     }
-    worldServerHandler.SetNovusConnection(novusConnection);
+	worldServerHandler.SetNovusConnection(novusConnection);
 
     srand((u32)time(NULL));
     std::thread run_thread([&]
