@@ -285,8 +285,6 @@ namespace ConnectionSystem
                 }
                 else
                 {
-                    // Do we want to set it to true, and then false if we fail or false and then set it to true if we succeed?
-                    packet.handled = true;
                     switch (Common::Opcode(packet.opcode))
                     {
                         case Common::Opcode::CMSG_SET_ACTIVE_MOVER:
@@ -299,6 +297,7 @@ namespace ConnectionSystem
 
                             timeSync.Write<u32>(0);
                             novusConnection.SendPacket(timeSync);
+                            packet.handled = true;
                             break;
                         }
                         case Common::Opcode::CMSG_LOGOUT_REQUEST:
@@ -310,6 +309,7 @@ namespace ConnectionSystem
                             packetHeader.AddTo(logoutRequest);
 
                             novusConnection.SendPacket(logoutRequest);
+                            packet.handled = true;
                             break;
                         }
                         case Common::Opcode::CMSG_STANDSTATECHANGE:
@@ -327,6 +327,7 @@ namespace ConnectionSystem
 
                             standStateChange.Write<u8>(u8(standState));
                             novusConnection.SendPacket(standStateChange);
+                            packet.handled = true;
                             break;
                         }
                         /* These packets should be read here, but preferbly handled elsewhere */
@@ -420,8 +421,7 @@ namespace ConnectionSystem
                                 }
                             });
 
-                            //SendPacket(movementData, opcode);
-
+                            packet.handled = true;
                             break;
                         }
                     }
