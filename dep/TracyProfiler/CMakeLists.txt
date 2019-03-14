@@ -1,6 +1,6 @@
 # MIT License
 
-# Copyright (c) 2018-2019 NovusCore
+# Copyright (c) 2018 NovusCore
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,28 +20,4 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-project(common VERSION 1.0.0 DESCRIPTION "Common is a static library for NovusCore")
-
-file(GLOB_RECURSE COMMON_FILES "*.cpp" "*.h")
-set(COMMON_DEPENDENCIES
-    "${CMAKE_CURRENT_LIST_DIR}/Dependencies/amy"
-    "${CMAKE_CURRENT_LIST_DIR}/Dependencies/json"
-)
-set(TRACY
-    "${CMAKE_SOURCE_DIR}/dep/TracyProfiler/tracy/TracyClient.cpp"
-)
-
-add_library(common ${COMMON_FILES} ${TRACY})
-find_assign_files(${COMMON_FILES})
-source_group(TracyProfiler ${TRACY})
-
-target_include_directories(common PRIVATE ${COMMON_DEPENDENCIES})
-target_link_libraries(common asio openssl mysql zlib)
-
-if (ENABLE_TRACY_PROFILER)
-add_compile_definitions(TRACY_ENABLE TRACY_ON_DEMAND)
-endif()
-
-# Set VERSION & FOLDER Property
-set_target_properties(common PROPERTIES VERSION ${PROJECT_VERSION})
-set_target_properties(common PROPERTIES FOLDER "server")
+set(ENABLE_TRACY_PROFILER false CACHE BOOL "Enables Tracy profiling")

@@ -49,7 +49,7 @@ namespace PlayerUpdateDataSystem
         UF_FLAG_DYNAMIC                 = 0x100
     };
 
-    Common::ByteBuffer BuildPlayerUpdateData(u32 playerGuid, u8 updateType, u16 updateFlags, u32 visibleFlags, PlayerUpdateDataComponent& playerUpdateData, PositionComponent position)
+    Common::ByteBuffer BuildPlayerUpdateData(u64 playerGuid, u8 updateType, u16 updateFlags, u32 visibleFlags, PlayerUpdateDataComponent& playerUpdateData, PositionComponent position)
     {
         Common::ByteBuffer buffer(500);
         buffer.Write<u8>(updateType);
