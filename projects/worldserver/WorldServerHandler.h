@@ -3,6 +3,7 @@
 #include "Utils/ConcurrentQueue.h"
 #include "Message.h"
 #include <entt.hpp>
+#include <taskflow/taskflow.hpp>
 #include <unordered_map>
 
 enum InputMessages
@@ -25,8 +26,9 @@ namespace tf
 
 struct FrameworkRegistryPair
 {
-	entt::registry* registry;
-	tf::Framework* framework;
+    entt::registry registry;
+    tf::Framework framework;
+    tf::Taskflow taskflow;
 };
 
 class NovusConnection;
