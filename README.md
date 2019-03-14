@@ -34,4 +34,5 @@ Here we include a honorable mention to all the libraries included directly into 
 * [Amy](https://github.com/liancheng/amy)
 * [Tracy Profiler](https://bitbucket.org/wolfpld/tracy/src/master/)
 * [Entt ECS](https://github.com/skypjack/entt)
+* [Cpp-Taskflow](https://github.com/cpp-taskflow/cpp-taskflow)
 * [ZLIB](https://github.com/madler/zlib)
