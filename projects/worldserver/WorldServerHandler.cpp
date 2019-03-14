@@ -10,6 +10,7 @@
 #include "ECS/Systems/ConnectionSystem.h"
 #include "ECS/Systems/ClientUpdateSystem.h"
 #include "ECS/Systems/PlayerUpdateDataSystem.h"
+#include "ECS/Systems/CreatePlayerSystem.h"
 
 #include "ECS/Components/SingletonComponent.h"
 
@@ -71,11 +72,13 @@ void WorldServerHandler::Run()
 {
 	SetupUpdateFramework();
 
-	u32 entity = _updateFramework.registry->create();
+	_updateFramework.registry->create();
 	SingletonComponent& singletonComponent = _updateFramework.registry->assign<SingletonComponent>(0);
+    CreatePlayerQueueComponent& createPlayerQueueComponent = _updateFramework.registry->assign<CreatePlayerQueueComponent>(0);
 	singletonComponent.worldServerHandler = this;
 	singletonComponent.connection = _novusConnection;
 	singletonComponent.deltaTime = 1.0f;
+    createPlayerQueueComponent.newEntityQueue = new ConcurrentQueue<Message>(256);
 
 	Timer timer;
 	while (true)
@@ -128,8 +131,6 @@ bool WorldServerHandler::Update()
 		Message message;
 		while (_inputQueue.try_dequeue(message))
 		{
-
-
 			if (message.code == -1)
 				assert(false);
 
@@ -151,25 +152,15 @@ bool WorldServerHandler::Update()
 				// Create Entity if it doesn't exist, otherwise add 
 				if (Common::Opcode((u16)message.opcode) == Common::Opcode::CMSG_PLAYER_LOGIN)
 				{
-					ZoneScopedNC("LoginMessage", tracy::Color::Blue2)
-					u64 playerGuid = 0;
-					message.packet.Read<u64>(playerGuid);
-
-					
-					u32 entity = _updateFramework.registry->create();
-					ConnectionComponent& connection = _updateFramework.registry->assign<ConnectionComponent>(entity, u32(message.account), playerGuid, false);
-					connection.packets.push_back({ u32(message.opcode), false, message.packet });
-
-					_updateFramework.registry->assign<PlayerUpdateDataComponent>(entity);
-					_updateFramework.registry->assign<PositionComponent>(entity, 0u, -8949.950195f, -132.492996f, 83.531197f, 0.f);
-
-					_accountToEntityMap[message.account] = entity;
+                    ZoneScopedNC("LoginMessage", tracy::Color::Blue2)
+                    _updateFramework.registry->get<CreatePlayerQueueComponent>(0).newEntityQueue->enqueue(message);
 				}
 				else
 				{
 					ZoneScopedNC("ForwardMessage", tracy::Color::Blue2)
-					auto itr = _accountToEntityMap.find(message.account);
-					if (itr != _accountToEntityMap.end())
+                    SingletonComponent & singletonComponent = _updateFramework.registry->get<SingletonComponent>(0);
+                    auto itr = singletonComponent.accountToEntityMap.find(u32(message.account));
+                    if (itr != singletonComponent.accountToEntityMap.end())
 					{
 						ConnectionComponent& connection = _updateFramework.registry->get<ConnectionComponent>(itr->second);
 						connection.packets.push_back({ u32(message.opcode), false, message.packet });
@@ -204,6 +195,11 @@ void WorldServerHandler::SetupUpdateFramework()
 		ClientUpdateSystem::Update(registry);
 	});
 	clientUpdateSystemTask.gather(playerUpdateDataSystemTask);
+
+    tf::Task createPlayerSystemTask = framework.emplace([&registry]() {
+        CreatePlayerSystem::Update(registry);
+    });
+    createPlayerSystemTask.gather(clientUpdateSystemTask);
 }
 
 void WorldServerHandler::UpdateSystems()

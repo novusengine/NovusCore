@@ -68,7 +68,6 @@ private:
     f32 _targetTickRate;
 
     NovusConnection* _novusConnection;
-    std::unordered_map<u64, u32> _accountToEntityMap;
 	ConcurrentQueue<Message> _inputQueue;
 	ConcurrentQueue<Message> _outputQueue;
 	FrameworkRegistryPair _updateFramework;

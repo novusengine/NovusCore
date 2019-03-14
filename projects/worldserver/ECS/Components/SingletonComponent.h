@@ -1,5 +1,6 @@
 #pragma once
-#include <NovusTypes.h>
+#include <NovusTypes.h> 
+#include <unordered_map>
 
 class NovusConnection;
 class WorldServerHandler;
@@ -9,4 +10,5 @@ struct SingletonComponent
 	f32 lifeTime;
 	NovusConnection* connection;
 	WorldServerHandler* worldServerHandler;
+    std::unordered_map<u32, u32> accountToEntityMap;
 };
