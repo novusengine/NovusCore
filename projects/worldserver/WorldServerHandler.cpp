@@ -148,8 +148,7 @@ bool WorldServerHandler::Update()
 
 			if (message.code == MSG_IN_FOWARD_PACKET)
 			{
-				
-				// Create Entity if it doesn't exist, otherwise add 
+                // Forward player login to later in the frame.
 				if (Common::Opcode((u16)message.opcode) == Common::Opcode::CMSG_PLAYER_LOGIN)
 				{
                     ZoneScopedNC("LoginMessage", tracy::Color::Blue2)
