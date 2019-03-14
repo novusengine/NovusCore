@@ -58,8 +58,8 @@ public:
     }
 private:
 	void Run();
-	bool Update(f32 deltaTime);
-	void UpdateSystems(f32 deltaTime);
+	bool Update();
+	void UpdateSystems();
 
 	void SetupUpdateFramework();
 

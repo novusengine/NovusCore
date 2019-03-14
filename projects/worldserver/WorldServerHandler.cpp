@@ -82,8 +82,11 @@ void WorldServerHandler::Run()
 	{
 		f32 deltaTime = timer.GetDeltaTime();
 		timer.Tick();
+
+		singletonComponent.lifeTime = timer.GetLifeTime();
+		singletonComponent.deltaTime = deltaTime;
 		
-		if (!Update(deltaTime))
+		if (!Update())
 			break;
 
 		{
@@ -117,7 +120,7 @@ void WorldServerHandler::Run()
 	_outputQueue.enqueue(exitMessage);
 }
 
-bool WorldServerHandler::Update(f32 deltaTime)
+bool WorldServerHandler::Update()
 {
 	ZoneScopedNC("Update", tracy::Color::Blue2)
 	{
@@ -176,7 +179,7 @@ bool WorldServerHandler::Update(f32 deltaTime)
 		}
 	}
 	
-	UpdateSystems(deltaTime);
+	UpdateSystems();
 	return true;
 }
 
@@ -203,10 +206,8 @@ void WorldServerHandler::SetupUpdateFramework()
 	clientUpdateSystemTask.gather(playerUpdateDataSystemTask);
 }
 
-void WorldServerHandler::UpdateSystems(f32 deltaTime)
+void WorldServerHandler::UpdateSystems()
 {
-	_updateFramework.registry->get<SingletonComponent>(0).deltaTime = deltaTime;
-
 	ZoneScopedNC("UpdateSystems", tracy::Color::Blue2)
 	tf::Taskflow taskflow;
 	taskflow.run(*_updateFramework.framework);
