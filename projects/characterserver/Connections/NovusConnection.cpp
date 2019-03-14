@@ -27,6 +27,7 @@
 #include <Networking\Opcode\Opcode.h>
 #include <Database\DatabaseConnector.h>
 
+#include <algorithm>
 #include <bitset>
 #include <zlib.h>
 
@@ -71,7 +72,7 @@ std::unordered_map<u8, NovusMessageHandler> NovusConnection::InitMessageHandlers
 
     messageHandlers[NOVUS_CHALLENGE]    = { NOVUSSTATUS_CHALLENGE,    sizeof(sNovusChallenge),  &NovusConnection::HandleCommandChallenge };
     messageHandlers[NOVUS_PROOF]        = { NOVUSSTATUS_PROOF,        1,                        &NovusConnection::HandleCommandProof };
-    messageHandlers[NOVUS_FOWARDPACKET] = { NOVUSSTATUS_AUTHED,       9,                        &NovusConnection::HandleCommandForwardPacket };
+    messageHandlers[NOVUS_FORWARDPACKET] = { NOVUSSTATUS_AUTHED,       9,                        &NovusConnection::HandleCommandForwardPacket };
 
     return messageHandlers;
 }
@@ -131,7 +132,7 @@ void NovusConnection::HandleRead()
             return;
         }
 
-        if (command == NOVUS_FOWARDPACKET)
+        if (command == NOVUS_FORWARDPACKET)
         {
             // Check if we should read header
             if (_headerBuffer.GetSpaceLeft() > 0)
@@ -234,7 +235,7 @@ bool NovusConnection::HandleCommandForwardPacket()
 
             Common::ByteBuffer forwardPacket;
             NovusHeader packetHeader;
-            packetHeader.command = NOVUS_FOWARDPACKET;
+            packetHeader.command = NOVUS_FORWARDPACKET;
             packetHeader.account = header->account;
             packetHeader.opcode = Common::Opcode::SMSG_ACCOUNT_DATA_TIMES;
             packetHeader.size = 4 + 1 + 4;
@@ -261,7 +262,7 @@ bool NovusConnection::HandleCommandForwardPacket()
             }
 
             NovusHeader packetHeader;
-            packetHeader.command = NOVUS_FOWARDPACKET;
+            packetHeader.command = NOVUS_FORWARDPACKET;
             packetHeader.account = header->account;
             packetHeader.opcode = Common::Opcode::SMSG_UPDATE_ACCOUNT_DATA_COMPLETE;
             packetHeader.size = 8;
@@ -284,7 +285,7 @@ bool NovusConnection::HandleCommandForwardPacket()
 
 
             NovusHeader packetHeader;
-            packetHeader.command = NOVUS_FOWARDPACKET;
+            packetHeader.command = NOVUS_FORWARDPACKET;
             packetHeader.account = header->account;
             packetHeader.opcode = Common::Opcode::SMSG_REALM_SPLIT;
 
@@ -309,7 +310,7 @@ bool NovusConnection::HandleCommandForwardPacket()
                 Common::ByteBuffer charEnum;
 
                 NovusHeader packetHeader;
-                packetHeader.command = NOVUS_FOWARDPACKET;
+                packetHeader.command = NOVUS_FORWARDPACKET;
                 packetHeader.account = header->account;
                 packetHeader.opcode = Common::Opcode::SMSG_CHAR_ENUM;
 
@@ -379,7 +380,7 @@ bool NovusConnection::HandleCommandForwardPacket()
                 Common::ByteBuffer forwardPacket;
 
                 NovusHeader packetHeader;
-                packetHeader.command = NOVUS_FOWARDPACKET;
+                packetHeader.command = NOVUS_FORWARDPACKET;
                 packetHeader.account = header->account;
                 packetHeader.opcode = Common::Opcode::SMSG_CHAR_CREATE;
                 packetHeader.size = 1;
@@ -392,6 +393,10 @@ bool NovusConnection::HandleCommandForwardPacket()
                     delete createData;
                     return;
                 }
+
+                /* Convert name to proper format */
+                std::transform(createData->charName.begin(), createData->charName.end(), createData->charName.begin(), ::tolower);
+                createData->charName[0] = std::toupper(createData->charName[0]);
 
                 PreparedStatement characterBaseData("INSERT INTO characters(account, name, race, gender, class, map_id, zone_id, coordinate_x, coordinate_y, coordinate_z) VALUES({u}, {s}, {u}, {u}, {u}, {i}, {i}, {f}, {f}, {f});");
                 characterBaseData.Bind(header->account);
@@ -443,7 +448,7 @@ bool NovusConnection::HandleCommandForwardPacket()
             {
                 Common::ByteBuffer forwardPacket;
                 NovusHeader packetHeader;
-                packetHeader.command = NOVUS_FOWARDPACKET;
+                packetHeader.command = NOVUS_FORWARDPACKET;
                 packetHeader.account = header->account;
                 packetHeader.opcode = Common::Opcode::SMSG_CHAR_DELETE;
                 packetHeader.size = 1;

@@ -7,8 +7,12 @@
 // Systems
 #include "ECS/Systems/ConnectionSystem.h"
 #include "ECS/Systems/ClientUpdateSystem.h"
+#include "ECS/Systems/PlayerUpdateDataSystem.h"
 
 #include "Connections/NovusConnection.h"
+
+using namespace std::chrono;
+static const steady_clock::time_point ApplicationStartTime = steady_clock::now();
 
 WorldServerHandler::WorldServerHandler(f32 targetTickRate)
 	: _isRunning(false)
@@ -54,12 +58,7 @@ void WorldServerHandler::Stop()
 
 void WorldServerHandler::Run()
 {
-	_componentRegistry = new entt::registry<u32>();
-	// Temporary for now, don't worry
-	for (u32 i = 0; i < 10; ++i) {
-		auto entity = _componentRegistry->create();
-		_componentRegistry->assign<PositionComponent>(entity, 0u, i * 1.f, i * 1.f, i * 1.f, i * 1.f);
-	}
+	_componentRegistry = new entt::registry();
 
 	Timer timer;
 	while (true)
@@ -75,7 +74,7 @@ void WorldServerHandler::Run()
 		for (deltaTime = timer.GetDeltaTime(); deltaTime < targetDelta; deltaTime = timer.GetDeltaTime())
 		{
 			f32 remaining = targetDelta - deltaTime;
-			if (remaining < 2.0f)
+			if (remaining < 0.002f)
 			{
 				std::this_thread::yield();
 			}
@@ -120,66 +119,30 @@ bool WorldServerHandler::Update(f32 deltaTime)
 
         if (message.code == MSG_IN_FOWARD_PACKET)
         {
-            switch (Common::Opcode((u16)message.opcode))
+            // Create Entity if it doesn't exist, otherwise add 
+            if (Common::Opcode((u16)message.opcode) == Common::Opcode::CMSG_PLAYER_LOGIN)
             {
-                case Common::Opcode::CMSG_SET_ACTIVE_MOVER:
+                u64 playerGuid = 0;
+                message.packet.Read<u64>(playerGuid);
+
+                u32 entity = _componentRegistry->create();
+                _componentRegistry->assign<ConnectionComponent>(entity, u32(message.account), playerGuid, false);
+                _componentRegistry->assign<PlayerUpdateDataComponent>(entity);
+                _componentRegistry->assign<PositionComponent>(entity, 0u, -8949.950195f, -132.492996f, 83.531197f, 0.f);
+
+                ConnectionComponent& connection = _componentRegistry->get<ConnectionComponent>(entity);
+                connection.packets.push_back({ u32(message.opcode), false, message.packet });
+
+                _accountToEntityMap[message.account] = entity;
+            }
+            else
+            {
+                auto itr = _accountToEntityMap.find(message.account);
+                if (itr != _accountToEntityMap.end())
                 {
-                    NovusHeader packetHeader;
-                    packetHeader.command = NOVUS_FOWARDPACKET;
-                    packetHeader.account = message.account;
-                    packetHeader.opcode = Common::Opcode::SMSG_TIME_SYNC_REQ;
-                    packetHeader.size = 4;
-
-                    Common::ByteBuffer timeSync(9 + 4);
-                    packetHeader.AddTo(timeSync);
-
-                    timeSync.Write<u32>(0);
-                    _novusConnection->SendPacket(timeSync);
-                    break;
+                    ConnectionComponent& connection = _componentRegistry->get<ConnectionComponent>(itr->second);
+                    connection.packets.push_back({ u32(message.opcode), false, message.packet });
                 }
-                case Common::Opcode::CMSG_PLAYER_LOGIN:
-                {
-                    u64 playerGuid = 0;
-                    message.packet.Read<u64>(playerGuid);
-
-                    auto entity = _componentRegistry->create();
-                    _componentRegistry->assign<ConnectionComponent>(entity, (u32)message.account, playerGuid, false);
-                    _componentRegistry->assign<PlayerConnectionData>(entity);
-                    _componentRegistry->assign<PositionComponent>(entity, 0u, 1.f, 1.f, 1.f, 1.f);
-
-                    break;
-                }
-                case Common::Opcode::CMSG_LOGOUT_REQUEST:
-                {
-
-                    Message defaultOpcodeMessage;
-                    defaultOpcodeMessage.code = MSG_OUT_PRINT;
-                    defaultOpcodeMessage.message = new std::string("Received LOGOUT REQUEST Opcode\n");
-                    _outputQueue.enqueue(defaultOpcodeMessage);
-
-                    NovusHeader packetHeader;
-                    packetHeader.command = NOVUS_FOWARDPACKET;
-                    packetHeader.account = message.account;
-                    packetHeader.opcode = Common::Opcode::SMSG_LOGOUT_COMPLETE;
-                    packetHeader.size = 0;
-
-                    Common::ByteBuffer logoutRequest(0);
-                    packetHeader.AddTo(logoutRequest);
-
-                    _novusConnection->SendPacket(logoutRequest);
-                    
-                    break;
-                }
-
-                default:
-                {
-                    Message defaultOpcodeMessage;
-                    defaultOpcodeMessage.code = MSG_OUT_PRINT;
-                    defaultOpcodeMessage.message = new std::string("Received Unhandled Opcode");
-                    _outputQueue.enqueue(defaultOpcodeMessage);
-                    break;
-                }
-
             }
         }
 	}
@@ -190,8 +153,14 @@ bool WorldServerHandler::Update(f32 deltaTime)
 
 void WorldServerHandler::UpdateSystems(f32 deltaTime)
 {
-	ClientUpdateSystem::Update(deltaTime, *_componentRegistry);
-    
-    // Call last, Don't multithread this
+    /* No Multi threading on this call (Parallel is fine) */
     ConnectionSystem::Update(deltaTime, *_novusConnection, *_componentRegistry);
+
+    /* Run Gameplay Systems */
+
+    
+    /* Run PlayerUpdateDataSystem to fill out PlayerUpdateData */
+    PlayerUpdateDataSystem::Update(deltaTime, *this, *_novusConnection, *_componentRegistry);
+    /* Run ClientUpdateSystem to send built PlayerUpdateData to players who need it */
+    ClientUpdateSystem::Update(deltaTime, *_componentRegistry);
 }

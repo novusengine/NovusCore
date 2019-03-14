@@ -34,7 +34,7 @@ std::unordered_map<u8, NovusMessageHandler> NovusConnection::InitMessageHandlers
 
     messageHandlers[NOVUS_CHALLENGE]    = { NOVUSSTATUS_CHALLENGE,    sizeof(sNovusChallenge),  &NovusConnection::HandleCommandChallenge };
     messageHandlers[NOVUS_PROOF]        = { NOVUSSTATUS_PROOF,        1,                        &NovusConnection::HandleCommandProof };
-    messageHandlers[NOVUS_FOWARDPACKET] = { NOVUSSTATUS_AUTHED,       9,                        &NovusConnection::HandleCommandForwardPacket };
+    messageHandlers[NOVUS_FORWARDPACKET] = { NOVUSSTATUS_AUTHED,       9,                        &NovusConnection::HandleCommandForwardPacket };
 
     return messageHandlers;
 }
@@ -94,7 +94,7 @@ void NovusConnection::HandleRead()
             return;
         }
 
-        if (command == NOVUS_FOWARDPACKET)
+        if (command == NOVUS_FORWARDPACKET)
         {
             // Check if we should read header
             if (_headerBuffer.GetSpaceLeft() > 0)

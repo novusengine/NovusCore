@@ -35,7 +35,7 @@ enum NovusCommand
 {
     NOVUS_CHALLENGE         = 0x00,
     NOVUS_PROOF             = 0x01,
-    NOVUS_FOWARDPACKET      = 0x02
+    NOVUS_FORWARDPACKET      = 0x02
 };
 enum NovusStatus
 {

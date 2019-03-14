@@ -224,7 +224,7 @@ bool RelayConnection::HandlePacketRead()
 
                     // Write the base novus structure for the packet
                     NovusHeader packetHeader;
-                    packetHeader.command = NOVUS_FOWARDPACKET;
+                    packetHeader.command = NOVUS_FORWARDPACKET;
                     packetHeader.account = account;
                     packetHeader.opcode = opcode;
                     packetHeader.size = _packetBuffer.GetActualSize();
@@ -245,7 +245,7 @@ bool RelayConnection::HandlePacketRead()
 
                     // Write the base novus structure for the packet
                     NovusHeader packetHeader;
-                    packetHeader.command = NOVUS_FOWARDPACKET;
+                    packetHeader.command = NOVUS_FORWARDPACKET;
                     packetHeader.account = account;
                     packetHeader.opcode = opcode;
                     packetHeader.size = _packetBuffer.GetActualSize();

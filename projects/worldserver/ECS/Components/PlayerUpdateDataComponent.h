@@ -3,11 +3,13 @@
 
 #include <Networking/ByteBuffer.h>
 #include "../Connections/NovusConnection.h"
+#include <vector>
 
-struct PlayerConnectionData
+struct PlayerUpdateDataComponent
 {
-    PlayerConnectionData() : updateMask(PLAYER_END), playerFields(PLAYER_END * 4) { }
+    PlayerUpdateDataComponent() : updateMask(PLAYER_END), playerFields(PLAYER_END * 4) { }
 
     UpdateMask<1344> updateMask;
     Common::ByteBuffer playerFields;
+    std::vector<u64> visibleGuids;
 };

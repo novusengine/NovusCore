@@ -3,6 +3,7 @@
 #include "Utils/ConcurrentQueue.h"
 #include "Message.h"
 #include <entt.hpp>
+#include <unordered_map>
 
 enum InputMessages
 {
@@ -31,6 +32,19 @@ public:
 	bool TryGetMessage(Message& message);
 
     void SetNovusConnection(NovusConnection* novusConnection) { _novusConnection = novusConnection; }
+
+    template <typename... Args>
+    void PrintMessage(std::string message, Args... args)
+    {
+        char str[256];
+        int length = sprintf_s(str, message.c_str(), args...);
+        assert(length > -1);
+
+        Message printMessage;
+        printMessage.code = MSG_OUT_PRINT;
+        printMessage.message = new std::string(str);
+        _outputQueue.enqueue(printMessage);
+    }
 private:
 	void Run();
 	bool Update(f32 deltaTime);
@@ -41,7 +55,8 @@ private:
     f32 _targetTickRate;
 
     NovusConnection* _novusConnection;
+    std::unordered_map<u64, u32> _accountToEntityMap;
 	ConcurrentQueue<Message> _inputQueue;
 	ConcurrentQueue<Message> _outputQueue;
-	entt::registry<u32>* _componentRegistry;
+	entt::registry* _componentRegistry;
 };

@@ -36,7 +36,7 @@ enum NovusCommand
 {
     NOVUS_CHALLENGE         = 0x00,
     NOVUS_PROOF             = 0x01,
-    NOVUS_FOWARDPACKET      = 0x02
+    NOVUS_FORWARDPACKET      = 0x02
 };
 enum NovusStatus
 {
@@ -1741,6 +1741,10 @@ public:
     {
         _bits.reset();
     }
+    bool Any()
+    {
+        return _bits.any();
+    }
 
     void AddTo(Common::ByteBuffer& buffer)
     {
@@ -1890,6 +1894,14 @@ struct NovusHeader
     u32    account;
     u16    opcode;
     u16    size;
+
+    void CreateForwardHeader(u32 _account, u16 _opcode, u16 _size)
+    {
+        command = NOVUS_FORWARDPACKET;
+        account = _account;
+        opcode = _opcode;
+        size = _size;
+    }
 
     void Read(Common::ByteBuffer& buffer)
     {
