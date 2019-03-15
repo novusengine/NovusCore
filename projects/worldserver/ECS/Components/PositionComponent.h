@@ -3,12 +3,6 @@
 #include <vector>
 #include <Networking/ByteBuffer.h>
 
-struct PositionUpdateData
-{
-    u16 opcode;
-    Common::ByteBuffer data;
-};
-
 struct PositionComponent 
 {
 	u32 mapId;

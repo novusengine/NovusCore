@@ -10,7 +10,12 @@
 #include "ECS/Systems/ClientUpdateSystem.h"
 #include "ECS/Systems/PlayerUpdateDataSystem.h"
 #include "ECS/Systems/CreatePlayerSystem.h"
+#include "ECS/Systems/DeletePlayerSystem.h"
+
 #include "ECS/Components/SingletonComponent.h"
+#include "ECS/Components/CreatePlayerQueueSingleton.h"
+#include "ECS/Components/PlayerUpdatesQueueSingleton.h"
+#include "ECS/Components/DeletePlayerQueueSingleton.h"
 #include "Connections/NovusConnection.h"
 
 WorldServerHandler::WorldServerHandler(f32 targetTickRate)
@@ -69,11 +74,14 @@ void WorldServerHandler::Run()
 
     _updateFramework.registry.create();
     SingletonComponent& singletonComponent = _updateFramework.registry.assign<SingletonComponent>(0);
-    CreatePlayerQueueComponent& createPlayerQueueComponent = _updateFramework.registry.assign<CreatePlayerQueueComponent>(0);
+    CreatePlayerQueueSingleton& createPlayerQueueComponent = _updateFramework.registry.assign<CreatePlayerQueueSingleton>(0);
+    PlayerUpdatesQueueSingleton& playerUpdatesQueueSingleton = _updateFramework.registry.assign<PlayerUpdatesQueueSingleton>(0);
+    DeletePlayerQueueSingleton& deletePlayerQueueSingleton = _updateFramework.registry.assign<DeletePlayerQueueSingleton>(0);
     singletonComponent.worldServerHandler = this;
     singletonComponent.connection = _novusConnection;
     singletonComponent.deltaTime = 1.0f;
     createPlayerQueueComponent.newEntityQueue = new ConcurrentQueue<Message>(256);
+    deletePlayerQueueSingleton.expiredEntityQueue = new ConcurrentQueue<ExpiredPlayerData>(256);
 
     Timer timer;
 
@@ -153,7 +161,7 @@ bool WorldServerHandler::Update()
                 if (Common::Opcode((u16)message.opcode) == Common::Opcode::CMSG_PLAYER_LOGIN)
                 {
                     ZoneScopedNC("LoginMessage", tracy::Color::Blue2)
-                    _updateFramework.registry.get<CreatePlayerQueueComponent>(0).newEntityQueue->enqueue(message);
+                    _updateFramework.registry.get<CreatePlayerQueueSingleton>(0).newEntityQueue->enqueue(message);
                 }
                 else
                 {
@@ -200,13 +208,19 @@ void WorldServerHandler::SetupUpdateFramework()
     });
     clientUpdateSystemTask.gather(playerUpdateDataSystemTask);
 
-    tf::Task createPlayerSystemTask = framework.emplace([&registry]() 
+    tf::Task createPlayerSystemTask = framework.emplace([&registry]()
     {
         ZoneScopedNC("CreatePlayerSystem", tracy::Color::Blue2)
-        CreatePlayerSystem::Update(registry);
+            CreatePlayerSystem::Update(registry);
     });
+    createPlayerSystemTask.gather(clientUpdateSystemTask); 
 
-    createPlayerSystemTask.gather(clientUpdateSystemTask);
+    tf::Task deletePlayerSystemTask = framework.emplace([&registry]()
+    {
+        ZoneScopedNC("DeletePlayerSystem", tracy::Color::Blue2)
+        DeletePlayerSystem::Update(registry);
+    });
+    deletePlayerSystemTask.gather(createPlayerSystemTask);
 }
 
 void WorldServerHandler::UpdateSystems()

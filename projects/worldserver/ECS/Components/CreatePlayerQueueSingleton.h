@@ -3,7 +3,7 @@
 #include "../Message.h"
 #include "Utils/ConcurrentQueue.h"
 
-struct CreatePlayerQueueComponent
+struct CreatePlayerQueueSingleton
 {
     ConcurrentQueue<Message>* newEntityQueue;
 };

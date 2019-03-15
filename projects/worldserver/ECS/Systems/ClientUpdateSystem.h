@@ -5,42 +5,58 @@
 #include "../Components/PositionComponent.h"
 #include "../Components/UnitStatusComponent.h"
 #include "../Components/SingletonComponent.h"
+#include "../Components/PlayerUpdatesQueueSingleton.h"
 
 namespace ClientUpdateSystem
 {
 	void Update(entt::registry &registry) 
     {
         SingletonComponent& singleton = registry.get<SingletonComponent>(0);
+        PlayerUpdatesQueueSingleton& playerUpdatesQueue = registry.get<PlayerUpdatesQueueSingleton>(0);
         NovusConnection& novusConnection = *singleton.connection;
 
         auto view = registry.view<ConnectionComponent, PlayerUpdateDataComponent, PositionComponent>();
-        auto subView = registry.view<ConnectionComponent>();
 
-        view.each([&novusConnection, subView](const auto, ConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData, PositionComponent& clientPositionData)
+        view.each([&novusConnection, playerUpdatesQueue](const auto, ConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData, PositionComponent& clientPositionData)
         {
-            if (clientPositionData.positionUpdateData.size() > 0)
+            NovusHeader novusHeader;
+            for (PlayerUpdatePacket playerUpdatePacket : playerUpdatesQueue.playerUpdatePacketQueue)
             {
-                subView.each([&novusConnection, clientConnection, clientPositionData](const auto, ConnectionComponent& connection)
+                if (playerUpdatePacket.updateType == PlayerUpdateDataSystem::UPDATETYPE_CREATE_OBJECT ||
+                    playerUpdatePacket.updateType == PlayerUpdateDataSystem::UPDATETYPE_CREATE_OBJECT2 &&
+                    playerUpdatePacket.characterGuid != clientConnection.characterGuid)
                 {
-                    if (clientConnection.characterGuid != connection.characterGuid)
+                    if (std::find(clientUpdateData.visibleGuids.begin(), clientUpdateData.visibleGuids.end(), playerUpdatePacket.characterGuid) == clientUpdateData.visibleGuids.end())
                     {
-                        for (PositionUpdateData positionUpdate : clientPositionData.positionUpdateData)
-                        {
-                            NovusHeader packetHeader;
-                            packetHeader.CreateForwardHeader(connection.accountGuid, positionUpdate.opcode, positionUpdate.data.size());
+                        novusHeader.CreateForwardHeader(clientConnection.accountGuid, playerUpdatePacket.opcode, playerUpdatePacket.data.size());
 
-                            Common::ByteBuffer writtenData(packetHeader.size);
-                            packetHeader.AddTo(writtenData);
-                            writtenData.Append(positionUpdate.data);
+                        Common::ByteBuffer packet(novusHeader.size);
+                        novusHeader.AddTo(packet);
+                        packet.Append(playerUpdatePacket.data);
 
-                            novusConnection.SendPacket(writtenData);
-                        }
+                        novusConnection.SendPacket(packet);
+                        clientUpdateData.visibleGuids.push_back(playerUpdatePacket.characterGuid);
                     }
-                });
+                }
+            }
 
-                // Clear position updates
-                clientPositionData.positionUpdateData.clear();
+            for (MovementPacket movementPacket : playerUpdatesQueue.playerMovementPacketQueue)
+            {
+                if (clientConnection.characterGuid != movementPacket.characterGuid)
+                {
+                    novusHeader.CreateForwardHeader(clientConnection.accountGuid, movementPacket.opcode, movementPacket.data.size());
+
+                    Common::ByteBuffer packet(novusHeader.size);
+                    novusHeader.AddTo(packet);
+                    packet.Append(movementPacket.data);
+
+                    novusConnection.SendPacket(packet);
+                }
             }
         });
+
+        // Clear Queues
+        playerUpdatesQueue.playerUpdatePacketQueue.clear();
+        playerUpdatesQueue.playerMovementPacketQueue.clear();
 	}
 }

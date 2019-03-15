@@ -1,6 +1,7 @@
 #include "ConnectionSystem.h"
 #include <Networking/Opcode/Opcode.h>
 #include "../Components/SingletonComponent.h"
+#include "../Components/DeletePlayerQueueSingleton.h"
 
 namespace ConnectionSystem
 {
@@ -16,11 +17,12 @@ namespace ConnectionSystem
     void Update(entt::registry &registry)
     {
 		SingletonComponent& singleton = registry.get<SingletonComponent>(0);
+        DeletePlayerQueueSingleton& deletePlayerQueue = registry.get<DeletePlayerQueueSingleton>(0);
 		NovusConnection& novusConnection = *singleton.connection;
 
         auto view = registry.view<ConnectionComponent, PlayerUpdateDataComponent, PositionComponent>();
 
-        view.each([&novusConnection, singleton](const auto, ConnectionComponent& connection, PlayerUpdateDataComponent& updateData, PositionComponent& positionData)
+        view.each([&singleton, &deletePlayerQueue, &novusConnection](const auto, ConnectionComponent& connection, PlayerUpdateDataComponent& updateData, PositionComponent& positionData)
         {
             NovusHeader packetHeader;
             packetHeader.command = NOVUS_FORWARDPACKET;
@@ -306,8 +308,13 @@ namespace ConnectionSystem
 
                             Common::ByteBuffer logoutRequest(0);
                             packetHeader.AddTo(logoutRequest);
-
                             novusConnection.SendPacket(logoutRequest);
+
+                            ExpiredPlayerData expiredPlayerData;
+                            expiredPlayerData.account = connection.accountGuid;
+                            expiredPlayerData.guid = connection.characterGuid;
+                            deletePlayerQueue.expiredEntityQueue->enqueue(expiredPlayerData);
+
                             packet.handled = true;
                             break;
                         }
@@ -363,7 +370,7 @@ namespace ConnectionSystem
                             packet.data.ReadPackedGUID(guid);
 
                             uint32_t movementFlags;
-                            uint16_t movementExtraFlags;
+                            uint16_t movementFlagsExtra;
                             uint32_t gameTime;
                             float position_x;
                             float position_y;
@@ -378,7 +385,7 @@ namespace ConnectionSystem
                             positionData.oldorientation = positionData.orientation;
 
                             packet.data.Read(&movementFlags, 4);
-                            packet.data.Read(&movementExtraFlags, 2);
+                            packet.data.Read(&movementFlagsExtra, 2);
                             packet.data.Read(&gameTime, 4);
                             packet.data.Read(&position_x, 4);
                             packet.data.Read(&position_y, 4);
@@ -392,26 +399,17 @@ namespace ConnectionSystem
                             positionData.orientation = position_orientation;
 
                             uint32_t timeDelay = u32(singleton.lifeTimeInMS) - gameTime;
-                            Common::ByteBuffer movementData(packet.data.size());
-                            movementData.AppendGuid(guid);
-                            movementData.Write<uint32_t>(movementFlags); // MovementFlags
-                            movementData.Write<uint16_t>(movementExtraFlags); // Extra MovementFlags
-                            movementData.Write<uint32_t>(gameTime + timeDelay); // Game Time
-                            movementData.Write<float>(positionData.x);
-                            movementData.Write<float>(positionData.y);
-                            movementData.Write<float>(positionData.z);
-                            movementData.Write<float>(positionData.orientation);
-
-                            // FallTime
-                            movementData.Write<uint32_t>(fallTime);
-
-                            // Store the position data (This shouldn't be stored in the position component, doing it temporarly for proof of concept)
-                            // This is super ugly, just testing out a concept for now.
                             PositionUpdateData positionUpdateData;
                             positionUpdateData.opcode = opcode;
-                            positionUpdateData.data = movementData;
-
-                            positionData.positionUpdateData.push_back(positionUpdateData);
+                            positionUpdateData.movementFlags = movementFlags;
+                            positionUpdateData.movementFlagsExtra = movementFlagsExtra;
+                            positionUpdateData.gameTime = gameTime + timeDelay;
+                            positionUpdateData.x = positionData.x;
+                            positionUpdateData.y = positionData.y;
+                            positionUpdateData.z = positionData.z;
+                            positionUpdateData.orientation = positionData.orientation;
+                            positionUpdateData.fallTime = fallTime;
+                            updateData.positionUpdateData.push_back(positionUpdateData);
 
                             packet.handled = true;
                             break;

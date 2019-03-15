@@ -8,15 +8,14 @@
 #include "../Components/SingletonComponent.h"
 #include "../Components/ConnectionComponent.h"
 #include "../Components/PositionComponent.h"
-#include "../Components/CreatePlayerQueueComponent.h"
+#include "../Components/CreatePlayerQueueSingleton.h"
 
 namespace CreatePlayerSystem
 {
     void Update(entt::registry &registry)
     {
 		SingletonComponent& singleton = registry.get<SingletonComponent>(0);
-        CreatePlayerQueueComponent& createPlayerQueue = registry.get<CreatePlayerQueueComponent>(0);
-		WorldServerHandler& worldServerHandler = *singleton.worldServerHandler;
+        CreatePlayerQueueSingleton& createPlayerQueue = registry.get<CreatePlayerQueueSingleton>(0);
 
         Message message;
         while (createPlayerQueue.newEntityQueue->try_dequeue(message))

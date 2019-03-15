@@ -7,6 +7,7 @@
 #include "../Components/SingletonComponent.h"
 #include "../Components/ConnectionComponent.h"
 #include "../Components/PlayerUpdateDataComponent.h"
+#include "../Components/PlayerUpdatesQueueSingleton.h"
 
 namespace PlayerUpdateDataSystem
 {
@@ -50,7 +51,7 @@ namespace PlayerUpdateDataSystem
         UF_FLAG_DYNAMIC                 = 0x100
     };
 
-    Common::ByteBuffer BuildPlayerUpdateData(u64 playerGuid, u8 updateType, u16 updateFlags, u32 visibleFlags, PlayerUpdateDataComponent& playerUpdateData, PositionComponent position)
+    Common::ByteBuffer BuildPlayerUpdateData(u64 playerGuid, u8 updateType, u16 updateFlags, u32 visibleFlags, PlayerUpdateDataComponent& playerUpdateData, PositionComponent position, u16& opcode)
     {
         Common::ByteBuffer buffer(500);
         buffer.Write<u8>(updateType);
@@ -247,7 +248,7 @@ namespace PlayerUpdateDataSystem
         updateData.AddBlock(buffer);
 
         Common::ByteBuffer tempBuffer;
-        updateData.Build(tempBuffer);
+        updateData.Build(tempBuffer, opcode);
 
         return tempBuffer;
     }
@@ -255,76 +256,88 @@ namespace PlayerUpdateDataSystem
     void Update(entt::registry &registry)
     {
 		SingletonComponent& singleton = registry.get<SingletonComponent>(0);
+        PlayerUpdatesQueueSingleton& playerUpdatesQueue = registry.get<PlayerUpdatesQueueSingleton>(0);
 		NovusConnection& novusConnection = *singleton.connection;
-		WorldServerHandler& worldServerHandler = *singleton.worldServerHandler;
 
         auto view = registry.view<ConnectionComponent, PlayerUpdateDataComponent, PositionComponent>();
         auto subView = registry.view<ConnectionComponent, PlayerUpdateDataComponent, PositionComponent>();
 
-        view.each([&novusConnection, &worldServerHandler, subView](const auto, ConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData, PositionComponent& clientPositionData)
+        view.each([&novusConnection, &playerUpdatesQueue, subView](const auto, ConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData, PositionComponent& clientPositionData)
         {
             if (!clientConnection.isInitialized)
             {
-                clientConnection.isInitialized = true;
-
-                /* Build Player Data */
+                /* Build Self Packet, must be sent immediately */
                 u8 updateType = UPDATETYPE_CREATE_OBJECT2;
-                u16 updateFlag = UPDATEFLAG_NONE;
-                u32 visibleFlags = UF_FLAG_PUBLIC;
+                u16 selfUpdateFlag = (UPDATEFLAG_SELF | UPDATEFLAG_LIVING | UPDATEFLAG_STATIONARY_POSITION);
+                u32 selfVisibleFlags = (UF_FLAG_PUBLIC | UF_FLAG_PRIVATE);
+                u16 buildOpcode = 0;
 
-                updateFlag |= UPDATEFLAG_SELF;
-                updateFlag |= UPDATEFLAG_LIVING;
-                updateFlag |= UPDATEFLAG_STATIONARY_POSITION;
-                visibleFlags |= UF_FLAG_PRIVATE;
-                
-                Common::ByteBuffer playerUpdateData = BuildPlayerUpdateData(clientConnection.characterGuid, updateType, updateFlag, visibleFlags, clientUpdateData, clientPositionData);
+                Common::ByteBuffer selfPlayerUpdate = BuildPlayerUpdateData(clientConnection.characterGuid, updateType, selfUpdateFlag, selfVisibleFlags, clientUpdateData, clientPositionData, buildOpcode);
 
                 NovusHeader novusHeader;
-                novusHeader.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_COMPRESSED_UPDATE_OBJECT, playerUpdateData.GetActualSize());
+                novusHeader.CreateForwardHeader(clientConnection.accountGuid, buildOpcode, selfPlayerUpdate.GetActualSize());
+                Common::ByteBuffer packet(novusHeader.size);
+                novusHeader.AddTo(packet);
+                packet.Append(selfPlayerUpdate);
 
-                Common::ByteBuffer sentUpdatePacket;
-                novusHeader.AddTo(sentUpdatePacket);
-                sentUpdatePacket.Append(playerUpdateData);
-                novusConnection.SendPacket(sentUpdatePacket);
-            }
-            else
-            {
-                subView.each([&novusConnection, &worldServerHandler, &clientConnection, &clientUpdateData](const auto, ConnectionComponent& unitUpdateConnection, PlayerUpdateDataComponent& unitUpdateData, PositionComponent& unitPositionData)
+                novusConnection.SendPacket(packet);
+                clientConnection.isInitialized = true;
+
+                /* Build Self Packet for public */
+                u16 publicUpdateFlag = (UPDATEFLAG_LIVING | UPDATEFLAG_STATIONARY_POSITION);
+                u32 publicVisibleFlags = UF_FLAG_PUBLIC;
+
+                PlayerUpdatePacket playerUpdatePacket;
+                playerUpdatePacket.characterGuid = clientConnection.characterGuid;
+                playerUpdatePacket.updateType = updateType;
+                playerUpdatePacket.data = BuildPlayerUpdateData(clientConnection.characterGuid, updateType, publicUpdateFlag, publicVisibleFlags, clientUpdateData, clientPositionData, buildOpcode);
+                playerUpdatePacket.opcode = buildOpcode;
+                playerUpdatesQueue.playerUpdatePacketQueue.push_back(playerUpdatePacket);
+
+                subView.each([&novusConnection, &playerUpdatesQueue, &clientConnection](const auto, ConnectionComponent& connection, PlayerUpdateDataComponent& updateData, PositionComponent& positionData)
                 {
-                    if (clientConnection.characterGuid != unitUpdateConnection.characterGuid)
+                    if (clientConnection.characterGuid != connection.characterGuid)
                     {
-                        if (std::find(clientUpdateData.visibleGuids.begin(), clientUpdateData.visibleGuids.end(), unitUpdateConnection.characterGuid) == clientUpdateData.visibleGuids.end())
-                        {
-                            /* Build Player Data */
-                            u8 updateType = !unitUpdateConnection.isInitialized ? UPDATETYPE_CREATE_OBJECT2 : UPDATETYPE_CREATE_OBJECT;
-                            u16 updateFlag = UPDATEFLAG_NONE;
-                            u32 visibleFlags = UF_FLAG_PUBLIC;
+                        /* Build Player Packet for self */
+                        u8 updateType = UPDATETYPE_CREATE_OBJECT;
+                        u16 publicUpdateFlag = (UPDATEFLAG_LIVING | UPDATEFLAG_STATIONARY_POSITION);
+                        u32 publicVisibleFlags = UF_FLAG_PUBLIC;
+                        u16 buildOpcode = 0;
 
-                            // Living should be checked through UnitStatusComponent
-                            updateFlag |= UPDATEFLAG_LIVING;
-                            updateFlag |= UPDATEFLAG_STATIONARY_POSITION;
+                        PlayerUpdatePacket playerUpdatePacket;
+                        playerUpdatePacket.characterGuid = connection.characterGuid;
+                        playerUpdatePacket.updateType = updateType;
+                        playerUpdatePacket.data = BuildPlayerUpdateData(connection.characterGuid, updateType, publicUpdateFlag, publicVisibleFlags, updateData, positionData, buildOpcode);
+                        playerUpdatePacket.opcode = buildOpcode;
+                        playerUpdatesQueue.playerUpdatePacketQueue.push_back(playerUpdatePacket);
 
-                            Common::ByteBuffer playerUpdateData = BuildPlayerUpdateData(unitUpdateConnection.characterGuid, updateType, updateFlag, visibleFlags, unitUpdateData, unitPositionData);
-
-                            NovusHeader novusHeader;
-                            novusHeader.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_COMPRESSED_UPDATE_OBJECT, playerUpdateData.GetActualSize());
-
-                            Common::ByteBuffer sentUpdatePacket;
-                            novusHeader.AddTo(sentUpdatePacket);
-                            sentUpdatePacket.Append(playerUpdateData);
-                            novusConnection.SendPacket(sentUpdatePacket);
-
-                            clientUpdateData.visibleGuids.push_back(unitUpdateConnection.characterGuid);
-                        }
                     }
                 });
             }
-        });
+            else
+            {
+                for (PositionUpdateData positionData : clientUpdateData.positionUpdateData)
+                {
+                    MovementPacket movementPacket;
+                    movementPacket.opcode = positionData.opcode;
+                    movementPacket.characterGuid = clientConnection.characterGuid;
 
-        /* Reset the updateMask so we don't write twice */
-        /*view.each([&novusConnection, &worldServerHandler, subView](const auto, ConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData, PositionComponent& clientPositionData)
-        {
-            clientUpdateData.updateMask.Reset();
-        });*/
+                    movementPacket.data.AppendGuid(movementPacket.characterGuid);
+                    movementPacket.data.Write<u32>(positionData.movementFlags);
+                    movementPacket.data.Write<u16>(positionData.movementFlagsExtra);
+                    movementPacket.data.Write<u32>(positionData.gameTime);
+                    movementPacket.data.Write<f32>(positionData.x);
+                    movementPacket.data.Write<f32>(positionData.y);
+                    movementPacket.data.Write<f32>(positionData.z);
+                    movementPacket.data.Write<f32>(positionData.orientation);
+                    movementPacket.data.Write<u32>(positionData.fallTime);
+
+                    playerUpdatesQueue.playerMovementPacketQueue.push_back(movementPacket);
+                }
+
+                // Clear Updates
+                clientUpdateData.positionUpdateData.clear();
+            }
+        });
     }
 }

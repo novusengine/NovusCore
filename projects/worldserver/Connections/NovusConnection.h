@@ -26,6 +26,7 @@
 #include <asio\ip\tcp.hpp>
 #include <Networking\BaseSocket.h>
 #include <Networking\TcpServer.h>
+#include <Networking/Opcode/Opcode.h>
 #include <Cryptography\BigNumber.h>
 #include <Cryptography\StreamCrypto.h>
 #include <unordered_map>
@@ -1774,20 +1775,37 @@ private:
 class UpdateData
 {
 public:
-    UpdateData() : blockCount(0) { }
+    UpdateData() : _blockCount(0) { }
+
+    bool IsEmpty() { return _data.empty() && _nonVisibleGuids.empty(); }
 
     void AddBlock(Common::ByteBuffer const& block)
     {
-        data.Append(block);
-        ++blockCount;
+        _data.Append(block);
+        ++_blockCount;
+    }
+    void AddGuid(u64 guid)
+    {
+        _nonVisibleGuids.push_back(guid);
     }
 
-    bool Build(Common::ByteBuffer& packet)
+    bool Build(Common::ByteBuffer& packet, u16& opcode)
     {
-        Common::ByteBuffer buffer(4 + data._writePos);
-        buffer.Write<u32>(blockCount);
+        Common::ByteBuffer buffer((4 + _nonVisibleGuids.empty() ? 0 : 1 + 4 + 9 * _nonVisibleGuids.size()) + _data._writePos);
+        buffer.Write<u32>(_nonVisibleGuids.empty() ? _blockCount : _blockCount + 1);
 
-        buffer.Append(data);
+        if (!_nonVisibleGuids.empty())
+        {
+            buffer.Write<u8>(4); // UPDATETYPE_OUT_OF_RANGE_OBJECTS
+            buffer.Write<u32>(_nonVisibleGuids.size());
+
+            for (u64 guid : _nonVisibleGuids)
+            {
+                buffer.AppendGuid(guid);
+            }
+        }
+
+        buffer.Append(_data);
         size_t pSize = buffer._writePos;
 
         if (pSize > 100)
@@ -1803,20 +1821,22 @@ public:
 
             packet.Resize(destsize + sizeof(u32));
             packet._writePos = packet.size();
+            opcode = Common::Opcode::SMSG_COMPRESSED_UPDATE_OBJECT;
         }
         else
         {
             packet.Append(buffer);
             packet._writePos = packet.size();
-            /* This is not hit yet */
+            opcode = Common::Opcode::SMSG_UPDATE_OBJECT;
         }
 
         return true;
     }
 
 private:
-    u32 blockCount;
-    Common::ByteBuffer data;
+    u32 _blockCount;
+    std::vector<u64> _nonVisibleGuids;
+    Common::ByteBuffer _data;
 
     void Compress(void* dst, u32 *dst_size, void* src, int src_size)
     {
