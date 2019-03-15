@@ -18,7 +18,10 @@ CREATE TABLE IF NOT EXISTS `accounts` (
   PRIMARY KEY (`guid`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
 
--- Dumping structure for table authserver.realms
+/*!40000 ALTER TABLE `accounts` DISABLE KEYS */;
+INSERT INTO `accounts` (`guid`, `username`, `salt`, `verifier`) VALUES (1, 'ADMIN', 'AD31174982EF8F0B8686FCAC4857D89D093D5C000F68DFB102178FBC8D3ADFA9', '10DB5B75BCF6946B5F4DECCA7C5635D04374FFAE4105620C824A644FE876AE92');
+/*!40000 ALTER TABLE `accounts` ENABLE KEYS */;
+
 CREATE TABLE IF NOT EXISTS `realms` (
   `id` tinyint(3) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(64) NOT NULL DEFAULT 'NovusCore Realm',
@@ -32,8 +35,7 @@ CREATE TABLE IF NOT EXISTS `realms` (
 
 -- Dumping data for table authserver.realms: ~0 rows (approximately)
 /*!40000 ALTER TABLE `realms` DISABLE KEYS */;
-INSERT INTO `realms` (`id`, `name`, `address`, `type`, `flags`, `timezone`, `population`) VALUES
-	(1, 'NovusCore Realm', '127.0.0.1:8000', 1, 0, 1, 0),
+INSERT INTO `realms` (`id`, `name`, `address`, `type`, `flags`, `timezone`, `population`) VALUES (1, 'NovusCore Realm', '127.0.0.1:8000', 1, 0, 1, 0);
 /*!40000 ALTER TABLE `realms` ENABLE KEYS */;
 
 -- Dumping structure for table authserver.realm_characters
