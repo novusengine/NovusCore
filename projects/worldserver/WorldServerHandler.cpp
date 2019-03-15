@@ -83,6 +83,7 @@ void WorldServerHandler::Run()
         timer.Tick();
 
         singletonComponent.lifeTime = timer.GetLifeTime();
+        singletonComponent.lifeTimeInMS = singletonComponent.lifeTime * 1000;
         singletonComponent.deltaTime = deltaTime;
 
         if (!Update())
@@ -157,7 +158,7 @@ bool WorldServerHandler::Update()
                 else
                 {
                     ZoneScopedNC("ForwardMessage", tracy::Color::Blue2)
-                    SingletonComponent & singletonComponent = _updateFramework.registry.get<SingletonComponent>(0);
+                    SingletonComponent& singletonComponent = _updateFramework.registry.get<SingletonComponent>(0);
 
                     auto itr = singletonComponent.accountToEntityMap.find(u32(message.account));
                     if (itr != singletonComponent.accountToEntityMap.end())
@@ -181,23 +182,27 @@ void WorldServerHandler::SetupUpdateFramework()
 
     tf::Task connectionSystemTask = framework.emplace([&registry]()
     {
+        ZoneScopedNC("ConnectionSystem", tracy::Color::Blue2)
         ConnectionSystem::Update(registry);
     });
 
     tf::Task playerUpdateDataSystemTask = framework.emplace([&registry]() 
     {
+        ZoneScopedNC("PlayerUpdateDataSystem", tracy::Color::Blue2)
         PlayerUpdateDataSystem::Update(registry);
     });
     playerUpdateDataSystemTask.gather(connectionSystemTask);
 
     tf::Task clientUpdateSystemTask = framework.emplace([&registry]() 
     {
+        ZoneScopedNC("clientUpdateSystemTask", tracy::Color::Blue2)
         ClientUpdateSystem::Update(registry);
     });
     clientUpdateSystemTask.gather(playerUpdateDataSystemTask);
 
     tf::Task createPlayerSystemTask = framework.emplace([&registry]() 
     {
+        ZoneScopedNC("CreatePlayerSystem", tracy::Color::Blue2)
         CreatePlayerSystem::Update(registry);
     });
 

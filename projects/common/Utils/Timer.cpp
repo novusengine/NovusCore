@@ -7,7 +7,6 @@ Timer::Timer()
 {
 	_startTime = Clock::now();
 	_lastTick = Clock::now();
-	_lastTick = Clock::now();
 }
 
 Timer::~Timer()

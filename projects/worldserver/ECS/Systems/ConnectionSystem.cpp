@@ -19,9 +19,8 @@ namespace ConnectionSystem
 		NovusConnection& novusConnection = *singleton.connection;
 
         auto view = registry.view<ConnectionComponent, PlayerUpdateDataComponent, PositionComponent>();
-        auto subView = registry.view<ConnectionComponent>();
 
-        view.each([&novusConnection, subView](const auto, ConnectionComponent& connection, PlayerUpdateDataComponent& updateData, PositionComponent& positionData)
+        view.each([&novusConnection, singleton](const auto, ConnectionComponent& connection, PlayerUpdateDataComponent& updateData, PositionComponent& positionData)
         {
             NovusHeader packetHeader;
             packetHeader.command = NOVUS_FORWARDPACKET;
@@ -369,8 +368,14 @@ namespace ConnectionSystem
                             float position_x;
                             float position_y;
                             float position_z;
-                            float position_o;
+                            float position_orientation;
                             uint32_t fallTime;
+
+                            // Store old movement info
+                            positionData.oldx = positionData.x;
+                            positionData.oldy = positionData.y;
+                            positionData.oldz = positionData.z;
+                            positionData.oldorientation = positionData.orientation;
 
                             packet.data.Read(&movementFlags, 4);
                             packet.data.Read(&movementExtraFlags, 2);
@@ -378,48 +383,35 @@ namespace ConnectionSystem
                             packet.data.Read(&position_x, 4);
                             packet.data.Read(&position_y, 4);
                             packet.data.Read(&position_z, 4);
-                            packet.data.Read(&position_o, 4);
+                            packet.data.Read(&position_orientation, 4);
                             packet.data.Read(&fallTime, 4);
 
-                            uint32_t gameTimeMS = uint32_t(duration_cast<milliseconds>(steady_clock::now() - ApplicationStartTime).count());
-                            uint32_t timeDelay = gameTimeMS - gameTime;
-                            //std::cout << "Movement Info (" << opcode << "," << guid << "," << movementFlags << "," << movementExtraFlags << ",(" << gameTime << "," << gameTimeMS << "," << timeDelay << ")," << position_x << "," << position_y << "," << position_z << "," << position_o << "," << fallTime << ")" << std::endl;
+                            positionData.x = position_x;
+                            positionData.y = position_y;
+                            positionData.z = position_z;
+                            positionData.orientation = position_orientation;
 
+                            uint32_t timeDelay = u32(singleton.lifeTimeInMS) - gameTime;
                             Common::ByteBuffer movementData(packet.data.size());
                             movementData.AppendGuid(guid);
                             movementData.Write<uint32_t>(movementFlags); // MovementFlags
                             movementData.Write<uint16_t>(movementExtraFlags); // Extra MovementFlags
                             movementData.Write<uint32_t>(gameTime + timeDelay); // Game Time
-                            movementData.Write<float>(position_x);
-                            movementData.Write<float>(position_y);
-                            movementData.Write<float>(position_z);
-                            movementData.Write<float>(position_o);
+                            movementData.Write<float>(positionData.x);
+                            movementData.Write<float>(positionData.y);
+                            movementData.Write<float>(positionData.z);
+                            movementData.Write<float>(positionData.orientation);
 
                             // FallTime
                             movementData.Write<uint32_t>(fallTime);
 
-                            positionData.x = position_x;
-                            positionData.y = position_y;
-                            positionData.z = position_z;
-                            positionData.o = position_o;
+                            // Store the position data (This shouldn't be stored in the position component, doing it temporarly for proof of concept)
+                            // This is super ugly, just testing out a concept for now.
+                            PositionUpdateData positionUpdateData;
+                            positionUpdateData.opcode = opcode;
+                            positionUpdateData.data = movementData;
 
-                            subView.each([this, opcode, guid, movementData, &novusConnection](const auto, ConnectionComponent& connection)
-                            {
-                                if (guid != connection.characterGuid)
-                                {
-                                    NovusHeader packetHeader;
-                                    packetHeader.command = NOVUS_FORWARDPACKET;
-                                    packetHeader.account = connection.accountGuid;
-                                    packetHeader.opcode = opcode;
-                                    packetHeader.size = movementData.size();
-
-                                    Common::ByteBuffer writtenData(packetHeader.size);
-                                    packetHeader.AddTo(writtenData);
-                                    writtenData.Append(movementData);
-
-                                    novusConnection.SendPacket(writtenData);
-                                }
-                            });
+                            positionData.positionUpdateData.push_back(positionUpdateData);
 
                             packet.handled = true;
                             break;

@@ -72,7 +72,7 @@ namespace PlayerUpdateDataSystem
             buffer.Write<f32>(position.x);
             buffer.Write<f32>(position.y);
             buffer.Write<f32>(position.z);
-            buffer.Write<f32>(position.o);
+            buffer.Write<f32>(position.orientation);
 
             // FallTime
             buffer.Write<u32>(0);
@@ -101,7 +101,7 @@ namespace PlayerUpdateDataSystem
                     buffer.Write<f32>(position.x);
                     buffer.Write<f32>(position.y);
                     buffer.Write<f32>(position.z);
-                    buffer.Write<f32>(position.o);
+                    buffer.Write<f32>(position.orientation);
                 }
             }
         }
