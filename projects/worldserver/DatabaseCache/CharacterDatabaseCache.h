@@ -1,5 +1,6 @@
 #pragma once
 #include "BaseDatabaseCache.h"
+#include <unordered_map>
 
 // Characters table in DB
 class CharacterDatabaseCache;
