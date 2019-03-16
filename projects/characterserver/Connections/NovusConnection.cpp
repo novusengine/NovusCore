@@ -357,9 +357,9 @@ bool NovusConnection::HandleCommandForwardPacket()
 
                     charEnum.Write<u8>(1); // First Login (Here we should probably do a playerTime check to determin if its the player's first login)
 
-                    charEnum.Write<u32>(22234); // Pet Display Id
-                    charEnum.Write<u32>(5);  // Pet Level
-                    charEnum.Write<u32>(1);  // Pet Family
+                    charEnum.Write<u32>(0); // Pet Display Id (Lich King: 22234)
+                    charEnum.Write<u32>(0);  // Pet Level
+                    charEnum.Write<u32>(0);  // Pet Family
 
                     u32 equipmentDataNull = 0;
                     for (i32 i = 0; i < 23; ++i)
