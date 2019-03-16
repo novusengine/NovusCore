@@ -233,19 +233,29 @@ bool NovusConnection::HandleCommandForwardPacket()
             // UInt8:   Unknown Byte Value
             // UInt32:  Mask for the account data fields
 
-            Common::ByteBuffer forwardPacket;
+            Common::ByteBuffer accountDataForwardPacket;
+            Common::ByteBuffer accountDataTimes;
             NovusHeader packetHeader;
             packetHeader.command = NOVUS_FORWARDPACKET;
             packetHeader.account = header->account;
             packetHeader.opcode = Common::Opcode::SMSG_ACCOUNT_DATA_TIMES;
-            packetHeader.size = 4 + 1 + 4;
-            packetHeader.AddTo(forwardPacket);
 
-            forwardPacket.Write<u32>((u32)time(nullptr));
-            forwardPacket.Write<u8>(1);
-            forwardPacket.Write<u32>(0x15);
+            u32 mask = 0x15;
+            accountDataTimes.Write<u32>((u32)time(nullptr));
+            accountDataTimes.Write<u8>(1); // bitmask blocks count
+            accountDataTimes.Write<u32>(mask); // PER_CHARACTER_CACHE_MASK
 
-            SendPacket(forwardPacket);
+            for (u32 i = 0; i < 8; ++i)
+            {
+                if (mask & (1 << i))
+                    accountDataTimes.Write<u32>(0);
+            }
+
+            packetHeader.size = (u16)accountDataTimes.GetActualSize();
+            packetHeader.AddTo(accountDataForwardPacket);
+            accountDataForwardPacket.Append(accountDataTimes);
+
+            SendPacket(accountDataForwardPacket);
             break;
         }
         case Common::Opcode::CMSG_UPDATE_ACCOUNT_DATA:
