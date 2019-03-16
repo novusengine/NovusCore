@@ -25,6 +25,7 @@
 #include <NovusTypes.h>
 #include <entt.hpp>
 
+#include "../NovusEnums.h"
 #include "../Components/PositionComponent.h"
 #include "../Components/UnitStatusComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
@@ -45,8 +46,8 @@ namespace ClientUpdateSystem
             NovusHeader novusHeader;
             for (PlayerUpdatePacket playerUpdatePacket : playerUpdatesQueue.playerUpdatePacketQueue)
             {
-                if (playerUpdatePacket.updateType == PlayerUpdateDataSystem::UPDATETYPE_CREATE_OBJECT ||
-                    playerUpdatePacket.updateType == PlayerUpdateDataSystem::UPDATETYPE_CREATE_OBJECT2 &&
+                if ((playerUpdatePacket.updateType == UPDATETYPE_CREATE_OBJECT ||
+                    playerUpdatePacket.updateType == UPDATETYPE_CREATE_OBJECT2) &&
                     playerUpdatePacket.characterGuid != clientConnection.characterGuid)
                 {
                     if (std::find(clientUpdateData.visibleGuids.begin(), clientUpdateData.visibleGuids.end(), playerUpdatePacket.characterGuid) == clientUpdateData.visibleGuids.end())
@@ -61,8 +62,19 @@ namespace ClientUpdateSystem
                         clientUpdateData.visibleGuids.push_back(playerUpdatePacket.characterGuid);
                     }
                 }
+                else if (playerUpdatePacket.updateType == UPDATETYPE_VALUES)
+                {
+                    if (playerUpdatePacket.characterGuid != clientConnection.characterGuid)
+                    {
+                        novusHeader.CreateForwardHeader(clientConnection.accountGuid, playerUpdatePacket.opcode, playerUpdatePacket.data.size());
 
-                /* Handle Updates to existing players here */
+                        Common::ByteBuffer packet(novusHeader.size);
+                        novusHeader.AddTo(packet);
+                        packet.Append(playerUpdatePacket.data);
+
+                        novusConnection.SendPacket(packet);
+                    }
+                }
             }
 
             for (MovementPacket movementPacket : playerUpdatesQueue.playerMovementPacketQueue)

@@ -44,9 +44,9 @@ struct PositionUpdateData
 
 struct PlayerUpdateDataComponent
 {
-    PlayerUpdateDataComponent() : updateMask(PLAYER_END), playerFields(PLAYER_END * 4) { }
+    PlayerUpdateDataComponent() : changesMask(PLAYER_END), playerFields(PLAYER_END * 4) { }
 
-    UpdateMask<1344> updateMask;
+    UpdateMask<1344> changesMask;
     Common::ByteBuffer playerFields;
     std::vector<u32> visibleGuids;
     std::vector<PositionUpdateData> positionUpdateData;

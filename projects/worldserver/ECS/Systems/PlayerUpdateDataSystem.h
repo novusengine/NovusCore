@@ -38,95 +38,62 @@ namespace PlayerUpdateDataSystem
     using namespace std::chrono;
     const steady_clock::time_point ApplicationStartTime = steady_clock::now();
 
-    enum ObjectUpdateType : u8
-    {
-        UPDATETYPE_VALUES               = 0,
-        UPDATETYPE_MOVEMENT             = 1,
-        UPDATETYPE_CREATE_OBJECT        = 2,
-        UPDATETYPE_CREATE_OBJECT2       = 3,
-        UPDATETYPE_OUT_OF_RANGE_OBJECTS = 4,
-        UPDATETYPE_NEAR_OBJECTS         = 5
-    };
-    enum ObjectUpdateFlag : u16
-    {
-        UPDATEFLAG_NONE                 = 0x0000,
-        UPDATEFLAG_SELF                 = 0x0001,
-        UPDATEFLAG_TRANSPORT            = 0x0002,
-        UPDATEFLAG_HAS_TARGET           = 0x0004,
-        UPDATEFLAG_UNKNOWN              = 0x0008,
-        UPDATEFLAG_LOWGUID              = 0x0010,
-        UPDATEFLAG_LIVING               = 0x0020,
-        UPDATEFLAG_STATIONARY_POSITION  = 0x0040,
-        UPDATEFLAG_VEHICLE              = 0x0080,
-        UPDATEFLAG_POSITION             = 0x0100,
-        UPDATEFLAG_ROTATION             = 0x0200
-    };
-    enum UpdatefieldFlags
-    {
-        UF_FLAG_NONE                    = 0x000,
-        UF_FLAG_PUBLIC                  = 0x001,
-        UF_FLAG_PRIVATE                 = 0x002,
-        UF_FLAG_OWNER                   = 0x004,
-        UF_FLAG_UNUSED1                 = 0x008,
-        UF_FLAG_ITEM_OWNER              = 0x010,
-        UF_FLAG_SPECIAL_INFO            = 0x020,
-        UF_FLAG_PARTY_MEMBER            = 0x040,
-        UF_FLAG_UNUSED2                 = 0x080,
-        UF_FLAG_DYNAMIC                 = 0x100
-    };
-
     Common::ByteBuffer BuildPlayerUpdateData(u64 playerGuid, u8 updateType, u16 updateFlags, u32 visibleFlags, PlayerUpdateDataComponent& playerUpdateData, PositionComponent position, u16& opcode)
     {
         Common::ByteBuffer buffer(500);
         buffer.Write<u8>(updateType);
         buffer.AppendGuid(playerGuid);
-        buffer.Write<u8>(4); // TYPEID_PLAYER
 
-        // BuildMovementUpdate(ByteBuffer* data, uint16 flags)
-        buffer.Write<u16>(updateFlags);
-
-        if (updateFlags & UPDATEFLAG_LIVING)
+        if (updateType == 2 || updateType == 3)
         {
-            u32 gameTimeMS = u32(duration_cast<milliseconds>(steady_clock::now() - ApplicationStartTime).count());
-            //std::cout << "Gametime MS: " << gameTimeMS << std::endl;
+            buffer.Write<u8>(4); // TYPEID_PLAYER
 
-            buffer.Write<u32>(0x00); // MovementFlags
-            buffer.Write<u16>(0x00); // Extra MovementFlags
-            buffer.Write<u32>(gameTimeMS); // Game Time
-            // TaggedPosition<Position::XYZO>(pos);
-            buffer.Write<f32>(position.x);
-            buffer.Write<f32>(position.y);
-            buffer.Write<f32>(position.z);
-            buffer.Write<f32>(position.orientation);
+            // BuildMovementUpdate(ByteBuffer* data, uint16 flags)
+            buffer.Write<u16>(updateFlags);
 
-            // FallTime
-            buffer.Write<u32>(0);
-
-            // Movement Speeds
-            buffer.Write<f32>(2.5f); // MOVE_WALK
-            buffer.Write<f32>(7.0f); // MOVE_RUN
-            buffer.Write<f32>(4.5f); // MOVE_RUN_BACK
-            buffer.Write<f32>(4.722222f); // MOVE_SWIM
-            buffer.Write<f32>(2.5f); // MOVE_SWIM_BACK
-            buffer.Write<f32>(7.0f); // MOVE_FLIGHT
-            buffer.Write<f32>(4.5f); // MOVE_FLIGHT_BACK
-            buffer.Write<f32>(3.141593f); // MOVE_TURN_RATE
-            buffer.Write<f32>(3.141593f); // MOVE_PITCH_RATE
-        }
-        else
-        {
-            if (updateFlags & UPDATEFLAG_POSITION)
+            if (updateFlags & UPDATEFLAG_LIVING)
             {
+                u32 gameTimeMS = u32(duration_cast<milliseconds>(steady_clock::now() - ApplicationStartTime).count());
+                //std::cout << "Gametime MS: " << gameTimeMS << std::endl;
 
+                buffer.Write<u32>(0x00); // MovementFlags
+                buffer.Write<u16>(0x00); // Extra MovementFlags
+                buffer.Write<u32>(gameTimeMS); // Game Time
+                // TaggedPosition<Position::XYZO>(pos);
+                buffer.Write<f32>(position.x);
+                buffer.Write<f32>(position.y);
+                buffer.Write<f32>(position.z);
+                buffer.Write<f32>(position.orientation);
+
+                // FallTime
+                buffer.Write<u32>(0);
+
+                // Movement Speeds
+                buffer.Write<f32>(2.5f); // MOVE_WALK
+                buffer.Write<f32>(7.0f); // MOVE_RUN
+                buffer.Write<f32>(4.5f); // MOVE_RUN_BACK
+                buffer.Write<f32>(4.722222f); // MOVE_SWIM
+                buffer.Write<f32>(2.5f); // MOVE_SWIM_BACK
+                buffer.Write<f32>(7.0f); // MOVE_FLIGHT
+                buffer.Write<f32>(4.5f); // MOVE_FLIGHT_BACK
+                buffer.Write<f32>(3.141593f); // MOVE_TURN_RATE
+                buffer.Write<f32>(3.141593f); // MOVE_PITCH_RATE
             }
             else
             {
-                if (updateFlags & UPDATEFLAG_STATIONARY_POSITION)
+                if (updateFlags & UPDATEFLAG_POSITION)
                 {
-                    buffer.Write<f32>(position.x);
-                    buffer.Write<f32>(position.y);
-                    buffer.Write<f32>(position.z);
-                    buffer.Write<f32>(position.orientation);
+
+                }
+                else
+                {
+                    if (updateFlags & UPDATEFLAG_STATIONARY_POSITION)
+                    {
+                        buffer.Write<f32>(position.x);
+                        buffer.Write<f32>(position.y);
+                        buffer.Write<f32>(position.z);
+                        buffer.Write<f32>(position.orientation);
+                    }
                 }
             }
         }
@@ -141,7 +108,7 @@ namespace PlayerUpdateDataSystem
         for (u16 index = 0; index < PLAYER_END; ++index)
         {
             if (fieldNotifyFlags & flags[index] || ((flags[index] & visibleFlags) & UF_FLAG_SPECIAL_INFO)
-                || ((updateType == 0 ? updateMask.IsSet(index) : playerUpdateData.playerFields.ReadAt<i32>(index * 4))
+                || ((updateType == 0 ? playerUpdateData.changesMask.IsSet(index) : playerUpdateData.playerFields.ReadAt<i32>(index * 4))
                     && (flags[index] & visibleFlags)))
             {
                 updateMask.SetBit(index);
@@ -340,6 +307,33 @@ namespace PlayerUpdateDataSystem
             }
             else
             {
+                /* Only Build Packet if any fields were changed */
+                if (clientUpdateData.changesMask.Any())
+                {
+                    /* Build Self Packet, must be sent immediately */
+                    u8 updateType = UPDATETYPE_VALUES;
+                    u32 selfVisibleFlags = (UF_FLAG_PUBLIC | UF_FLAG_PRIVATE);
+                    u16 buildOpcode = 0;
+
+                    Common::ByteBuffer selfPlayerUpdate = BuildPlayerUpdateData(clientConnection.characterGuid, updateType, 0, selfVisibleFlags, clientUpdateData, clientPositionData, buildOpcode);
+                    NovusHeader novusHeader;
+                    novusHeader.CreateForwardHeader(clientConnection.accountGuid, buildOpcode, selfPlayerUpdate.GetActualSize());
+                    Common::ByteBuffer packet(novusHeader.size);
+                    novusHeader.AddTo(packet);
+                    packet.Append(selfPlayerUpdate);
+
+                    novusConnection.SendPacket(packet);
+
+                    /* Build Self Packet for public */
+                    u32 publicVisibleFlags = UF_FLAG_PUBLIC;
+                    PlayerUpdatePacket playerUpdatePacket;
+                    playerUpdatePacket.characterGuid = clientConnection.characterGuid;
+                    playerUpdatePacket.updateType = updateType;
+                    playerUpdatePacket.data = BuildPlayerUpdateData(clientConnection.characterGuid, updateType, 0, publicVisibleFlags, clientUpdateData, clientPositionData, buildOpcode);
+                    playerUpdatePacket.opcode = buildOpcode;
+                    playerUpdatesQueue.playerUpdatePacketQueue.push_back(playerUpdatePacket);
+                }
+
                 for (PositionUpdateData positionData : clientUpdateData.positionUpdateData)
                 {
                     MovementPacket movementPacket;
@@ -360,6 +354,7 @@ namespace PlayerUpdateDataSystem
                 }
 
                 // Clear Updates
+                clientUpdateData.changesMask.Reset();
                 clientUpdateData.positionUpdateData.clear();
             }
         });

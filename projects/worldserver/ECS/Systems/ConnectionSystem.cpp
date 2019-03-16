@@ -1,5 +1,6 @@
 #include "ConnectionSystem.h"
 #include <Networking/Opcode/Opcode.h>
+#include "../NovusEnums.h"
 #include "../Components/Singletons/SingletonComponent.h"
 #include "../Components/Singletons/DeletePlayerQueueSingleton.h"
 
@@ -10,8 +11,8 @@ namespace ConnectionSystem
     void SetGuidValue(PlayerUpdateDataComponent& updateData, u16 index, u64 value)
     {
         updateData.playerFields.WriteAt<u64>(value, index * 4);
-        updateData.updateMask.SetBit(index);
-        updateData.updateMask.SetBit(index + 1);
+        updateData.changesMask.SetBit(index);
+        updateData.changesMask.SetBit(index + 1);
     }
 
     void Update(entt::registry &registry)
@@ -38,7 +39,7 @@ namespace ConnectionSystem
                         /* Login Code Here */
                         updateData.playerFields.Clean();
                         updateData.playerFields.Resize(PLAYER_END * 4);
-                        updateData.updateMask.Reset();
+                        updateData.changesMask.Reset();
 
                         /* SMSG_LOGIN_VERIFY_WORLD */
                         Common::ByteBuffer verifyWorld;
@@ -144,7 +145,7 @@ namespace ConnectionSystem
                         /* Set Initial Fields */
                         SetGuidValue(updateData, OBJECT_FIELD_GUID, connection.characterGuid);
                         SetFieldValue<u32>(updateData, OBJECT_FIELD_TYPE, 0x19); // Object Type Player (Player, Unit, Object)
-                        SetFieldValue<f32>(updateData, OBJECT_FIELD_SCALE_X, 1.0f); // Object Type Player (Player, Unit, Object)
+                        SetFieldValue<f32>(updateData, OBJECT_FIELD_SCALE_X, 1.0f);
 
                         SetFieldValue<u8>(updateData, UNIT_FIELD_BYTES_0, 4, 0);
                         SetFieldValue<u8>(updateData, UNIT_FIELD_BYTES_0, 1, 1);
@@ -166,7 +167,7 @@ namespace ConnectionSystem
                         SetFieldValue<u32>(updateData, UNIT_FIELD_MAXPOWER5, 0);
                         SetFieldValue<u32>(updateData, UNIT_FIELD_MAXPOWER6, 8);
                         SetFieldValue<u32>(updateData, UNIT_FIELD_MAXPOWER7, 1000);
-                        SetFieldValue<u32>(updateData, UNIT_FIELD_LEVEL, 80);
+                        SetFieldValue<u32>(updateData, UNIT_FIELD_LEVEL, 1);
                         SetFieldValue<u32>(updateData, UNIT_FIELD_FACTIONTEMPLATE, 1);
                         SetFieldValue<u32>(updateData, UNIT_FIELD_FLAGS, 0x00000008);
                         SetFieldValue<u32>(updateData, UNIT_FIELD_FLAGS_2, 0x00000800);
@@ -321,9 +322,11 @@ namespace ConnectionSystem
                         case Common::Opcode::CMSG_STANDSTATECHANGE:
                         {
                             u32 standState = 0;
-                            packet.data.Read<uint32_t>(standState);
+                            packet.data.Read<u32>(standState);
 
                             /* Should Update Unit Field Here */
+                            SetFieldValue<u8>(updateData, UNIT_FIELD_BYTES_1, u8(standState));
+                            SetFieldValue<u32>(updateData, UNIT_FIELD_LEVEL, 2);
 
                             packetHeader.opcode = Common::Opcode::SMSG_STANDSTATE_UPDATE;
                             packetHeader.size = 1;
@@ -333,6 +336,15 @@ namespace ConnectionSystem
 
                             standStateChange.Write<u8>(u8(standState));
                             novusConnection.SendPacket(standStateChange);
+                            packet.handled = true;
+                            break;
+                        }
+                        case Common::Opcode::CMSG_SET_SELECTION:
+                        {
+                            u64 selectedGuid = 0;
+                            packet.data.Read<u64>(selectedGuid);
+
+                            SetGuidValue(updateData, UNIT_FIELD_TARGET, selectedGuid);
                             packet.handled = true;
                             break;
                         }
