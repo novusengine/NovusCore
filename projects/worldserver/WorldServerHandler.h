@@ -33,6 +33,7 @@ enum InputMessages
 {
 	MSG_IN_EXIT,
 	MSG_IN_PING,
+    MSG_IN_SET_CONNECTION,
     MSG_IN_FOWARD_PACKET
 };
 

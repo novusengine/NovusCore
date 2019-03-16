@@ -67,6 +67,9 @@ int main()
     });
 
     NC_LOG_MESSAGE("Worldserver established node connection to Relayserver.");
+    Message setConnectionMessage;
+    setConnectionMessage.code = MSG_IN_SET_CONNECTION;
+    worldServerHandler.PassMessage(setConnectionMessage);
 
     ConsoleCommandHandler consoleCommandHandler;
 	auto future = std::async(std::launch::async, GetLineFromCin);

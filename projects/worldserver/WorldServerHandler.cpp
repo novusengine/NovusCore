@@ -33,8 +33,6 @@ WorldServerHandler::~WorldServerHandler()
 void WorldServerHandler::SetNovusConnection(NovusConnection* connection)
 {
     _novusConnection = connection;
-    SingletonComponent& singletonComponent = _updateFramework.registry.get<SingletonComponent>(0);
-    singletonComponent.connection = _novusConnection;
 }
 
 void WorldServerHandler::PassMessage(Message& message)
@@ -153,6 +151,12 @@ bool WorldServerHandler::Update()
                 pongMessage.code = MSG_OUT_PRINT;
                 pongMessage.message = new std::string("PONG!");
                 _outputQueue.enqueue(pongMessage);
+            }
+
+            if (message.code == MSG_IN_SET_CONNECTION)
+            {
+                SingletonComponent& singletonComponent = _updateFramework.registry.get<SingletonComponent>(0);
+                singletonComponent.connection = _novusConnection;
             }
 
             if (message.code == MSG_IN_FOWARD_PACKET)
