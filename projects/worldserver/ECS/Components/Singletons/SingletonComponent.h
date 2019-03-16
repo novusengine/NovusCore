@@ -22,12 +22,17 @@
     SOFTWARE.
 */
 #pragma once
-#include "../WorldServerHandler.h"
-#include "../Message.h"
+#include <NovusTypes.h> 
+#include <unordered_map>
 
-void PingCommand(WorldServerHandler& worldServerHandler, std::vector<std::string> subCommands)
+class NovusConnection;
+class WorldServerHandler;
+struct SingletonComponent 
 {
-	Message pingMessage;
-	pingMessage.code = MSG_IN_PING;
-	worldServerHandler.PassMessage(pingMessage);
-}
+	f32 deltaTime;
+	f32 lifeTime;
+	f32 lifeTimeInMS;
+	NovusConnection* connection;
+	WorldServerHandler* worldServerHandler;
+    std::unordered_map<u64, u32> accountToEntityMap;
+};

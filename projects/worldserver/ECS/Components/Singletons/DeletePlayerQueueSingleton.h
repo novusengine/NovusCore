@@ -22,12 +22,17 @@
     SOFTWARE.
 */
 #pragma once
-#include "../WorldServerHandler.h"
+#include <NovusTypes.h>
 #include "../Message.h"
+#include "Utils/ConcurrentQueue.h"
 
-void PingCommand(WorldServerHandler& worldServerHandler, std::vector<std::string> subCommands)
+struct ExpiredPlayerData
 {
-	Message pingMessage;
-	pingMessage.code = MSG_IN_PING;
-	worldServerHandler.PassMessage(pingMessage);
-}
+    u64 account;
+    u32 guid;
+};
+
+struct DeletePlayerQueueSingleton
+{
+    ConcurrentQueue<ExpiredPlayerData>* expiredEntityQueue;
+};

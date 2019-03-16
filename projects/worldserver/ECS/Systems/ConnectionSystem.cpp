@@ -1,7 +1,7 @@
 #include "ConnectionSystem.h"
 #include <Networking/Opcode/Opcode.h>
-#include "../Components/SingletonComponent.h"
-#include "../Components/DeletePlayerQueueSingleton.h"
+#include "../Components/Singletons/SingletonComponent.h"
+#include "../Components/Singletons/DeletePlayerQueueSingleton.h"
 
 namespace ConnectionSystem
 {

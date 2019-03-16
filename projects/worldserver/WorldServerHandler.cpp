@@ -12,10 +12,10 @@
 #include "ECS/Systems/CreatePlayerSystem.h"
 #include "ECS/Systems/DeletePlayerSystem.h"
 
-#include "ECS/Components/SingletonComponent.h"
-#include "ECS/Components/CreatePlayerQueueSingleton.h"
-#include "ECS/Components/PlayerUpdatesQueueSingleton.h"
-#include "ECS/Components/DeletePlayerQueueSingleton.h"
+#include "ECS/Components/Singletons/SingletonComponent.h"
+#include "ECS/Components/Singletons/CreatePlayerQueueSingleton.h"
+#include "ECS/Components/Singletons/PlayerUpdatesQueueSingleton.h"
+#include "ECS/Components/Singletons/DeletePlayerQueueSingleton.h"
 #include "Connections/NovusConnection.h"
 
 WorldServerHandler::WorldServerHandler(f32 targetTickRate)

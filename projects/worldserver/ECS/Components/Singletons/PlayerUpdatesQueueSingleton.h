@@ -22,12 +22,27 @@
     SOFTWARE.
 */
 #pragma once
-#include "../WorldServerHandler.h"
-#include "../Message.h"
+#include <NovusTypes.h>
+#include <vector>
+#include <Networking/ByteBuffer.h>
 
-void PingCommand(WorldServerHandler& worldServerHandler, std::vector<std::string> subCommands)
+struct PlayerUpdatePacket
 {
-	Message pingMessage;
-	pingMessage.code = MSG_IN_PING;
-	worldServerHandler.PassMessage(pingMessage);
-}
+    u16 opcode;
+    u32 characterGuid;
+    u8 updateType;
+    Common::ByteBuffer data;
+};
+
+struct MovementPacket
+{
+    u16 opcode;
+    u32 characterGuid;
+    Common::ByteBuffer data;
+};
+
+struct PlayerUpdatesQueueSingleton
+{
+    std::vector<PlayerUpdatePacket> playerUpdatePacketQueue;
+    std::vector<MovementPacket> playerMovementPacketQueue;
+};

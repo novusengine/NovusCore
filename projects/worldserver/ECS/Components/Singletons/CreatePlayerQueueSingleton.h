@@ -22,12 +22,11 @@
     SOFTWARE.
 */
 #pragma once
-#include "../WorldServerHandler.h"
+#include <NovusTypes.h>
 #include "../Message.h"
+#include "Utils/ConcurrentQueue.h"
 
-void PingCommand(WorldServerHandler& worldServerHandler, std::vector<std::string> subCommands)
+struct CreatePlayerQueueSingleton
 {
-	Message pingMessage;
-	pingMessage.code = MSG_IN_PING;
-	worldServerHandler.PassMessage(pingMessage);
-}
+    ConcurrentQueue<Message>* newEntityQueue;
+};
