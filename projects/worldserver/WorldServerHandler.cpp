@@ -16,6 +16,7 @@
 #include "ECS/Components/Singletons/CreatePlayerQueueSingleton.h"
 #include "ECS/Components/Singletons/PlayerUpdatesQueueSingleton.h"
 #include "ECS/Components/Singletons/DeletePlayerQueueSingleton.h"
+#include "ECS/Components/Singletons/CharacterDatabaseCacheSingleton.h"
 #include "Connections/NovusConnection.h"
 
 WorldServerHandler::WorldServerHandler(f32 targetTickRate)
@@ -75,11 +76,15 @@ void WorldServerHandler::Run()
     CreatePlayerQueueSingleton& createPlayerQueueComponent = _updateFramework.registry.assign<CreatePlayerQueueSingleton>(0);
     PlayerUpdatesQueueSingleton& playerUpdatesQueueSingleton = _updateFramework.registry.assign<PlayerUpdatesQueueSingleton>(0);
     DeletePlayerQueueSingleton& deletePlayerQueueSingleton = _updateFramework.registry.assign<DeletePlayerQueueSingleton>(0);
+    CharacterDatabaseCacheSingleton& characterDatabaseCacheSingleton = _updateFramework.registry.assign<CharacterDatabaseCacheSingleton>(0);
     singletonComponent.worldServerHandler = this;
     singletonComponent.connection = _novusConnection;
     singletonComponent.deltaTime = 1.0f;
     createPlayerQueueComponent.newEntityQueue = new ConcurrentQueue<Message>(256);
     deletePlayerQueueSingleton.expiredEntityQueue = new ConcurrentQueue<ExpiredPlayerData>(256);
+    characterDatabaseCacheSingleton.cache = new CharacterDatabaseCache();
+
+    characterDatabaseCacheSingleton.cache->Load();
 
     Timer timer;
 

@@ -6,6 +6,7 @@
 
 #include "../Components/Singletons/SingletonComponent.h"
 #include "../Components/Singletons/DeletePlayerQueueSingleton.h"
+#include "../Components/Singletons/CharacterDatabaseCacheSingleton.h"
 
 namespace ConnectionSystem
 {
@@ -22,11 +23,12 @@ namespace ConnectionSystem
     {
 		SingletonComponent& singleton = registry.get<SingletonComponent>(0);
         DeletePlayerQueueSingleton& deletePlayerQueue = registry.get<DeletePlayerQueueSingleton>(0);
+        CharacterDatabaseCacheSingleton& characterDatabase = registry.get<CharacterDatabaseCacheSingleton>(0);
 		NovusConnection& novusConnection = *singleton.connection;
 
         auto view = registry.view<ConnectionComponent, PlayerUpdateDataComponent, PositionComponent>();
 
-        view.each([&singleton, &deletePlayerQueue, &novusConnection](const auto, ConnectionComponent& connection, PlayerUpdateDataComponent& updateData, PositionComponent& positionData)
+        view.each([&singleton, &deletePlayerQueue, &characterDatabase, &novusConnection](const auto, ConnectionComponent& connection, PlayerUpdateDataComponent& updateData, PositionComponent& positionData)
         {
             NovusHeader packetHeader;
             packetHeader.command = NOVUS_FORWARDPACKET;
@@ -145,9 +147,8 @@ namespace ConnectionSystem
                         novusConnection.SendPacket(loginSetTimeSpeed);
 
                         /* Set Initial Fields */
-                        CharacterDatabaseCache characterDatabaseCache;
-                        const CharacterData characterData = characterDatabaseCache.GetCharacterDataReadOnly(connection.characterGuid);
-                        const CharacterVisualData characterVisualData = characterDatabaseCache.GetCharacterVisualDataReadOnly(connection.characterGuid);
+                        const CharacterData characterData = characterDatabase.cache->GetCharacterDataReadOnly(connection.characterGuid);
+                        const CharacterVisualData characterVisualData = characterDatabase.cache->GetCharacterVisualDataReadOnly(connection.characterGuid);
 
                         SetGuidValue(updateData, OBJECT_FIELD_GUID, connection.characterGuid);
                         SetFieldValue<u32>(updateData, OBJECT_FIELD_TYPE, 0x19); // Object Type Player (Player, Unit, Object)
@@ -363,8 +364,7 @@ namespace ConnectionSystem
                             u64 guid;
                             packet.data.Read<u64>(guid);
 
-                            CharacterDatabaseCache characterDatabaseCache;
-                            const CharacterData characterData = characterDatabaseCache.GetCharacterDataReadOnly(guid);
+                            const CharacterData characterData = characterDatabase.cache->GetCharacterDataReadOnly(guid);
 
                             NovusHeader novusHeader;
                             Common::ByteBuffer nameQueryForward;

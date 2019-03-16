@@ -34,6 +34,7 @@
 #include "../Components/PositionComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
 #include "../Components/Singletons/CreatePlayerQueueSingleton.h"
+#include "../Components/Singletons/CharacterDatabaseCacheSingleton.h"
 
 namespace CreatePlayerSystem
 {
@@ -41,6 +42,7 @@ namespace CreatePlayerSystem
     {
 		SingletonComponent& singleton = registry.get<SingletonComponent>(0);
         CreatePlayerQueueSingleton& createPlayerQueue = registry.get<CreatePlayerQueueSingleton>(0);
+        CharacterDatabaseCacheSingleton& characterDatabase = registry.get<CharacterDatabaseCacheSingleton>(0);
 
         Message message;
         while (createPlayerQueue.newEntityQueue->try_dequeue(message))
@@ -52,8 +54,7 @@ namespace CreatePlayerSystem
             ConnectionComponent& connection = registry.assign<ConnectionComponent>(entity, u32(message.account), playerGuid, false);
             connection.packets.push_back({ u32(message.opcode), false, message.packet });
 
-            CharacterDatabaseCache characterDatabaseCache;
-            const CharacterData characterData = characterDatabaseCache.GetCharacterDataReadOnly(playerGuid);
+            const CharacterData characterData = characterDatabase.cache->GetCharacterDataReadOnly(playerGuid);
 
             // -8949.950195f, -132.492996f, 83.531197f, 0.f
             registry.assign<PlayerUpdateDataComponent>(entity);

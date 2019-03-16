@@ -26,7 +26,7 @@ struct CharacterData
         _isReadOnly = isReadOnly;
     }
 
-    u32 guid;
+    u64 guid;
     u32 account;
     std::string name;
     u8 race;
@@ -64,7 +64,7 @@ struct CharacterVisualData
         _isReadOnly = isReadOnly;
     }
 
-    u32 guid;
+    u64 guid;
     u8 skin;
     u8 face;
     u8 facialStyle;
@@ -92,14 +92,14 @@ public:
     void SaveAsync() override;
 
     // Character cache
-    CharacterData GetCharacterData(u32 guid);
-    const CharacterData GetCharacterDataReadOnly(u32 guid);
+    CharacterData GetCharacterData(u64 guid);
+    const CharacterData GetCharacterDataReadOnly(u64 guid);
 
     // Character Visual cache
-    CharacterVisualData GetCharacterVisualData(u32 guid);
-    const CharacterVisualData GetCharacterVisualDataReadOnly(u32 guid);
+    CharacterVisualData GetCharacterVisualData(u64 guid);
+    const CharacterVisualData GetCharacterVisualDataReadOnly(u64 guid);
 
 private:
-    std::unordered_map<u32, CharacterData> _characterDataCache;
-    std::unordered_map<u32, CharacterVisualData> _characterVisualDataCache;
+    std::unordered_map<u64, CharacterData> _characterDataCache;
+    std::unordered_map<u64, CharacterVisualData> _characterVisualDataCache;
 };
