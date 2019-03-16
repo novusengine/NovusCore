@@ -1,6 +1,9 @@
 #include "ConnectionSystem.h"
 #include <Networking/Opcode/Opcode.h>
 #include "../NovusEnums.h"
+
+#include "../DatabaseCache/CharacterDatabaseCache.h"
+
 #include "../Components/Singletons/SingletonComponent.h"
 #include "../Components/Singletons/DeletePlayerQueueSingleton.h"
 
@@ -95,7 +98,7 @@ namespace ConnectionSystem
                         packetHeader.AddTo(motd);
 
                         motd.Write<u32>(1);
-                        motd.WriteString("Welcome");
+                        motd.WriteString("Welcome to NovusCore!");
 
                         packetHeader.size = (u16)motd.GetActualSize();
                         packetHeader.AddTo(motdForwardPacket);
@@ -112,7 +115,6 @@ namespace ConnectionSystem
                         learnedDanceMoves.Write<u32>(0);
                         learnedDanceMoves.Write<u32>(0);
                         novusConnection.SendPacket(learnedDanceMoves);
-
 
                         /* SMSG_ACTION_BUTTONS */
                         Common::ByteBuffer actionButtons;
@@ -143,13 +145,16 @@ namespace ConnectionSystem
                         novusConnection.SendPacket(loginSetTimeSpeed);
 
                         /* Set Initial Fields */
+                        CharacterDatabaseCache characterDatabaseCache;
+                        CharacterData characterData = characterDatabaseCache.GetCharacterData(connection.characterGuid);
+
                         SetGuidValue(updateData, OBJECT_FIELD_GUID, connection.characterGuid);
                         SetFieldValue<u32>(updateData, OBJECT_FIELD_TYPE, 0x19); // Object Type Player (Player, Unit, Object)
                         SetFieldValue<f32>(updateData, OBJECT_FIELD_SCALE_X, 1.0f);
 
-                        SetFieldValue<u8>(updateData, UNIT_FIELD_BYTES_0, 4, 0);
-                        SetFieldValue<u8>(updateData, UNIT_FIELD_BYTES_0, 1, 1);
-                        SetFieldValue<u8>(updateData, UNIT_FIELD_BYTES_0, 1, 2);
+                        SetFieldValue<u8>(updateData, UNIT_FIELD_BYTES_0, characterData.race, 0);
+                        SetFieldValue<u8>(updateData, UNIT_FIELD_BYTES_0, characterData.classId, 1);
+                        SetFieldValue<u8>(updateData, UNIT_FIELD_BYTES_0, characterData.gender, 2);
                         SetFieldValue<u8>(updateData, UNIT_FIELD_BYTES_0, 1, 3);
                         SetFieldValue<u32>(updateData, UNIT_FIELD_HEALTH, 60);
                         SetFieldValue<u32>(updateData, UNIT_FIELD_POWER1, 0);
@@ -167,7 +172,7 @@ namespace ConnectionSystem
                         SetFieldValue<u32>(updateData, UNIT_FIELD_MAXPOWER5, 0);
                         SetFieldValue<u32>(updateData, UNIT_FIELD_MAXPOWER6, 8);
                         SetFieldValue<u32>(updateData, UNIT_FIELD_MAXPOWER7, 1000);
-                        SetFieldValue<u32>(updateData, UNIT_FIELD_LEVEL, 1);
+                        SetFieldValue<u32>(updateData, UNIT_FIELD_LEVEL, characterData.level);
                         SetFieldValue<u32>(updateData, UNIT_FIELD_FACTIONTEMPLATE, 1);
                         SetFieldValue<u32>(updateData, UNIT_FIELD_FLAGS, 0x00000008);
                         SetFieldValue<u32>(updateData, UNIT_FIELD_FLAGS_2, 0x00000800);
@@ -176,8 +181,10 @@ namespace ConnectionSystem
                         SetFieldValue<u32>(updateData, UNIT_FIELD_RANGEDATTACKTIME, 0);
                         SetFieldValue<f32>(updateData, UNIT_FIELD_BOUNDINGRADIUS, 0.208000f);
                         SetFieldValue<f32>(updateData, UNIT_FIELD_COMBATREACH, 1.5f);
-                        SetFieldValue<u32>(updateData, UNIT_FIELD_DISPLAYID, 56);
-                        SetFieldValue<u32>(updateData, UNIT_FIELD_NATIVEDISPLAYID, 50);
+
+                        u32 displayId = (47 + characterData.race * 2) + characterData.gender;
+                        SetFieldValue<u32>(updateData, UNIT_FIELD_DISPLAYID, displayId);
+                        SetFieldValue<u32>(updateData, UNIT_FIELD_NATIVEDISPLAYID, displayId);
                         SetFieldValue<u32>(updateData, UNIT_FIELD_MOUNTDISPLAYID, 0);
                         SetFieldValue<f32>(updateData, UNIT_FIELD_MINDAMAGE, 9.007143f);
                         SetFieldValue<f32>(updateData, UNIT_FIELD_MAXDAMAGE, 11.007143f);
@@ -242,9 +249,11 @@ namespace ConnectionSystem
 
                         for (int i = 0; i < 127; ++i)
                         {
-                            SetFieldValue<u32>(updateData, (PLAYER_SKILL_INFO_1_1 + ((i) * 3)), 0);
-                            SetFieldValue<u32>(updateData, (PLAYER_SKILL_INFO_1_1 + ((i) * 3)) + 1, 0);
-                            SetFieldValue<u32>(updateData, (PLAYER_SKILL_INFO_1_1 + ((i) * 3)) + 2, 0);
+                            {
+                                SetFieldValue<u32>(updateData, (PLAYER_SKILL_INFO_1_1 + ((i) * 3)), 0);
+                                SetFieldValue<u32>(updateData, (PLAYER_SKILL_INFO_1_1 + ((i) * 3)) + 1, 0);
+                                SetFieldValue<u32>(updateData, (PLAYER_SKILL_INFO_1_1 + ((i) * 3)) + 2, 0);
+                            }
                         }
 
                         SetFieldValue<u32>(updateData, PLAYER_CHARACTER_POINTS1, 0);
@@ -345,6 +354,34 @@ namespace ConnectionSystem
                             packet.data.Read<u64>(selectedGuid);
 
                             SetGuidValue(updateData, UNIT_FIELD_TARGET, selectedGuid);
+                            packet.handled = true;
+                            break;
+                        }
+                        case Common::Opcode::CMSG_NAME_QUERY:
+                        {
+                            u64 guid;
+                            packet.data.Read<u64>(guid);
+
+                            CharacterDatabaseCache characterDatabaseCache;
+                            CharacterData characterData = characterDatabaseCache.GetCharacterData(guid);
+
+                            NovusHeader novusHeader;
+                            Common::ByteBuffer nameQueryForward;
+                            Common::ByteBuffer nameQuery;
+
+                            nameQuery.AppendGuid(guid);
+                            nameQuery.Write<u8>(0); // Name Unknown (0 = false, 1 = true);
+                            nameQuery.WriteString(characterData.name);
+                            nameQuery.Write<u8>(0);
+                            nameQuery.Write<u8>(characterData.race);
+                            nameQuery.Write<u8>(characterData.gender);
+                            nameQuery.Write<u8>(characterData.classId);
+                            nameQuery.Write<u8>(0);
+
+                            novusHeader.CreateForwardHeader(connection.accountGuid, Common::Opcode::SMSG_NAME_QUERY_RESPONSE, nameQuery.GetActualSize());
+                            novusHeader.AddTo(nameQueryForward);
+                            nameQueryForward.Append(nameQuery);
+                            novusConnection.SendPacket(nameQueryForward);
                             packet.handled = true;
                             break;
                         }

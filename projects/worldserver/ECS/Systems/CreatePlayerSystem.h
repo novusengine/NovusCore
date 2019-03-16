@@ -27,6 +27,8 @@
 #include <Networking/ByteBuffer.h>
 #include "../Message.h"
 
+#include "../DatabaseCache/CharacterDatabaseCache.h"
+
 #include "../Connections/NovusConnection.h"
 #include "../Components/ConnectionComponent.h"
 #include "../Components/PositionComponent.h"
@@ -50,8 +52,12 @@ namespace CreatePlayerSystem
             ConnectionComponent& connection = registry.assign<ConnectionComponent>(entity, u32(message.account), playerGuid, false);
             connection.packets.push_back({ u32(message.opcode), false, message.packet });
 
+            CharacterDatabaseCache characterDatabaseCache;
+            CharacterData characterData = characterDatabaseCache.GetCharacterData(playerGuid);
+
+            // -8949.950195f, -132.492996f, 83.531197f, 0.f
             registry.assign<PlayerUpdateDataComponent>(entity);
-            registry.assign<PositionComponent>(entity, 0u, -8949.950195f, -132.492996f, 83.531197f, 0.f);
+            registry.assign<PositionComponent>(entity, characterData.mapId, characterData.coordinateX, characterData.coordinateY, characterData.coordinateZ, characterData.orientation);
 
             singleton.accountToEntityMap[u32(message.account)] = entity;
         }
