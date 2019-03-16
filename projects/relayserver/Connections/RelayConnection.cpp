@@ -209,10 +209,13 @@ bool RelayConnection::HandlePacketRead()
         case Common::Opcode::CMSG_KEEP_ALIVE:
             break;
         case Common::Opcode::CMSG_AUTH_SESSION:
-            HandleAuthSession();
+            if (account == 0)
+            {
+                HandleAuthSession();
+            }
             break;
         default:
-            std::cout << "Forwarding Opcode: 0x" << std::uppercase << std::hex << opcode << std::dec << "(" << opcode << ")" << std::endl;
+            //std::cout << "Forwarding Opcode: 0x" << std::uppercase << std::hex << opcode << std::dec << "(" << opcode << ")" << std::endl;
 
             if (opcode == Common::Opcode::CMSG_READY_FOR_ACCOUNT_DATA_TIMES || opcode == Common::Opcode::CMSG_UPDATE_ACCOUNT_DATA
                 || opcode == Common::Opcode::CMSG_REALM_SPLIT || opcode == Common::Opcode::CMSG_CHAR_ENUM
@@ -348,7 +351,6 @@ void RelayConnection::HandleAuthSession()
             Close(asio::error::interrupted);
             return;
         }
-        account = results[0][0].as<amy::sql_int_unsigned>();
 
         // We need to try to use the session key that we have, if we don't the client won't be able to read the auth response error.
         sessionKey->Hex2BN(results[0][1].as<amy::sql_varchar>().c_str());
@@ -368,6 +370,7 @@ void RelayConnection::HandleAuthSession()
             Close(asio::error::interrupted);
             return;
         }
+        account = results[0][0].as<amy::sql_int_unsigned>();
 
         /* SMSG_AUTH_RESPONSE */
         Common::ByteBuffer packet(1 + 4 + 1 + 4 + 1);
