@@ -146,7 +146,8 @@ namespace ConnectionSystem
 
                         /* Set Initial Fields */
                         CharacterDatabaseCache characterDatabaseCache;
-                        CharacterData characterData = characterDatabaseCache.GetCharacterData(connection.characterGuid);
+                        const CharacterData characterData = characterDatabaseCache.GetCharacterDataReadOnly(connection.characterGuid);
+                        const CharacterVisualData characterVisualData = characterDatabaseCache.GetCharacterVisualDataReadOnly(connection.characterGuid);
 
                         SetGuidValue(updateData, OBJECT_FIELD_GUID, connection.characterGuid);
                         SetFieldValue<u32>(updateData, OBJECT_FIELD_TYPE, 0x19); // Object Type Player (Player, Unit, Object)
@@ -222,16 +223,16 @@ namespace ConnectionSystem
                         SetFieldValue<f32>(updateData, UNIT_FIELD_MAXRANGEDDAMAGE, 0);
                         SetFieldValue<f32>(updateData, UNIT_FIELD_HOVERHEIGHT, 1);
 
-                        SetFieldValue<u32>(updateData, PLAYER_FLAGS, 0);
-                        SetFieldValue<u8>(updateData, PLAYER_BYTES, 1, 0);
-                        SetFieldValue<u8>(updateData, PLAYER_BYTES, 1, 1);
-                        SetFieldValue<u8>(updateData, PLAYER_BYTES, 1, 2);
-                        SetFieldValue<u8>(updateData, PLAYER_BYTES, 1, 3);
-                        SetFieldValue<u8>(updateData, PLAYER_BYTES_2, 1, 0);
+                        SetFieldValue<u32>(updateData, PLAYER_FLAGS, 0x8000); // Developer Flag
+                        SetFieldValue<u8>(updateData, PLAYER_BYTES, characterVisualData.skin, 0);
+                        SetFieldValue<u8>(updateData, PLAYER_BYTES, characterVisualData.face, 1);
+                        SetFieldValue<u8>(updateData, PLAYER_BYTES, characterVisualData.hairStyle, 2);
+                        SetFieldValue<u8>(updateData, PLAYER_BYTES, characterVisualData.hairColor, 3);
+                        SetFieldValue<u8>(updateData, PLAYER_BYTES_2, characterVisualData.facialStyle, 0);
                         SetFieldValue<u8>(updateData, PLAYER_BYTES_2, 0, 1);
                         SetFieldValue<u8>(updateData, PLAYER_BYTES_2, 0, 2);
                         SetFieldValue<u8>(updateData, PLAYER_BYTES_2, 3, 3);
-                        SetFieldValue<u8>(updateData, PLAYER_BYTES_3, 1, 0);
+                        SetFieldValue<u8>(updateData, PLAYER_BYTES_3, characterData.gender, 0);
                         SetFieldValue<u8>(updateData, PLAYER_BYTES_3, 0, 1);
                         SetFieldValue<u8>(updateData, PLAYER_BYTES_3, 0, 2);
                         SetFieldValue<u8>(updateData, PLAYER_BYTES_3, 0, 3);
@@ -363,7 +364,7 @@ namespace ConnectionSystem
                             packet.data.Read<u64>(guid);
 
                             CharacterDatabaseCache characterDatabaseCache;
-                            CharacterData characterData = characterDatabaseCache.GetCharacterData(guid);
+                            const CharacterData characterData = characterDatabaseCache.GetCharacterDataReadOnly(guid);
 
                             NovusHeader novusHeader;
                             Common::ByteBuffer nameQueryForward;

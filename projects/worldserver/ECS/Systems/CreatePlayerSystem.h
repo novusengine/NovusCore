@@ -53,7 +53,7 @@ namespace CreatePlayerSystem
             connection.packets.push_back({ u32(message.opcode), false, message.packet });
 
             CharacterDatabaseCache characterDatabaseCache;
-            CharacterData characterData = characterDatabaseCache.GetCharacterData(playerGuid);
+            const CharacterData characterData = characterDatabaseCache.GetCharacterDataReadOnly(playerGuid);
 
             // -8949.950195f, -132.492996f, 83.531197f, 0.f
             registry.assign<PlayerUpdateDataComponent>(entity);

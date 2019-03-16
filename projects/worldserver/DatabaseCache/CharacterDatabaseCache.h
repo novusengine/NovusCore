@@ -48,6 +48,37 @@ private:
     CharacterDatabaseCache* _cache;
     bool _isReadOnly;
 };
+// Character_visual_data table in DB
+struct CharacterVisualData
+{
+    CharacterVisualData(CharacterDatabaseCache* cache, bool isReadOnly) { _cache = cache; _isReadOnly = isReadOnly; }
+    CharacterVisualData(CharacterVisualData& data, bool isReadOnly)
+    {
+        guid = data.guid;
+        skin = data.skin;
+        face = data.face;
+        facialStyle = data.facialStyle;
+        hairStyle = data.hairStyle;
+        hairColor = data.hairColor;
+        _cache = data._cache;
+        _isReadOnly = isReadOnly;
+    }
+
+    u32 guid;
+    u8 skin;
+    u8 face;
+    u8 facialStyle;
+    u8 hairStyle;
+    u8 hairColor;
+
+    void UpdateCache()
+    {
+        assert(!_isReadOnly);
+    }
+private:
+    CharacterDatabaseCache* _cache;
+    bool _isReadOnly;
+};
 
 class CharacterDatabaseCache : BaseDatabaseCache
 {
@@ -64,6 +95,11 @@ public:
     CharacterData GetCharacterData(u32 guid);
     const CharacterData GetCharacterDataReadOnly(u32 guid);
 
+    // Character Visual cache
+    CharacterVisualData GetCharacterVisualData(u32 guid);
+    const CharacterVisualData GetCharacterVisualDataReadOnly(u32 guid);
+
 private:
     std::unordered_map<u32, CharacterData> _characterDataCache;
+    std::unordered_map<u32, CharacterVisualData> _characterVisualDataCache;
 };

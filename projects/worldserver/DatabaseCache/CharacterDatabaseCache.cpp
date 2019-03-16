@@ -76,9 +76,55 @@ CharacterData CharacterDatabaseCache::GetCharacterData(u32 guid)
         return newCharacterData;
     }
 }
-
 const CharacterData CharacterDatabaseCache::GetCharacterDataReadOnly(u32 guid)
 {
     CharacterData characterData(GetCharacterData(guid), true);
     return characterData;
+}
+
+CharacterVisualData CharacterDatabaseCache::GetCharacterVisualData(u32 guid)
+{
+    auto cache = _characterVisualDataCache.find(guid);
+    if (cache != _characterVisualDataCache.end())
+    {
+        _accessMutex.lock_shared();
+        CharacterVisualData characterVisualData = cache->second;
+        _accessMutex.unlock_shared();
+
+        return characterVisualData;
+    }
+    else
+    {
+        // We don't have the character, so we load it
+        std::shared_ptr<DatabaseConnector> connector;
+        bool result = DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, connector);
+        assert(result);
+
+        PreparedStatement stmt("SELECT * FROM character_visual_data WHERE guid = {u};");
+        stmt.Bind(guid);
+
+        amy::result_set resultSet;
+        connector->Query(stmt, resultSet);
+
+        assert(resultSet.affected_rows() == 1);
+
+        CharacterVisualData newCharacterVisualData(this, false);
+        newCharacterVisualData.guid = resultSet[0][0].as<amy::sql_int_unsigned>();
+        newCharacterVisualData.skin = resultSet[0][1].as<amy::sql_tinyint_unsigned>();
+        newCharacterVisualData.face = resultSet[0][2].as<amy::sql_tinyint_unsigned>();
+        newCharacterVisualData.facialStyle = resultSet[0][3].as<amy::sql_tinyint_unsigned>();
+        newCharacterVisualData.hairStyle = resultSet[0][4].as<amy::sql_tinyint_unsigned>();
+        newCharacterVisualData.hairColor = resultSet[0][5].as<amy::sql_tinyint_unsigned>();
+
+        _accessMutex.lock();
+        _characterVisualDataCache.insert({ guid, newCharacterVisualData });
+        _accessMutex.unlock();
+
+        return newCharacterVisualData;
+    }
+}
+const CharacterVisualData CharacterDatabaseCache::GetCharacterVisualDataReadOnly(u32 guid)
+{
+    CharacterVisualData characterVisualData(GetCharacterVisualData(guid), true);
+    return characterVisualData;
 }
