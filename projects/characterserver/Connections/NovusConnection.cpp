@@ -222,7 +222,7 @@ bool NovusConnection::HandleCommandProof()
 bool NovusConnection::HandleCommandForwardPacket()
 {
     NovusHeader* header = reinterpret_cast<NovusHeader*>(_headerBuffer.GetReadPointer());
-    std::cout << "Received opcode: 0x" << std::hex << std::uppercase << header->opcode << std::endl;
+    //std::cout << "Received opcode: 0x" << std::hex << std::uppercase << header->opcode << std::endl;
 
     switch ((Common::Opcode)header->opcode)
     {

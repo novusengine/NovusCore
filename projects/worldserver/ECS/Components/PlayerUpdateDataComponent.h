@@ -42,6 +42,14 @@ struct PositionUpdateData
     u32 fallTime;
 };
 
+struct ChatUpdateData
+{
+    u8 chatType;
+    i32 language;
+    u64 sender;
+    std::string message;
+};
+
 struct PlayerUpdateDataComponent
 {
     PlayerUpdateDataComponent() : changesMask(PLAYER_END), playerFields(PLAYER_END * 4) { }
@@ -74,4 +82,5 @@ struct PlayerUpdateDataComponent
     Common::ByteBuffer playerFields;
     std::vector<u32> visibleGuids;
     std::vector<PositionUpdateData> positionUpdateData;
+    std::vector<ChatUpdateData> chatUpdateData;
 };

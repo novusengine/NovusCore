@@ -41,8 +41,15 @@ struct MovementPacket
     Common::ByteBuffer data;
 };
 
+struct ChatPacket
+{
+    u32 characterGuid;
+    Common::ByteBuffer data;
+};
+
 struct PlayerUpdatesQueueSingleton
 {
     std::vector<PlayerUpdatePacket> playerUpdatePacketQueue;
     std::vector<MovementPacket> playerMovementPacketQueue;
+    std::vector<ChatPacket> playerChatPacketQueue;
 };

@@ -224,26 +224,52 @@ namespace PlayerUpdateDataSystem
                 clientUpdateData.changesMask.Reset();
             }
 
-            for (PositionUpdateData positionData : clientUpdateData.positionUpdateData)
+            if(clientUpdateData.positionUpdateData.size() > 0)
             {
-                MovementPacket movementPacket;
-                movementPacket.opcode = positionData.opcode;
-                movementPacket.characterGuid = clientConnection.characterGuid;
+                for (PositionUpdateData positionData : clientUpdateData.positionUpdateData)
+                {
+                    MovementPacket movementPacket;
+                    movementPacket.opcode = positionData.opcode;
+                    movementPacket.characterGuid = clientConnection.characterGuid;
 
-                movementPacket.data.AppendGuid(movementPacket.characterGuid);
-                movementPacket.data.Write<u32>(positionData.movementFlags);
-                movementPacket.data.Write<u16>(positionData.movementFlagsExtra);
-                movementPacket.data.Write<u32>(positionData.gameTime);
-                movementPacket.data.Write<f32>(positionData.x);
-                movementPacket.data.Write<f32>(positionData.y);
-                movementPacket.data.Write<f32>(positionData.z);
-                movementPacket.data.Write<f32>(positionData.orientation);
-                movementPacket.data.Write<u32>(positionData.fallTime);
+                    movementPacket.data.AppendGuid(movementPacket.characterGuid);
+                    movementPacket.data.Write<u32>(positionData.movementFlags);
+                    movementPacket.data.Write<u16>(positionData.movementFlagsExtra);
+                    movementPacket.data.Write<u32>(positionData.gameTime);
+                    movementPacket.data.Write<f32>(positionData.x);
+                    movementPacket.data.Write<f32>(positionData.y);
+                    movementPacket.data.Write<f32>(positionData.z);
+                    movementPacket.data.Write<f32>(positionData.orientation);
+                    movementPacket.data.Write<u32>(positionData.fallTime);
 
-                playerUpdatesQueue.playerMovementPacketQueue.push_back(movementPacket);
-
-                // Clear Updates
+                    playerUpdatesQueue.playerMovementPacketQueue.push_back(movementPacket);
+                }
+                // Clear Position Updates
                 clientUpdateData.positionUpdateData.clear();
+            }
+
+            if (clientUpdateData.chatUpdateData.size() > 0)
+            {
+                for (ChatUpdateData chatData : clientUpdateData.chatUpdateData)
+                {
+                    ChatPacket chatPacket;
+
+                    chatPacket.data.Write<u8>(chatData.chatType);
+                    chatPacket.data.Write<i32>(chatData.language);
+                    chatPacket.data.Write<u64>(chatData.sender);
+                    chatPacket.data.Write<u32>(0); // Chat Flag (??)
+
+                    // This is based on chatType
+                    chatPacket.data.Write<u64>(0); // Receiver (0) for none
+
+                    chatPacket.data.Write<u32>(u32(chatData.message.length()) + 1);
+                    chatPacket.data.WriteString(chatData.message);
+                    chatPacket.data.Write<u8>(0); // Chat Tag
+
+                    playerUpdatesQueue.playerChatPacketQueue.push_back(chatPacket);
+                }
+                // Clear Chat Updates
+                clientUpdateData.chatUpdateData.clear();
             }
         });
     }

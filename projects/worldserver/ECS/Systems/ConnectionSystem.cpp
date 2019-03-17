@@ -1,5 +1,6 @@
 #include "ConnectionSystem.h"
 #include <Networking/Opcode/Opcode.h>
+#include <Utils/DebugHandler.h>
 #include "../NovusEnums.h"
 
 #include "../DatabaseCache/CharacterDatabaseCache.h"
@@ -190,6 +191,68 @@ namespace ConnectionSystem
                         positionUpdateData.fallTime = fallTime;
                         clientUpdateData.positionUpdateData.push_back(positionUpdateData);
 
+                        packet.handled = true;
+                        break;
+                    }
+                
+                    case Common::Opcode::CMSG_MESSAGECHAT:
+                    {
+                        packet.handled = true;
+
+                        u32 msgType;
+                        u32 msgLang;
+
+                        packet.data.Read<u32>(msgType);
+                        packet.data.Read<u32>(msgLang);
+
+                        if (msgType >= 0x34)
+                        {
+                            // Client tried to use invalid type
+                            break;
+                        }
+
+                        if (msgLang == 0 && msgType != 0x17 && msgType != 0x18)
+                        {
+                            // Client tried to send a message in universal language. (While it not being afk or dnd)
+                            break;
+                        }
+
+                        std::string msgOutput;
+                        switch (msgType)
+                        {
+                            case 0x01: // MSG_SAY
+                            case 0x06: // MSG_YELL
+                            case 0x0A: // MSG_EMOTE
+                            case 0x0B: // MSG_TEXT_EMOTE
+                            {
+                                packet.data.Read(msgOutput);
+                                break;
+                            }
+
+                            default:
+                            {
+                                NC_LOG_MESSAGE("Account(%u), Character(%u) sent unhandled message type %u", clientConnection.accountGuid, clientConnection.characterGuid, msgType);
+                                break;
+                            }
+                        }
+
+                        // Max Message Size is 255
+                        if (msgOutput.size() > 255)
+                            break;
+
+                        /* Build Packet */
+                        ChatUpdateData chatUpdateData;
+                        chatUpdateData.chatType = msgType;
+                        chatUpdateData.language = msgLang;
+                        chatUpdateData.sender = clientConnection.characterGuid;
+                        chatUpdateData.message = msgOutput;
+                        clientUpdateData.chatUpdateData.push_back(chatUpdateData);
+                        break;
+                    }
+                    default:
+                    {
+                        // Mark all unhandled opcodes as handled to prevent the queue from trying to handle them every frame.
+                        NC_LOG_MESSAGE("Account(%u), Character(%u) sent unhandled opcode %u", clientConnection.accountGuid, clientConnection.characterGuid, opcode);
                         packet.handled = true;
                         break;
                     }

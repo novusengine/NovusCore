@@ -90,10 +90,23 @@ namespace ClientUpdateSystem
                     novusConnection.SendPacket(packet);
                 }
             }
+
+            for (ChatPacket chatPacket : playerUpdatesQueue.playerChatPacketQueue)
+            {
+
+                novusHeader.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_MESSAGECHAT, chatPacket.data.size());
+
+                Common::ByteBuffer packet(novusHeader.size);
+                novusHeader.AddTo(packet);
+                packet.Append(chatPacket.data);
+
+                novusConnection.SendPacket(packet);
+            }
         });
 
         // Clear Queues
         playerUpdatesQueue.playerUpdatePacketQueue.clear();
         playerUpdatesQueue.playerMovementPacketQueue.clear();
+        playerUpdatesQueue.playerChatPacketQueue.clear();
 	}
 }

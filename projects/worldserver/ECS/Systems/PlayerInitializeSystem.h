@@ -135,7 +135,7 @@ namespace PlayerInitializeSystem
                 packetHeader.opcode = Common::Opcode::SMSG_INITIAL_SPELLS;
                 Common::ByteBuffer initialSpells;
                 initialSpells.Write<u8>(0);
-                initialSpells.Write<u16>(spellStorageData.spells.size());
+                initialSpells.Write<u16>(u16(spellStorageData.spells.size()));
 
                 for (u32 spell : spellStorageData.spells)
                 {
@@ -267,7 +267,7 @@ namespace PlayerInitializeSystem
             clientUpdateData.SetFieldValue<u32>(PLAYER_XP, 0);
             clientUpdateData.SetFieldValue<u32>(PLAYER_NEXT_LEVEL_XP, 400);
 
-            u32 skillSize = skillStorageData.skills.size();
+            i32 skillSize = i32(skillStorageData.skills.size());
             for (int i = 0; i < 127; ++i)
             {
                 if (i < skillSize)
