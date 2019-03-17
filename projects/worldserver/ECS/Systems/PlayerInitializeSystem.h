@@ -127,8 +127,9 @@ namespace PlayerInitializeSystem
                 actionButtons.Write<u32>(0);
             }
             novusConnection.SendPacket(actionButtons);
+
+
             /* SMSG_INITIAL_SPELLS */
-            
             if (spellStorageData.spells.size() > 0)
             {
                 Common::ByteBuffer initialSpellsForward;
@@ -149,6 +150,18 @@ namespace PlayerInitializeSystem
                 initialSpellsForward.Append(initialSpells);
                 novusConnection.SendPacket(initialSpellsForward);
             }
+
+
+            /* SMSG_ALL_ACHIEVEMENT_DATA */
+            Common::ByteBuffer achivementData;
+            packetHeader.opcode = Common::Opcode::SMSG_ALL_ACHIEVEMENT_DATA;
+            packetHeader.size = 4 + 4;
+            packetHeader.AddTo(achivementData);
+
+            achivementData.Write<i32>(-1);
+            achivementData.Write<i32>(-1);
+            novusConnection.SendPacket(achivementData);
+
 
             /* SMSG_LOGIN_SETTIMESPEED */
             Common::ByteBuffer loginSetTimeSpeed;

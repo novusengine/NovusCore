@@ -58,8 +58,6 @@ void WorldServerHandler::Start()
     thread.detach();
 }
 
-
-
 void WorldServerHandler::Stop()
 {
     if (!_isRunning)

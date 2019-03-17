@@ -75,6 +75,29 @@ namespace CommandParserSystem
                                 if (playerLevel != level)
                                     clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_LEVEL, level);
 
+                                /* I put this in here so that we can unlock the achievement frame when reaching level 10 */
+                                if (level >= 10 && playerLevel < 10)
+                                {
+                                    Common::ByteBuffer achivementData;
+                                    NovusHeader packetHeader;
+                                    packetHeader.command = NOVUS_FORWARDPACKET;
+                                    packetHeader.account = clientConnection.accountGuid;
+                                    packetHeader.opcode = Common::Opcode::SMSG_ACHIEVEMENT_EARNED;
+                                    packetHeader.size = 2 + 4 + 4 + 4;
+                                    packetHeader.AddTo(achivementData);
+
+                                    achivementData.AppendGuid(clientConnection.characterGuid);
+                                    achivementData.Write<u32>(6); // Level 10
+
+                                    tm lt;
+                                    time_t const tmpServerTime = time(nullptr);
+                                    localtime_s(&lt, &tmpServerTime);
+                                    achivementData.Write<u32>(((lt.tm_year - 100) << 24 | lt.tm_mon << 20 | (lt.tm_mday - 1) << 14 | lt.tm_wday << 11 | lt.tm_hour << 6 | lt.tm_min));
+                                    achivementData.Write<u32>(0);
+
+                                    novusConnection.SendPacket(achivementData);
+                                }
+
                                 command.handled = true;
                             }
                             catch (std::exception e)
@@ -85,7 +108,7 @@ namespace CommandParserSystem
                         else
                         {
                             if (playerLevel < 255)
-                                clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_LEVEL, clientUpdateData.GetFieldValue<u32>(UNIT_FIELD_LEVEL) + 1);
+                                clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_LEVEL, playerLevel + 1);
 
                             command.handled = true;
                         }
