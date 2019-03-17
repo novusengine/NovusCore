@@ -7,10 +7,10 @@
 
 // Systems
 #include "ECS/Systems/ConnectionSystem.h"
-#include "ECS/Systems/ClientUpdateSystem.h"
 #include "ECS/Systems/PlayerInitializeSystem.h"
 #include "ECS/Systems/PlayerCreateDataSystem.h"
 #include "ECS/Systems/PlayerUpdateDataSystem.h"
+#include "ECS/Systems/ClientUpdateSystem.h"
 #include "ECS/Systems/CreatePlayerSystem.h"
 #include "ECS/Systems/DeletePlayerSystem.h"
 
@@ -222,7 +222,7 @@ void WorldServerHandler::SetupUpdateFramework()
     });
     playerCreateDataSystem.gather(playerInitializeSystem);
 
-    // playerUpdateDataSystemTask
+    // PlayerUpdateDataSystem
     tf::Task playerUpdateDataSystemTask = framework.emplace([&registry]()
     {
         ZoneScopedNC("PlayerUpdateDataSystem", tracy::Color::Blue2)
@@ -238,7 +238,7 @@ void WorldServerHandler::SetupUpdateFramework()
     });
     clientUpdateSystemTask.gather(playerUpdateDataSystemTask);
 
-    // createPlayerSystemTask
+    // CreatePlayerSystem
     tf::Task createPlayerSystemTask = framework.emplace([&registry]()
     {
         ZoneScopedNC("CreatePlayerSystem", tracy::Color::Blue2)
@@ -246,7 +246,7 @@ void WorldServerHandler::SetupUpdateFramework()
     });
     createPlayerSystemTask.gather(clientUpdateSystemTask); 
 
-    // deletePlayerSystemTask
+    // DeletePlayerSystem
     tf::Task deletePlayerSystemTask = framework.emplace([&registry]()
     {
         ZoneScopedNC("DeletePlayerSystem", tracy::Color::Blue2)
