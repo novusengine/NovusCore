@@ -48,6 +48,7 @@ struct ChatUpdateData
     i32 language;
     u64 sender;
     std::string message;
+    bool handled;
 };
 
 struct PlayerUpdateDataComponent

@@ -205,25 +205,31 @@ namespace ConnectionSystem
                         packet.data.Read<u32>(msgType);
                         packet.data.Read<u32>(msgLang);
 
-                        if (msgType >= 0x34)
+                        if (msgType >= MAX_MSG_TYPE)
                         {
                             // Client tried to use invalid type
                             break;
                         }
 
-                        if (msgLang == 0 && msgType != 0x17 && msgType != 0x18)
+                        if (msgLang == LANG_UNIVERSAL && msgType != CHAT_MSG_AFK && msgType != CHAT_MSG_DND)
                         {
                             // Client tried to send a message in universal language. (While it not being afk or dnd)
+                            break;
+                        }
+
+                        if (msgType == CHAT_MSG_AFK || msgType == CHAT_MSG_DND)
+                        {
+                            // We don't want to send this message to any client.
                             break;
                         }
 
                         std::string msgOutput;
                         switch (msgType)
                         {
-                            case 0x01: // MSG_SAY
-                            case 0x06: // MSG_YELL
-                            case 0x0A: // MSG_EMOTE
-                            case 0x0B: // MSG_TEXT_EMOTE
+                            case CHAT_MSG_SAY:
+                            case CHAT_MSG_YELL:
+                            case CHAT_MSG_EMOTE:
+                            case CHAT_MSG_TEXT_EMOTE:
                             {
                                 packet.data.Read(msgOutput);
                                 break;
@@ -246,6 +252,7 @@ namespace ConnectionSystem
                         chatUpdateData.language = msgLang;
                         chatUpdateData.sender = clientConnection.characterGuid;
                         chatUpdateData.message = msgOutput;
+                        chatUpdateData.handled = false;
                         clientUpdateData.chatUpdateData.push_back(chatUpdateData);
                         break;
                     }
@@ -259,13 +266,12 @@ namespace ConnectionSystem
                 }
             }
 
-            std::vector<OpcodePacket>& packets = clientConnection.packets;
-            if (packets.size() > 0)
+            if (clientConnection.packets.size() > 0)
             {
-                packets.erase(std::remove_if(packets.begin(), packets.end(), [](OpcodePacket& packet)
+                clientConnection.packets.erase(std::remove_if(clientConnection.packets.begin(), clientConnection.packets.end(), [](OpcodePacket& packet)
                 {
                     return packet.handled;
-                }), packets.end());
+                }), clientConnection.packets.end());
             }
         });
     }

@@ -8,6 +8,7 @@
 // Systems
 #include "ECS/Systems/ConnectionSystem.h"
 #include "ECS/Systems/PlayerInitializeSystem.h"
+#include "ECS/Systems/CommandParserSystem.h"
 #include "ECS/Systems/PlayerCreateDataSystem.h"
 #include "ECS/Systems/PlayerUpdateDataSystem.h"
 #include "ECS/Systems/ClientUpdateSystem.h"
@@ -199,7 +200,7 @@ void WorldServerHandler::SetupUpdateFramework()
 {
     tf::Framework& framework = _updateFramework.framework;
     entt::registry& registry = _updateFramework.registry;
-
+    
     // ConnectionSystem
     tf::Task connectionSystemTask = framework.emplace([&registry]()
     {
@@ -207,27 +208,35 @@ void WorldServerHandler::SetupUpdateFramework()
         ConnectionSystem::Update(registry);
     });
 
+    // CommandParserSystem
+    tf::Task commandParserSystemTask = framework.emplace([&registry]()
+    {
+        ZoneScopedNC("CommandParserSystem", tracy::Color::Blue2)
+        CommandParserSystem::Update(registry);
+    });
+    commandParserSystemTask.gather(connectionSystemTask);
+
     // PlayerInitializeSystem
-    tf::Task playerInitializeSystem = framework.emplace([&registry]()
+    tf::Task playerInitializeSystemTask = framework.emplace([&registry]()
     {
         ZoneScopedNC("PlayerInitializeSystem", tracy::Color::Blue2)
-            PlayerInitializeSystem::Update(registry);
+        PlayerInitializeSystem::Update(registry);
     });
-    playerInitializeSystem.gather(connectionSystemTask);
+    playerInitializeSystemTask.gather(commandParserSystemTask);
 
     // PlayerCreateDataSystem
     tf::Task playerCreateDataSystem = framework.emplace([&registry]()
     {
         ZoneScopedNC("PlayerCreateDataSystem", tracy::Color::Blue2)
-            PlayerCreateDataSystem::Update(registry);
+        PlayerCreateDataSystem::Update(registry);
     });
-    playerCreateDataSystem.gather(playerInitializeSystem);
+    playerCreateDataSystem.gather(playerInitializeSystemTask);
 
     // PlayerUpdateDataSystem
     tf::Task playerUpdateDataSystemTask = framework.emplace([&registry]()
     {
         ZoneScopedNC("PlayerUpdateDataSystem", tracy::Color::Blue2)
-            PlayerUpdateDataSystem::Update(registry);
+        PlayerUpdateDataSystem::Update(registry);
     });
     playerUpdateDataSystemTask.gather(playerCreateDataSystem);
 
@@ -243,7 +252,7 @@ void WorldServerHandler::SetupUpdateFramework()
     tf::Task createPlayerSystemTask = framework.emplace([&registry]()
     {
         ZoneScopedNC("CreatePlayerSystem", tracy::Color::Blue2)
-            CreatePlayerSystem::Update(registry);
+        CreatePlayerSystem::Update(registry);
     });
     createPlayerSystemTask.gather(clientUpdateSystemTask); 
 
