@@ -2,7 +2,7 @@
 
 ### What is NovusCore
 
-NovusCore is an emulating project for World of Warcraft. We aim to support as many versions as we can, in an as flexible manner as possible, meaning that the aim to make it 'easier' to have multiple game builds supported by the same core.
+NovusCore is an emulating project for World of Warcraft. We aim to support as many versions as we can, in an as flexible manner as possible, meaning that the aim is to make it 'easier', to have multiple game builds supported by the same core.
 
 Currently NovusCore is being written baseline for the Wrath of the Lich King 3.3.5a 12340 client build. This is to better enable us to design our architecture around the WoW Client. 
 
