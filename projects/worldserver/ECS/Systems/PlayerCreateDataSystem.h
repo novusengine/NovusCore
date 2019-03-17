@@ -29,17 +29,67 @@
 #include "../NovusEnums.h"
 #include "../Connections/NovusConnection.h"
 #include "../Components/ConnectionComponent.h"
+#include "../Components/PositionComponent.h"
+#include "../Components/PlayerInitializeComponent.h"
 #include "../Components/PlayerUpdateDataComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
 #include "../Components/Singletons/PlayerUpdatesQueueSingleton.h"
 
-namespace PlayerUpdateDataSystem
+namespace PlayerCreateDataSystem
 {
-    Common::ByteBuffer BuildPlayerUpdateData(u64 playerGuid, u32 visibleFlags, PlayerUpdateDataComponent& playerUpdateData, u16& opcode)
+    Common::ByteBuffer BuildPlayerCreateData(u64 playerGuid, u8 updateType, u16 updateFlags, u32 visibleFlags, u32 lifeTimeInMS, PlayerUpdateDataComponent& playerUpdateData, PositionComponent position, u16& opcode)
     {
         Common::ByteBuffer buffer(500);
-        buffer.Write<u8>(UPDATETYPE_VALUES);
+        buffer.Write<u8>(updateType);
         buffer.AppendGuid(playerGuid);
+
+        buffer.Write<u8>(4); // TYPEID_PLAYER
+
+        // BuildMovementUpdate(ByteBuffer* data, uint16 flags)
+        buffer.Write<u16>(updateFlags);
+
+        if (updateFlags & UPDATEFLAG_LIVING)
+        {
+            buffer.Write<u32>(0x00); // MovementFlags
+            buffer.Write<u16>(0x00); // Extra MovementFlags
+            buffer.Write<u32>(lifeTimeInMS); // Game Time
+            // TaggedPosition<Position::XYZO>(pos);
+            buffer.Write<f32>(position.x);
+            buffer.Write<f32>(position.y);
+            buffer.Write<f32>(position.z);
+            buffer.Write<f32>(position.orientation);
+
+            // FallTime
+            buffer.Write<u32>(0);
+
+            // Movement Speeds
+            buffer.Write<f32>(2.5f); // MOVE_WALK
+            buffer.Write<f32>(7.0f); // MOVE_RUN
+            buffer.Write<f32>(4.5f); // MOVE_RUN_BACK
+            buffer.Write<f32>(4.722222f); // MOVE_SWIM
+            buffer.Write<f32>(2.5f); // MOVE_SWIM_BACK
+            buffer.Write<f32>(7.0f); // MOVE_FLIGHT
+            buffer.Write<f32>(4.5f); // MOVE_FLIGHT_BACK
+            buffer.Write<f32>(3.141593f); // MOVE_TURN_RATE
+            buffer.Write<f32>(3.141593f); // MOVE_PITCH_RATE
+        }
+        else
+        {
+            if (updateFlags & UPDATEFLAG_POSITION)
+            {
+
+            }
+            else
+            {
+                if (updateFlags & UPDATEFLAG_STATIONARY_POSITION)
+                {
+                    buffer.Write<f32>(position.x);
+                    buffer.Write<f32>(position.y);
+                    buffer.Write<f32>(position.z);
+                    buffer.Write<f32>(position.orientation);
+                }
+            }
+        }
 
         Common::ByteBuffer fieldBuffer;
         fieldBuffer.Resize(5304);
@@ -50,8 +100,9 @@ namespace PlayerUpdateDataSystem
 
         for (u16 index = 0; index < PLAYER_END; ++index)
         {
-            if (fieldNotifyFlags & flags[index] || ((flags[index] & visibleFlags) & UF_FLAG_SPECIAL_INFO) || 
-               (playerUpdateData.changesMask.IsSet(index) && (flags[index] & visibleFlags)))
+            if (fieldNotifyFlags & flags[index] || ((flags[index] & visibleFlags) & UF_FLAG_SPECIAL_INFO)
+                || ((updateType == 0 ? playerUpdateData.changesMask.IsSet(index) : playerUpdateData.playerFields.ReadAt<i32>(index * 4))
+                    && (flags[index] & visibleFlags)))
             {
                 updateMask.SetBit(index);
 
@@ -188,23 +239,27 @@ namespace PlayerUpdateDataSystem
 
     void Update(entt::registry &registry)
     {
-		SingletonComponent& singleton = registry.get<SingletonComponent>(0);
+        SingletonComponent& singleton = registry.get<SingletonComponent>(0);
         PlayerUpdatesQueueSingleton& playerUpdatesQueue = registry.get<PlayerUpdatesQueueSingleton>(0);
-		NovusConnection& novusConnection = *singleton.connection;
+        NovusConnection& novusConnection = *singleton.connection;
+        u32 lifeTimeInMS = u32(singleton.lifeTimeInMS);
 
-        auto view = registry.view<ConnectionComponent, PlayerUpdateDataComponent, PositionComponent>();
-        view.each([&novusConnection, &playerUpdatesQueue](const auto, ConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData, PositionComponent& clientPositionData)
+        auto view = registry.view<PlayerInitializeComponent, PlayerUpdateDataComponent, PositionComponent>();
+        if (!view.empty())
         {
-            /* Only Build Packet if any fields were changed */
-            if (clientUpdateData.changesMask.Any())
+            auto subView = registry.view<ConnectionComponent, PlayerUpdateDataComponent, PositionComponent>();
+            view.each([&novusConnection, &playerUpdatesQueue, lifeTimeInMS, subView](const auto, PlayerInitializeComponent& clientInitializeData, PlayerUpdateDataComponent& clientUpdateData, PositionComponent& clientPositionData)
             {
                 /* Build Self Packet, must be sent immediately */
+                u8 updateType = UPDATETYPE_CREATE_OBJECT2;
+                u16 selfUpdateFlag = (UPDATEFLAG_SELF | UPDATEFLAG_LIVING | UPDATEFLAG_STATIONARY_POSITION);
                 u32 selfVisibleFlags = (UF_FLAG_PUBLIC | UF_FLAG_PRIVATE);
                 u16 buildOpcode = 0;
 
-                Common::ByteBuffer selfPlayerUpdate = BuildPlayerUpdateData(clientConnection.characterGuid, selfVisibleFlags, clientUpdateData, buildOpcode);
+                Common::ByteBuffer selfPlayerUpdate = BuildPlayerCreateData(clientInitializeData.characterGuid, updateType, selfUpdateFlag, selfVisibleFlags, lifeTimeInMS, clientUpdateData, clientPositionData, buildOpcode);
+
                 NovusHeader novusHeader;
-                novusHeader.CreateForwardHeader(clientConnection.accountGuid, buildOpcode, selfPlayerUpdate.GetActualSize());
+                novusHeader.CreateForwardHeader(clientInitializeData.accountGuid, buildOpcode, selfPlayerUpdate.GetActualSize());
                 Common::ByteBuffer packet(novusHeader.size);
                 novusHeader.AddTo(packet);
                 packet.Append(selfPlayerUpdate);
@@ -212,39 +267,38 @@ namespace PlayerUpdateDataSystem
                 novusConnection.SendPacket(packet);
 
                 /* Build Self Packet for public */
+                u16 publicUpdateFlag = (UPDATEFLAG_LIVING | UPDATEFLAG_STATIONARY_POSITION);
                 u32 publicVisibleFlags = UF_FLAG_PUBLIC;
+
                 PlayerUpdatePacket playerUpdatePacket;
-                playerUpdatePacket.characterGuid = clientConnection.characterGuid;
-                playerUpdatePacket.updateType = UPDATETYPE_VALUES;
-                playerUpdatePacket.data = BuildPlayerUpdateData(clientConnection.characterGuid, publicVisibleFlags, clientUpdateData, buildOpcode);
+                playerUpdatePacket.characterGuid = clientInitializeData.characterGuid;
+                playerUpdatePacket.updateType = updateType;
+                playerUpdatePacket.data = BuildPlayerCreateData(clientInitializeData.characterGuid, updateType, publicUpdateFlag, publicVisibleFlags, lifeTimeInMS, clientUpdateData, clientPositionData, buildOpcode);
                 playerUpdatePacket.opcode = buildOpcode;
                 playerUpdatesQueue.playerUpdatePacketQueue.push_back(playerUpdatePacket);
 
-                // Clear Updates
-                clientUpdateData.changesMask.Reset();
-            }
+                subView.each([&novusConnection, &playerUpdatesQueue, &clientInitializeData, lifeTimeInMS](const auto, ConnectionComponent& connection, PlayerUpdateDataComponent& updateData, PositionComponent& positionData)
+                {
+                    if (clientInitializeData.characterGuid != connection.characterGuid)
+                    {
+                        /* Build Player Packet for self */
+                        u8 updateType = UPDATETYPE_CREATE_OBJECT;
+                        u16 publicUpdateFlag = (UPDATEFLAG_LIVING | UPDATEFLAG_STATIONARY_POSITION);
+                        u32 publicVisibleFlags = UF_FLAG_PUBLIC;
+                        u16 buildOpcode = 0;
 
-            for (PositionUpdateData positionData : clientUpdateData.positionUpdateData)
-            {
-                MovementPacket movementPacket;
-                movementPacket.opcode = positionData.opcode;
-                movementPacket.characterGuid = clientConnection.characterGuid;
+                        PlayerUpdatePacket playerUpdatePacket;
+                        playerUpdatePacket.characterGuid = connection.characterGuid;
+                        playerUpdatePacket.updateType = updateType;
+                        playerUpdatePacket.data = BuildPlayerCreateData(connection.characterGuid, updateType, publicUpdateFlag, publicVisibleFlags, lifeTimeInMS, updateData, positionData, buildOpcode);
+                        playerUpdatePacket.opcode = buildOpcode;
+                        playerUpdatesQueue.playerUpdatePacketQueue.push_back(playerUpdatePacket);
+                    }
+                });
+            });
 
-                movementPacket.data.AppendGuid(movementPacket.characterGuid);
-                movementPacket.data.Write<u32>(positionData.movementFlags);
-                movementPacket.data.Write<u16>(positionData.movementFlagsExtra);
-                movementPacket.data.Write<u32>(positionData.gameTime);
-                movementPacket.data.Write<f32>(positionData.x);
-                movementPacket.data.Write<f32>(positionData.y);
-                movementPacket.data.Write<f32>(positionData.z);
-                movementPacket.data.Write<f32>(positionData.orientation);
-                movementPacket.data.Write<u32>(positionData.fallTime);
-
-                playerUpdatesQueue.playerMovementPacketQueue.push_back(movementPacket);
-
-                // Clear Updates
-                clientUpdateData.positionUpdateData.clear();
-            }
-        });
+            // Remove PlayerInitializeComponent from all entities (They've just been handled above)
+            registry.reset<PlayerInitializeComponent>();
+        }
     }
 }

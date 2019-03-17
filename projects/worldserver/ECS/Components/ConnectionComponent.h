@@ -37,6 +37,5 @@ struct ConnectionComponent
 {
 	u32 accountGuid;
 	u64 characterGuid;
-    bool isInitialized;
     std::vector<OpcodePacket> packets;
 };

@@ -22,17 +22,10 @@
     SOFTWARE.
 */
 #pragma once
-#include <NovusTypes.h> 
-#include <unordered_map>
+#include <NovusTypes.h>
 
-class NovusConnection;
-class WorldServerHandler;
-struct SingletonComponent 
+struct PlayerInitializeComponent
 {
-	f32 deltaTime;
-	f32 lifeTimeInS;
-	f32 lifeTimeInMS;
-	NovusConnection* connection;
-	WorldServerHandler* worldServerHandler;
-    std::unordered_map<u64, u32> accountToEntityMap;
+	u32 accountGuid;
+	u64 characterGuid;
 };

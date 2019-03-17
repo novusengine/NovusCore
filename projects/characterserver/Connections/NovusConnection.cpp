@@ -293,7 +293,6 @@ bool NovusConnection::HandleCommandForwardPacket()
             u32 unk = 0;
             _packetBuffer.Read<u32>(unk);
 
-
             NovusHeader packetHeader;
             packetHeader.command = NOVUS_FORWARDPACKET;
             packetHeader.account = header->account;

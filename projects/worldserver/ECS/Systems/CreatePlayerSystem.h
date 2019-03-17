@@ -32,6 +32,7 @@
 #include "../Connections/NovusConnection.h"
 #include "../Components/ConnectionComponent.h"
 #include "../Components/PositionComponent.h"
+#include "../Components/PlayerInitializeComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
 #include "../Components/Singletons/CreatePlayerQueueSingleton.h"
 #include "../Components/Singletons/CharacterDatabaseCacheSingleton.h"
@@ -51,8 +52,8 @@ namespace CreatePlayerSystem
             message.packet.Read<u64>(playerGuid);
 
             u32 entity = registry.create();
-            ConnectionComponent& connection = registry.assign<ConnectionComponent>(entity, u32(message.account), playerGuid, false);
-            connection.packets.push_back({ u32(message.opcode), false, message.packet });
+            registry.assign<ConnectionComponent>(entity, u32(message.account), playerGuid);
+            registry.assign<PlayerInitializeComponent>(entity, u32(message.account), playerGuid);
 
             const CharacterData characterData = characterDatabase.cache->GetCharacterDataReadOnly(playerGuid);
 
