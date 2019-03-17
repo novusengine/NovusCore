@@ -29,7 +29,7 @@
 #include <Networking/Opcode/Opcode.h>
 #include <Cryptography\BigNumber.h>
 #include <Cryptography\StreamCrypto.h>
-#include <unordered_map>
+#include <robin_hood.h>
 #include <bitset>
 #include <zlib.h>
 
@@ -272,14 +272,20 @@ struct NovusHeader
     }
 };
 
+class NovusConnection;
+struct NovusMessageHandler
+{
+    NovusStatus status;
+    size_t packetSize;
+    bool (NovusConnection::*handler)();
+};
 #pragma pack(pop)
 
 class WorldServerHandler;
-struct NovusMessageHandler;
 class NovusConnection : Common::BaseSocket
 {
 public:
-    static std::unordered_map<u8, NovusMessageHandler> InitMessageHandlers();
+    static robin_hood::unordered_map<u8, NovusMessageHandler> InitMessageHandlers();
 
     NovusConnection(WorldServerHandler* worldServerHandler, asio::ip::tcp::socket* socket, std::string address, u16 port, u8 realmId) : Common::BaseSocket(socket), _status(NOVUSSTATUS_CHALLENGE), _crypto(), _address(address), _port(port), _realmId(realmId), _headerBuffer(), _packetBuffer()
     { 
@@ -312,12 +318,3 @@ private:
     Common::ByteBuffer _packetBuffer;
     WorldServerHandler* _worldServerHandler;
 };
-
-#pragma pack(push, 1)
-struct NovusMessageHandler
-{
-    NovusStatus status;
-    size_t packetSize;
-    bool (NovusConnection::*handler)();
-};
-#pragma pack(pop)

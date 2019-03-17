@@ -28,7 +28,7 @@
 #include <Networking\TcpServer.h>
 #include <Cryptography\BigNumber.h>
 #include <Cryptography\StreamCrypto.h>
-#include <unordered_map>
+#include <robin_hood.h>
 #include <NovusTypes.h>
 
 enum NovusCommand
@@ -100,13 +100,20 @@ struct cCharacterCreateData
         buffer.Read<u8>(charOutfitId);
     }
 };
+
+class NovusConnection;
+struct NovusMessageHandler
+{
+    NovusStatus status;
+    size_t packetSize;
+    bool (NovusConnection::*handler)();
+};
 #pragma pack(pop)
 
-struct NovusMessageHandler;
 class NovusConnection : Common::BaseSocket
 {
 public:
-    static std::unordered_map<u8, NovusMessageHandler> InitMessageHandlers();
+    static robin_hood::unordered_map<u8, NovusMessageHandler> InitMessageHandlers();
 
     NovusConnection(asio::ip::tcp::socket* socket, std::string address, u16 port, u8 realmId) : Common::BaseSocket(socket), _status(NOVUSSTATUS_CHALLENGE), _crypto(), _address(address), _port(port), _realmId(realmId), _headerBuffer(), _packetBuffer()
     { 
@@ -137,12 +144,3 @@ private:
     Common::ByteBuffer _headerBuffer;
     Common::ByteBuffer _packetBuffer;
 };
-
-#pragma pack(push, 1)
-struct NovusMessageHandler
-{
-    NovusStatus status;
-    size_t packetSize;
-    bool (NovusConnection::*handler)();
-};
-#pragma pack(pop)

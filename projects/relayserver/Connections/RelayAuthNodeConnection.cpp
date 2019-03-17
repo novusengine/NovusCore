@@ -26,16 +26,16 @@
 #include "Networking\ByteBuffer.h"
 #include <Utils/DebugHandler.h>
 
-std::unordered_map<u8, RelayMessageHandler> RelayAuthNodeConnection::InitMessageHandlers()
+robin_hood::unordered_map<u8, RelayMessageHandler> RelayAuthNodeConnection::InitMessageHandlers()
 {
-    std::unordered_map<u8, RelayMessageHandler> messageHandlers;
+    robin_hood::unordered_map<u8, RelayMessageHandler> messageHandlers;
 
     messageHandlers[RELAY_CHALLENGE] =  { RELAYSTATUS_CHALLENGE,    sizeof(sRelayChallenge),    &RelayAuthNodeConnection::HandleCommandChallenge };
     messageHandlers[RELAY_PROOF]     =  { RELAYSTATUS_PROOF,        1,                          &RelayAuthNodeConnection::HandleCommandProof };
 
     return messageHandlers;
 }
-std::unordered_map<u8, RelayMessageHandler> const MessageHandlers = RelayAuthNodeConnection::InitMessageHandlers();
+robin_hood::unordered_map<u8, RelayMessageHandler> const MessageHandlers = RelayAuthNodeConnection::InitMessageHandlers();
 
 bool RelayAuthNodeConnection::Start()
 {

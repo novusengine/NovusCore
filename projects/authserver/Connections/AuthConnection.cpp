@@ -138,9 +138,9 @@ struct sAuthLogonGameListData
 std::array<u8, 16> VersionChallenge = { { 0xBA, 0xA3, 0x1E, 0x99, 0xA0, 0x0B, 0x21, 0x57, 0xFC, 0x37, 0x3F, 0xB3, 0x69, 0xCD, 0xD2, 0xF1 } };
 #define MAX_REALM_COUNT 256
 
-std::unordered_map<u8, AuthMessageHandler> AuthConnection::InitMessageHandlers()
+robin_hood::unordered_map<u8, AuthMessageHandler> AuthConnection::InitMessageHandlers()
 {
-    std::unordered_map<u8, AuthMessageHandler> messageHandlers;
+    robin_hood::unordered_map<u8, AuthMessageHandler> messageHandlers;
 
     messageHandlers[AUTH_CHALLENGE]             = { STATUS_CHALLENGE,         4,                              1,   &AuthConnection::HandleCommandChallenge          };
     messageHandlers[AUTH_PROOF]                 = { STATUS_PROOF,             sizeof(cAuthLogonProof),        1,   &AuthConnection::HandleCommandProof              };
@@ -150,7 +150,7 @@ std::unordered_map<u8, AuthMessageHandler> AuthConnection::InitMessageHandlers()
 
     return messageHandlers;
 }
-std::unordered_map<u8, AuthMessageHandler> const MessageHandlers = AuthConnection::InitMessageHandlers();
+robin_hood::unordered_map<u8, AuthMessageHandler> const MessageHandlers = AuthConnection::InitMessageHandlers();
 
 bool AuthConnection::Start()
 {

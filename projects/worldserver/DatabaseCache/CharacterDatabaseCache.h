@@ -1,6 +1,6 @@
 #pragma once
 #include "BaseDatabaseCache.h"
-#include <unordered_map>
+#include <robin_hood.h>
 
 // characters table in DB
 class CharacterDatabaseCache;
@@ -152,8 +152,8 @@ public:
     const std::vector<CharacterSkillStorage> GetCharacterSkillStorageReadOnly(u64 guid);
 
 private:
-    std::unordered_map<u64, CharacterData> _characterDataCache;
-    std::unordered_map<u64, CharacterVisualData> _characterVisualDataCache;
-    std::unordered_map<u64, std::vector<CharacterSpellStorage>> _characterSpellStorageCache;
-    std::unordered_map<u64, std::vector<CharacterSkillStorage>> _characterSkillStorageCache;
+    robin_hood::unordered_map<u64, CharacterData> _characterDataCache;
+    robin_hood::unordered_map<u64, CharacterVisualData> _characterVisualDataCache;
+    robin_hood::unordered_map<u64, std::vector<CharacterSpellStorage>> _characterSpellStorageCache;
+    robin_hood::unordered_map<u64, std::vector<CharacterSkillStorage>> _characterSkillStorageCache;
 };

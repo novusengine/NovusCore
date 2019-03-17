@@ -28,7 +28,7 @@
 #include <Cryptography\BigNumber.h>
 #include <Cryptography\SHA1.h>
 #include <Database\DatabaseConnector.h>
-#include <unordered_map>
+#include <robin_hood.h>
 #include <NovusTypes.h>
 
 enum AuthCommand
@@ -107,11 +107,21 @@ enum LoginResult
     LOGIN_LOCKED_ENFORCED                        = 0x10
 };
 
-struct AuthMessageHandler;
+#pragma pack(push, 1)
+class AuthConnection;
+struct AuthMessageHandler
+{
+    AuthStatus status;
+    size_t packetSize;
+    u8 maxPacketsPerRead;
+    bool (AuthConnection::*handler)();
+};
+#pragma pack(pop)
+
 class AuthConnection : public Common::BaseSocket
 {
 public:
-    static std::unordered_map<u8, AuthMessageHandler> InitMessageHandlers();
+    static robin_hood::unordered_map<u8, AuthMessageHandler> InitMessageHandlers();
 
     AuthConnection(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), _status(STATUS_CHALLENGE), username(), packetsReadThisRead(17)
     { 
@@ -155,13 +165,3 @@ public:
     }
     std::vector<u8> packetsReadThisRead;
 };
-
-#pragma pack(push, 1)
-struct AuthMessageHandler
-{
-    AuthStatus status;
-    size_t packetSize;
-    u8 maxPacketsPerRead;
-    bool (AuthConnection::*handler)();
-};
-#pragma pack(pop)

@@ -25,16 +25,16 @@
 #include "AuthNodeConnection.h"
 #include <Networking\ByteBuffer.h>
 
-std::unordered_map<u8, AuthNodeMessageHandler> AuthNodeConnection::InitMessageHandlers()
+robin_hood::unordered_map<u8, AuthNodeMessageHandler> AuthNodeConnection::InitMessageHandlers()
 {
-    std::unordered_map<u8, AuthNodeMessageHandler> messageHandlers;
+    robin_hood::unordered_map<u8, AuthNodeMessageHandler> messageHandlers;
 
     messageHandlers[NODE_CHALLENGE]             =   { NODESTATUS_CHALLENGE,         sizeof(AuthNodeChallenge),  &AuthNodeConnection::HandleCommandChallenge };
     messageHandlers[NODE_PROOF]                 =   { NODESTATUS_PROOF,             1,                          &AuthNodeConnection::HandleCommandProof     };
 
     return messageHandlers;
 }
-std::unordered_map<u8, AuthNodeMessageHandler> const MessageHandlers = AuthNodeConnection::InitMessageHandlers();
+robin_hood::unordered_map<u8, AuthNodeMessageHandler> const MessageHandlers = AuthNodeConnection::InitMessageHandlers();
 
 bool AuthNodeConnection::Start()
 {

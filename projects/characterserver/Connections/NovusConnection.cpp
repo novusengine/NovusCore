@@ -66,17 +66,17 @@ enum CharacterResponses
     CHAR_DELETE_FAILED_ARENA_CAPTAIN                       = 75,
 };
 
-std::unordered_map<u8, NovusMessageHandler> NovusConnection::InitMessageHandlers()
+robin_hood::unordered_map<u8, NovusMessageHandler> NovusConnection::InitMessageHandlers()
 {
-    std::unordered_map<u8, NovusMessageHandler> messageHandlers;
+    robin_hood::unordered_map<u8, NovusMessageHandler> messageHandlers;
 
-    messageHandlers[NOVUS_CHALLENGE]    = { NOVUSSTATUS_CHALLENGE,    sizeof(sNovusChallenge),  &NovusConnection::HandleCommandChallenge };
-    messageHandlers[NOVUS_PROOF]        = { NOVUSSTATUS_PROOF,        1,                        &NovusConnection::HandleCommandProof };
-    messageHandlers[NOVUS_FORWARDPACKET] = { NOVUSSTATUS_AUTHED,       9,                        &NovusConnection::HandleCommandForwardPacket };
+    messageHandlers[NOVUS_CHALLENGE]        = { NOVUSSTATUS_CHALLENGE,    sizeof(sNovusChallenge),  &NovusConnection::HandleCommandChallenge };
+    messageHandlers[NOVUS_PROOF]            = { NOVUSSTATUS_PROOF,        1,                        &NovusConnection::HandleCommandProof };
+    messageHandlers[NOVUS_FORWARDPACKET]    = { NOVUSSTATUS_AUTHED,       9,                        &NovusConnection::HandleCommandForwardPacket };
 
     return messageHandlers;
 }
-std::unordered_map<u8, NovusMessageHandler> const MessageHandlers = NovusConnection::InitMessageHandlers();
+robin_hood::unordered_map<u8, NovusMessageHandler> const MessageHandlers = NovusConnection::InitMessageHandlers();
 
 bool NovusConnection::Start()
 {

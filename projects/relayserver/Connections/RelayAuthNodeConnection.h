@@ -28,7 +28,7 @@
 #include <Networking\TcpServer.h>
 #include <Cryptography\BigNumber.h>
 #include <Cryptography\StreamCrypto.h>
-#include <unordered_map>
+#include <robin_hood.h>
 
 enum RelayCommand
 {
@@ -50,13 +50,20 @@ struct sRelayChallenge
     u8 command;
     u8 K[32];
 };
+
+class RelayAuthNodeConnection;
+struct RelayMessageHandler
+{
+    RelayStatus status;
+    size_t packetSize;
+    bool (RelayAuthNodeConnection::*handler)();
+};
 #pragma pack(pop)
 
-struct RelayMessageHandler;
 class RelayAuthNodeConnection : public Common::BaseSocket
 {
 public:
-    static std::unordered_map<u8, RelayMessageHandler> InitMessageHandlers();
+    static robin_hood::unordered_map<u8, RelayMessageHandler> InitMessageHandlers();
 
     RelayAuthNodeConnection(asio::ip::tcp::socket* socket, std::string address, u16 port) : Common::BaseSocket(socket), _status(RELAYSTATUS_CHALLENGE), _crypto(), _address(address), _port(port)
     { 
@@ -78,12 +85,3 @@ private:
     StreamCrypto* _crypto;
     BigNumber* _key;
 };
-
-#pragma pack(push, 1)
-struct RelayMessageHandler
-{
-    RelayStatus status;
-    size_t packetSize;
-    bool (RelayAuthNodeConnection::*handler)();
-};
-#pragma pack(pop)

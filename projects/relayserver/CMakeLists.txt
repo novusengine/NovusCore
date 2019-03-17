@@ -26,6 +26,7 @@ file(GLOB_RECURSE RELAYSERVER_FILES "*.cpp" "*.h")
 set(RELAYSERVER_DEPENDENCIES
     "../common/Dependencies/amy"
     "../common/Dependencies/json"
+    "../common/Dependencies/robin-hood-hashing"
     "${ZLIB_INCLUDE_DIRS}"
 )
 

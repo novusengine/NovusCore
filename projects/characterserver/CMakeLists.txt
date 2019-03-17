@@ -26,6 +26,7 @@ file(GLOB_RECURSE CHARACTERSERVER_FILES "*.cpp" "*.h")
 set(CHARACTERSERVER_DEPENDENCIES
     "../common/Dependencies/amy"
     "../common/Dependencies/json"
+    "../common/Dependencies/robin-hood-hashing"
     "${ZLIB_INCLUDE_DIRS}"
 )
 

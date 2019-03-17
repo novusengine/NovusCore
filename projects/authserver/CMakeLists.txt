@@ -26,6 +26,7 @@ file(GLOB_RECURSE AUTHSERVER_FILES "*.cpp" "*.h")
 set(AUTHSERVER_DEPENDENCIES
     "../common/Dependencies/amy"
     "../common/Dependencies/json"
+    "../common/Dependencies/robin-hood-hashing"
 )
 
 add_executable(authserver ${AUTHSERVER_FILES})

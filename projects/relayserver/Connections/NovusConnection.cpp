@@ -26,9 +26,9 @@
 #include <Networking\ByteBuffer.h>
 #include "..\ConnectionHandlers\ClientRelayConnectionHandler.h"
 
-std::unordered_map<u8, NovusMessageHandler> NovusConnection::InitMessageHandlers()
+robin_hood::unordered_map<u8, NovusMessageHandler> NovusConnection::InitMessageHandlers()
 {
-    std::unordered_map<u8, NovusMessageHandler> messageHandlers;
+    robin_hood::unordered_map<u8, NovusMessageHandler> messageHandlers;
 
     messageHandlers[NOVUS_CHALLENGE]             =   { NOVUSSTATUS_CHALLENGE,         sizeof(cNovusChallenge),  &NovusConnection::HandleCommandChallenge        };
     messageHandlers[NOVUS_PROOF]                 =   { NOVUSSTATUS_PROOF,             1,                        &NovusConnection::HandleCommandProof            };
@@ -36,7 +36,7 @@ std::unordered_map<u8, NovusMessageHandler> NovusConnection::InitMessageHandlers
 
     return messageHandlers;
 }
-std::unordered_map<u8, NovusMessageHandler> const MessageHandlers = NovusConnection::InitMessageHandlers();
+robin_hood::unordered_map<u8, NovusMessageHandler> const MessageHandlers = NovusConnection::InitMessageHandlers();
 
 bool NovusConnection::Start()
 {

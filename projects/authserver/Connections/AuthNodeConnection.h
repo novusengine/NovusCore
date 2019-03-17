@@ -28,7 +28,7 @@
 #include <Cryptography\BigNumber.h>
 #include <Cryptography\SHA1.h>
 #include <Cryptography\StreamCrypto.h>
-#include <unordered_map>
+#include <robin_hood.h>
 #include <NovusTypes.h>
 
 enum AuthNodeCommand
@@ -51,13 +51,20 @@ struct AuthNodeChallenge
     u16    version;
     u16    build;
 };
+
+class AuthNodeConnection;
+struct AuthNodeMessageHandler
+{
+    AuthNodeStatus status;
+    size_t packetSize;
+    bool (AuthNodeConnection::*handler)();
+};
 #pragma pack(pop)
 
-struct AuthNodeMessageHandler;
 class AuthNodeConnection : public Common::BaseSocket
 {
 public:
-    static std::unordered_map<u8, AuthNodeMessageHandler> InitMessageHandlers();
+    static robin_hood::unordered_map<u8, AuthNodeMessageHandler> InitMessageHandlers();
 
     AuthNodeConnection(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), _status(NODESTATUS_CHALLENGE), _crypto()
     {
@@ -78,12 +85,3 @@ public:
     StreamCrypto* _crypto;
     BigNumber* _key;
 };
-
-#pragma pack(push, 1)
-struct AuthNodeMessageHandler
-{
-    AuthNodeStatus status;
-    size_t packetSize;
-    bool (AuthNodeConnection::*handler)();
-};
-#pragma pack(pop)
