@@ -10,7 +10,7 @@ USE `charserver`;
 
 -- Dumping structure for table charserver.characters
 CREATE TABLE IF NOT EXISTS `characters` (
-  `guid` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `guid` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `account` int(10) unsigned NOT NULL,
   `name` varchar(32) NOT NULL,
   `race` tinyint(3) unsigned NOT NULL DEFAULT '1',
@@ -26,11 +26,29 @@ CREATE TABLE IF NOT EXISTS `characters` (
   PRIMARY KEY (`guid`),
   UNIQUE KEY `name` (`name`),
   KEY `account` (`account`)
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=latin1;
+
+-- Dumping structure for table charserver.character_skill_storage
+CREATE TABLE IF NOT EXISTS `character_skill_storage` (
+  `guid` bigint(20) NOT NULL,
+  `skill` smallint(5) unsigned NOT NULL,
+  `value` smallint(5) unsigned NOT NULL DEFAULT '0',
+  `maxValue` smallint(5) unsigned NOT NULL DEFAULT '0',
+  `comment` varchar(50) NOT NULL DEFAULT '',
+  UNIQUE KEY `guid_spell` (`guid`,`skill`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- Dumping structure for table charserver.character_spell_storage
+CREATE TABLE IF NOT EXISTS `character_spell_storage` (
+  `guid` bigint(20) NOT NULL,
+  `spell` int(10) unsigned NOT NULL,
+  `comment` varchar(50) NOT NULL DEFAULT '',
+  UNIQUE KEY `guid_spell` (`guid`,`spell`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- Dumping structure for table charserver.character_visual_data
 CREATE TABLE IF NOT EXISTS `character_visual_data` (
-  `guid` int(10) unsigned NOT NULL,
+  `guid` bigint(20) unsigned NOT NULL,
   `skin` tinyint(3) unsigned NOT NULL,
   `face` tinyint(3) unsigned NOT NULL,
   `facial_style` tinyint(3) unsigned NOT NULL,

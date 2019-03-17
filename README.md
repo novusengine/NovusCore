@@ -30,9 +30,10 @@ You will find the developers to be active on the discord and always up for answe
 ### Libraries
 Here we include a honorable mention to all the libraries included directly into the source of NovusCore. You do not need to download these on your own, but we felt it was important to address these as without them, NovusCore would be a lot more time consuming to develop.
 * [Fast MPMC Queue](https://github.com/spectre1989/fast_mpmc_queue)
-* [Nlohmann Json](https://github.com/nlohmann/json/)
+* [Nlohmann Json](https://github.com/nlohmann/json)
+* [Robin Hood Hashing](https://github.com/martinus/robin-hood-hashing)
 * [Amy](https://github.com/liancheng/amy)
-* [Tracy Profiler](https://bitbucket.org/wolfpld/tracy/src/master/)
-* [Entt ECS](https://github.com/skypjack/entt)
+* [Tracy Profiler](https://bitbucket.org/wolfpld/tracy/src/master)
+* [Entt ECS](https://github.com/skypjack/entt/)
 * [Cpp-Taskflow](https://github.com/cpp-taskflow/cpp-taskflow)
 * [ZLIB](https://github.com/madler/zlib)

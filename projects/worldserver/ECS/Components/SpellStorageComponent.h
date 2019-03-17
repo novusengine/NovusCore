@@ -1,3 +1,4 @@
+#pragma once
 /*
     MIT License
 
@@ -21,19 +22,10 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
 */
-#pragma once
-#include <NovusTypes.h> 
-#include <robin_hood.h>
+#include <NovusTypes.h>
+#include <vector>
 
-class NovusConnection;
-class WorldServerHandler;
-struct SingletonComponent 
+struct SpellStorageComponent 
 {
-    SingletonComponent() : deltaTime(0), lifeTimeInS(0), lifeTimeInMS(0), connection(nullptr), worldServerHandler(nullptr), accountToEntityMap() { }
-	f32 deltaTime;
-	f32 lifeTimeInS;
-	f32 lifeTimeInMS;
-	NovusConnection* connection;
-	WorldServerHandler* worldServerHandler;
-    robin_hood::unordered_map<u32, u32> accountToEntityMap;
+    std::vector<u32> spells;
 };

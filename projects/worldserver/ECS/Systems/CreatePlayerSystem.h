@@ -32,6 +32,8 @@
 #include "../Connections/NovusConnection.h"
 #include "../Components/ConnectionComponent.h"
 #include "../Components/PositionComponent.h"
+#include "../Components/SpellStorageComponent.h"
+#include "../Components/SkillStorageComponent.h"
 #include "../Components/PlayerInitializeComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
 #include "../Components/Singletons/CreatePlayerQueueSingleton.h"
@@ -60,6 +62,8 @@ namespace CreatePlayerSystem
             // -8949.950195f, -132.492996f, 83.531197f, 0.f
             registry.assign<PlayerUpdateDataComponent>(entity);
             registry.assign<PositionComponent>(entity, characterData.mapId, characterData.coordinateX, characterData.coordinateY, characterData.coordinateZ, characterData.orientation);
+            registry.assign<SpellStorageComponent>(entity);
+            registry.assign<SkillStorageComponent>(entity);
 
             singleton.accountToEntityMap[u32(message.account)] = entity;
         }

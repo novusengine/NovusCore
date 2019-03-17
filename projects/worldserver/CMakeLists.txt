@@ -26,6 +26,7 @@ file(GLOB_RECURSE WORLDSERVER_FILES "*.cpp" "*.h")
 set(WORLDSERVER_DEPENDENCIES
     "../common/Dependencies/amy"
     "../common/Dependencies/json"
+    "../common/Dependencies/robin-hood-hashing"
     "${CMAKE_CURRENT_LIST_DIR}/Dependencies/Entt"
     "${ZLIB_INCLUDE_DIRS}"
     "${CMAKE_SOURCE_DIR}/dep/TracyProfiler"

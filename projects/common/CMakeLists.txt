@@ -26,6 +26,7 @@ file(GLOB_RECURSE COMMON_FILES "*.cpp" "*.h")
 set(COMMON_DEPENDENCIES
     "${CMAKE_CURRENT_LIST_DIR}/Dependencies/amy"
     "${CMAKE_CURRENT_LIST_DIR}/Dependencies/json"
+    "${CMAKE_CURRENT_LIST_DIR}/Dependencies/robin-hood-hashing"
 )
 set(TRACY
     "${CMAKE_SOURCE_DIR}/dep/TracyProfiler/tracy/TracyClient.cpp"

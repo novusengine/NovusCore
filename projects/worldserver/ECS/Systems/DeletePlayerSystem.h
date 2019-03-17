@@ -43,7 +43,7 @@ namespace DeletePlayerSystem
         NovusConnection& novusConnection = *singleton.connection;
         
         Common::ByteBuffer buildPacket;
-        std::vector<u32> deletedEntities;
+        std::vector<u64> deletedEntities;
         UpdateData updateData;
 
         ExpiredPlayerData expiredPlayerData;

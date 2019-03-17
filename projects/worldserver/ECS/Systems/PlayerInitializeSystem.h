@@ -5,6 +5,8 @@
 
 #include "../DatabaseCache/CharacterDatabaseCache.h"
 
+#include "../Components/SpellStorageComponent.h"
+#include "../Components/SkillStorageComponent.h"
 #include "../Components/PlayerInitializeComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
 #include "../Components/Singletons/CharacterDatabaseCacheSingleton.h"
@@ -17,9 +19,23 @@ namespace PlayerInitializeSystem
         CharacterDatabaseCacheSingleton& characterDatabase = registry.get<CharacterDatabaseCacheSingleton>(0);
         NovusConnection& novusConnection = *singleton.connection;
 
-        auto view = registry.view<PlayerInitializeComponent, PlayerUpdateDataComponent, PositionComponent>();
-        view.each([&characterDatabase, &novusConnection](const auto, PlayerInitializeComponent& clientInitializeData, PlayerUpdateDataComponent& clientUpdateData, PositionComponent& clientPositionData)
+        auto view = registry.view<PlayerInitializeComponent, PlayerUpdateDataComponent, PositionComponent, SpellStorageComponent, SkillStorageComponent>();
+        view.each([&characterDatabase, &novusConnection](const auto, PlayerInitializeComponent& clientInitializeData, PlayerUpdateDataComponent& clientUpdateData, PositionComponent& clientPositionData, SpellStorageComponent& spellStorageData, SkillStorageComponent& skillStorageData)
         {
+            /* Load Cached Data for character */
+            for (CharacterSpellStorage spell : characterDatabase.cache->GetCharacterSpellStorageReadOnly(clientInitializeData.characterGuid))
+            {
+                spellStorageData.spells.push_back(spell.id);
+            }
+            for (CharacterSkillStorage skill : characterDatabase.cache->GetCharacterSkillStorageReadOnly(clientInitializeData.characterGuid))
+            {
+                skillData newSkill;
+                newSkill.id = skill.id;
+                newSkill.value = skill.value;
+                newSkill.maxValue = skill.maxValue;
+                skillStorageData.skills.push_back(newSkill);
+            }
+            
             NovusHeader packetHeader;
             packetHeader.command = NOVUS_FORWARDPACKET;
             packetHeader.account = clientInitializeData.accountGuid;
@@ -80,8 +96,8 @@ namespace PlayerInitializeSystem
             packetHeader.opcode = Common::Opcode::SMSG_MOTD;
             packetHeader.AddTo(motd);
 
-            motd.Write<u32>(1);
-            motd.WriteString("Welcome to NovusCore!");
+            motd.Write<u32>(0);
+            motd.WriteString("Welcome to NovusCore.");
 
             packetHeader.size = (u16)motd.GetActualSize();
             packetHeader.AddTo(motdForwardPacket);
@@ -111,6 +127,28 @@ namespace PlayerInitializeSystem
                 actionButtons.Write<u32>(0);
             }
             novusConnection.SendPacket(actionButtons);
+            /* SMSG_INITIAL_SPELLS */
+            
+            if (spellStorageData.spells.size() > 0)
+            {
+                Common::ByteBuffer initialSpellsForward;
+                packetHeader.opcode = Common::Opcode::SMSG_INITIAL_SPELLS;
+                Common::ByteBuffer initialSpells;
+                initialSpells.Write<u8>(0);
+                initialSpells.Write<u16>(spellStorageData.spells.size());
+
+                for (u32 spell : spellStorageData.spells)
+                {
+                    initialSpells.Write<u32>(spell);
+                    initialSpells.Write<u16>(0);
+                }
+
+                initialSpells.Write<u16>(0); // Cooldown History Size
+                packetHeader.size = initialSpells.GetActualSize();
+                packetHeader.AddTo(initialSpellsForward);
+                initialSpellsForward.Append(initialSpells);
+                novusConnection.SendPacket(initialSpellsForward);
+            }
 
             /* SMSG_LOGIN_SETTIMESPEED */
             Common::ByteBuffer loginSetTimeSpeed;
@@ -176,7 +214,6 @@ namespace PlayerInitializeSystem
             clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_BYTES_1, 0);
             clientUpdateData.SetFieldValue<f32>(UNIT_MOD_CAST_SPEED, 1);
 
-            /* 3 individual for loops would make some for nice cache improvements :') */
             for (int i = 0; i < 5; i++)
             {
                 clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_STAT0 + i, 20);
@@ -230,8 +267,21 @@ namespace PlayerInitializeSystem
             clientUpdateData.SetFieldValue<u32>(PLAYER_XP, 0);
             clientUpdateData.SetFieldValue<u32>(PLAYER_NEXT_LEVEL_XP, 400);
 
+            u32 skillSize = skillStorageData.skills.size();
             for (int i = 0; i < 127; ++i)
             {
+                if (i < skillSize)
+                {
+                    skillData skill = skillStorageData.skills.at(i);
+                    clientUpdateData.SetFieldValue<u16>((PLAYER_SKILL_INFO_1_1 + ((i) * 3)), skill.id);
+                    clientUpdateData.SetFieldValue<u16>((PLAYER_SKILL_INFO_1_1 + ((i) * 3)), 0, 2);
+
+                    clientUpdateData.SetFieldValue<u16>((PLAYER_SKILL_INFO_1_1 + ((i) * 3)) + 1, skill.value);
+                    clientUpdateData.SetFieldValue<u16>((PLAYER_SKILL_INFO_1_1 + ((i) * 3)) + 1, skill.maxValue, 2);
+
+                    clientUpdateData.SetFieldValue<u32>((PLAYER_SKILL_INFO_1_1 + ((i) * 3)) + 2, 0);
+                }
+                else
                 {
                     clientUpdateData.SetFieldValue<u32>((PLAYER_SKILL_INFO_1_1 + ((i) * 3)), 0);
                     clientUpdateData.SetFieldValue<u32>((PLAYER_SKILL_INFO_1_1 + ((i) * 3)) + 1, 0);

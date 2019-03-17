@@ -28,8 +28,8 @@
 
 struct ExpiredPlayerData
 {
-    u64 account;
-    u32 guid;
+    u32 account;
+    u64 guid;
 };
 
 struct DeletePlayerQueueSingleton

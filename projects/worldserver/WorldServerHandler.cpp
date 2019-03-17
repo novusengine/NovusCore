@@ -79,17 +79,18 @@ void WorldServerHandler::Run()
     PlayerUpdatesQueueSingleton& playerUpdatesQueueSingleton = _updateFramework.registry.assign<PlayerUpdatesQueueSingleton>(0);
     DeletePlayerQueueSingleton& deletePlayerQueueSingleton = _updateFramework.registry.assign<DeletePlayerQueueSingleton>(0);
     CharacterDatabaseCacheSingleton& characterDatabaseCacheSingleton = _updateFramework.registry.assign<CharacterDatabaseCacheSingleton>(0);
+   
     singletonComponent.worldServerHandler = this;
     singletonComponent.connection = _novusConnection;
     singletonComponent.deltaTime = 1.0f;
+
     createPlayerQueueComponent.newEntityQueue = new ConcurrentQueue<Message>(256);
     deletePlayerQueueSingleton.expiredEntityQueue = new ConcurrentQueue<ExpiredPlayerData>(256);
-    characterDatabaseCacheSingleton.cache = new CharacterDatabaseCache();
 
+    characterDatabaseCacheSingleton.cache = new CharacterDatabaseCache();
     characterDatabaseCacheSingleton.cache->Load();
 
     Timer timer;
-
     while (true)
     {
         f32 deltaTime = timer.GetDeltaTime();
