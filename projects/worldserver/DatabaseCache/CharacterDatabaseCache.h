@@ -6,8 +6,9 @@
 class CharacterDatabaseCache;
 struct CharacterData
 {
-    CharacterData(CharacterDatabaseCache* cache, bool isReadOnly) { _cache = cache; _isReadOnly = isReadOnly; }
-    CharacterData(CharacterData& data, bool isReadOnly)
+    CharacterData() { }
+    CharacterData(CharacterDatabaseCache* cache) { _cache = cache; }
+    CharacterData(const CharacterData& data)
     {
         guid = data.guid;
         account = data.account;
@@ -23,7 +24,6 @@ struct CharacterData
         coordinateZ = data.coordinateZ;
         orientation = data.orientation;
         _cache = data._cache;
-        _isReadOnly = isReadOnly;
     }
 
     u64 guid;
@@ -42,17 +42,16 @@ struct CharacterData
 
     void UpdateCache()
     {
-        assert(!_isReadOnly);
     }
 private:
     CharacterDatabaseCache* _cache;
-    bool _isReadOnly;
 };
 // character_visual_data table in DB
 struct CharacterVisualData
 {
-    CharacterVisualData(CharacterDatabaseCache* cache, bool isReadOnly) { _cache = cache; _isReadOnly = isReadOnly; }
-    CharacterVisualData(CharacterVisualData& data, bool isReadOnly)
+    CharacterVisualData() { }
+    CharacterVisualData(CharacterDatabaseCache* cache) { _cache = cache; }
+    CharacterVisualData(const CharacterVisualData& data)
     {
         guid = data.guid;
         skin = data.skin;
@@ -61,7 +60,6 @@ struct CharacterVisualData
         hairStyle = data.hairStyle;
         hairColor = data.hairColor;
         _cache = data._cache;
-        _isReadOnly = isReadOnly;
     }
 
     u64 guid;
@@ -73,42 +71,40 @@ struct CharacterVisualData
 
     void UpdateCache()
     {
-        assert(!_isReadOnly);
     }
 private:
     CharacterDatabaseCache* _cache;
-    bool _isReadOnly;
 };
 // character_spell_storage table in DB
 struct CharacterSpellStorage
 {
-    CharacterSpellStorage(CharacterDatabaseCache* cache, bool isReadOnly) { _cache = cache; _isReadOnly = isReadOnly; }
-    CharacterSpellStorage(CharacterSpellStorage& data, bool isReadOnly)
+    CharacterSpellStorage() { }
+    CharacterSpellStorage(CharacterDatabaseCache* cache) { _cache = cache; }
+    CharacterSpellStorage(const CharacterSpellStorage& data)
     {
         id = data.id;
-        _isReadOnly = isReadOnly;
+        _cache = data._cache;
     }
 
     u32 id;
 
     void UpdateCache()
     {
-        assert(!_isReadOnly);
     }
 private:
     CharacterDatabaseCache* _cache;
-    bool _isReadOnly;
 };
 // character_skill_storage table in DB
 struct CharacterSkillStorage
 {
-    CharacterSkillStorage(CharacterDatabaseCache* cache, bool isReadOnly) { _cache = cache; _isReadOnly = isReadOnly; }
-    CharacterSkillStorage(CharacterSkillStorage& data, bool isReadOnly)
+    CharacterSkillStorage() { }
+    CharacterSkillStorage(CharacterDatabaseCache* cache) { _cache = cache; }
+    CharacterSkillStorage(const CharacterSkillStorage& data)
     {
         id = data.id;
         value = data.value;
         maxValue = data.maxValue;
-        _isReadOnly = isReadOnly;
+        _cache = data._cache;
     }
 
     u16 id;
@@ -117,11 +113,9 @@ struct CharacterSkillStorage
 
     void UpdateCache()
     {
-        assert(!_isReadOnly);
     }
 private:
     CharacterDatabaseCache* _cache;
-    bool _isReadOnly;
 };
 
 class CharacterDatabaseCache : BaseDatabaseCache
@@ -136,20 +130,16 @@ public:
     void SaveAsync() override;
 
     // Character cache
-    CharacterData GetCharacterData(u64 guid);
-    const CharacterData GetCharacterDataReadOnly(u64 guid);
+    bool GetCharacterData(u64 guid, CharacterData& output);
 
     // Character Visual cache
-    CharacterVisualData GetCharacterVisualData(u64 guid);
-    const CharacterVisualData GetCharacterVisualDataReadOnly(u64 guid);
+    bool GetCharacterVisualData(u64 guid, CharacterVisualData& output);
 
     // Character Spell Storage cache
-    std::vector<CharacterSpellStorage> GetCharacterSpellStorage(u64 guid);
-    const std::vector<CharacterSpellStorage> GetCharacterSpellStorageReadOnly(u64 guid);
+    bool GetCharacterSpellStorage(u64 guid, std::vector<CharacterSpellStorage>& output);
 
     // Character Skill Storage cache
-    std::vector<CharacterSkillStorage> GetCharacterSkillStorage(u64 guid);
-    const std::vector<CharacterSkillStorage> GetCharacterSkillStorageReadOnly(u64 guid);
+    bool GetCharacterSkillStorage(u64 guid, std::vector<CharacterSkillStorage>& output);
 
 private:
     robin_hood::unordered_map<u64, CharacterData> _characterDataCache;

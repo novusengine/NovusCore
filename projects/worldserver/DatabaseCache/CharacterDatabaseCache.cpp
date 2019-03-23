@@ -23,7 +23,7 @@ void CharacterDatabaseCache::Load()
     {
         for (auto row : resultSet)
         {
-            CharacterData newCharacterData(this, false);
+            CharacterData newCharacterData(this);
             newCharacterData.guid = row[0].as<amy::sql_bigint_unsigned>();
             newCharacterData.account = row[1].as<amy::sql_int_unsigned>();
             newCharacterData.name = row[2].as<amy::sql_varchar>();
@@ -38,7 +38,7 @@ void CharacterDatabaseCache::Load()
             newCharacterData.coordinateZ = row[11].as<amy::sql_float>();
             newCharacterData.orientation = row[12].as<amy::sql_float>();
 
-            CharacterVisualData newCharacterVisualData(this, false);
+            CharacterVisualData newCharacterVisualData(this);
             newCharacterVisualData.guid = newCharacterData.guid;
             newCharacterVisualData.skin = row[13].as<amy::sql_tinyint_unsigned>();
             newCharacterVisualData.face = row[14].as<amy::sql_tinyint_unsigned>();
@@ -58,7 +58,7 @@ void CharacterDatabaseCache::Load()
     {
         for (auto row : resultSet)
         {
-            CharacterSpellStorage newCharacterSpellStorage(this, false);
+            CharacterSpellStorage newCharacterSpellStorage(this);
             u64 guid = row[0].as<amy::sql_bigint_unsigned>();
             newCharacterSpellStorage.id = row[1].as<amy::sql_int_unsigned>();
 
@@ -74,7 +74,7 @@ void CharacterDatabaseCache::Load()
     {
         for (auto row : resultSet)
         {
-            CharacterSkillStorage newCharacterSkillStorage(this, false);
+            CharacterSkillStorage newCharacterSkillStorage(this);
             u64 guid = row[0].as<amy::sql_bigint_unsigned>();
             newCharacterSkillStorage.id = row[1].as<amy::sql_smallint_unsigned>();
             newCharacterSkillStorage.value = row[2].as<amy::sql_smallint_unsigned>();
@@ -99,7 +99,7 @@ void CharacterDatabaseCache::SaveAsync()
 {
 }
 
-CharacterData CharacterDatabaseCache::GetCharacterData(u64 guid)
+bool CharacterDatabaseCache::GetCharacterData(u64 guid, CharacterData& output)
 {
     auto cache = _characterDataCache.find(guid);
     if (cache != _characterDataCache.end())
@@ -108,7 +108,8 @@ CharacterData CharacterDatabaseCache::GetCharacterData(u64 guid)
         CharacterData characterData = cache->second;
         _accessMutex.unlock_shared();
 
-        return characterData;
+        output = characterData;
+        return true;
     }
     else
     {
@@ -123,9 +124,10 @@ CharacterData CharacterDatabaseCache::GetCharacterData(u64 guid)
         amy::result_set resultSet;
         connector->Query(stmt, resultSet);
 
-        assert(resultSet.affected_rows() == 1);
+        if (resultSet.affected_rows() == 0)
+            return false;
 
-        CharacterData newCharacterData(this, false);
+        CharacterData newCharacterData(this);
         newCharacterData.guid = resultSet[0][0].as<amy::sql_int_unsigned>();
         newCharacterData.account = resultSet[0][1].as<amy::sql_int_unsigned>();
 
@@ -146,16 +148,11 @@ CharacterData CharacterDatabaseCache::GetCharacterData(u64 guid)
         _characterDataCache.insert({ guid, newCharacterData });
         _accessMutex.unlock();
 
-        return newCharacterData;
+        output = newCharacterData;
+        return true;
     }
 }
-const CharacterData CharacterDatabaseCache::GetCharacterDataReadOnly(u64 guid)
-{
-    CharacterData characterData(GetCharacterData(guid), true);
-    return characterData;
-}
-
-CharacterVisualData CharacterDatabaseCache::GetCharacterVisualData(u64 guid)
+bool CharacterDatabaseCache::GetCharacterVisualData(u64 guid, CharacterVisualData& output)
 {
     auto cache = _characterVisualDataCache.find(guid);
     if (cache != _characterVisualDataCache.end())
@@ -164,7 +161,8 @@ CharacterVisualData CharacterDatabaseCache::GetCharacterVisualData(u64 guid)
         CharacterVisualData characterVisualData = cache->second;
         _accessMutex.unlock_shared();
 
-        return characterVisualData;
+        output = characterVisualData;
+        return true;
     }
     else
     {
@@ -179,9 +177,10 @@ CharacterVisualData CharacterDatabaseCache::GetCharacterVisualData(u64 guid)
         amy::result_set resultSet;
         connector->Query(stmt, resultSet);
 
-        assert(resultSet.affected_rows() == 1);
+        if (resultSet.affected_rows() == 0)
+            return false;
 
-        CharacterVisualData newCharacterVisualData(this, false);
+        CharacterVisualData newCharacterVisualData(this);
         newCharacterVisualData.guid = resultSet[0][0].as<amy::sql_int_unsigned>();
         newCharacterVisualData.skin = resultSet[0][1].as<amy::sql_tinyint_unsigned>();
         newCharacterVisualData.face = resultSet[0][2].as<amy::sql_tinyint_unsigned>();
@@ -193,16 +192,11 @@ CharacterVisualData CharacterDatabaseCache::GetCharacterVisualData(u64 guid)
         _characterVisualDataCache.insert({ guid, newCharacterVisualData });
         _accessMutex.unlock();
 
-        return newCharacterVisualData;
+        output = newCharacterVisualData;
+        return true;
     }
 }
-const CharacterVisualData CharacterDatabaseCache::GetCharacterVisualDataReadOnly(u64 guid)
-{
-    CharacterVisualData characterVisualData(GetCharacterVisualData(guid), true);
-    return characterVisualData;
-}
-
-std::vector<CharacterSpellStorage> CharacterDatabaseCache::GetCharacterSpellStorage(u64 guid)
+bool CharacterDatabaseCache::GetCharacterSpellStorage(u64 guid, std::vector<CharacterSpellStorage>& output)
 {
     auto cache = _characterSpellStorageCache.find(guid);
     if (cache != _characterSpellStorageCache.end())
@@ -211,7 +205,8 @@ std::vector<CharacterSpellStorage> CharacterDatabaseCache::GetCharacterSpellStor
         std::vector<CharacterSpellStorage> characterSpellStorageData = cache->second;
         _accessMutex.unlock_shared();
 
-        return characterSpellStorageData;
+        output = characterSpellStorageData;
+        return true;
     }
     else
     {
@@ -226,9 +221,10 @@ std::vector<CharacterSpellStorage> CharacterDatabaseCache::GetCharacterSpellStor
         amy::result_set resultSet;
         connector->Query(stmt, resultSet);
 
-        assert(resultSet.affected_rows() > 0);
+        if (resultSet.affected_rows() == 0)
+            return false;
 
-        CharacterSpellStorage newCharacterSpellStorage(this, false);
+        CharacterSpellStorage newCharacterSpellStorage(this);
         u64 guid = resultSet[0][0].as<amy::sql_bigint_unsigned>();
         newCharacterSpellStorage.id = resultSet[0][1].as<amy::sql_int_unsigned>();
 
@@ -236,15 +232,11 @@ std::vector<CharacterSpellStorage> CharacterDatabaseCache::GetCharacterSpellStor
         _characterSpellStorageCache[guid].push_back(newCharacterSpellStorage);
         _accessMutex.unlock();
 
-        return _characterSpellStorageCache[guid];
+        output = _characterSpellStorageCache[guid];
+        return true;
     }
 }
-const std::vector<CharacterSpellStorage> CharacterDatabaseCache::GetCharacterSpellStorageReadOnly(u64 guid)
-{
-    return GetCharacterSpellStorage(guid);
-}
-
-std::vector<CharacterSkillStorage> CharacterDatabaseCache::GetCharacterSkillStorage(u64 guid)
+bool CharacterDatabaseCache::GetCharacterSkillStorage(u64 guid, std::vector<CharacterSkillStorage>& output)
 {
     auto cache = _characterSkillStorageCache.find(guid);
     if (cache != _characterSkillStorageCache.end())
@@ -253,7 +245,8 @@ std::vector<CharacterSkillStorage> CharacterDatabaseCache::GetCharacterSkillStor
         std::vector<CharacterSkillStorage> characterSkillStorageData = cache->second;
         _accessMutex.unlock_shared();
 
-        return characterSkillStorageData;
+        output = characterSkillStorageData;
+        return true;
     }
     else
     {
@@ -268,9 +261,10 @@ std::vector<CharacterSkillStorage> CharacterDatabaseCache::GetCharacterSkillStor
         amy::result_set resultSet;
         connector->Query(stmt, resultSet);
 
-        assert(resultSet.affected_rows() > 0);
+        if (resultSet.affected_rows() == 0)
+            return false;
 
-        CharacterSkillStorage newCharacterSkillStorage(this, false);
+        CharacterSkillStorage newCharacterSkillStorage(this);
         u64 guid = resultSet[0][0].as<amy::sql_bigint_unsigned>();
         newCharacterSkillStorage.id = resultSet[0][1].as<amy::sql_smallint_unsigned>();
         newCharacterSkillStorage.value = resultSet[0][2].as<amy::sql_smallint_unsigned>();
@@ -280,10 +274,7 @@ std::vector<CharacterSkillStorage> CharacterDatabaseCache::GetCharacterSkillStor
         _characterSkillStorageCache[guid].push_back(newCharacterSkillStorage);
         _accessMutex.unlock();
 
-        return _characterSkillStorageCache[guid];
+        output = _characterSkillStorageCache[guid];
+        return true;
     }
-}
-const std::vector<CharacterSkillStorage> CharacterDatabaseCache::GetCharacterSkillStorageReadOnly(u64 guid)
-{
-    return GetCharacterSkillStorage(guid);
 }

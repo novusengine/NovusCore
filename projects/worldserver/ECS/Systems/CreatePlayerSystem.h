@@ -51,21 +51,23 @@ namespace CreatePlayerSystem
         while (createPlayerQueue.newEntityQueue->try_dequeue(message))
         {
             u64 playerGuid = 0;
-            message.packet.Read<u64>(playerGuid);
+            message.packet.Read<u64>(playerGuid); 
+            
+            CharacterData characterData;
+            if (characterDatabase.cache->GetCharacterData(playerGuid, characterData))
+            {
+                u32 entity = registry.create();
+                registry.assign<ConnectionComponent>(entity, u32(message.account), playerGuid);
+                registry.assign<PlayerInitializeComponent>(entity, u32(message.account), playerGuid);
 
-            u32 entity = registry.create();
-            registry.assign<ConnectionComponent>(entity, u32(message.account), playerGuid);
-            registry.assign<PlayerInitializeComponent>(entity, u32(message.account), playerGuid);
+                // -8949.950195f, -132.492996f, 83.531197f, 0.f
+                registry.assign<PlayerUpdateDataComponent>(entity);
+                registry.assign<PositionComponent>(entity, characterData.mapId, characterData.coordinateX, characterData.coordinateY, characterData.coordinateZ, characterData.orientation);
+                registry.assign<SpellStorageComponent>(entity);
+                registry.assign<SkillStorageComponent>(entity);
 
-            const CharacterData characterData = characterDatabase.cache->GetCharacterDataReadOnly(playerGuid);
-
-            // -8949.950195f, -132.492996f, 83.531197f, 0.f
-            registry.assign<PlayerUpdateDataComponent>(entity);
-            registry.assign<PositionComponent>(entity, characterData.mapId, characterData.coordinateX, characterData.coordinateY, characterData.coordinateZ, characterData.orientation);
-            registry.assign<SpellStorageComponent>(entity);
-            registry.assign<SkillStorageComponent>(entity);
-
-            singleton.accountToEntityMap[u32(message.account)] = entity;
+                singleton.accountToEntityMap[u32(message.account)] = entity;
+            }
         }
     }
 }

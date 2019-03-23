@@ -24,17 +24,26 @@ namespace PlayerInitializeSystem
         view.each([&characterDatabase, &novusConnection](const auto, PlayerInitializeComponent& clientInitializeData, PlayerUpdateDataComponent& clientUpdateData, PositionComponent& clientPositionData, SpellStorageComponent& spellStorageData, SkillStorageComponent& skillStorageData)
         {
             /* Load Cached Data for character */
-            for (CharacterSpellStorage spell : characterDatabase.cache->GetCharacterSpellStorageReadOnly(clientInitializeData.characterGuid))
+            std::vector<CharacterSpellStorage> characterSpellStorage;
+            if (characterDatabase.cache->GetCharacterSpellStorage(clientInitializeData.characterGuid, characterSpellStorage))
             {
-                spellStorageData.spells.push_back(spell.id);
+                for (CharacterSpellStorage spell : characterSpellStorage)
+                {
+                    spellStorageData.spells.push_back(spell.id);
+                }
             }
-            for (CharacterSkillStorage skill : characterDatabase.cache->GetCharacterSkillStorageReadOnly(clientInitializeData.characterGuid))
+
+            std::vector<CharacterSkillStorage> characterSkillStorage;
+            if (characterDatabase.cache->GetCharacterSkillStorage(clientInitializeData.characterGuid, characterSkillStorage))
             {
-                skillData newSkill;
-                newSkill.id = skill.id;
-                newSkill.value = skill.value;
-                newSkill.maxValue = skill.maxValue;
-                skillStorageData.skills.push_back(newSkill);
+                for (CharacterSkillStorage skill : characterSkillStorage)
+                {
+                    skillData newSkill;
+                    newSkill.id = skill.id;
+                    newSkill.value = skill.value;
+                    newSkill.maxValue = skill.maxValue;
+                    skillStorageData.skills.push_back(newSkill);
+                }
             }
             
             NovusHeader packetHeader;
@@ -169,10 +178,12 @@ namespace PlayerInitializeSystem
             novusConnection.SendPacket(loginSetTimeSpeed);
 
             /* Set Initial Fields */
-            const CharacterData characterData = characterDatabase.cache->GetCharacterDataReadOnly(clientInitializeData.characterGuid);
-            const CharacterVisualData characterVisualData = characterDatabase.cache->GetCharacterVisualDataReadOnly(clientInitializeData.characterGuid);
+            CharacterData characterData;
+            characterDatabase.cache->GetCharacterData(clientInitializeData.characterGuid, characterData);
+            CharacterVisualData characterVisualData;
+            characterDatabase.cache->GetCharacterVisualData(clientInitializeData.characterGuid, characterVisualData);
 
-            clientUpdateData.SetGuidValue(OBJECT_FIELD_GUID, clientInitializeData.characterGuid);
+            clientUpdateData.SetGuidValue(OBJECT_FIELD_GUID, characterData.guid);
             clientUpdateData.SetFieldValue<u32>(OBJECT_FIELD_TYPE, 0x19); // Object Type Player (Player, Unit, Object)
             clientUpdateData.SetFieldValue<f32>(OBJECT_FIELD_SCALE_X, 1.0f);
 

@@ -103,18 +103,29 @@ namespace ConnectionSystem
                         u64 guid;
                         packet.data.Read<u64>(guid);
 
-                        const CharacterData characterData = characterDatabase.cache->GetCharacterDataReadOnly(guid);
-
                         NovusHeader novusHeader;
                         Common::ByteBuffer nameQuery;
-
                         nameQuery.AppendGuid(guid);
-                        nameQuery.Write<u8>(0); // Name Unknown (0 = false, 1 = true);
-                        nameQuery.WriteString(characterData.name);
-                        nameQuery.Write<u8>(0);
-                        nameQuery.Write<u8>(characterData.race);
-                        nameQuery.Write<u8>(characterData.gender);
-                        nameQuery.Write<u8>(characterData.classId);
+
+                        CharacterData characterData;
+                        if (characterDatabase.cache->GetCharacterData(guid, characterData))
+                        {
+                            nameQuery.Write<u8>(0); // Name Unknown (0 = false, 1 = true);
+                            nameQuery.WriteString(characterData.name);
+                            nameQuery.Write<u8>(0);
+                            nameQuery.Write<u8>(characterData.race);
+                            nameQuery.Write<u8>(characterData.gender);
+                            nameQuery.Write<u8>(characterData.classId);
+                        }
+                        else
+                        {
+                            nameQuery.Write<u8>(1); // Name Unknown (0 = false, 1 = true);
+                            nameQuery.WriteString("Unknown");
+                            nameQuery.Write<u8>(0);
+                            nameQuery.Write<u8>(0);
+                            nameQuery.Write<u8>(0);
+                            nameQuery.Write<u8>(0);
+                        }
                         nameQuery.Write<u8>(0);
 
                         novusHeader.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_NAME_QUERY_RESPONSE, nameQuery.GetActualSize());
