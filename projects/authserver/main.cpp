@@ -29,7 +29,7 @@
 #include "ConnectionHandlers/ClientAuthConnectionHandler.h"
 #include "ConnectionHandlers/RelayNodeConnectionHandler.h"
 
-int main()
+i32 main()
 {
     /* Initialize Debug Handler */
     //InitDebugger(PROGRAM_TYPE::Char);

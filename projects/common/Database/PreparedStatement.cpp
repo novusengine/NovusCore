@@ -31,7 +31,7 @@ PreparedStatement& PreparedStatement::Bind(std::string value)
 	return *this;
 }
 
-PreparedStatement& PreparedStatement::Bind(unsigned int value)
+PreparedStatement& PreparedStatement::Bind(u32 value)
 {
     size_t replacePos = _statement.find("{u}");
 
@@ -80,7 +80,7 @@ PreparedStatement& PreparedStatement::Bind(u64 value)
     return *this;
 }
 
-PreparedStatement& PreparedStatement::Bind(int value)
+PreparedStatement& PreparedStatement::Bind(i32 value)
 {
 	size_t replacePos = _statement.find("{i}");
 

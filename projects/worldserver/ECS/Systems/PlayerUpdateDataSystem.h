@@ -27,6 +27,7 @@
 #include <Networking/ByteBuffer.h>
 
 #include "../NovusEnums.h"
+
 #include "../Connections/NovusConnection.h"
 #include "../Components/ConnectionComponent.h"
 #include "../Components/PlayerUpdateDataComponent.h"
@@ -202,14 +203,10 @@ namespace PlayerUpdateDataSystem
                 u32 selfVisibleFlags = (UF_FLAG_PUBLIC | UF_FLAG_PRIVATE);
                 u16 buildOpcode = 0;
 
-                Common::ByteBuffer selfPlayerUpdate = BuildPlayerUpdateData(clientConnection.characterGuid, selfVisibleFlags, clientUpdateData, buildOpcode);
                 NovusHeader novusHeader;
+                Common::ByteBuffer selfPlayerUpdate = BuildPlayerUpdateData(clientConnection.characterGuid, selfVisibleFlags, clientUpdateData, buildOpcode);
                 novusHeader.CreateForwardHeader(clientConnection.accountGuid, buildOpcode, selfPlayerUpdate.GetActualSize());
-                Common::ByteBuffer packet(novusHeader.size);
-                novusHeader.AddTo(packet);
-                packet.Append(selfPlayerUpdate);
-
-                novusConnection.SendPacket(packet);
+                novusConnection.SendPacket(novusHeader.BuildHeaderPacket(selfPlayerUpdate));
 
                 /* Build Self Packet for public */
                 u32 publicVisibleFlags = UF_FLAG_PUBLIC;

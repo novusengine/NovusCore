@@ -74,7 +74,7 @@ public:
     void PrintMessage(std::string message, Args... args)
     {
         char str[256];
-        int length = sprintf_s(str, message.c_str(), args...);
+        i32 length = sprintf_s(str, message.c_str(), args...);
         assert(length > -1);
 
         Message printMessage;

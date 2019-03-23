@@ -5,16 +5,16 @@
 template<typename T>
 struct TypeLock 
 {
-    std::atomic<int> lock;
+    std::atomic<i32> lock;
 };
 template<typename T>
-std::atomic<int>& GetWriters() 
+std::atomic<i32>& GetWriters()
 {
     static TypeLock<T> typelock;
     return typelock.lock;
 }
 template<typename T>
-std::atomic<int>& GetReaders() 
+std::atomic<i32>& GetReaders()
 {
     static TypeLock<T> typelock;
     return typelock.lock;

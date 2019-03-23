@@ -57,7 +57,7 @@ namespace Common
     class TcpServer
     {
     public:
-        TcpServer(asio::io_service& io_service, int port) : _acceptor(io_service, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port)), _ioService(io_service)
+        TcpServer(asio::io_service& io_service, i32 port) : _acceptor(io_service, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port)), _ioService(io_service)
         {
             _workerThread = new WorkerThread();
             _workerThread->_connections = &_connections;

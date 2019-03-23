@@ -87,7 +87,7 @@ std::string GetSHA1FromHexStr(std::string const& HexString)
 
     while (first != last)
     {
-        ss << std::setw(2) << static_cast<int>(*first++);
+        ss << std::setw(2) << static_cast<i32>(*first++);
     }
 
     return ss.str();

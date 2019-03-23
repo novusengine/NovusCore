@@ -29,16 +29,16 @@
 class NovusConnectionHandler : public Common::TcpServer
 {
 public:
-    NovusConnectionHandler(asio::io_service& io_service, int port) : Common::TcpServer(io_service, port) { _instance = this; }
+    NovusConnectionHandler(asio::io_service& io_service, i32 port) : Common::TcpServer(io_service, port) { _instance = this; }
     static NovusConnection* GetCharacterConnection()
     {
-        static int loadDistributionId = 0;
+        static i32 loadDistributionId = 0;
 
         if (_instance->_connections.size() == 0)
             return nullptr;
 
         /*if (loadDistributionId >= _instance->_connections.size())
-            loadDistributionId = int(_instance->_connections.size() - 1);
+            loadDistributionId = i32(_instance->_connections.size() - 1);
         
         NovusConnection* connection = reinterpret_cast<NovusConnection*>(_instance->_connections.at(loadDistributionId));
         loadDistributionId = (loadDistributionId + 1) % _instance->_connections.size();*/

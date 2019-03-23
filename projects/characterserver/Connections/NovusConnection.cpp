@@ -28,6 +28,7 @@
 #include <Database\DatabaseConnector.h>
 
 #include <algorithm>
+#include <string>
 #include <bitset>
 #include <zlib.h>
 
@@ -418,17 +419,58 @@ bool NovusConnection::HandleCommandForwardPacket()
                 characterBaseData.Bind(-8949.950195f);
                 characterBaseData.Bind(-132.492996f);
                 characterBaseData.Bind(83.531197f);
+                connector.Execute(characterBaseData);
 
-                PreparedStatement characterVisualData("INSERT INTO character_visual_data(guid, skin, face, facial_style, hair_style, hair_color) VALUES(LAST_INSERT_ID(), {u}, {u}, {u}, {u}, {u});");
+                // This needs to be non-async as we rely on LAST_INSERT_ID() to retrieve the character's guid
+                amy::result_set guidResult;
+                connector.Query("SELECT LAST_INSERT_ID();", guidResult);
+                u64 characterGuid = guidResult[0][0].as<amy::sql_bigint_unsigned>();
+
+                PreparedStatement characterVisualData("INSERT INTO character_visual_data(guid, skin, face, facial_style, hair_style, hair_color) VALUES({u}, {u}, {u}, {u}, {u}, {u});");
+                characterVisualData.Bind(characterGuid);
                 characterVisualData.Bind(createData->charSkin);
                 characterVisualData.Bind(createData->charFace);
                 characterVisualData.Bind(createData->charFacialStyle);
                 characterVisualData.Bind(createData->charHairStyle);
                 characterVisualData.Bind(createData->charHairColor);
+                connector.ExecuteAsync(characterVisualData);
 
-                // This needs to be non-async as we rely on LAST_INSERT_ID() to retrieve the character's guid
-                connector.Execute(characterBaseData);
-                connector.Execute(characterVisualData);
+                // Baseline Skills
+                std::stringstream skills;
+                skills << "INSERT INTO character_skill_storage(guid, skill, value, character_skill_storage.maxValue) VALUES";
+                skills << "(" << characterGuid << ", 98, 300, 300);";
+                connector.ExecuteAsync(skills.str());
+
+                // Baseline Spells
+                std::stringstream spells;
+                spells << "INSERT INTO character_spell_storage(guid, spell) VALUES";
+                spells << "(" << characterGuid << ", 203),";
+                spells << "(" << characterGuid << ", 204),";
+                spells << "(" << characterGuid << ", 522),";
+                spells << "(" << characterGuid << ", 668),";
+                spells << "(" << characterGuid << ", 2382),";
+                spells << "(" << characterGuid << ", 3050),";
+                spells << "(" << characterGuid << ", 3365),";
+                spells << "(" << characterGuid << ", 6233),";
+                spells << "(" << characterGuid << ", 6246),";
+                spells << "(" << characterGuid << ", 6247),";
+                spells << "(" << characterGuid << ", 6477),";
+                spells << "(" << characterGuid << ", 6478),";
+                spells << "(" << characterGuid << ", 6603),";
+                spells << "(" << characterGuid << ", 7266),";
+                spells << "(" << characterGuid << ", 7267),";
+                spells << "(" << characterGuid << ", 7355),";
+                spells << "(" << characterGuid << ", 8386),";
+                spells << "(" << characterGuid << ", 9125),";
+                spells << "(" << characterGuid << ", 9078),";
+                spells << "(" << characterGuid << ", 16092),";
+                spells << "(" << characterGuid << ", 21651),";
+                spells << "(" << characterGuid << ", 21652),";
+                spells << "(" << characterGuid << ", 22027),";
+                spells << "(" << characterGuid << ", 22810),";
+                spells << "(" << characterGuid << ", 61437),";
+                spells << "(" << characterGuid << ", 68398);";
+                connector.ExecuteAsync(spells.str());
 
                 DatabaseConnector::Borrow(DATABASE_TYPE::AUTHSERVER, [this, header](std::shared_ptr<DatabaseConnector>& connector)
                 {
@@ -486,8 +528,16 @@ bool NovusConnection::HandleCommandForwardPacket()
                 PreparedStatement characterVisualData("DELETE FROM character_visual_data WHERE guid={u};");
                 characterVisualData.Bind(guid);
 
+                PreparedStatement charcaterSkillStorage("DELETE FROM character_skill_storage WHERE guid={u};");
+                charcaterSkillStorage.Bind(guid);
+
+                PreparedStatement charcaterSpellStorage("DELETE FROM character_spell_storage WHERE guid={u};");
+                charcaterSpellStorage.Bind(guid);
+
                 connector.Execute(characterBaseData);
                 connector.Execute(characterVisualData);
+                connector.Execute(charcaterSkillStorage);
+                connector.Execute(charcaterSpellStorage);
 
                 DatabaseConnector::Borrow(DATABASE_TYPE::AUTHSERVER, [this, header](std::shared_ptr<DatabaseConnector>& connector)
                 {

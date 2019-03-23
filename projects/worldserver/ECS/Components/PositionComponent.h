@@ -33,6 +33,8 @@ struct PositionComponent
 	f32 y;
 	f32 z;
 	f32 orientation;
+
+    u32 oldGameTime;
     f32 oldx;
     f32 oldy;
     f32 oldz;

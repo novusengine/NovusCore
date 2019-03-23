@@ -29,7 +29,7 @@
 class ClientRelayConnectionHandler : public Common::TcpServer
 {
 public:
-    ClientRelayConnectionHandler(asio::io_service& io_service, int port) : Common::TcpServer(io_service, port) { _instance = this; }
+    ClientRelayConnectionHandler(asio::io_service& io_service, i32 port) : Common::TcpServer(io_service, port) { _instance = this; }
     static RelayConnection* GetConnectionByAccountGuid(u64 account)
     {
         if (_instance->_connections.size() == 0)

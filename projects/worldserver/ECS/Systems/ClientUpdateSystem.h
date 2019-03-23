@@ -40,7 +40,6 @@ namespace ClientUpdateSystem
         NovusConnection& novusConnection = *singleton.connection;
 
         auto view = registry.view<ConnectionComponent, PlayerUpdateDataComponent>();
-
         view.each([&novusConnection, playerUpdatesQueue](const auto, ConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData)
         {
             NovusHeader novusHeader;
@@ -53,12 +52,7 @@ namespace ClientUpdateSystem
                     if (std::find(clientUpdateData.visibleGuids.begin(), clientUpdateData.visibleGuids.end(), playerUpdatePacket.characterGuid) == clientUpdateData.visibleGuids.end())
                     {
                         novusHeader.CreateForwardHeader(clientConnection.accountGuid, playerUpdatePacket.opcode, playerUpdatePacket.data.size());
-
-                        Common::ByteBuffer packet(novusHeader.size);
-                        novusHeader.AddTo(packet);
-                        packet.Append(playerUpdatePacket.data);
-
-                        novusConnection.SendPacket(packet);
+                        novusConnection.SendPacket(novusHeader.BuildHeaderPacket(playerUpdatePacket.data));
                         clientUpdateData.visibleGuids.push_back(playerUpdatePacket.characterGuid);
                     }
                 }
@@ -67,12 +61,7 @@ namespace ClientUpdateSystem
                     if (playerUpdatePacket.characterGuid != clientConnection.characterGuid)
                     {
                         novusHeader.CreateForwardHeader(clientConnection.accountGuid, playerUpdatePacket.opcode, playerUpdatePacket.data.size());
-
-                        Common::ByteBuffer packet(novusHeader.size);
-                        novusHeader.AddTo(packet);
-                        packet.Append(playerUpdatePacket.data);
-
-                        novusConnection.SendPacket(packet);
+                        novusConnection.SendPacket(novusHeader.BuildHeaderPacket(playerUpdatePacket.data));
                     }
                 }
             }
@@ -82,31 +71,25 @@ namespace ClientUpdateSystem
                 if (clientConnection.characterGuid != movementPacket.characterGuid)
                 {
                     novusHeader.CreateForwardHeader(clientConnection.accountGuid, movementPacket.opcode, movementPacket.data.size());
-
-                    Common::ByteBuffer packet(novusHeader.size);
-                    novusHeader.AddTo(packet);
-                    packet.Append(movementPacket.data);
-
-                    novusConnection.SendPacket(packet);
+                    novusConnection.SendPacket(novusHeader.BuildHeaderPacket(movementPacket.data));
                 }
             }
 
             for (ChatPacket chatPacket : playerUpdatesQueue.playerChatPacketQueue)
             {
-
                 novusHeader.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_MESSAGECHAT, chatPacket.data.size());
-
-                Common::ByteBuffer packet(novusHeader.size);
-                novusHeader.AddTo(packet);
-                packet.Append(chatPacket.data);
-
-                novusConnection.SendPacket(packet);
+                novusConnection.SendPacket(novusHeader.BuildHeaderPacket(chatPacket.data));
             }
         });
 
         // Clear Queues
-        playerUpdatesQueue.playerUpdatePacketQueue.clear();
-        playerUpdatesQueue.playerMovementPacketQueue.clear();
-        playerUpdatesQueue.playerChatPacketQueue.clear();
+        if (playerUpdatesQueue.playerUpdatePacketQueue.size() != 0)
+            playerUpdatesQueue.playerUpdatePacketQueue.clear();
+
+        if (playerUpdatesQueue.playerMovementPacketQueue.size() != 0)
+            playerUpdatesQueue.playerMovementPacketQueue.clear();
+
+        if (playerUpdatesQueue.playerChatPacketQueue.size() != 0)
+            playerUpdatesQueue.playerChatPacketQueue.clear();
 	}
 }

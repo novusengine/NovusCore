@@ -49,7 +49,7 @@ namespace Common
             u8 guidmark = 0;
             Read(&guidmark, 1);
 
-            for (int i = 0; i < 8; ++i)
+            for (i32 i = 0; i < 8; ++i)
             {
                 if (guidmark & (u8(1) << i))
                 {

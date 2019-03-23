@@ -2,6 +2,7 @@
 #include <Networking/Opcode/Opcode.h>
 #include <NovusTypes.h>
 #include "../NovusEnums.h"
+#include "../Utils/CharacterUtils.h"
 
 #include "../DatabaseCache/CharacterDatabaseCache.h"
 
@@ -58,7 +59,6 @@ namespace PlayerInitializeSystem
 
 
             /* SMSG_ACCOUNT_DATA_TIMES */
-            Common::ByteBuffer accountDataForwardPacket;
             Common::ByteBuffer accountDataTimes;
             packetHeader.opcode = Common::Opcode::SMSG_ACCOUNT_DATA_TIMES;
 
@@ -72,11 +72,8 @@ namespace PlayerInitializeSystem
                 if (mask & (1 << i))
                     accountDataTimes.Write<u32>(0);
             }
-
-            packetHeader.size = (u16)accountDataTimes.GetActualSize();
-            packetHeader.AddTo(accountDataForwardPacket);
-            accountDataForwardPacket.Append(accountDataTimes);
-            novusConnection.SendPacket(accountDataForwardPacket);
+            
+            novusConnection.SendPacket(packetHeader.BuildHeaderPacket(accountDataTimes));
 
 
             /* SMSG_FEATURE_SYSTEM_STATUS */
@@ -91,7 +88,6 @@ namespace PlayerInitializeSystem
 
 
             /* SMSG_MOTD */
-            Common::ByteBuffer motdForwardPacket;
             Common::ByteBuffer motd;
             packetHeader.opcode = Common::Opcode::SMSG_MOTD;
             packetHeader.AddTo(motd);
@@ -99,10 +95,7 @@ namespace PlayerInitializeSystem
             motd.Write<u32>(0);
             motd.WriteString("Welcome to NovusCore.");
 
-            packetHeader.size = (u16)motd.GetActualSize();
-            packetHeader.AddTo(motdForwardPacket);
-            motdForwardPacket.Append(motd);
-            novusConnection.SendPacket(motdForwardPacket);
+            novusConnection.SendPacket(packetHeader.BuildHeaderPacket(motd));
 
 
             /* SMSG_LEARNED_DANCE_MOVES */
@@ -114,6 +107,7 @@ namespace PlayerInitializeSystem
             learnedDanceMoves.Write<u32>(0);
             learnedDanceMoves.Write<u32>(0);
             novusConnection.SendPacket(learnedDanceMoves);
+
 
             /* SMSG_ACTION_BUTTONS */
             Common::ByteBuffer actionButtons;
@@ -132,7 +126,6 @@ namespace PlayerInitializeSystem
             /* SMSG_INITIAL_SPELLS */
             if (spellStorageData.spells.size() > 0)
             {
-                Common::ByteBuffer initialSpellsForward;
                 packetHeader.opcode = Common::Opcode::SMSG_INITIAL_SPELLS;
                 Common::ByteBuffer initialSpells;
                 initialSpells.Write<u8>(0);
@@ -145,10 +138,7 @@ namespace PlayerInitializeSystem
                 }
 
                 initialSpells.Write<u16>(0); // Cooldown History Size
-                packetHeader.size = initialSpells.GetActualSize();
-                packetHeader.AddTo(initialSpellsForward);
-                initialSpellsForward.Append(initialSpells);
-                novusConnection.SendPacket(initialSpellsForward);
+                novusConnection.SendPacket(packetHeader.BuildHeaderPacket(initialSpells));
             }
 
 
@@ -207,7 +197,7 @@ namespace PlayerInitializeSystem
             clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER6, 8);
             clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER7, 1000);
             clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_LEVEL, characterData.level);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_FACTIONTEMPLATE, 1);
+            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_FACTIONTEMPLATE, 14);
             clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_FLAGS, 0x00000008);
             clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_FLAGS_2, 0x00000800);
             clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_BASEATTACKTIME + 0, 2900);
@@ -216,7 +206,9 @@ namespace PlayerInitializeSystem
             clientUpdateData.SetFieldValue<f32>(UNIT_FIELD_BOUNDINGRADIUS, 0.208000f);
             clientUpdateData.SetFieldValue<f32>(UNIT_FIELD_COMBATREACH, 1.5f);
 
-            u32 displayId = (47 + characterData.race * 2) + characterData.gender;
+            u32 displayId = 0;
+            CharacterUtils::GetDisplayIdFromRace(characterData, displayId);
+
             clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_DISPLAYID, displayId);
             clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_NATIVEDISPLAYID, displayId);
             clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_MOUNTDISPLAYID, 0);
@@ -227,14 +219,14 @@ namespace PlayerInitializeSystem
             clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_BYTES_1, 0);
             clientUpdateData.SetFieldValue<f32>(UNIT_MOD_CAST_SPEED, 1);
 
-            for (int i = 0; i < 5; i++)
+            for (i32 i = 0; i < 5; i++)
             {
                 clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_STAT0 + i, 20);
                 clientUpdateData.SetFieldValue<i32>(UNIT_FIELD_POSSTAT0 + i, 0);
                 clientUpdateData.SetFieldValue<i32>(UNIT_FIELD_NEGSTAT0 + i, 0);
             }
 
-            for (int i = 0; i < 7; i++)
+            for (i32 i = 0; i < 7; i++)
             {
                 clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_RESISTANCES + i, 0);
                 clientUpdateData.SetFieldValue<i32>(UNIT_FIELD_RESISTANCEBUFFMODSPOSITIVE + i, 0);
@@ -244,7 +236,10 @@ namespace PlayerInitializeSystem
 
             clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_BASE_MANA, 0);
             clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_BASE_HEALTH, 20);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_BYTES_2, 0);
+            clientUpdateData.SetFieldValue<u8>(UNIT_FIELD_BYTES_2, 0);
+            clientUpdateData.SetFieldValue<u8>(UNIT_FIELD_BYTES_2, 0x05, 1);
+            clientUpdateData.SetFieldValue<u8>(UNIT_FIELD_BYTES_2, 0, 2);
+            clientUpdateData.SetFieldValue<u8>(UNIT_FIELD_BYTES_2, 0, 3);
             clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_ATTACK_POWER, 29);
             clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_ATTACK_POWER_MODS, 0);
             clientUpdateData.SetFieldValue<f32>(UNIT_FIELD_ATTACK_POWER_MULTIPLIER, 1.0f);
@@ -256,7 +251,7 @@ namespace PlayerInitializeSystem
             clientUpdateData.SetFieldValue<f32>(UNIT_FIELD_HOVERHEIGHT, 1);
 
             clientUpdateData.SetFieldValue<u32>(PLAYER_FLAGS, 0);
-            clientUpdateData.SetFieldValue<u8>(PLAYER_BYTES, characterVisualData.skin, 0);
+            clientUpdateData.SetFieldValue<u8>(PLAYER_BYTES, characterVisualData.skin);
             clientUpdateData.SetFieldValue<u8>(PLAYER_BYTES, characterVisualData.face, 1);
             clientUpdateData.SetFieldValue<u8>(PLAYER_BYTES, characterVisualData.hairStyle, 2);
             clientUpdateData.SetFieldValue<u8>(PLAYER_BYTES, characterVisualData.hairColor, 3);
@@ -264,7 +259,7 @@ namespace PlayerInitializeSystem
             clientUpdateData.SetFieldValue<u8>(PLAYER_BYTES_2, 0, 1);
             clientUpdateData.SetFieldValue<u8>(PLAYER_BYTES_2, 0, 2);
             clientUpdateData.SetFieldValue<u8>(PLAYER_BYTES_2, 3, 3);
-            clientUpdateData.SetFieldValue<u8>(PLAYER_BYTES_3, characterData.gender, 0);
+            clientUpdateData.SetFieldValue<u8>(PLAYER_BYTES_3, characterData.gender);
             clientUpdateData.SetFieldValue<u8>(PLAYER_BYTES_3, 0, 1);
             clientUpdateData.SetFieldValue<u8>(PLAYER_BYTES_3, 0, 2);
             clientUpdateData.SetFieldValue<u8>(PLAYER_BYTES_3, 0, 3);
@@ -281,7 +276,7 @@ namespace PlayerInitializeSystem
             clientUpdateData.SetFieldValue<u32>(PLAYER_NEXT_LEVEL_XP, 400);
 
             i32 skillSize = i32(skillStorageData.skills.size());
-            for (int i = 0; i < 127; ++i)
+            for (i32 i = 0; i < 127; ++i)
             {
                 if (i < skillSize)
                 {
@@ -311,13 +306,13 @@ namespace PlayerInitializeSystem
             clientUpdateData.SetFieldValue<f32>(PLAYER_RANGED_CRIT_PERCENTAGE, 4.0f);
             clientUpdateData.SetFieldValue<f32>(PLAYER_OFFHAND_CRIT_PERCENTAGE, 4.0f);
 
-            for (int i = 0; i < 127; i++)
+            for (i32 i = 0; i < 127; i++)
                 clientUpdateData.SetFieldValue<u32>(PLAYER_EXPLORED_ZONES_1 + i, 0xFFFFFFFF);
 
             clientUpdateData.SetFieldValue<i32>(PLAYER_REST_STATE_EXPERIENCE, 0);
             clientUpdateData.SetFieldValue<u32>(PLAYER_FIELD_COINAGE, 5000000);
 
-            for (int i = 0; i < 7; i++)
+            for (i32 i = 0; i < 7; i++)
             {
                 clientUpdateData.SetFieldValue<i32>(PLAYER_FIELD_MOD_DAMAGE_DONE_POS + i, 0);
                 clientUpdateData.SetFieldValue<i32>(PLAYER_FIELD_MOD_DAMAGE_DONE_NEG + i, 0);
@@ -327,12 +322,12 @@ namespace PlayerInitializeSystem
             clientUpdateData.SetFieldValue<i32>(PLAYER_FIELD_WATCHED_FACTION_INDEX, -1);
             clientUpdateData.SetFieldValue<u32>(PLAYER_FIELD_MAX_LEVEL, 80);
 
-            for (int i = 0; i < 3; i++)
+            for (i32 i = 0; i < 3; i++)
             {
                 clientUpdateData.SetFieldValue<f32>(PLAYER_RUNE_REGEN_1 + i, 0.1f);
             }
 
-            for (int i = 0; i < 5; i++)
+            for (i32 i = 0; i < 5; i++)
             {
                 clientUpdateData.SetFieldValue<f32>(PLAYER_FIELD_GLYPH_SLOTS_1 + i, f32(21 + i));
             }

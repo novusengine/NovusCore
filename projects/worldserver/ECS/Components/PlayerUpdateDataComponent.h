@@ -23,10 +23,11 @@
 */
 #pragma once
 #include <NovusTypes.h>
+#include <Networking/ByteBuffer.h>
 #include <vector>
 
-#include <Networking/ByteBuffer.h>
 #include "../NovusEnums.h"
+#include "../Utils/UpdateMask.h"
 #include "../Connections/NovusConnection.h"
 
 struct PositionUpdateData

@@ -285,7 +285,7 @@ bool RelayConnection::HandlePacketRead()
 
 void RelayConnection::SendPacket(Common::ByteBuffer& packet, Common::Opcode opcode)
 {
-    int packetSize = packet.GetActualSize() + 5;
+    i32 packetSize = packet.GetActualSize() + 5;
     Common::ByteBuffer buffer(packetSize);
     buffer.Resize(packetSize);
 
@@ -457,7 +457,7 @@ void RelayConnection::HandleAuthSession()
 
         // Tutorial Flags : REQUIRED
         Common::ByteBuffer tutorialFlags(4 * 8);
-        for (int i = 0; i < 8; i++)
+        for (i32 i = 0; i < 8; i++)
             tutorialFlags.Write<u32>(0xFF);
 
         SendPacket(tutorialFlags, Common::Opcode::SMSG_TUTORIAL_FLAGS);

@@ -33,7 +33,7 @@
 
 NovusConnectionHandler*         NovusConnectionHandler::_instance       = nullptr;
 ClientRelayConnectionHandler*   ClientRelayConnectionHandler::_instance = nullptr;
-int main()
+i32 main()
 {
     /* Initialize Debug Handler */
     //InitDebugger(PROGRAM_TYPE::Relay);

@@ -67,13 +67,9 @@ namespace DeletePlayerSystem
             auto view = registry.view<ConnectionComponent, PlayerUpdateDataComponent>();
             view.each([&novusConnection, &buildPacket, &deletedEntities, buildOpcode](const auto, ConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData)
             {
-                Common::ByteBuffer sentPacket;
                 NovusHeader novusHeader;
                 novusHeader.CreateForwardHeader(clientConnection.accountGuid, buildOpcode, buildPacket.GetActualSize());
-                novusHeader.AddTo(sentPacket);
-                sentPacket.Append(buildPacket);
-
-                novusConnection.SendPacket(sentPacket);
+                novusConnection.SendPacket(novusHeader.BuildHeaderPacket(buildPacket));
 
                 for (u32 guid : deletedEntities)
                 {

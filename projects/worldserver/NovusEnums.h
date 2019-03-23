@@ -344,7 +344,6 @@ enum EUnitFields
     PLAYER_PET_SPELL_POWER = UNIT_END + 0x0499, // Size: 1, Type: INT, Flags: PRIVATE
     PLAYER_END = UNIT_END + 0x049A
 };
-
 enum UpdatefieldFlags
 {
     UF_FLAG_NONE = 0x000,
@@ -358,7 +357,6 @@ enum UpdatefieldFlags
     UF_FLAG_UNUSED2 = 0x080,
     UF_FLAG_DYNAMIC = 0x100
 };
-
 static u32 UnitUpdateFieldFlags[PLAYER_END] =
 {
     UF_FLAG_PUBLIC,                                         // OBJECT_FIELD_GUID
@@ -1688,7 +1686,6 @@ static u32 UnitUpdateFieldFlags[PLAYER_END] =
     UF_FLAG_PRIVATE,                                        // PLAYER_GLYPHS_ENABLED
     UF_FLAG_PRIVATE,                                        // PLAYER_PET_SPELL_POWER
 };
-
 enum ObjectUpdateType : u8
 {
     UPDATETYPE_VALUES = 0,

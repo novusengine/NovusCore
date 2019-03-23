@@ -78,7 +78,7 @@ void BigNumber::Bin2BN(u8 const* data, i32 size)
 {
     u8* array = new u8[size];
 
-    for (int i = 0; i < size; i++)
+    for (i32 i = 0; i < size; i++)
         array[i] = data[size - 1 - i];
 
     BN_bin2bn(array, size, _bigNum);
@@ -87,8 +87,8 @@ void BigNumber::Bin2BN(u8 const* data, i32 size)
 }
 std::unique_ptr<u8[]> BigNumber::BN2BinArray(size_t size, bool littleEndian)
 {
-    int numBytes = GetBytes();
-    int neededSize = ((int)size >= numBytes) ? (int)size : numBytes;
+    i32 numBytes = GetBytes();
+    i32 neededSize = ((i32)size >= numBytes) ? (i32)size : numBytes;
 
     u8* array = new u8[neededSize];
 
@@ -108,7 +108,7 @@ std::unique_ptr<u8[]> BigNumber::BN2BinArray(size_t size, bool littleEndian)
 
 void BigNumber::Rand(size_t bits)
 {
-    BN_rand(_bigNum, (int)bits, 0, 1);
+    BN_rand(_bigNum, (i32)bits, 0, 1);
 }
 BigNumber BigNumber::Exponential(BigNumber const& bigNum)
 {

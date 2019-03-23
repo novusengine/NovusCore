@@ -28,7 +28,7 @@
 
 #include "Connections\NovusConnection.h"
 
-int main()
+i32 main()
 {
     /* Initialize Debug Handler */
     //InitDebugger(PROGRAM_TYPE::Char);

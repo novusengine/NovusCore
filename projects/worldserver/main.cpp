@@ -20,7 +20,7 @@ std::string GetLineFromCin() {
 	return line;
 }
 
-int main()
+i32 main()
 {
     //InitDebugger(PROGRAM_TYPE::World);
 
@@ -106,10 +106,10 @@ int main()
 	}
 
 	std::string message = "--- Thank you for flying with NovusCore, press enter to exit --- ";
-	for (int i = 0; i < message.size()-1; i++)
+	for (i32 i = 0; i < message.size()-1; i++)
 		std::cout << "-";
 	std::cout << std::endl << message << std::endl;
-	for (int i = 0; i < message.size()-1; i++)
+	for (i32 i = 0; i < message.size()-1; i++)
 		std::cout << "-";
 	std::cout << std::endl;
 

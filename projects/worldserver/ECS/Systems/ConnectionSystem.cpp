@@ -1,6 +1,7 @@
 #include "ConnectionSystem.h"
 #include <Networking/Opcode/Opcode.h>
 #include <Utils/DebugHandler.h>
+#include <Utils/AtomicLock.h>
 #include "../NovusEnums.h"
 
 #include "../DatabaseCache/CharacterDatabaseCache.h"
@@ -18,8 +19,16 @@ namespace ConnectionSystem
         CharacterDatabaseCacheSingleton& characterDatabase = registry.get<CharacterDatabaseCacheSingleton>(0);
 		NovusConnection& novusConnection = *singleton.connection;
 
-        auto view = registry.view<ConnectionComponent, PlayerUpdateDataComponent, PositionComponent>();
+        LockRead(SingletonComponent);
+        LockRead(DeletePlayerQueueSingleton);
+        LockRead(CharacterDatabaseCacheSingleton);
+        LockRead(NovusConnection);
 
+        LockWrite(ConnectionComponent);
+        LockWrite(PlayerUpdateDataComponent);
+        LockWrite(PositionComponent);
+
+        auto view = registry.view<ConnectionComponent, PlayerUpdateDataComponent, PositionComponent>();
         view.each([&singleton, &deletePlayerQueue, &characterDatabase, &novusConnection](const auto, ConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData, PositionComponent& clientPositionData)
         {
             NovusHeader packetHeader;
@@ -83,7 +92,7 @@ namespace ConnectionSystem
                     case Common::Opcode::CMSG_SET_SELECTION:
                     {
                         u64 selectedGuid = 0;
-                        packet.data.Read<u64>(selectedGuid);
+                        packet.data.ReadPackedGUID(selectedGuid);
 
                         clientUpdateData.SetGuidValue(UNIT_FIELD_TARGET, selectedGuid);
                         packet.handled = true;
@@ -97,7 +106,6 @@ namespace ConnectionSystem
                         const CharacterData characterData = characterDatabase.cache->GetCharacterDataReadOnly(guid);
 
                         NovusHeader novusHeader;
-                        Common::ByteBuffer nameQueryForward;
                         Common::ByteBuffer nameQuery;
 
                         nameQuery.AppendGuid(guid);
@@ -110,9 +118,7 @@ namespace ConnectionSystem
                         nameQuery.Write<u8>(0);
 
                         novusHeader.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_NAME_QUERY_RESPONSE, nameQuery.GetActualSize());
-                        novusHeader.AddTo(nameQueryForward);
-                        nameQueryForward.Append(nameQuery);
-                        novusConnection.SendPacket(nameQueryForward);
+                        novusConnection.SendPacket(novusHeader.BuildHeaderPacket(nameQuery));
                         packet.handled = true;
                         break;
                     }
@@ -146,23 +152,17 @@ namespace ConnectionSystem
                     case Common::Opcode::MSG_MOVE_HEARTBEAT:
                     {
                         // Read GUID here as packed
-                        uint64_t guid;
+                        u64 guid;
                         packet.data.ReadPackedGUID(guid);
 
-                        uint32_t movementFlags;
-                        uint16_t movementFlagsExtra;
-                        uint32_t gameTime;
-                        float position_x;
-                        float position_y;
-                        float position_z;
-                        float position_orientation;
-                        uint32_t fallTime;
-
-                        // Store old movement info
-                        clientPositionData.oldx = clientPositionData.x;
-                        clientPositionData.oldy = clientPositionData.y;
-                        clientPositionData.oldz = clientPositionData.z;
-                        clientPositionData.oldorientation = clientPositionData.orientation;
+                        u32 movementFlags;
+                        u16 movementFlagsExtra;
+                        u32 gameTime;
+                        f32 position_x;
+                        f32 position_y;
+                        f32 position_z;
+                        f32 orientation;
+                        u32 fallTime;
 
                         packet.data.Read(&movementFlags, 4);
                         packet.data.Read(&movementFlagsExtra, 2);
@@ -170,31 +170,42 @@ namespace ConnectionSystem
                         packet.data.Read(&position_x, 4);
                         packet.data.Read(&position_y, 4);
                         packet.data.Read(&position_z, 4);
-                        packet.data.Read(&position_orientation, 4);
+                        packet.data.Read(&orientation, 4);
                         packet.data.Read(&fallTime, 4);
 
-                        clientPositionData.x = position_x;
-                        clientPositionData.y = position_y;
-                        clientPositionData.z = position_z;
-                        clientPositionData.orientation = position_orientation;
+                        // 
+                        if (gameTime > clientPositionData.oldGameTime)
+                        {
+                            // Store old movement info
+                            clientPositionData.oldGameTime = gameTime;
+                            clientPositionData.oldx = clientPositionData.x;
+                            clientPositionData.oldy = clientPositionData.y;
+                            clientPositionData.oldz = clientPositionData.z;
+                            clientPositionData.oldorientation = clientPositionData.orientation;
 
-                        uint32_t timeDelay = u32(singleton.lifeTimeInMS) - gameTime;
-                        PositionUpdateData positionUpdateData;
-                        positionUpdateData.opcode = opcode;
-                        positionUpdateData.movementFlags = movementFlags;
-                        positionUpdateData.movementFlagsExtra = movementFlagsExtra;
-                        positionUpdateData.gameTime = gameTime + timeDelay;
-                        positionUpdateData.x = clientPositionData.x;
-                        positionUpdateData.y = clientPositionData.y;
-                        positionUpdateData.z = clientPositionData.z;
-                        positionUpdateData.orientation = clientPositionData.orientation;
-                        positionUpdateData.fallTime = fallTime;
-                        clientUpdateData.positionUpdateData.push_back(positionUpdateData);
+                            clientPositionData.x = position_x;
+                            clientPositionData.y = position_y;
+                            clientPositionData.z = position_z;
+                            clientPositionData.orientation = orientation;
+
+                            PositionUpdateData positionUpdateData;
+                            positionUpdateData.opcode = opcode;
+                            positionUpdateData.movementFlags = movementFlags;
+                            positionUpdateData.movementFlagsExtra = movementFlagsExtra;
+                            positionUpdateData.gameTime = u32(singleton.lifeTimeInMS);
+                            positionUpdateData.x = position_x;
+                            positionUpdateData.y = position_y;
+                            positionUpdateData.z = position_z;
+                            positionUpdateData.orientation = orientation;
+                            positionUpdateData.fallTime = fallTime;
+                            clientUpdateData.positionUpdateData.push_back(positionUpdateData);
+
+                            NC_LOG_MESSAGE("Opcode(%u), ServerTimeInMS(%u), GameTime(%u)", opcode, u32(singleton.lifeTimeInMS), gameTime);
+                        }
 
                         packet.handled = true;
                         break;
                     }
-                
                     case Common::Opcode::CMSG_MESSAGECHAT:
                     {
                         packet.handled = true;
@@ -254,6 +265,67 @@ namespace ConnectionSystem
                         chatUpdateData.message = msgOutput;
                         chatUpdateData.handled = false;
                         clientUpdateData.chatUpdateData.push_back(chatUpdateData);
+                        break;
+                    }
+                    case Common::Opcode::CMSG_ATTACKSWING:
+                    {
+                        u64 attackGuid;
+                        packet.data.Read<u64>(attackGuid);
+
+                        NovusHeader novusHeader;
+                        Common::ByteBuffer attackStart;
+                        novusHeader.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_ATTACKSTART, 16);
+                        novusHeader.AddTo(attackStart);
+
+                        attackStart.Write<u64>(clientConnection.characterGuid);
+                        attackStart.Write<u64>(attackGuid);
+
+                        novusConnection.SendPacket(attackStart);
+
+                        Common::ByteBuffer attackerStateUpdate;
+                        attackerStateUpdate.Write<u32>(0);
+                        attackerStateUpdate.AppendGuid(clientConnection.characterGuid);
+                        attackerStateUpdate.AppendGuid(attackGuid);
+                        attackerStateUpdate.Write<u32>(5);
+                        attackerStateUpdate.Write<u32>(0);
+                        attackerStateUpdate.Write<u8>(1);
+
+                        attackerStateUpdate.Write<u32>(1);
+                        attackerStateUpdate.Write<f32>(5);
+                        attackerStateUpdate.Write<u32>(5);
+
+                        attackerStateUpdate.Write<u8>(0);
+                        attackerStateUpdate.Write<u32>(0);
+                        attackerStateUpdate.Write<u32>(0);
+
+                        novusHeader.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_ATTACKERSTATEUPDATE, 0);
+                        novusConnection.SendPacket(novusHeader.BuildHeaderPacket(attackerStateUpdate));
+
+                        packet.handled = true;
+                        break;
+                    }
+                    case Common::Opcode::CMSG_ATTACKSTOP:
+                    {
+                        u64 attackGuid = clientUpdateData.GetFieldValue<u64>(UNIT_FIELD_TARGET);
+
+                        Common::ByteBuffer attackStop;
+                        attackStop.AppendGuid(clientConnection.characterGuid);
+                        attackStop.AppendGuid(attackGuid);
+                        attackStop.Write<u32>(0);
+
+                        NovusHeader novusHeader;
+                        novusHeader.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_ATTACKSTOP, 20);
+                        novusConnection.SendPacket(novusHeader.BuildHeaderPacket(attackStop));
+                        packet.handled = true;
+                        break;
+                    }
+                    case Common::Opcode::CMSG_SETSHEATHED:
+                    {
+                        u32 state;
+                        packet.data.Read<u32>(state);
+
+                        clientUpdateData.SetFieldValue<u8>(UNIT_FIELD_BYTES_2, u8(state));
+                        packet.handled = true;
                         break;
                     }
                     default:

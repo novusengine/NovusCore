@@ -28,8 +28,8 @@
 
 // Valid type/tokens
 // {s} - std::string
-// {i} - int
-// {u} - unsigned int
+// {i} - i32
+// {u} - u32
 // {f} - f32
 // {d} - f64
 
@@ -40,8 +40,8 @@ public:
 
     PreparedStatement& Bind(u8 value);
 	PreparedStatement& Bind(std::string value);
-    PreparedStatement& Bind(unsigned int value);
-	PreparedStatement& Bind(int value);
+    PreparedStatement& Bind(u32 value);
+	PreparedStatement& Bind(i32 value);
 	PreparedStatement& Bind(f32 value);
 	PreparedStatement& Bind(f64 value);
     PreparedStatement& Bind(u64 value);

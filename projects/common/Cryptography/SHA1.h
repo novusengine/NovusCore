@@ -44,7 +44,7 @@ public:
     void Finish();
 
     u8* GetData(void) { return _data; }
-    int GetLength(void) const { return SHA_DIGEST_LENGTH; }
+    i32 GetLength(void) const { return SHA_DIGEST_LENGTH; }
 
 private:
     SHA_CTX _state;

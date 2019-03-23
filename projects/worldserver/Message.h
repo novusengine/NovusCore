@@ -29,7 +29,7 @@ struct Message
 {
     Message() { code = -1; opcode = -1; account = -1; message = nullptr; }
 
-	int code;
+    i32 code;
     i16 opcode;
     i32 account;
     Common::ByteBuffer packet;
