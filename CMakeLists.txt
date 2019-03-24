@@ -35,6 +35,11 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_INSTALL_PREFIX}")
 
 add_compile_definitions($<CONFIG> NOMINMAX WIN32_LEAN_AND_MEAN)
 
+if (MSVC)
+    add_definitions("/MP")
+    add_compile_options("/WX")
+endif()
+
 if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set (CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/build" CACHE PATH "default install path" FORCE )
 endif()

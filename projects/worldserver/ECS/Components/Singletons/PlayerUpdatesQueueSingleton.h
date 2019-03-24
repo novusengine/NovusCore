@@ -29,7 +29,7 @@
 struct PlayerUpdatePacket
 {
     u16 opcode;
-    u32 characterGuid;
+    u64 characterGuid;
     u8 updateType;
     Common::ByteBuffer data;
 };
@@ -37,7 +37,7 @@ struct PlayerUpdatePacket
 struct MovementPacket
 {
     u16 opcode;
-    u32 characterGuid;
+    u64 characterGuid;
     Common::ByteBuffer data;
 };
 

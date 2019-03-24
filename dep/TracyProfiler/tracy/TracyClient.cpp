@@ -15,6 +15,9 @@
 
 #ifdef TRACY_ENABLE
 
+#pragma warning(push)
+#pragma warning(disable: 4996)
+
 #include "common/tracy_lz4.cpp"
 #include "client/TracyProfiler.cpp"
 #include "client/TracyCallstack.cpp"
@@ -37,5 +40,7 @@
 #  pragma comment(lib, "ws2_32.lib")
 #  pragma comment(lib, "dbghelp.lib")
 #endif
+
+#pragma warning(pop) 
 
 #endif

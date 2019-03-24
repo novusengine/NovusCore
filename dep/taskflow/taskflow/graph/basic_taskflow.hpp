@@ -450,7 +450,7 @@ void BasicTaskflow<E>::Closure::operator () () const {
         node->_dependents.pop_back();
       }
     }
-    node->_num_dependents = node->_dependents.size();
+    node->_num_dependents = static_cast<unsigned int>(node->_dependents.size());
     node->clear_status();
   }
 

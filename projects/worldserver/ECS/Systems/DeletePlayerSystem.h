@@ -71,7 +71,7 @@ namespace DeletePlayerSystem
                 novusHeader.CreateForwardHeader(clientConnection.accountGuid, buildOpcode, buildPacket.GetActualSize());
                 novusConnection.SendPacket(novusHeader.BuildHeaderPacket(buildPacket));
 
-                for (u32 guid : deletedEntities)
+                for (u64 guid : deletedEntities)
                 {
                     auto position = std::find(clientUpdateData.visibleGuids.begin(), clientUpdateData.visibleGuids.end(), guid);
                     if (position != clientUpdateData.visibleGuids.end())

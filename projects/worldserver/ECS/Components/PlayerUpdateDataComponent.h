@@ -82,7 +82,7 @@ struct PlayerUpdateDataComponent
 
     UpdateMask<1344> changesMask;
     Common::ByteBuffer playerFields;
-    std::vector<u32> visibleGuids;
+    std::vector<u64> visibleGuids;
     std::vector<PositionUpdateData> positionUpdateData;
     std::vector<ChatUpdateData> chatUpdateData;
 };
