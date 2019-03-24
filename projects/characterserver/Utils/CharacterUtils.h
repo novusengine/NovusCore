@@ -69,5 +69,4 @@ namespace CharacterUtils
 
         return true;
     }
-
 }

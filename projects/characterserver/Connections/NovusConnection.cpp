@@ -330,25 +330,25 @@ bool NovusConnection::HandleCommandForwardPacket()
                 /* Template for loading a character */
                 for (auto& row : results)
                 {
-                    charEnum.Write<u64>(row[0].as<amy::sql_int_unsigned>()); // Guid
-                    charEnum.WriteString(row[1].as<amy::sql_varchar>()); // Name
-                    charEnum.Write<u8>(row[2].as<amy::sql_tinyint_unsigned>()); // Race
-                    charEnum.Write<u8>(row[3].as<amy::sql_tinyint_unsigned>()); // Class
-                    charEnum.Write<u8>(row[4].as<amy::sql_tinyint_unsigned>()); // Gender
+                    charEnum.Write<u64>(row[0].GetU64()); // Guid
+                    charEnum.WriteString(row[1].GetString()); // Name
+                    charEnum.Write<u8>(row[2].GetU8()); // Race
+                    charEnum.Write<u8>(row[3].GetU8()); // Class
+                    charEnum.Write<u8>(row[4].GetU8()); // Gender
 
-                    charEnum.Write<u8>(row[5].as<amy::sql_tinyint_unsigned>()); // Skin
-                    charEnum.Write<u8>(row[6].as<amy::sql_tinyint_unsigned>()); // Face
-                    charEnum.Write<u8>(row[7].as<amy::sql_tinyint_unsigned>()); // Hairstyle
-                    charEnum.Write<u8>(row[8].as<amy::sql_tinyint_unsigned>()); // Haircolor
-                    charEnum.Write<u8>(row[9].as<amy::sql_tinyint_unsigned>()); // Facialstyle
+                    charEnum.Write<u8>(row[5].GetU8()); // Skin
+                    charEnum.Write<u8>(row[6].GetU8()); // Face
+                    charEnum.Write<u8>(row[7].GetU8()); // Hairstyle
+                    charEnum.Write<u8>(row[8].GetU8()); // Haircolor
+                    charEnum.Write<u8>(row[9].GetU8()); // Facialstyle
 
-                    charEnum.Write<u8>(row[10].as<amy::sql_tinyint_unsigned>()); // Level
-                    charEnum.Write<u32>(row[11].as<amy::sql_tinyint_unsigned>()); // Zone Id
-                    charEnum.Write<u32>(row[12].as<amy::sql_tinyint_unsigned>()); // Map Id
+                    charEnum.Write<u8>(row[10].GetU8()); // Level
+                    charEnum.Write<u32>(row[11].GetU8()); // Zone Id
+                    charEnum.Write<u32>(row[12].GetU8()); // Map Id
 
-                    charEnum.Write<f32>(row[13].as<amy::sql_float>()); // X
-                    charEnum.Write<f32>(row[14].as<amy::sql_float>()); // Y
-                    charEnum.Write<f32>(row[15].as<amy::sql_float>()); // Z
+                    charEnum.Write<f32>(row[13].GetF32()); // X
+                    charEnum.Write<f32>(row[14].GetF32()); // Y
+                    charEnum.Write<f32>(row[15].GetF32()); // Z
 
                     charEnum.Write<u32>(0); // Guild Id
 

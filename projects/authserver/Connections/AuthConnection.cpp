@@ -252,9 +252,10 @@ void AuthConnection::HandleCommandChallengeCallback(amy::result_set& results)
         return;
     }
 
-    accountGuid = results[0][0].as<amy::sql_int_unsigned>();
-    std::string dbSalt = results[0][1].as<amy::sql_varchar>();
-    std::string dbVerifier = results[0][2].as<amy::sql_varchar>();
+    amy::row resultRow = results[0];
+    accountGuid = resultRow[0].GetU32();
+    std::string dbSalt = resultRow[1].GetString();
+    std::string dbVerifier = resultRow[2].GetString();
 
     s.Hex2BN(dbSalt.c_str());
     v.Hex2BN(dbVerifier.c_str());
@@ -492,7 +493,7 @@ bool AuthConnection::HandleCommandGameServerList()
         {
             for (auto row : realmCharacterCountResult)
             {
-                realmCharacterData[row[0].as<amy::sql_tinyint_unsigned>()] = row[1].as<amy::sql_tinyint_unsigned>();
+                realmCharacterData[row[0].GetU8()] = row[1].GetU8();
             }
         }
 
@@ -500,13 +501,13 @@ bool AuthConnection::HandleCommandGameServerList()
         for (auto row : results)
         {
             sAuthLogonGameListData realmData;
-            realmData.Id = row[0].as<amy::sql_tinyint_unsigned>();
-            realmData.Name = row[1].as<amy::sql_varchar>();
-            realmData.Address = row[2].as<amy::sql_varchar>();
-            realmData.Type = row[3].as<amy::sql_tinyint_unsigned>();
-            realmData.Flags = row[4].as<amy::sql_tinyint_unsigned>();
-            realmData.Timezone = row[5].as<amy::sql_tinyint_unsigned>();
-            realmData.Population = row[6].as<amy::sql_float>();
+            realmData.Id = row[0].GetU8();
+            realmData.Name = row[1].GetString();
+            realmData.Address = row[2].GetString();
+            realmData.Type = row[3].GetU8();
+            realmData.Flags = row[4].GetU8();
+            realmData.Timezone = row[5].GetU8();
+            realmData.Population = row[6].GetF32();
             realmData.Characters = realmCharacterData[realmData.Id];
             realmData.Locked = 0;
 
@@ -519,7 +520,7 @@ bool AuthConnection::HandleCommandGameServerList()
 
         Common::ByteBuffer RealmListSizeBuffer;
         RealmListSizeBuffer.Write<u32>(0);
-        RealmListSizeBuffer.Write<u16>((u16)results.affected_rows());
+        RealmListSizeBuffer.Write<u16>(u16(results.affected_rows()));
 
         Common::ByteBuffer hdr;
         hdr.Write<u8>(AUTH_GAMESERVER_LIST);

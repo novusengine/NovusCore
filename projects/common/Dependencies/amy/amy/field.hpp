@@ -34,6 +34,51 @@ public:
         return detail::value_cast<SQLType>(value_str_, length_);
     }
 
+    sql_tinyint GetI8() const {
+        assert(!is_null());
+        return detail::value_cast<sql_tinyint>(value_str_, length_);
+    }
+    sql_tinyint_unsigned GetU8() const {
+        assert(!is_null());
+        return detail::value_cast<sql_tinyint_unsigned>(value_str_, length_);
+    }
+    sql_smallint GetI16() const {
+        assert(!is_null());
+        return detail::value_cast<sql_smallint>(value_str_, length_);
+    }
+    sql_smallint_unsigned GetU16() const {
+        assert(!is_null());
+        return detail::value_cast<sql_smallint_unsigned>(value_str_, length_);
+    }
+    sql_int GetI32() const {
+        assert(!is_null());
+        return detail::value_cast<sql_int>(value_str_, length_);
+    }
+    sql_int_unsigned GetU32() const {
+        assert(!is_null());
+        return detail::value_cast<sql_int_unsigned>(value_str_, length_);
+    }
+    sql_bigint GetI64() const {
+        assert(!is_null());
+        return detail::value_cast<sql_bigint>(value_str_, length_);
+    }
+    sql_bigint_unsigned GetU64() const {
+        assert(!is_null());
+        return detail::value_cast<sql_bigint_unsigned>(value_str_, length_);
+    }
+    sql_float GetF32() const {
+        assert(!is_null());
+        return detail::value_cast<sql_float>(value_str_, length_);
+    }
+    sql_double GetF64() const {
+        assert(!is_null());
+        return detail::value_cast<sql_double>(value_str_, length_);
+    }
+    sql_varchar GetString() const {
+        assert(!is_null());
+        return detail::value_cast<sql_varchar>(value_str_, length_);
+    }
+
     char const* data() const {
         return value_str_;
     }

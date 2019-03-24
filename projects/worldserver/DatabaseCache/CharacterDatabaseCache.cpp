@@ -24,27 +24,27 @@ void CharacterDatabaseCache::Load()
         for (auto row : resultSet)
         {
             CharacterData newCharacterData(this);
-            newCharacterData.guid = row[0].as<amy::sql_bigint_unsigned>();
-            newCharacterData.account = row[1].as<amy::sql_int_unsigned>();
-            newCharacterData.name = row[2].as<amy::sql_varchar>();
-            newCharacterData.race = row[3].as<amy::sql_tinyint_unsigned>();
-            newCharacterData.gender = row[4].as<amy::sql_tinyint_unsigned>();
-            newCharacterData.classId = row[5].as<amy::sql_tinyint_unsigned>();
-            newCharacterData.level = row[6].as<amy::sql_tinyint_unsigned>();
-            newCharacterData.mapId = row[7].as<amy::sql_int_unsigned>();
-            newCharacterData.zoneId = row[8].as<amy::sql_int_unsigned>();
-            newCharacterData.coordinateX = row[9].as<amy::sql_float>();
-            newCharacterData.coordinateY = row[10].as<amy::sql_float>();
-            newCharacterData.coordinateZ = row[11].as<amy::sql_float>();
-            newCharacterData.orientation = row[12].as<amy::sql_float>();
+            newCharacterData.guid = row[0].GetU64();
+            newCharacterData.account = row[1].GetU32();
+            newCharacterData.name = row[2].GetString();
+            newCharacterData.race = row[3].GetU8();
+            newCharacterData.gender = row[4].GetU8();
+            newCharacterData.classId = row[5].GetU8();
+            newCharacterData.level = row[6].GetU8();
+            newCharacterData.mapId = row[7].GetU32();
+            newCharacterData.zoneId = row[8].GetU32();
+            newCharacterData.coordinateX = row[9].GetF32();
+            newCharacterData.coordinateY = row[10].GetF32();
+            newCharacterData.coordinateZ = row[11].GetF32();
+            newCharacterData.orientation = row[12].GetF32();
 
             CharacterVisualData newCharacterVisualData(this);
             newCharacterVisualData.guid = newCharacterData.guid;
-            newCharacterVisualData.skin = row[13].as<amy::sql_tinyint_unsigned>();
-            newCharacterVisualData.face = row[14].as<amy::sql_tinyint_unsigned>();
-            newCharacterVisualData.facialStyle = row[15].as<amy::sql_tinyint_unsigned>();
-            newCharacterVisualData.hairStyle = row[16].as<amy::sql_tinyint_unsigned>();
-            newCharacterVisualData.hairColor = row[17].as<amy::sql_tinyint_unsigned>();
+            newCharacterVisualData.skin = row[13].GetU8();
+            newCharacterVisualData.face = row[14].GetU8();
+            newCharacterVisualData.facialStyle = row[15].GetU8();
+            newCharacterVisualData.hairStyle = row[16].GetU8();
+            newCharacterVisualData.hairColor = row[17].GetU8();
 
             _accessMutex.lock();
             _characterDataCache.insert({ newCharacterData.guid, newCharacterData });
@@ -59,8 +59,8 @@ void CharacterDatabaseCache::Load()
         for (auto row : resultSet)
         {
             CharacterSpellStorage newCharacterSpellStorage(this);
-            u64 guid = row[0].as<amy::sql_bigint_unsigned>();
-            newCharacterSpellStorage.id = row[1].as<amy::sql_int_unsigned>();
+            u64 guid = row[0].GetU64();
+            newCharacterSpellStorage.id = row[1].GetU32();
 
             _accessMutex.lock();
             _characterSpellStorageCache[guid].push_back(newCharacterSpellStorage);
@@ -75,10 +75,10 @@ void CharacterDatabaseCache::Load()
         for (auto row : resultSet)
         {
             CharacterSkillStorage newCharacterSkillStorage(this);
-            u64 guid = row[0].as<amy::sql_bigint_unsigned>();
-            newCharacterSkillStorage.id = row[1].as<amy::sql_smallint_unsigned>();
-            newCharacterSkillStorage.value = row[2].as<amy::sql_smallint_unsigned>();
-            newCharacterSkillStorage.maxValue = row[3].as<amy::sql_smallint_unsigned>();
+            u64 guid = row[0].GetU64();
+            newCharacterSkillStorage.id = row[1].GetU16();
+            newCharacterSkillStorage.value = row[2].GetU16();
+            newCharacterSkillStorage.maxValue = row[3].GetU16();
 
             _accessMutex.lock();
             _characterSkillStorageCache[guid].push_back(newCharacterSkillStorage);
@@ -128,21 +128,23 @@ bool CharacterDatabaseCache::GetCharacterData(u64 guid, CharacterData& output)
             return false;
 
         CharacterData newCharacterData(this);
-        newCharacterData.guid = resultSet[0][0].as<amy::sql_int_unsigned>();
-        newCharacterData.account = resultSet[0][1].as<amy::sql_int_unsigned>();
+        amy::row resultRow = resultSet[0];
 
-        newCharacterData.name = resultSet[0][2].as<amy::sql_varchar>();
+        newCharacterData.guid = resultRow[0].GetU32();
+        newCharacterData.account = resultRow[1].GetU32();
 
-        newCharacterData.race = resultSet[0][3].as<amy::sql_tinyint_unsigned>();
-        newCharacterData.gender = resultSet[0][4].as<amy::sql_tinyint_unsigned>();
-        newCharacterData.classId = resultSet[0][5].as<amy::sql_tinyint_unsigned>();
-        newCharacterData.level = resultSet[0][6].as<amy::sql_tinyint_unsigned>();
-        newCharacterData.mapId = resultSet[0][7].as<amy::sql_int_unsigned>();
-        newCharacterData.zoneId = resultSet[0][8].as<amy::sql_int_unsigned>();
-        newCharacterData.coordinateX = resultSet[0][9].as<amy::sql_float>();
-        newCharacterData.coordinateY = resultSet[0][10].as<amy::sql_float>();
-        newCharacterData.coordinateZ = resultSet[0][11].as<amy::sql_float>();
-        newCharacterData.orientation = resultSet[0][12].as<amy::sql_float>();
+        newCharacterData.name = resultRow[2].GetString();
+
+        newCharacterData.race = resultRow[3].GetU8();
+        newCharacterData.gender = resultRow[4].GetU8();
+        newCharacterData.classId = resultRow[5].GetU8();
+        newCharacterData.level = resultRow[6].GetU8();
+        newCharacterData.mapId = resultRow[7].GetU32();
+        newCharacterData.zoneId = resultRow[8].GetU32();
+        newCharacterData.coordinateX = resultRow[9].GetF32();
+        newCharacterData.coordinateY = resultRow[10].GetF32();
+        newCharacterData.coordinateZ = resultRow[11].GetF32();
+        newCharacterData.orientation = resultRow[12].GetF32();
 
         _accessMutex.lock();
         _characterDataCache.insert({ guid, newCharacterData });
@@ -181,12 +183,14 @@ bool CharacterDatabaseCache::GetCharacterVisualData(u64 guid, CharacterVisualDat
             return false;
 
         CharacterVisualData newCharacterVisualData(this);
-        newCharacterVisualData.guid = resultSet[0][0].as<amy::sql_int_unsigned>();
-        newCharacterVisualData.skin = resultSet[0][1].as<amy::sql_tinyint_unsigned>();
-        newCharacterVisualData.face = resultSet[0][2].as<amy::sql_tinyint_unsigned>();
-        newCharacterVisualData.facialStyle = resultSet[0][3].as<amy::sql_tinyint_unsigned>();
-        newCharacterVisualData.hairStyle = resultSet[0][4].as<amy::sql_tinyint_unsigned>();
-        newCharacterVisualData.hairColor = resultSet[0][5].as<amy::sql_tinyint_unsigned>();
+        amy::row resultRow = resultSet[0];
+
+        newCharacterVisualData.guid = resultRow[0].GetU32();
+        newCharacterVisualData.skin = resultRow[1].GetU8();
+        newCharacterVisualData.face = resultRow[2].GetU8();
+        newCharacterVisualData.facialStyle = resultRow[3].GetU8();
+        newCharacterVisualData.hairStyle = resultRow[4].GetU8();
+        newCharacterVisualData.hairColor = resultRow[5].GetU8();
 
         _accessMutex.lock();
         _characterVisualDataCache.insert({ guid, newCharacterVisualData });
@@ -228,8 +232,8 @@ bool CharacterDatabaseCache::GetCharacterSpellStorage(u64 guid, std::vector<Char
         for (auto row : resultSet)
         {
             CharacterSpellStorage newCharacterSpellStorage(this);
-            u64 guid = row[0].as<amy::sql_bigint_unsigned>();
-            newCharacterSpellStorage.id = row[1].as<amy::sql_int_unsigned>();
+            u64 guid = row[0].GetU64();
+            newCharacterSpellStorage.id = row[1].GetU32();
 
             _characterSpellStorageCache[guid].push_back(newCharacterSpellStorage);
         }
@@ -271,10 +275,10 @@ bool CharacterDatabaseCache::GetCharacterSkillStorage(u64 guid, std::vector<Char
         for (auto row : resultSet)
         {
             CharacterSkillStorage newCharacterSkillStorage(this);
-            u64 guid = row[0].as<amy::sql_bigint_unsigned>();
-            newCharacterSkillStorage.id = row[1].as<amy::sql_smallint_unsigned>();
-            newCharacterSkillStorage.value = row[2].as<amy::sql_smallint_unsigned>();
-            newCharacterSkillStorage.maxValue = row[3].as<amy::sql_smallint_unsigned>();
+            u64 guid = row[0].GetU64();
+            newCharacterSkillStorage.id = row[1].GetU16();
+            newCharacterSkillStorage.value = row[2].GetU16();
+            newCharacterSkillStorage.maxValue = row[3].GetU16();
 
             _characterSkillStorageCache[guid].push_back(newCharacterSkillStorage);
         }
