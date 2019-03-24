@@ -186,25 +186,72 @@ namespace ConnectionSystem
                         packet.data.Read(&fallTime, 4);
 
                         u8 opcodeIndex = CharacterUtils::GetLastMovementTimeIndexFromOpcode(opcode);
-                        if (gameTime > clientPositionData.lastMovementOpcodeTime[opcodeIndex])
+                        u32 opcodeTime = clientPositionData.lastMovementOpcodeTime[opcodeIndex];
+                        if (gameTime > opcodeTime)
                         {
-                            clientPositionData.x = position_x;
-                            clientPositionData.y = position_y;
-                            clientPositionData.z = position_z;
-                            clientPositionData.orientation = orientation;
-                            clientPositionData.lastMovementOpcodeTime[opcodeIndex] = gameTime;
+                            if (opcode == Common::Opcode::MSG_MOVE_HEARTBEAT)
+                            {
+                                if (opcodeTime != 0)
+                                {
+                                    f32 timeSinceHeartbeat = (gameTime - opcodeTime) * 0.001f;
+                                    clientPositionData.maxDistanceToMove = (7.1111f * timeSinceHeartbeat);
+                                }
+                            }
 
-                            PositionUpdateData positionUpdateData;
-                            positionUpdateData.opcode = opcode;
-                            positionUpdateData.movementFlags = movementFlags;
-                            positionUpdateData.movementFlagsExtra = movementFlagsExtra;
-                            positionUpdateData.gameTime = u32(singleton.lifeTimeInMS);
-                            positionUpdateData.x = position_x;
-                            positionUpdateData.y = position_y;
-                            positionUpdateData.z = position_z;
-                            positionUpdateData.orientation = orientation;
-                            positionUpdateData.fallTime = fallTime;
-                            clientUpdateData.positionUpdateData.push_back(positionUpdateData);
+                            /* Cheap Detection for now */
+                            if (opcodeTime == 0 ||
+                                (abs(clientPositionData.x - position_x) <= clientPositionData.maxDistanceToMove &&
+                                    abs(clientPositionData.y - position_y) <= clientPositionData.maxDistanceToMove &&
+                                    abs(clientPositionData.z - position_z) <= clientPositionData.maxDistanceToMove))
+                            {
+                                clientPositionData.lastMovementOpcodeTime[opcodeIndex] = gameTime;
+
+                                PositionUpdateData positionUpdateData;
+                                positionUpdateData.opcode = opcode;
+                                positionUpdateData.movementFlags = movementFlags;
+                                positionUpdateData.movementFlagsExtra = movementFlagsExtra;
+                                positionUpdateData.gameTime = u32(singleton.lifeTimeInMS);
+                                positionUpdateData.fallTime = fallTime;
+
+                                if (opcode == Common::Opcode::MSG_MOVE_HEARTBEAT)
+                                {
+                                    clientPositionData.safe_x = position_x;
+                                    clientPositionData.safe_y = position_y;
+                                    clientPositionData.safe_z = position_z;
+                                    clientPositionData.safe_orientation = orientation;
+                                }
+
+                                clientPositionData.x = position_x;
+                                clientPositionData.y = position_y;
+                                clientPositionData.z = position_z;
+                                clientPositionData.orientation = orientation;
+
+                                positionUpdateData.x = position_x;
+                                positionUpdateData.y = position_y;
+                                positionUpdateData.z = position_z;
+                                positionUpdateData.orientation = orientation;
+
+                                clientUpdateData.positionUpdateData.push_back(positionUpdateData);
+                            }
+                            else
+                            {
+                                NC_LOG_MESSAGE("Opcode(%u), X(%f) Y(%f) Z(%f)", opcode, abs(clientPositionData.x - position_x), abs(clientPositionData.y - position_y), abs(clientPositionData.z - position_z));
+
+                                NovusHeader novusHeader;
+                                Common::ByteBuffer movementPacket;
+                                movementPacket.AppendGuid(clientConnection.characterGuid);
+                                movementPacket.Write<u32>(movementFlags);
+                                movementPacket.Write<u16>(movementFlagsExtra);
+                                movementPacket.Write<u32>(u32(singleton.lifeTimeInMS));
+                                movementPacket.Write<f32>(clientPositionData.safe_x);
+                                movementPacket.Write<f32>(clientPositionData.safe_y);
+                                movementPacket.Write<f32>(clientPositionData.safe_z);
+                                movementPacket.Write<f32>(clientPositionData.safe_orientation);
+                                movementPacket.Write<u32>(fallTime);
+
+                                novusHeader.CreateForwardHeader(clientConnection.accountGuid, opcode, movementPacket.size());
+                                novusConnection.SendPacket(novusHeader.BuildHeaderPacket(movementPacket));
+                            }
                         }
 
                         packet.handled = true;
@@ -341,7 +388,6 @@ namespace ConnectionSystem
                     }
                 }
             }
-
             /* Cull Movement Data */
 
             if (clientConnection.packets.size() > 0)

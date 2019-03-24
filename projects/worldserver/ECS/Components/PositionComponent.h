@@ -35,6 +35,12 @@ struct PositionComponent
 	f32 z;
 	f32 orientation;
 
+    f32 safe_x;
+    f32 safe_y;
+    f32 safe_z;
+    f32 safe_orientation;
+
+    f32 maxDistanceToMove;
     u32 lastMovementOpcodeTime[MAX_MOVEMENT_OPCODES];
     std::vector<PositionUpdateData> positionUpdateData;
 };

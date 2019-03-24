@@ -62,7 +62,9 @@ namespace CreatePlayerSystem
 
                 // -8949.950195f, -132.492996f, 83.531197f, 0.f
                 registry.assign<PlayerUpdateDataComponent>(entity);
-                registry.assign<PositionComponent>(entity, characterData.mapId, characterData.coordinateX, characterData.coordinateY, characterData.coordinateZ, characterData.orientation);
+                /* 8.53332f is the yards the player can move over 1.2 seconds with base speed, this should be updated in the future to include the player's actual speed upon login, such as the player
+                   being mounted up from a previous session */
+                registry.assign<PositionComponent>(entity, characterData.mapId, characterData.coordinateX, characterData.coordinateY, characterData.coordinateZ, characterData.orientation, characterData.coordinateX, characterData.coordinateY, characterData.coordinateZ, characterData.orientation, 8.53332f, false);
                 registry.assign<SpellStorageComponent>(entity);
                 registry.assign<SkillStorageComponent>(entity);
 
