@@ -45,6 +45,11 @@ namespace PlayerInitializeSystem
                     skillStorageData.skills.push_back(newSkill);
                 }
             }
+
+            for (i32 i = 0; i < MAX_MOVEMENT_OPCODES; i++)
+            {
+                clientPositionData.lastMovementOpcodeTime[i] = 0;
+            }
             
             NovusHeader packetHeader;
             packetHeader.command = NOVUS_FORWARDPACKET;
@@ -65,7 +70,6 @@ namespace PlayerInitializeSystem
             verifyWorld.Write<f32>(clientPositionData.z);
             verifyWorld.Write<f32>(clientPositionData.y);
             novusConnection.SendPacket(verifyWorld);
-
 
             /* SMSG_ACCOUNT_DATA_TIMES */
             Common::ByteBuffer accountDataTimes;

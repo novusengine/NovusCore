@@ -26,6 +26,7 @@
 #include <vector>
 #include <Networking/ByteBuffer.h>
 
+#define MAX_MOVEMENT_OPCODES 27
 struct PositionComponent 
 {
 	u32 mapId;
@@ -34,11 +35,6 @@ struct PositionComponent
 	f32 z;
 	f32 orientation;
 
-    u32 oldGameTime;
-    f32 oldx;
-    f32 oldy;
-    f32 oldz;
-    f32 oldorientation;
-
+    u32 lastMovementOpcodeTime[MAX_MOVEMENT_OPCODES];
     std::vector<PositionUpdateData> positionUpdateData;
 };

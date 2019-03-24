@@ -2,8 +2,9 @@
 #include <Networking/Opcode/Opcode.h>
 #include <Utils/DebugHandler.h>
 #include <Utils/AtomicLock.h>
-#include "../NovusEnums.h"
 
+#include "../NovusEnums.h"
+#include "../Utils/CharacterUtils.h"
 #include "../DatabaseCache/CharacterDatabaseCache.h"
 
 #include "../Components/Singletons/SingletonComponent.h"
@@ -184,20 +185,14 @@ namespace ConnectionSystem
                         packet.data.Read(&orientation, 4);
                         packet.data.Read(&fallTime, 4);
 
-                        // 
-                        if (gameTime > clientPositionData.oldGameTime)
+                        u8 opcodeIndex = CharacterUtils::GetLastMovementTimeIndexFromOpcode(opcode);
+                        if (gameTime > clientPositionData.lastMovementOpcodeTime[opcodeIndex])
                         {
-                            // Store old movement info
-                            clientPositionData.oldGameTime = gameTime;
-                            clientPositionData.oldx = clientPositionData.x;
-                            clientPositionData.oldy = clientPositionData.y;
-                            clientPositionData.oldz = clientPositionData.z;
-                            clientPositionData.oldorientation = clientPositionData.orientation;
-
                             clientPositionData.x = position_x;
                             clientPositionData.y = position_y;
                             clientPositionData.z = position_z;
                             clientPositionData.orientation = orientation;
+                            clientPositionData.lastMovementOpcodeTime[opcodeIndex] = gameTime;
 
                             PositionUpdateData positionUpdateData;
                             positionUpdateData.opcode = opcode;
@@ -210,8 +205,6 @@ namespace ConnectionSystem
                             positionUpdateData.orientation = orientation;
                             positionUpdateData.fallTime = fallTime;
                             clientUpdateData.positionUpdateData.push_back(positionUpdateData);
-
-                            NC_LOG_MESSAGE("Opcode(%u), ServerTimeInMS(%u), GameTime(%u)", opcode, u32(singleton.lifeTimeInMS), gameTime);
                         }
 
                         packet.handled = true;
@@ -348,6 +341,8 @@ namespace ConnectionSystem
                     }
                 }
             }
+
+            /* Cull Movement Data */
 
             if (clientConnection.packets.size() > 0)
             {
