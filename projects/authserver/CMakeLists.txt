@@ -27,6 +27,7 @@ set(AUTHSERVER_DEPENDENCIES
     "../common/Dependencies/amy"
     "../common/Dependencies/json"
     "../common/Dependencies/robin-hood-hashing"
+    "${CMAKE_SOURCE_DIR}/dep/asio"
 )
 
 add_executable(authserver ${AUTHSERVER_FILES})

@@ -21,7 +21,6 @@ You will find the developers to be active on the discord and always up for answe
 
 
 ### Dependencies
-* [Asio](http://sourceforge.net/projects/asio/files/asio/1.12.1%20%28Stable%29/)
 * [OpenSSL 1.0.2q](http://slproweb.com/products/Win32OpenSSL.html)
 * [MySQL C Connector 5.6 (libmysqlcclient) or newer](https://dev.mysql.com/downloads/connector/c/)
 * [CMAKE 3.1 or newer](https://cmake.org/download/)
@@ -33,6 +32,7 @@ Here we include a honorable mention to all the libraries included directly into 
 * [Nlohmann Json](https://github.com/nlohmann/json)
 * [Robin Hood Hashing](https://github.com/martinus/robin-hood-hashing)
 * [Amy](https://github.com/liancheng/amy)
+* [Asio](http://sourceforge.net/projects/asio/files/asio/1.12.1%20%28Stable%29/)
 * [Tracy Profiler](https://bitbucket.org/wolfpld/tracy/src/master)
 * [Entt ECS](https://github.com/skypjack/entt/)
 * [Cpp-Taskflow](https://github.com/cpp-taskflow/cpp-taskflow)

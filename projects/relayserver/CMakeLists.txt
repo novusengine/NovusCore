@@ -28,6 +28,7 @@ set(RELAYSERVER_DEPENDENCIES
     "../common/Dependencies/json"
     "../common/Dependencies/robin-hood-hashing"
     "${ZLIB_INCLUDE_DIRS}"
+    "${CMAKE_SOURCE_DIR}/dep/asio"
 )
 
 add_executable(relayserver ${RELAYSERVER_FILES})

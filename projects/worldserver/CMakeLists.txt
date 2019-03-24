@@ -31,6 +31,7 @@ set(WORLDSERVER_DEPENDENCIES
     "${ZLIB_INCLUDE_DIRS}"
     "${CMAKE_SOURCE_DIR}/dep/TracyProfiler"
     "${CMAKE_SOURCE_DIR}/dep/taskflow"
+    "${CMAKE_SOURCE_DIR}/dep/asio"
 )
 
 add_executable(worldserver ${WORLDSERVER_FILES})

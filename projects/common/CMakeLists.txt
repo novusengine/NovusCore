@@ -27,6 +27,7 @@ set(COMMON_DEPENDENCIES
     "${CMAKE_CURRENT_LIST_DIR}/Dependencies/amy"
     "${CMAKE_CURRENT_LIST_DIR}/Dependencies/json"
     "${CMAKE_CURRENT_LIST_DIR}/Dependencies/robin-hood-hashing"
+    "${CMAKE_SOURCE_DIR}/dep/asio"
 )
 set(TRACY
     "${CMAKE_SOURCE_DIR}/dep/TracyProfiler/tracy/TracyClient.cpp"
