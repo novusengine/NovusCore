@@ -27,6 +27,7 @@
 #include <Utils/DebugHandler.h>
 
 #include "Connections\NovusConnection.h"
+#include "../DatabaseCache/CharacterDatabaseCache.h"
 
 i32 main()
 {
@@ -57,14 +58,18 @@ i32 main()
         return 0;
     }
 
+    CharacterDatabaseCache characterDatabaseCache;
+
+
     asio::io_service io_service(2);
-    NovusConnection novusConnection(new asio::ip::tcp::socket(io_service), ConfigHandler::GetOption<std::string>("relayserverip", "127.0.0.1"), ConfigHandler::GetOption<u16>("relayserverport", 10000), ConfigHandler::GetOption<u8>("realmId", 1));
+    NovusConnection novusConnection(new asio::ip::tcp::socket(io_service), ConfigHandler::GetOption<std::string>("relayserverip", "127.0.0.1"), ConfigHandler::GetOption<u16>("relayserverport", 10000), ConfigHandler::GetOption<u8>("realmId", 1), characterDatabaseCache);
 
     if (!novusConnection.Start())
     {
         std::getchar();
         return 0;
     }
+    characterDatabaseCache.Load();
 
     srand((u32)time(NULL));
     std::thread run_thread([&]

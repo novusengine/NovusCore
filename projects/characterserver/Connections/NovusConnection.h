@@ -31,6 +31,8 @@
 #include <robin_hood.h>
 #include <NovusTypes.h>
 
+#include "../DatabaseCache/CharacterDatabaseCache.h"
+
 enum NovusCommand
 {
     NOVUS_CHALLENGE         = 0x00,
@@ -115,7 +117,7 @@ class NovusConnection : Common::BaseSocket
 public:
     static robin_hood::unordered_map<u8, NovusMessageHandler> InitMessageHandlers();
 
-    NovusConnection(asio::ip::tcp::socket* socket, std::string address, u16 port, u8 realmId) : Common::BaseSocket(socket), _status(NOVUSSTATUS_CHALLENGE), _crypto(), _address(address), _port(port), _realmId(realmId), _headerBuffer(), _packetBuffer()
+    NovusConnection(asio::ip::tcp::socket* socket, std::string address, u16 port, u8 realmId, CharacterDatabaseCache& cache) : Common::BaseSocket(socket), _status(NOVUSSTATUS_CHALLENGE), _crypto(), _address(address), _port(port), _realmId(realmId), _cache(cache), _headerBuffer(), _packetBuffer()
     { 
         _crypto = new StreamCrypto();
         _key = new BigNumber();
@@ -143,4 +145,6 @@ private:
 
     Common::ByteBuffer _headerBuffer;
     Common::ByteBuffer _packetBuffer;
+
+    CharacterDatabaseCache& _cache;
 };

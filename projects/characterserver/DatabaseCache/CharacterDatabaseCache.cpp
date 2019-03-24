@@ -53,35 +53,37 @@ void CharacterDatabaseCache::Load()
         }
     }
 
-    connector->Query("SELECT guid, spell FROM character_spell_storage;", resultSet); 
+    connector->Query("SELECT raceMask, classMask, spell FROM default_spells;", resultSet); 
     if (resultSet.affected_rows() > 0)
     {
         for (auto row : resultSet)
         {
-            CharacterSpellStorage newCharacterSpellStorage(this);
-            u64 guid = row[0].as<amy::sql_bigint_unsigned>();
-            newCharacterSpellStorage.id = row[1].as<amy::sql_int_unsigned>();
+            DefaultSpellStorage newDefaultSpellStorage(this);
+            newDefaultSpellStorage.raceMask = row[0].as<amy::sql_smallint>();
+            newDefaultSpellStorage.classMask = row[1].as<amy::sql_smallint>();
+            newDefaultSpellStorage.id = row[2].as<amy::sql_int_unsigned>();
 
             _accessMutex.lock();
-            _characterSpellStorageCache[guid].push_back(newCharacterSpellStorage);
+            _defaultSpellStorageCache.push_back(newDefaultSpellStorage);
             _accessMutex.unlock();
         }
     }
 
 
-    connector->Query("SELECT guid, skill, value, character_skill_storage.maxValue FROM character_skill_storage;", resultSet);
+    connector->Query("SELECT raceMask, classMask, skill, value, default_skills.maxValue FROM default_skills;", resultSet);
     if (resultSet.affected_rows() > 0)
     {
         for (auto row : resultSet)
         {
-            CharacterSkillStorage newCharacterSkillStorage(this);
-            u64 guid = row[0].as<amy::sql_bigint_unsigned>();
-            newCharacterSkillStorage.id = row[1].as<amy::sql_smallint_unsigned>();
-            newCharacterSkillStorage.value = row[2].as<amy::sql_smallint_unsigned>();
-            newCharacterSkillStorage.maxValue = row[3].as<amy::sql_smallint_unsigned>();
+            DefaultSkillStorage newDefaultSkillStorage(this);
+            newDefaultSkillStorage.raceMask = row[0].as<amy::sql_smallint>();
+            newDefaultSkillStorage.classMask = row[1].as<amy::sql_smallint>();
+            newDefaultSkillStorage.id = row[2].as<amy::sql_smallint_unsigned>();
+            newDefaultSkillStorage.value = row[3].as<amy::sql_smallint_unsigned>();
+            newDefaultSkillStorage.maxValue = row[4].as<amy::sql_smallint_unsigned>();
 
             _accessMutex.lock();
-            _characterSkillStorageCache[guid].push_back(newCharacterSkillStorage);
+            _defaultSkillStorageCache.push_back(newDefaultSkillStorage);
             _accessMutex.unlock();
         }
     }
@@ -196,91 +198,11 @@ bool CharacterDatabaseCache::GetCharacterVisualData(u64 guid, CharacterVisualDat
         return true;
     }
 }
-bool CharacterDatabaseCache::GetCharacterSpellStorage(u64 guid, std::vector<CharacterSpellStorage>& output)
+const std::vector<DefaultSpellStorage> CharacterDatabaseCache::GetDefaultSpellStorageData()
 {
-    auto cache = _characterSpellStorageCache.find(guid);
-    if (cache != _characterSpellStorageCache.end())
-    {
-        _accessMutex.lock_shared();
-        std::vector<CharacterSpellStorage> characterSpellStorageData = cache->second;
-        _accessMutex.unlock_shared();
-
-        output = characterSpellStorageData;
-        return true;
-    }
-    else
-    {
-        // We don't have the character, so we load it
-        std::shared_ptr<DatabaseConnector> connector;
-        bool result = DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, connector);
-        assert(result);
-
-        PreparedStatement stmt("SELECT guid, spell FROM character_spell_storage WHERE guid = {u};");
-        stmt.Bind(guid);
-
-        amy::result_set resultSet;
-        connector->Query(stmt, resultSet);
-
-        if (resultSet.affected_rows() == 0)
-            return false;
-
-        _accessMutex.lock();
-        for (auto row : resultSet)
-        {
-            CharacterSpellStorage newCharacterSpellStorage(this);
-            u64 guid = row[0].as<amy::sql_bigint_unsigned>();
-            newCharacterSpellStorage.id = row[1].as<amy::sql_int_unsigned>();
-
-            _characterSpellStorageCache[guid].push_back(newCharacterSpellStorage);
-        }
-        _accessMutex.unlock();
-
-        output = _characterSpellStorageCache[guid];
-        return true;
-    }
+    return _defaultSpellStorageCache;
 }
-bool CharacterDatabaseCache::GetCharacterSkillStorage(u64 guid, std::vector<CharacterSkillStorage>& output)
+const std::vector<DefaultSkillStorage> CharacterDatabaseCache::GetDefaultSkillStorageData()
 {
-    auto cache = _characterSkillStorageCache.find(guid);
-    if (cache != _characterSkillStorageCache.end())
-    {
-        _accessMutex.lock_shared();
-        std::vector<CharacterSkillStorage> characterSkillStorageData = cache->second;
-        _accessMutex.unlock_shared();
-
-        output = characterSkillStorageData;
-        return true;
-    }
-    else
-    {
-        // We don't have the character, so we load it
-        std::shared_ptr<DatabaseConnector> connector;
-        bool result = DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, connector);
-        assert(result);
-
-        PreparedStatement stmt("SELECT guid, skill, value, character_skill_storage.maxValue FROM character_skill_storage WHERE guid = {u};");
-        stmt.Bind(guid);
-
-        amy::result_set resultSet;
-        connector->Query(stmt, resultSet);
-
-        if (resultSet.affected_rows() == 0)
-            return false;
-
-        _accessMutex.lock();
-        for (auto row : resultSet)
-        {
-            CharacterSkillStorage newCharacterSkillStorage(this);
-            u64 guid = row[0].as<amy::sql_bigint_unsigned>();
-            newCharacterSkillStorage.id = row[1].as<amy::sql_smallint_unsigned>();
-            newCharacterSkillStorage.value = row[2].as<amy::sql_smallint_unsigned>();
-            newCharacterSkillStorage.maxValue = row[3].as<amy::sql_smallint_unsigned>();
-
-            _characterSkillStorageCache[guid].push_back(newCharacterSkillStorage);
-        }
-        _accessMutex.unlock();
-
-        output = _characterSkillStorageCache[guid];
-        return true;
-    }
+    return _defaultSkillStorageCache;
 }

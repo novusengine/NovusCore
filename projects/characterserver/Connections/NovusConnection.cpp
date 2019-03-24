@@ -26,11 +26,11 @@
 #include <Networking\ByteBuffer.h>
 #include <Networking\Opcode\Opcode.h>
 #include <Database\DatabaseConnector.h>
-
 #include <algorithm>
 #include <string>
-#include <bitset>
-#include <zlib.h>
+#include <vector>
+
+#include "../Utils/CharacterUtils.h"
 
 enum CharacterResponses
 {    
@@ -436,41 +436,18 @@ bool NovusConnection::HandleCommandForwardPacket()
                 connector.ExecuteAsync(characterVisualData);
 
                 // Baseline Skills
-                std::stringstream skills;
-                skills << "INSERT INTO character_skill_storage(guid, skill, value, character_skill_storage.maxValue) VALUES";
-                skills << "(" << characterGuid << ", 98, 300, 300);";
-                connector.ExecuteAsync(skills.str());
+                std::string skillSql;
+                if (CharacterUtils::BuildDefaultSkillSQL(_cache.GetDefaultSkillStorageData(), characterGuid, createData->charRace, createData->charClass, skillSql))
+                {
+                    connector.ExecuteAsync(skillSql);
+                }
 
                 // Baseline Spells
-                std::stringstream spells;
-                spells << "INSERT INTO character_spell_storage(guid, spell) VALUES";
-                spells << "(" << characterGuid << ", 203),";
-                spells << "(" << characterGuid << ", 204),";
-                spells << "(" << characterGuid << ", 522),";
-                spells << "(" << characterGuid << ", 668),";
-                spells << "(" << characterGuid << ", 2382),";
-                spells << "(" << characterGuid << ", 3050),";
-                spells << "(" << characterGuid << ", 3365),";
-                spells << "(" << characterGuid << ", 6233),";
-                spells << "(" << characterGuid << ", 6246),";
-                spells << "(" << characterGuid << ", 6247),";
-                spells << "(" << characterGuid << ", 6477),";
-                spells << "(" << characterGuid << ", 6478),";
-                spells << "(" << characterGuid << ", 6603),";
-                spells << "(" << characterGuid << ", 7266),";
-                spells << "(" << characterGuid << ", 7267),";
-                spells << "(" << characterGuid << ", 7355),";
-                spells << "(" << characterGuid << ", 8386),";
-                spells << "(" << characterGuid << ", 9125),";
-                spells << "(" << characterGuid << ", 9078),";
-                spells << "(" << characterGuid << ", 16092),";
-                spells << "(" << characterGuid << ", 21651),";
-                spells << "(" << characterGuid << ", 21652),";
-                spells << "(" << characterGuid << ", 22027),";
-                spells << "(" << characterGuid << ", 22810),";
-                spells << "(" << characterGuid << ", 61437),";
-                spells << "(" << characterGuid << ", 68398);";
-                connector.ExecuteAsync(spells.str());
+                std::string spellSql;
+                if (CharacterUtils::BuildDefaultSpellSQL(_cache.GetDefaultSpellStorageData(), characterGuid, createData->charRace, createData->charClass, spellSql))
+                {
+                    connector.ExecuteAsync(spellSql);
+                }
 
                 DatabaseConnector::Borrow(DATABASE_TYPE::AUTHSERVER, [this, header](std::shared_ptr<DatabaseConnector>& connector)
                 {
