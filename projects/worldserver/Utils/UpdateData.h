@@ -40,7 +40,7 @@ public:
         buffer.Append(_data);
         size_t pSize = buffer._writePos;
 
-        if (false)//(pSize > 10000)
+        if (pSize > 1024) // Update packets over 1kb gets compressed
         {
             u32 destsize = compressBound(uLong(pSize));
             packet.Resize(destsize + sizeof(u32));
