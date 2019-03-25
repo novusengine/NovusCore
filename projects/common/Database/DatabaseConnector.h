@@ -107,6 +107,6 @@ private:
 
 	static SharedPool<DatabaseConnector> _connectorPools[DATABASE_TYPE::COUNT];
 	static std::thread* _asyncThread;
-	static ConcurrentQueue<AsyncSQLJob> _asyncJobQueue;
+	static moodycamel::ConcurrentQueue<AsyncSQLJob> _asyncJobQueue;
 	
 };

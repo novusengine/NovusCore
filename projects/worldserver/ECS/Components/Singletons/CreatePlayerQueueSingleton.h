@@ -28,5 +28,5 @@
 
 struct CreatePlayerQueueSingleton
 {
-    ConcurrentQueue<Message>* newEntityQueue;
+	moodycamel::ConcurrentQueue<Message>* newEntityQueue;
 };

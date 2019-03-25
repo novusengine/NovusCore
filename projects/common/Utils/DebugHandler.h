@@ -61,35 +61,36 @@ public:
     static void Initialize();
 
     template <typename... Args>
-    static void Print(std::string message, Args... args)
+    inline static void Print(std::string message, Args... args)
     {
         //PrintColor("[Message]: ", 15);
-        PrintColor(message + "\n", 7, args...);
-    }
+		//PrintColor(message + "\n", 7, args...);
+		printf((message + "\n").c_str(), args...);
+	}
 
     template <typename... Args>
-    static void PrintWarning(std::string message, Args... args)
+	inline static void PrintWarning(std::string message, Args... args)
     {
         PrintColor("[Warning]: ", 14);
         PrintColor(message + "\n", 7, args...);
     }
 
     template <typename... Args>
-    static void PrintDeprecated(std::string message, Args... args)
+	inline static void PrintDeprecated(std::string message, Args... args)
     {
         PrintColor("[Deprecated]: ", 14);
         PrintColor(message + "\n", 7, args...);
     }
 
     template <typename... Args>
-    static void PrintError(std::string message, Args... args)
+	inline static void PrintError(std::string message, Args... args)
     {
         PrintColor("[Error]: ", 12);
         PrintColor(message + "\n", 7, args...);
     }
 
     template <typename... Args>
-    static void PrintFatal(std::string message, Args... args)
+	inline static void PrintFatal(std::string message, Args... args)
     {
         PrintColor("[Fatal]: ", 12);
         PrintColor(message + "\n", 7, args...);
@@ -97,7 +98,7 @@ public:
     }
 
     template <typename... Args>
-    static void PrintSuccess(std::string message, Args... args)
+	inline static void PrintSuccess(std::string message, Args... args)
     {
         PrintColor("[Success]: ", 10);
         PrintColor(message + "\n", 7, args...);
@@ -105,7 +106,7 @@ public:
 
 private:
     template <typename... Args>
-    static void PrintColor(std::string message, u8 color, Args... args)
+	inline static void PrintColor(std::string message, u8 color, Args... args)
     {
         SetConsoleTextAttribute(_handle, color);
         printf(message.c_str(), args...);

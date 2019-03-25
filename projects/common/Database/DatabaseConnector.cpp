@@ -9,7 +9,7 @@ std::vector<std::string> DatabaseConnector::_names(DATABASE_TYPE::COUNT);
 std::vector<u16>         DatabaseConnector::_ports(DATABASE_TYPE::COUNT);
 bool                     DatabaseConnector::_initialized = false;
 SharedPool<DatabaseConnector> DatabaseConnector::_connectorPools[];
-ConcurrentQueue<AsyncSQLJob> DatabaseConnector::_asyncJobQueue(1024);
+moodycamel::ConcurrentQueue<AsyncSQLJob> DatabaseConnector::_asyncJobQueue(1024);
 
 void DatabaseConnector::Setup(std::string hosts[], u16 ports[], std::string usernames[], std::string passwords[], std::string names[])
 { 

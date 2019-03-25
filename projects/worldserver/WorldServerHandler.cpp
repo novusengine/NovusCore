@@ -83,8 +83,8 @@ void WorldServerHandler::Run()
     singletonComponent.connection = _novusConnection;
     singletonComponent.deltaTime = 1.0f;
 
-    createPlayerQueueComponent.newEntityQueue = new ConcurrentQueue<Message>(256);
-    deletePlayerQueueSingleton.expiredEntityQueue = new ConcurrentQueue<ExpiredPlayerData>(256);
+    createPlayerQueueComponent.newEntityQueue = new moodycamel::ConcurrentQueue<Message>(256);
+    deletePlayerQueueSingleton.expiredEntityQueue = new moodycamel::ConcurrentQueue<ExpiredPlayerData>(256);
 
     characterDatabaseCacheSingleton.cache = new CharacterDatabaseCache();
     characterDatabaseCacheSingleton.cache->Load();
@@ -140,7 +140,7 @@ bool WorldServerHandler::Update()
 {
     ZoneScopedNC("Update", tracy::Color::Blue2)
     {
-        ZoneScopedNC("HandleMessages", tracy::Color::Blue2)
+        ZoneScopedNC("HandleMessages", tracy::Color::Green3)
         Message message;
 
         while (_inputQueue.try_dequeue(message))
@@ -153,7 +153,7 @@ bool WorldServerHandler::Update()
 
             if (message.code == MSG_IN_PING)
             {
-                ZoneScopedNC("Ping", tracy::Color::Blue2)
+                ZoneScopedNC("Ping", tracy::Color::Green3)
                 Message pongMessage;
                 pongMessage.code = MSG_OUT_PRINT;
                 pongMessage.message = new std::string("PONG!");
@@ -171,12 +171,12 @@ bool WorldServerHandler::Update()
                 // Create Entity if it doesn't exist, otherwise add 
                 if (Common::Opcode((u16)message.opcode) == Common::Opcode::CMSG_PLAYER_LOGIN)
                 {
-                    ZoneScopedNC("LoginMessage", tracy::Color::Blue2)
+                    ZoneScopedNC("LoginMessage", tracy::Color::Green3)
                     _updateFramework.registry.get<CreatePlayerQueueSingleton>(0).newEntityQueue->enqueue(message);
                 }
                 else
                 {
-                    ZoneScopedNC("ForwardMessage", tracy::Color::Blue2)
+                    ZoneScopedNC("ForwardMessage", tracy::Color::Green3)
                     SingletonComponent& singletonComponent = _updateFramework.registry.get<SingletonComponent>(0);
 
                     auto itr = singletonComponent.accountToEntityMap.find(u32(message.account));
@@ -202,7 +202,7 @@ void WorldServerHandler::SetupUpdateFramework()
     // ConnectionSystem
     tf::Task connectionSystemTask = framework.emplace([&registry]()
     {
-        ZoneScopedNC("ConnectionSystem", tracy::Color::Blue2)
+        ZoneScopedNC("ConnectionSystem", tracy::Color::Orange2)
         ConnectionSystem::Update(registry);
     });
 
@@ -233,7 +233,7 @@ void WorldServerHandler::SetupUpdateFramework()
     // PlayerUpdateDataSystem
     tf::Task playerUpdateDataSystemTask = framework.emplace([&registry]()
     {
-        ZoneScopedNC("PlayerUpdateDataSystem", tracy::Color::Blue2)
+        ZoneScopedNC("PlayerUpdateDataSystem", tracy::Color::Yellow2)
         PlayerUpdateDataSystem::Update(registry);
     });
     playerUpdateDataSystemTask.gather(playerCreateDataSystem);

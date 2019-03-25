@@ -93,7 +93,7 @@ private:
     f32 _targetTickRate;
 
     NovusConnection* _novusConnection;
-	ConcurrentQueue<Message> _inputQueue;
-	ConcurrentQueue<Message> _outputQueue;
+	moodycamel::ConcurrentQueue<Message> _inputQueue;
+	moodycamel::ConcurrentQueue<Message> _outputQueue;
 	FrameworkRegistryPair _updateFramework;
 };

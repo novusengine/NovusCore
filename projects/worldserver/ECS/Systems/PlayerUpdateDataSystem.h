@@ -34,10 +34,14 @@
 #include "../Components/Singletons/SingletonComponent.h"
 #include "../Components/Singletons/PlayerUpdatesQueueSingleton.h"
 
+#include <tracy/Tracy.hpp>
+
 namespace PlayerUpdateDataSystem
 {
     Common::ByteBuffer BuildPlayerUpdateData(u64 playerGuid, u32 visibleFlags, PlayerUpdateDataComponent& playerUpdateData, u16& opcode)
     {
+		ZoneScopedNC("BuildPlayerUpdateData", tracy::Color::Yellow2)
+
         Common::ByteBuffer buffer(500);
         buffer.Write<u8>(UPDATETYPE_VALUES);
         buffer.AppendGuid(playerGuid);
@@ -196,9 +200,11 @@ namespace PlayerUpdateDataSystem
         auto view = registry.view<ConnectionComponent, PlayerUpdateDataComponent, PositionComponent>();
         view.each([&novusConnection, &playerUpdatesQueue](const auto, ConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData, PositionComponent& clientPositionData)
         {
+			ZoneScopedNC("Connection", tracy::Color::Yellow2)
             /* Only Build Packet if any fields were changed */
             if (clientUpdateData.changesMask.Any())
             {
+				ZoneScopedNC("Build Packet", tracy::Color::Yellow2)
                 /* Build Self Packet, must be sent immediately */
                 u32 selfVisibleFlags = (UF_FLAG_PUBLIC | UF_FLAG_PRIVATE);
                 u16 buildOpcode = 0;
@@ -223,6 +229,7 @@ namespace PlayerUpdateDataSystem
 
             if(clientUpdateData.positionUpdateData.size() > 0)
             {
+				ZoneScopedNC("PositionUpdate", tracy::Color::Yellow2)
                 for (PositionUpdateData positionData : clientUpdateData.positionUpdateData)
                 {
                     MovementPacket movementPacket;
@@ -247,6 +254,7 @@ namespace PlayerUpdateDataSystem
 
             if (clientUpdateData.chatUpdateData.size() > 0)
             {
+				ZoneScopedNC("ChatUpdate", tracy::Color::Yellow2)
                 for (ChatUpdateData chatData : clientUpdateData.chatUpdateData)
                 {
                     ChatPacket chatPacket;
