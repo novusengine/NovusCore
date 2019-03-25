@@ -257,8 +257,8 @@ namespace ConnectionSystem
                             }
                             else
                             {
-                                NC_LOG_MESSAGE("Opcode(%u), X(%f) Y(%f) Z(%f)", opcode, abs(clientPositionData.x - position_x), abs(clientPositionData.y - position_y), abs(clientPositionData.z - position_z));
-
+                                worldServerHandler.PrintMessage("Opcode(%u), X(%f) Y(%f) Z(%f)", opcode, abs(clientPositionData.x - position_x), abs(clientPositionData.y - position_y), abs(clientPositionData.z - position_z));
+                                
                                 NovusHeader novusHeader;
                                 Common::ByteBuffer movementPacket;
                                 movementPacket.AppendGuid(clientConnection.characterGuid);
@@ -323,7 +323,7 @@ namespace ConnectionSystem
 
                             default:
                             {
-                                NC_LOG_MESSAGE("Account(%u), Character(%u) sent unhandled message type %u", clientConnection.accountGuid, clientConnection.characterGuid, msgType);
+                                worldServerHandler.PrintMessage("Account(%u), Character(%u) sent unhandled message type %u", clientConnection.accountGuid, clientConnection.characterGuid, msgType);
                                 break;
                             }
                         }
@@ -412,13 +412,12 @@ namespace ConnectionSystem
                     default:
                     {
 						ZoneScopedNC("Packet::Unhandled", tracy::Color::Orange2)
-							// Mark all unhandled opcodes as handled to prevent the queue from trying to handle them every frame.
 						{
 							ZoneScopedNC("Packet::Unhandled::Log", tracy::Color::Orange2)
-							//NC_LOG_MESSAGE("Account(%u), Character(%u) sent unhandled opcode %u", clientConnection.accountGuid, clientConnection.characterGuid, opcode);
 							worldServerHandler.PrintMessage("Account(%u), Character(%u) sent unhandled opcode %u", clientConnection.accountGuid, clientConnection.characterGuid, opcode);
 						}
-                        
+
+                        // Mark all unhandled opcodes as handled to prevent the queue from trying to handle them every tick.
                         packet.handled = true;
                         break;
                     }
