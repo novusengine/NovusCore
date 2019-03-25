@@ -40,15 +40,17 @@ public:
     void AddTo(Common::ByteBuffer& buffer)
     {
         u32 maskPart = 0;
+		u32 j = 0;
         for (u32 i = 0; i < GetBlocks() * 32; i++)
         {
             if (IsSet(i))
-                maskPart |= 1 << i % 32;
+                maskPart |= 1 << j;
 
-            if ((i + 1) % 32 == 0)
+            if (++j == 32)
             {
                 buffer.Write<u32>(maskPart);
                 maskPart = 0;
+				j = 0;
             }
         }
     }

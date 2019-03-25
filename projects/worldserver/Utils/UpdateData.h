@@ -40,7 +40,7 @@ public:
         buffer.Append(_data);
         size_t pSize = buffer._writePos;
 
-        if (pSize > 100)
+        if (false)//(pSize > 10000)
         {
             u32 destsize = compressBound(uLong(pSize));
             packet.Resize(destsize + sizeof(u32));

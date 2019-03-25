@@ -58,7 +58,8 @@ namespace ClientUpdateSystem
                 }
                 else if (playerUpdatePacket.updateType == UPDATETYPE_VALUES)
                 {
-                    if (playerUpdatePacket.characterGuid != clientConnection.characterGuid)
+					// Currently we have not observed any issues with sending private field flags to any other client but themselves, this offers a good speed increase but if we see issues in the future we should recheck this.
+                    //if (playerUpdatePacket.characterGuid != clientConnection.characterGuid)
                     {
                         novusHeader.CreateForwardHeader(clientConnection.accountGuid, playerUpdatePacket.opcode, playerUpdatePacket.data.size());
                         novusConnection.SendPacket(novusHeader.BuildHeaderPacket(playerUpdatePacket.data));

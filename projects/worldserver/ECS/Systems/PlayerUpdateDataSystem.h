@@ -53,140 +53,152 @@ namespace PlayerUpdateDataSystem
         u32* flags = UnitUpdateFieldFlags;
         u16 fieldNotifyFlags = UF_FLAG_DYNAMIC;
 
-        for (u16 index = 0; index < PLAYER_END; ++index)
-        {
-            if (fieldNotifyFlags & flags[index] || ((flags[index] & visibleFlags) & UF_FLAG_SPECIAL_INFO) || 
-               (playerUpdateData.changesMask.IsSet(index) && (flags[index] & visibleFlags)))
-            {
-                updateMask.SetBit(index);
+		{
+			ZoneScopedNC("BuildPlayerUpdateData::Loop", tracy::Color::Yellow2)
+			for (u16 index = 0; index < PLAYER_END; ++index)
+			{
+				if (fieldNotifyFlags & flags[index] || ((flags[index] & visibleFlags) & UF_FLAG_SPECIAL_INFO) ||
+					(playerUpdateData.changesMask.IsSet(index) && (flags[index] & visibleFlags)))
+				{
+					updateMask.SetBit(index);
 
-                if (index == UNIT_NPC_FLAGS)
-                {
-                    u32 appendValue = playerUpdateData.playerFields.ReadAt<u32>(UNIT_NPC_FLAGS * 4);
+					if (index == UNIT_NPC_FLAGS)
+					{
+						u32 appendValue = playerUpdateData.playerFields.ReadAt<u32>(UNIT_NPC_FLAGS * 4);
 
-                    /*if (creature)
-                        if (!target->CanSeeSpellClickOn(creature))
-                            appendValue &= ~UNIT_NPC_FLAG_SPELLCLICK;*/
+						/*if (creature)
+							if (!target->CanSeeSpellClickOn(creature))
+								appendValue &= ~UNIT_NPC_FLAG_SPELLCLICK;*/
 
-                    fieldBuffer.Write<u32>(appendValue);
-                }
-                else if (index == UNIT_FIELD_AURASTATE)
-                {
-                    // Check per caster aura states to not enable using a spell in client if specified aura is not by target
-                    u32 auraState = playerUpdateData.playerFields.ReadAt<u32>(UNIT_FIELD_AURASTATE * 4) &~(((1 << (14 - 1)) | (1 << (16 - 1))));
+						fieldBuffer.Write<u32>(appendValue);
+					}
+					else if (index == UNIT_FIELD_AURASTATE)
+					{
+						// Check per caster aura states to not enable using a spell in client if specified aura is not by target
+						u32 auraState = playerUpdateData.playerFields.ReadAt<u32>(UNIT_FIELD_AURASTATE * 4) &~(((1 << (14 - 1)) | (1 << (16 - 1))));
 
-                    fieldBuffer.Write<u32>(auraState);
-                }
-                // Seems to be fixed already??
-                // FIXME: Some values at server stored in f32 format but must be sent to client in uint32 format
-                else if (index >= UNIT_FIELD_BASEATTACKTIME && index <= UNIT_FIELD_RANGEDATTACKTIME)
-                {
-                    // convert from f32 to uint32 and send
-                    fieldBuffer.Write<u32>(u32(playerUpdateData.playerFields.ReadAt<i32>(index * 4)));
-                }
-                // there are some (said f32 in TC, but all these are ints)int values which may be negative or can't get negative due to other checks
-                else if ((index >= UNIT_FIELD_NEGSTAT0 && index <= UNIT_FIELD_NEGSTAT4) ||
-                    (index >= UNIT_FIELD_RESISTANCEBUFFMODSPOSITIVE && index <= (UNIT_FIELD_RESISTANCEBUFFMODSPOSITIVE + 6)) ||
-                    (index >= UNIT_FIELD_RESISTANCEBUFFMODSNEGATIVE && index <= (UNIT_FIELD_RESISTANCEBUFFMODSNEGATIVE + 6)) ||
-                    (index >= UNIT_FIELD_POSSTAT0 && index <= UNIT_FIELD_POSSTAT4))
-                {
-                    fieldBuffer.Write<u32>(u32(playerUpdateData.playerFields.ReadAt<i32>(index * 4)));
-                }
-                // Gamemasters should be always able to select units - remove not selectable flag
-                else if (index == UNIT_FIELD_FLAGS)
-                {
-                    u32 appendValue = playerUpdateData.playerFields.ReadAt<u32>(UNIT_FIELD_FLAGS * 4);
-                    //if (target->IsGameMaster())
-                        //appendValue &= ~UNIT_FLAG_NOT_SELECTABLE;
+						fieldBuffer.Write<u32>(auraState);
+					}
+					// Seems to be fixed already??
+					// FIXME: Some values at server stored in f32 format but must be sent to client in uint32 format
+					else if (index >= UNIT_FIELD_BASEATTACKTIME && index <= UNIT_FIELD_RANGEDATTACKTIME)
+					{
+					// convert from f32 to uint32 and send
+					fieldBuffer.Write<u32>(u32(playerUpdateData.playerFields.ReadAt<i32>(index * 4)));
+					}
+					// there are some (said f32 in TC, but all these are ints)int values which may be negative or can't get negative due to other checks
+					else if ((index >= UNIT_FIELD_NEGSTAT0 && index <= UNIT_FIELD_NEGSTAT4) ||
+					(index >= UNIT_FIELD_RESISTANCEBUFFMODSPOSITIVE && index <= (UNIT_FIELD_RESISTANCEBUFFMODSPOSITIVE + 6)) ||
+					(index >= UNIT_FIELD_RESISTANCEBUFFMODSNEGATIVE && index <= (UNIT_FIELD_RESISTANCEBUFFMODSNEGATIVE + 6)) ||
+					(index >= UNIT_FIELD_POSSTAT0 && index <= UNIT_FIELD_POSSTAT4))
+					{
+					fieldBuffer.Write<u32>(u32(playerUpdateData.playerFields.ReadAt<i32>(index * 4)));
+					}
+					// Gamemasters should be always able to select units - remove not selectable flag
+					else if (index == UNIT_FIELD_FLAGS)
+					{
+					u32 appendValue = playerUpdateData.playerFields.ReadAt<u32>(UNIT_FIELD_FLAGS * 4);
+					//if (target->IsGameMaster())
+						//appendValue &= ~UNIT_FLAG_NOT_SELECTABLE;
 
-                    fieldBuffer.Write<u32>(appendValue);
-                }
-                // use modelid_a if not gm, _h if gm for CREATURE_FLAG_EXTRA_TRIGGER creatures
-                else if (index == UNIT_FIELD_DISPLAYID)
-                {
-                    u32 displayId = playerUpdateData.playerFields.ReadAt<u32>(UNIT_FIELD_DISPLAYID * 4);
-                    /*if (creature)
-                    {
-                        CreatureTemplate const* cinfo = creature->GetCreatureTemplate();
-                        // this also applies for transform auras
-                        if (SpellInfo const* transform = sSpellMgr->GetSpellInfo(GetTransformSpell()))
-                            for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
-                                if (transform->Effects[i].IsAura(SPELL_AURA_TRANSFORM))
-                                    if (CreatureTemplate const* transformInfo = sObjectMgr->GetCreatureTemplate(transform->Effects[i].MiscValue))
-                                    {
-                                        cinfo = transformInfo;
-                                        break;
-                                    }
-                        if (cinfo->flags_extra & CREATURE_FLAG_EXTRA_TRIGGER)
-                            if (target->IsGameMaster())
-                                displayId = cinfo->GetFirstVisibleModel();
-                    }*/
+					fieldBuffer.Write<u32>(appendValue);
+					}
+					// use modelid_a if not gm, _h if gm for CREATURE_FLAG_EXTRA_TRIGGER creatures
+					else if (index == UNIT_FIELD_DISPLAYID)
+					{
+					u32 displayId = playerUpdateData.playerFields.ReadAt<u32>(UNIT_FIELD_DISPLAYID * 4);
+					/*if (creature)
+					{
+						CreatureTemplate const* cinfo = creature->GetCreatureTemplate();
+						// this also applies for transform auras
+						if (SpellInfo const* transform = sSpellMgr->GetSpellInfo(GetTransformSpell()))
+							for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+								if (transform->Effects[i].IsAura(SPELL_AURA_TRANSFORM))
+									if (CreatureTemplate const* transformInfo = sObjectMgr->GetCreatureTemplate(transform->Effects[i].MiscValue))
+									{
+										cinfo = transformInfo;
+										break;
+									}
+						if (cinfo->flags_extra & CREATURE_FLAG_EXTRA_TRIGGER)
+							if (target->IsGameMaster())
+								displayId = cinfo->GetFirstVisibleModel();
+					}*/
 
-                    fieldBuffer.Write<u32>(displayId);
-                }
-                // hide lootable animation for unallowed players
-                else if (index == UNIT_DYNAMIC_FLAGS)
-                {
-                    u32 dynamicFlags = playerUpdateData.playerFields.ReadAt<u32>(UNIT_DYNAMIC_FLAGS * 4) & ~(0x4 | 0x08); // UNIT_DYNFLAG_TAPPED | UNIT_DYNFLAG_TAPPED_BY_PLAYER
+					fieldBuffer.Write<u32>(displayId);
+					}
+					// hide lootable animation for unallowed players
+					else if (index == UNIT_DYNAMIC_FLAGS)
+					{
+					u32 dynamicFlags = playerUpdateData.playerFields.ReadAt<u32>(UNIT_DYNAMIC_FLAGS * 4) & ~(0x4 | 0x08); // UNIT_DYNFLAG_TAPPED | UNIT_DYNFLAG_TAPPED_BY_PLAYER
 
-                    /*if (creature)
-                    {
-                        if (creature->hasLootRecipient())
-                        {
-                            dynamicFlags |= UNIT_DYNFLAG_TAPPED;
-                            if (creature->isTappedBy(target))
-                                dynamicFlags |= UNIT_DYNFLAG_TAPPED_BY_PLAYER;
-                        }
-                        if (!target->isAllowedToLoot(creature))
-                            dynamicFlags &= ~UNIT_DYNFLAG_LOOTABLE;
-                    }*/
+					/*if (creature)
+					{
+						if (creature->hasLootRecipient())
+						{
+							dynamicFlags |= UNIT_DYNFLAG_TAPPED;
+							if (creature->isTappedBy(target))
+								dynamicFlags |= UNIT_DYNFLAG_TAPPED_BY_PLAYER;
+						}
+						if (!target->isAllowedToLoot(creature))
+							dynamicFlags &= ~UNIT_DYNFLAG_LOOTABLE;
+					}*/
 
-                    // unit UNIT_DYNFLAG_TRACK_UNIT should only be sent to caster of SPELL_AURA_MOD_STALKED auras
-                    //if (dynamicFlags & UNIT_DYNFLAG_TRACK_UNIT)
-                        //if (!HasAuraTypeWithCaster(SPELL_AURA_MOD_STALKED, target->GetGUID()))
-                            //dynamicFlags &= ~UNIT_DYNFLAG_TRACK_UNIT;
+					// unit UNIT_DYNFLAG_TRACK_UNIT should only be sent to caster of SPELL_AURA_MOD_STALKED auras
+					//if (dynamicFlags & UNIT_DYNFLAG_TRACK_UNIT)
+						//if (!HasAuraTypeWithCaster(SPELL_AURA_MOD_STALKED, target->GetGUID()))
+							//dynamicFlags &= ~UNIT_DYNFLAG_TRACK_UNIT;
 
-                    fieldBuffer.Write<u32>(dynamicFlags);
-                }
-                // FG: pretend that OTHER players in own group are friendly ("blue")
-                else if (index == UNIT_FIELD_BYTES_2 || index == UNIT_FIELD_FACTIONTEMPLATE)
-                {
-                    //if (IsControlledByPlayer() && target != this && sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_GROUP) && IsInRaidWith(target))
-                    //{
-                        //FactionTemplateEntry const* ft1 = GetFactionTemplateEntry();
-                        //FactionTemplateEntry const* ft2 = target->GetFactionTemplateEntry();
-                        //if (!ft1->IsFriendlyTo(*ft2))
-                        //{
-                            //if (index == UNIT_FIELD_BYTES_2)
-                                // Allow targetting opposite faction in party when enabled in config
-                                //fieldBuffer << (m_uint32Values[UNIT_FIELD_BYTES_2] & ((UNIT_BYTE2_FLAG_SANCTUARY /*| UNIT_BYTE2_FLAG_AURAS | UNIT_BYTE2_FLAG_UNK5*/) << 8)); // this flag is at uint8 offset 1 !!
-                            //else
-                                // pretend that all other HOSTILE players have own faction, to allow follow, heal, rezz (trade wont work)
-                                //fieldBuffer << uint32(target->GetFaction());
-                        //}
-                        //else
-                            //fieldBuffer << m_uint32Values[index];
-                    //}
-                    //else
-                    fieldBuffer.Write(playerUpdateData.playerFields.GetDataPointer() + index * 4, 4);
-                }
-                else
-                {
-                    // send in current format (f32 as f32, uint32 as uint32)
-                    fieldBuffer.Write(playerUpdateData.playerFields.GetDataPointer() + index * 4, 4);
-                }
-            }
-        }
+					fieldBuffer.Write<u32>(dynamicFlags);
+					}
+					// FG: pretend that OTHER players in own group are friendly ("blue")
+					else if (index == UNIT_FIELD_BYTES_2 || index == UNIT_FIELD_FACTIONTEMPLATE)
+					{
+					//if (IsControlledByPlayer() && target != this && sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_GROUP) && IsInRaidWith(target))
+					//{
+						//FactionTemplateEntry const* ft1 = GetFactionTemplateEntry();
+						//FactionTemplateEntry const* ft2 = target->GetFactionTemplateEntry();
+						//if (!ft1->IsFriendlyTo(*ft2))
+						//{
+							//if (index == UNIT_FIELD_BYTES_2)
+								// Allow targetting opposite faction in party when enabled in config
+								//fieldBuffer << (m_uint32Values[UNIT_FIELD_BYTES_2] & ((UNIT_BYTE2_FLAG_SANCTUARY /*| UNIT_BYTE2_FLAG_AURAS | UNIT_BYTE2_FLAG_UNK5*/) << 8)); // this flag is at uint8 offset 1 !!
+							//else
+								// pretend that all other HOSTILE players have own faction, to allow follow, heal, rezz (trade wont work)
+								//fieldBuffer << uint32(target->GetFaction());
+						//}
+						//else
+							//fieldBuffer << m_uint32Values[index];
+					//}
+					//else
+					fieldBuffer.Write(playerUpdateData.playerFields.GetDataPointer() + index * 4, 4);
+					}
+					else
+					{
+					// send in current format (f32 as f32, uint32 as uint32)
+					fieldBuffer.Write(playerUpdateData.playerFields.GetDataPointer() + index * 4, 4);
+					}
+				}
+			}
+		}
 
-        buffer.Write<u8>(updateMask.GetBlocks());
-        updateMask.AddTo(buffer);
-        buffer.Append(fieldBuffer);
-
-        UpdateData updateData;
-        updateData.AddBlock(buffer);
+		{
+			ZoneScopedNC("BuildPlayerUpdateData::GetBlocks", tracy::Color::Yellow2)
+			buffer.Write<u8>(updateMask.GetBlocks());
+			updateMask.AddTo(buffer);
+			buffer.Append(fieldBuffer);
+		}
+        
+		UpdateData updateData;
+		{
+			ZoneScopedNC("BuildPlayerUpdateData::AddBlock", tracy::Color::Yellow2)
+			updateData.AddBlock(buffer);
+		}
 
         Common::ByteBuffer tempBuffer;
-        updateData.Build(tempBuffer, opcode);
+		{
+			ZoneScopedNC("BuildPlayerUpdateData::Build", tracy::Color::Yellow2)
+			updateData.Build(tempBuffer, opcode);
+		}
 
         return tempBuffer;
     }
@@ -209,17 +221,18 @@ namespace PlayerUpdateDataSystem
                 u32 selfVisibleFlags = (UF_FLAG_PUBLIC | UF_FLAG_PRIVATE);
                 u16 buildOpcode = 0;
 
-                NovusHeader novusHeader;
+				// Currently we have not observed any issues with sending private field flags to any other client but themselves, this offers a good speed increase but if we see issues in the future we should recheck this.
+                /*NovusHeader novusHeader;
                 Common::ByteBuffer selfPlayerUpdate = BuildPlayerUpdateData(clientConnection.characterGuid, selfVisibleFlags, clientUpdateData, buildOpcode);
                 novusHeader.CreateForwardHeader(clientConnection.accountGuid, buildOpcode, selfPlayerUpdate.GetActualSize());
-                novusConnection.SendPacket(novusHeader.BuildHeaderPacket(selfPlayerUpdate));
-
+                novusConnection.SendPacket(novusHeader.BuildHeaderPacket(selfPlayerUpdate));*/
+				
                 /* Build Self Packet for public */
                 u32 publicVisibleFlags = UF_FLAG_PUBLIC;
                 PlayerUpdatePacket playerUpdatePacket;
                 playerUpdatePacket.characterGuid = clientConnection.characterGuid;
                 playerUpdatePacket.updateType = UPDATETYPE_VALUES;
-                playerUpdatePacket.data = BuildPlayerUpdateData(clientConnection.characterGuid, publicVisibleFlags, clientUpdateData, buildOpcode);
+                playerUpdatePacket.data = BuildPlayerUpdateData(clientConnection.characterGuid, selfVisibleFlags, clientUpdateData, buildOpcode);
                 playerUpdatePacket.opcode = buildOpcode;
                 playerUpdatesQueue.playerUpdatePacketQueue.push_back(playerUpdatePacket);
 
