@@ -86,12 +86,8 @@ namespace Common
         }        
         void HandleInternalWrite(asio::error_code error, std::size_t transferedBytes)
         {
-            if (!error)
+            if (error)
             {
-            }
-            else
-            {
-                //printf("WRITE ERROR\n");
                 Close(error);
             }
         }

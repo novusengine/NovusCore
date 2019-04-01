@@ -43,9 +43,9 @@ namespace CreatePlayerSystem
 {
     void Update(entt::registry &registry)
     {
-		SingletonComponent& singleton = registry.get<SingletonComponent>(0);
-        CreatePlayerQueueSingleton& createPlayerQueue = registry.get<CreatePlayerQueueSingleton>(0);
-        CharacterDatabaseCacheSingleton& characterDatabase = registry.get<CharacterDatabaseCacheSingleton>(0);
+		SingletonComponent& singleton = registry.ctx<SingletonComponent>();
+        CreatePlayerQueueSingleton& createPlayerQueue = registry.ctx<CreatePlayerQueueSingleton>();
+        CharacterDatabaseCacheSingleton& characterDatabase = registry.ctx<CharacterDatabaseCacheSingleton>();
 
         Message message;
         while (createPlayerQueue.newEntityQueue->try_dequeue(message))

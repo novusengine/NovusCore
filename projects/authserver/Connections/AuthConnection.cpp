@@ -60,11 +60,11 @@ struct sAuthLogonChallengeHeader
 struct sAuthLogonChallengeData
 {
     u8 b[32];
-    u8 unk1;
+    u8 g_length;
     u8 g;
-    u8 unk2;
+    u8 n_length;
     u8 n[32];
-    u8 s[32];
+    u8 salt[32];
     u8 version_challenge[16];
     u8 security_flags;
 
@@ -277,11 +277,11 @@ void AuthConnection::HandleCommandChallengeCallback(amy::result_set& results)
 
     sAuthLogonChallengeData data;
     data.Append(data.b, B.BN2BinArray(32).get(), 32);
-    data.unk1 = 1;
+    data.g_length = 1;
     data.g = g.BN2BinArray(32).get()[0];
-    data.unk2 = 32;
+    data.n_length = 32;
     data.Append(data.n, N.BN2BinArray(32).get(), 32);
-    data.Append(data.s, s.BN2BinArray(32).get(), 32); // 32 bytes (SRP_6_S)
+    data.Append(data.salt, s.BN2BinArray(32).get(), 32); // 32 bytes (SRP_6_S)
     data.Append(data.version_challenge, VersionChallenge.data(), VersionChallenge.size());
     data.security_flags = 0;
     data.AddTo(response);

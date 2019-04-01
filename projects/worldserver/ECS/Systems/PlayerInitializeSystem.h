@@ -16,8 +16,8 @@ namespace PlayerInitializeSystem
 {
     void Update(entt::registry &registry)
     {
-        SingletonComponent& singleton = registry.get<SingletonComponent>(0);
-        CharacterDatabaseCacheSingleton& characterDatabase = registry.get<CharacterDatabaseCacheSingleton>(0);
+        SingletonComponent& singleton = registry.ctx<SingletonComponent>();
+        CharacterDatabaseCacheSingleton& characterDatabase = registry.ctx<CharacterDatabaseCacheSingleton>();
         NovusConnection& novusConnection = *singleton.connection;
 
         auto view = registry.view<PlayerInitializeComponent, PlayerUpdateDataComponent, PositionComponent, SpellStorageComponent, SkillStorageComponent>();

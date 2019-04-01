@@ -38,8 +38,8 @@ namespace DeletePlayerSystem
 {
     void Update(entt::registry &registry)
     {
-		SingletonComponent& singleton = registry.get<SingletonComponent>(0);
-        DeletePlayerQueueSingleton& deletePlayerQueue = registry.get<DeletePlayerQueueSingleton>(0);
+		SingletonComponent& singleton = registry.ctx<SingletonComponent>();
+        DeletePlayerQueueSingleton& deletePlayerQueue = registry.ctx<DeletePlayerQueueSingleton>();
         NovusConnection& novusConnection = *singleton.connection;
         
         Common::ByteBuffer buildPacket;

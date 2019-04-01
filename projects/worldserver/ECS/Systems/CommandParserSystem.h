@@ -43,7 +43,7 @@ namespace CommandParserSystem
 
 	void Update(entt::registry &registry) 
     {
-        SingletonComponent& singleton = registry.get<SingletonComponent>(0);
+        SingletonComponent& singleton = registry.ctx<SingletonComponent>();
         NovusConnection& novusConnection = *singleton.connection;
 
         auto view = registry.view<ConnectionComponent, PlayerUpdateDataComponent>();

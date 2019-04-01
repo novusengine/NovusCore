@@ -242,14 +242,14 @@ namespace PlayerCreateDataSystem
 
     void Update(entt::registry &registry)
     {
-        SingletonComponent& singleton = registry.get<SingletonComponent>(0);
-        PlayerUpdatesQueueSingleton& playerUpdatesQueue = registry.get<PlayerUpdatesQueueSingleton>(0);
-        NovusConnection& novusConnection = *singleton.connection;
-        u32 lifeTimeInMS = u32(singleton.lifeTimeInMS);
-
         auto view = registry.view<PlayerInitializeComponent, PlayerUpdateDataComponent, PositionComponent>();
         if (!view.empty())
         {
+            SingletonComponent& singleton = registry.ctx<SingletonComponent>();
+            PlayerUpdatesQueueSingleton& playerUpdatesQueue = registry.ctx<PlayerUpdatesQueueSingleton>();
+            NovusConnection& novusConnection = *singleton.connection;
+            u32 lifeTimeInMS = u32(singleton.lifeTimeInMS);
+
             auto subView = registry.view<ConnectionComponent, PlayerUpdateDataComponent, PositionComponent>();
             view.each([&novusConnection, &playerUpdatesQueue, lifeTimeInMS, subView](const auto, PlayerInitializeComponent& clientInitializeData, PlayerUpdateDataComponent& clientUpdateData, PositionComponent& clientPositionData)
             {

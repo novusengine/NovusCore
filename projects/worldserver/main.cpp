@@ -14,7 +14,8 @@
 
 #include "ConsoleCommands.h"
 
-std::string GetLineFromCin() {
+std::string GetLineFromCin() 
+{
 	std::string line;
 	std::getline(std::cin, line);
 	return line;

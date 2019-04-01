@@ -205,8 +205,8 @@ namespace PlayerUpdateDataSystem
 
     void Update(entt::registry &registry)
     {
-		SingletonComponent& singleton = registry.get<SingletonComponent>(0);
-        PlayerUpdatesQueueSingleton& playerUpdatesQueue = registry.get<PlayerUpdatesQueueSingleton>(0);
+		SingletonComponent& singleton = registry.ctx<SingletonComponent>();
+        PlayerUpdatesQueueSingleton& playerUpdatesQueue = registry.ctx<PlayerUpdatesQueueSingleton>();
 		NovusConnection& novusConnection = *singleton.connection;
 
         auto view = registry.view<ConnectionComponent, PlayerUpdateDataComponent, PositionComponent>();

@@ -73,11 +73,17 @@ void WorldServerHandler::Run()
     SetupUpdateFramework();
 
     _updateFramework.registry.create();
-    SingletonComponent& singletonComponent = _updateFramework.registry.assign<SingletonComponent>(0);
+    SingletonComponent& singletonComponent = _updateFramework.registry.set<SingletonComponent>();
+    CreatePlayerQueueSingleton& createPlayerQueueComponent = _updateFramework.registry.set<CreatePlayerQueueSingleton>();
+    PlayerUpdatesQueueSingleton& playerUpdatesQueueSingleton = _updateFramework.registry.set<PlayerUpdatesQueueSingleton>();
+    DeletePlayerQueueSingleton& deletePlayerQueueSingleton = _updateFramework.registry.set<DeletePlayerQueueSingleton>();
+    CharacterDatabaseCacheSingleton& characterDatabaseCacheSingleton = _updateFramework.registry.set<CharacterDatabaseCacheSingleton>();
+
+    /*SingletonComponent& singletonComponent = _updateFramework.registry.assign<SingletonComponent>(0);
     CreatePlayerQueueSingleton& createPlayerQueueComponent = _updateFramework.registry.assign<CreatePlayerQueueSingleton>(0);
     PlayerUpdatesQueueSingleton& playerUpdatesQueueSingleton = _updateFramework.registry.assign<PlayerUpdatesQueueSingleton>(0);
     DeletePlayerQueueSingleton& deletePlayerQueueSingleton = _updateFramework.registry.assign<DeletePlayerQueueSingleton>(0);
-    CharacterDatabaseCacheSingleton& characterDatabaseCacheSingleton = _updateFramework.registry.assign<CharacterDatabaseCacheSingleton>(0);
+    CharacterDatabaseCacheSingleton& characterDatabaseCacheSingleton = _updateFramework.registry.assign<CharacterDatabaseCacheSingleton>(0);*/
    
     singletonComponent.worldServerHandler = this;
     singletonComponent.connection = _novusConnection;
@@ -162,7 +168,7 @@ bool WorldServerHandler::Update()
 
             if (message.code == MSG_IN_SET_CONNECTION)
             {
-                SingletonComponent& singletonComponent = _updateFramework.registry.get<SingletonComponent>(0);
+                SingletonComponent& singletonComponent = _updateFramework.registry.ctx<SingletonComponent>();
                 singletonComponent.connection = _novusConnection;
             }
 
@@ -172,12 +178,12 @@ bool WorldServerHandler::Update()
                 if (Common::Opcode((u16)message.opcode) == Common::Opcode::CMSG_PLAYER_LOGIN)
                 {
                     ZoneScopedNC("LoginMessage", tracy::Color::Green3)
-                    _updateFramework.registry.get<CreatePlayerQueueSingleton>(0).newEntityQueue->enqueue(message);
+                    _updateFramework.registry.ctx<CreatePlayerQueueSingleton>().newEntityQueue->enqueue(message);
                 }
                 else
                 {
                     ZoneScopedNC("ForwardMessage", tracy::Color::Green3)
-                    SingletonComponent& singletonComponent = _updateFramework.registry.get<SingletonComponent>(0);
+                    SingletonComponent& singletonComponent = _updateFramework.registry.ctx<SingletonComponent>();
 
                     auto itr = singletonComponent.accountToEntityMap.find(u32(message.account));
                     if (itr != singletonComponent.accountToEntityMap.end())
