@@ -2,7 +2,6 @@
 #define ENTT_SIGNAL_DELEGATE_HPP
 
 
-#include <cassert>
 #include <cstring>
 #include <algorithm>
 #include <functional>
@@ -153,17 +152,17 @@ public:
         static_assert(std::is_invocable_r_v<Ret, decltype(Candidate), Type *, Args...>);
         data = value_or_instance;
 
-        fn = [](const void *data, Args... args) -> Ret {
-            Type *value_or_instance = nullptr;
+        fn = [](const void *payload, Args... args) -> Ret {
+            Type *curr = nullptr;
 
             if constexpr(std::is_const_v<Type>) {
-                value_or_instance = static_cast<Type *>(data);
+                curr = static_cast<Type *>(payload);
             } else {
-                value_or_instance = static_cast<Type *>(const_cast<void *>(data));
+                curr = static_cast<Type *>(const_cast<void *>(payload));
             }
 
             // this allows void(...) to eat return values and avoid errors
-            return Ret(std::invoke(Candidate, value_or_instance, args...));
+            return Ret(std::invoke(Candidate, curr, args...));
         };
     }
 
@@ -200,7 +199,7 @@ public:
      * @return The value returned by the underlying function.
      */
     Ret operator()(Args... args) const {
-        assert(fn);
+        ENTT_ASSERT(fn);
         return fn(data, args...);
     }
 

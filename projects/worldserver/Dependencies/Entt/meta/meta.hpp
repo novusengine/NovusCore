@@ -6,7 +6,6 @@
 #include <array>
 #include <memory>
 #include <cstring>
-#include <cassert>
 #include <cstddef>
 #include <utility>
 #include <functional>
@@ -240,8 +239,8 @@ const Type * try_cast(const meta_type_node *node, void *instance) ENTT_NOEXCEPT 
     if(node == type) {
         ret = instance;
     } else {
-        const auto *base = find_if<&meta_type_node::base>([type](auto *node) {
-            return node->type() == type;
+        const auto *base = find_if<&meta_type_node::base>([type](auto *candidate) {
+            return candidate->type() == type;
         }, node);
 
         ret = base ? base->cast(instance) : nullptr;
@@ -261,12 +260,12 @@ inline bool can_cast_or_convert(const meta_type_node *from, const meta_type_node
 
 template<typename... Args, std::size_t... Indexes>
 inline auto ctor(std::index_sequence<Indexes...>, const meta_type_node *node) ENTT_NOEXCEPT {
-    return internal::find_if([](auto *node) {
-        return node->size == sizeof...(Args) &&
+    return internal::find_if([](auto *candidate) {
+        return candidate->size == sizeof...(Args) &&
                 (([](auto *from, auto *to) {
                     return internal::can_cast_or_convert<&internal::meta_type_node::base>(from, to)
                             || internal::can_cast_or_convert<&internal::meta_type_node::conv>(from, to);
-                }(internal::meta_info<Args>::resolve(), node->arg(Indexes))) && ...);
+                }(internal::meta_info<Args>::resolve(), candidate->arg(Indexes))) && ...);
     }, node->ctor);
 }
 
@@ -489,7 +488,7 @@ public:
      */
     template<typename Type>
     inline const Type & cast() const ENTT_NOEXCEPT {
-        assert(can_cast<Type>());
+        ENTT_ASSERT(can_cast<Type>());
         return *internal::try_cast<Type>(node, instance);
     }
 
@@ -524,8 +523,8 @@ public:
         if(node == type) {
             any = *static_cast<const Type *>(instance);
         } else {
-            const auto *conv = internal::find_if<&internal::meta_type_node::conv>([type](auto *node) {
-                return node->type() == type;
+            const auto *conv = internal::find_if<&internal::meta_type_node::conv>([type](auto *other) {
+                return other->type() == type;
             }, node);
 
             if(conv) {
@@ -634,9 +633,9 @@ class meta_handle {
     {}
 
     template<typename Type>
-    meta_handle(char, Type &&instance) ENTT_NOEXCEPT
+    meta_handle(char, Type &&obj) ENTT_NOEXCEPT
         : node{internal::meta_info<Type>::resolve()},
-          instance{&instance}
+          instance{&obj}
     {}
 
 public:
@@ -649,11 +648,11 @@ public:
     /**
      * @brief Constructs a meta handle from a given instance.
      * @tparam Type Type of object to use to initialize the handle.
-     * @param instance A reference to an object to use to initialize the handle.
+     * @param obj A reference to an object to use to initialize the handle.
      */
     template<typename Type, typename = std::enable_if_t<!std::is_same_v<std::decay_t<Type>, meta_handle>>>
-    meta_handle(Type &&instance) ENTT_NOEXCEPT
-        : meta_handle{0, std::forward<Type>(instance)}
+    meta_handle(Type &&obj) ENTT_NOEXCEPT
+        : meta_handle{0, std::forward<Type>(obj)}
     {}
 
     /**
@@ -735,8 +734,8 @@ class meta_prop {
     /*! @brief A meta factory is allowed to create meta objects. */
     template<typename> friend class meta_factory;
 
-    inline meta_prop(const internal::meta_prop_node *node) ENTT_NOEXCEPT
-        : node{node}
+    inline meta_prop(const internal::meta_prop_node *curr) ENTT_NOEXCEPT
+        : node{curr}
     {}
 
 public:
@@ -805,8 +804,8 @@ class meta_base {
     /*! @brief A meta factory is allowed to create meta objects. */
     template<typename> friend class meta_factory;
 
-    inline meta_base(const internal::meta_base_node *node) ENTT_NOEXCEPT
-        : node{node}
+    inline meta_base(const internal::meta_base_node *curr) ENTT_NOEXCEPT
+        : node{curr}
     {}
 
 public:
@@ -880,8 +879,8 @@ class meta_conv {
     /*! @brief A meta factory is allowed to create meta objects. */
     template<typename> friend class meta_factory;
 
-    inline meta_conv(const internal::meta_conv_node *node) ENTT_NOEXCEPT
-        : node{node}
+    inline meta_conv(const internal::meta_conv_node *curr) ENTT_NOEXCEPT
+        : node{curr}
     {}
 
 public:
@@ -955,8 +954,8 @@ class meta_ctor {
     /*! @brief A meta factory is allowed to create meta objects. */
     template<typename> friend class meta_factory;
 
-    inline meta_ctor(const internal::meta_ctor_node *node) ENTT_NOEXCEPT
-        : node{node}
+    inline meta_ctor(const internal::meta_ctor_node *curr) ENTT_NOEXCEPT
+        : node{curr}
     {}
 
 public:
@@ -1020,8 +1019,8 @@ public:
     template<typename Op>
     inline std::enable_if_t<std::is_invocable_v<Op, meta_prop>, void>
     prop(Op op) const ENTT_NOEXCEPT {
-        internal::iterate([op = std::move(op)](auto *node) {
-            op(node->meta());
+        internal::iterate([op = std::move(op)](auto *curr) {
+            op(curr->meta());
         }, node->prop);
     }
 
@@ -1034,8 +1033,8 @@ public:
     template<typename Key>
     inline std::enable_if_t<!std::is_invocable_v<Key, meta_prop>, meta_prop>
     prop(Key &&key) const ENTT_NOEXCEPT {
-        const auto *curr = internal::find_if([key = meta_any{std::forward<Key>(key)}](auto *curr) {
-            return curr->key() == key;
+        const auto *curr = internal::find_if([key = meta_any{std::forward<Key>(key)}](auto *candidate) {
+            return candidate->key() == key;
         }, node->prop);
 
         return curr ? curr->meta() : meta_prop{};
@@ -1085,8 +1084,8 @@ class meta_dtor {
     /*! @brief A meta factory is allowed to create meta objects. */
     template<typename> friend class meta_factory;
 
-    inline meta_dtor(const internal::meta_dtor_node *node) ENTT_NOEXCEPT
-        : node{node}
+    inline meta_dtor(const internal::meta_dtor_node *curr) ENTT_NOEXCEPT
+        : node{curr}
     {}
 
 public:
@@ -1159,8 +1158,8 @@ class meta_data {
     /*! @brief A meta factory is allowed to create meta objects. */
     template<typename> friend class meta_factory;
 
-    inline meta_data(const internal::meta_data_node *node) ENTT_NOEXCEPT
-        : node{node}
+    inline meta_data(const internal::meta_data_node *curr) ENTT_NOEXCEPT
+        : node{curr}
     {}
 
 public:
@@ -1251,8 +1250,8 @@ public:
     template<typename Op>
     inline std::enable_if_t<std::is_invocable_v<Op, meta_prop>, void>
     prop(Op op) const ENTT_NOEXCEPT {
-        internal::iterate([op = std::move(op)](auto *node) {
-            op(node->meta());
+        internal::iterate([op = std::move(op)](auto *curr) {
+            op(curr->meta());
         }, node->prop);
     }
 
@@ -1265,8 +1264,8 @@ public:
     template<typename Key>
     inline std::enable_if_t<!std::is_invocable_v<Key, meta_prop>, meta_prop>
     prop(Key &&key) const ENTT_NOEXCEPT {
-        const auto *curr = internal::find_if([key = meta_any{std::forward<Key>(key)}](auto *curr) {
-            return curr->key() == key;
+        const auto *curr = internal::find_if([key = meta_any{std::forward<Key>(key)}](auto *candidate) {
+            return candidate->key() == key;
         }, node->prop);
 
         return curr ? curr->meta() : meta_prop{};
@@ -1316,8 +1315,8 @@ class meta_func {
     /*! @brief A meta factory is allowed to create meta objects. */
     template<typename> friend class meta_factory;
 
-    inline meta_func(const internal::meta_func_node *node) ENTT_NOEXCEPT
-        : node{node}
+    inline meta_func(const internal::meta_func_node *curr) ENTT_NOEXCEPT
+        : node{curr}
     {}
 
 public:
@@ -1419,8 +1418,8 @@ public:
     template<typename Op>
     inline std::enable_if_t<std::is_invocable_v<Op, meta_prop>, void>
     prop(Op op) const ENTT_NOEXCEPT {
-        internal::iterate([op = std::move(op)](auto *node) {
-            op(node->meta());
+        internal::iterate([op = std::move(op)](auto *curr) {
+            op(curr->meta());
         }, node->prop);
     }
 
@@ -1433,8 +1432,8 @@ public:
     template<typename Key>
     inline std::enable_if_t<!std::is_invocable_v<Key, meta_prop>, meta_prop>
     prop(Key &&key) const ENTT_NOEXCEPT {
-        const auto *curr = internal::find_if([key = meta_any{std::forward<Key>(key)}](auto *curr) {
-            return curr->key() == key;
+        const auto *curr = internal::find_if([key = meta_any{std::forward<Key>(key)}](auto *candidate) {
+            return candidate->key() == key;
         }, node->prop);
 
         return curr ? curr->meta() : meta_prop{};
@@ -1487,8 +1486,8 @@ class meta_type {
     /*! @brief A meta node is allowed to create meta objects. */
     template<typename...> friend struct internal::meta_node;
 
-    inline meta_type(const internal::meta_type_node *node) ENTT_NOEXCEPT
-        : node{node}
+    inline meta_type(const internal::meta_type_node *curr) ENTT_NOEXCEPT
+        : node{curr}
     {}
 
 public:
@@ -1612,8 +1611,8 @@ public:
      */
     template<typename Op>
     inline void base(Op op) const ENTT_NOEXCEPT {
-        internal::iterate<&internal::meta_type_node::base>([op = std::move(op)](auto *node) {
-            op(node->meta());
+        internal::iterate<&internal::meta_type_node::base>([op = std::move(op)](auto *curr) {
+            op(curr->meta());
         }, node);
     }
 
@@ -1626,8 +1625,8 @@ public:
      * @return The meta base associated with the given name, if any.
      */
     inline meta_base base(const char *str) const ENTT_NOEXCEPT {
-        const auto *curr = internal::find_if<&internal::meta_type_node::base>([name = hashed_string{str}](auto *node) {
-            return node->type()->name == name;
+        const auto *curr = internal::find_if<&internal::meta_type_node::base>([name = hashed_string{str}](auto *candidate) {
+            return candidate->type()->name == name;
         }, node);
 
         return curr ? curr->meta() : meta_base{};
@@ -1644,8 +1643,8 @@ public:
      */
     template<typename Op>
     inline void conv(Op op) const ENTT_NOEXCEPT {
-        internal::iterate<&internal::meta_type_node::conv>([op = std::move(op)](auto *node) {
-            op(node->meta());
+        internal::iterate<&internal::meta_type_node::conv>([op = std::move(op)](auto *curr) {
+            op(curr->meta());
         }, node);
     }
 
@@ -1661,8 +1660,8 @@ public:
      */
     template<typename Type>
     inline meta_conv conv() const ENTT_NOEXCEPT {
-        const auto *curr = internal::find_if<&internal::meta_type_node::conv>([type = internal::meta_info<Type>::resolve()](auto *node) {
-            return node->type() == type;
+        const auto *curr = internal::find_if<&internal::meta_type_node::conv>([type = internal::meta_info<Type>::resolve()](auto *candidate) {
+            return candidate->type() == type;
         }, node);
 
         return curr ? curr->meta() : meta_conv{};
@@ -1675,8 +1674,8 @@ public:
      */
     template<typename Op>
     inline void ctor(Op op) const ENTT_NOEXCEPT {
-        internal::iterate([op = std::move(op)](auto *node) {
-            op(node->meta());
+        internal::iterate([op = std::move(op)](auto *curr) {
+            op(curr->meta());
         }, node->ctor);
     }
 
@@ -1710,8 +1709,8 @@ public:
      */
     template<typename Op>
     inline void data(Op op) const ENTT_NOEXCEPT {
-        internal::iterate<&internal::meta_type_node::data>([op = std::move(op)](auto *node) {
-            op(node->meta());
+        internal::iterate<&internal::meta_type_node::data>([op = std::move(op)](auto *curr) {
+            op(curr->meta());
         }, node);
     }
 
@@ -1726,8 +1725,8 @@ public:
      * @return The meta data associated with the given name, if any.
      */
     inline meta_data data(const char *str) const ENTT_NOEXCEPT {
-        const auto *curr = internal::find_if<&internal::meta_type_node::data>([name = hashed_string{str}](auto *node) {
-            return node->name == name;
+        const auto *curr = internal::find_if<&internal::meta_type_node::data>([name = hashed_string{str}](auto *candidate) {
+            return candidate->name == name;
         }, node);
 
         return curr ? curr->meta() : meta_data{};
@@ -1745,8 +1744,8 @@ public:
      */
     template<typename Op>
     inline void func(Op op) const ENTT_NOEXCEPT {
-        internal::iterate<&internal::meta_type_node::func>([op = std::move(op)](auto *node) {
-            op(node->meta());
+        internal::iterate<&internal::meta_type_node::func>([op = std::move(op)](auto *curr) {
+            op(curr->meta());
         }, node);
     }
 
@@ -1761,8 +1760,8 @@ public:
      * @return The meta function associated with the given name, if any.
      */
     inline meta_func func(const char *str) const ENTT_NOEXCEPT {
-        const auto *curr = internal::find_if<&internal::meta_type_node::func>([name = hashed_string{str}](auto *node) {
-            return node->name == name;
+        const auto *curr = internal::find_if<&internal::meta_type_node::func>([name = hashed_string{str}](auto *candidate) {
+            return candidate->name == name;
         }, node);
 
         return curr ? curr->meta() : meta_func{};
@@ -1784,8 +1783,8 @@ public:
         std::array<meta_any, sizeof...(Args)> arguments{{std::forward<Args>(args)...}};
         meta_any any{};
 
-        internal::iterate<&internal::meta_type_node::ctor>([data = arguments.data(), &any](auto *node) -> bool {
-            any = node->invoke(data);
+        internal::iterate<&internal::meta_type_node::ctor>([data = arguments.data(), &any](auto *curr) -> bool {
+            any = curr->invoke(data);
             return static_cast<bool>(any);
         }, node);
 
@@ -1817,8 +1816,8 @@ public:
     template<typename Op>
     inline std::enable_if_t<std::is_invocable_v<Op, meta_prop>, void>
     prop(Op op) const ENTT_NOEXCEPT {
-        internal::iterate<&internal::meta_type_node::prop>([op = std::move(op)](auto *node) {
-            op(node->meta());
+        internal::iterate<&internal::meta_type_node::prop>([op = std::move(op)](auto *curr) {
+            op(curr->meta());
         }, node);
     }
 
@@ -1836,8 +1835,8 @@ public:
     template<typename Key>
     inline std::enable_if_t<!std::is_invocable_v<Key, meta_prop>, meta_prop>
     prop(Key &&key) const ENTT_NOEXCEPT {
-        const auto *curr = internal::find_if<&internal::meta_type_node::prop>([key = meta_any{std::forward<Key>(key)}](auto *curr) {
-            return curr->key() == key;
+        const auto *curr = internal::find_if<&internal::meta_type_node::prop>([key = meta_any{std::forward<Key>(key)}](auto *candidate) {
+            return candidate->key() == key;
         }, node);
 
         return curr ? curr->meta() : meta_prop{};

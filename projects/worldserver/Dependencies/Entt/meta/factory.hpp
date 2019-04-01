@@ -2,7 +2,6 @@
 #define ENTT_META_FACTORY_HPP
 
 
-#include <cassert>
 #include <utility>
 #include <algorithm>
 #include <type_traits>
@@ -81,7 +80,7 @@ class meta_factory {
             }
         };
 
-        assert(!duplicate(meta_any{std::get<0>(prop)}, node.next));
+        ENTT_ASSERT(!duplicate(meta_any{std::get<0>(prop)}, node.next));
         return &node;
     }
 
@@ -110,8 +109,8 @@ class meta_factory {
             }
         };
 
-        assert(!duplicate(name, node.next));
-        assert(!internal::meta_info<Type>::type);
+        ENTT_ASSERT(!duplicate(name, node.next));
+        ENTT_ASSERT(!internal::meta_info<Type>::type);
         internal::meta_info<Type>::type = &node;
         internal::meta_info<>::type = &node;
 
@@ -146,7 +145,7 @@ public:
             }
         };
 
-        assert((!internal::meta_info<Type>::template base<Base>));
+        ENTT_ASSERT((!internal::meta_info<Type>::template base<Base>));
         internal::meta_info<Type>::template base<Base> = &node;
         type->base = &node;
 
@@ -179,7 +178,7 @@ public:
             }
         };
 
-        assert((!internal::meta_info<Type>::template conv<To>));
+        ENTT_ASSERT((!internal::meta_info<Type>::template conv<To>));
         internal::meta_info<Type>::template conv<To> = &node;
         type->conv = &node;
 
@@ -220,7 +219,7 @@ public:
             }
         };
 
-        assert((!internal::meta_info<Type>::template ctor<typename helper_type::args_type>));
+        ENTT_ASSERT((!internal::meta_info<Type>::template ctor<typename helper_type::args_type>));
         internal::meta_info<Type>::template ctor<typename helper_type::args_type> = &node;
         type->ctor = &node;
 
@@ -258,7 +257,7 @@ public:
             }
         };
 
-        assert((!internal::meta_info<Type>::template ctor<typename helper_type::args_type>));
+        ENTT_ASSERT((!internal::meta_info<Type>::template ctor<typename helper_type::args_type>));
         internal::meta_info<Type>::template ctor<typename helper_type::args_type> = &node;
         type->ctor = &node;
 
@@ -298,8 +297,8 @@ public:
             }
         };
 
-        assert(!internal::meta_info<Type>::type->dtor);
-        assert((!internal::meta_info<Type>::template dtor<Func>));
+        ENTT_ASSERT(!internal::meta_info<Type>::type->dtor);
+        ENTT_ASSERT((!internal::meta_info<Type>::template dtor<Func>));
         internal::meta_info<Type>::template dtor<Func> = &node;
         internal::meta_info<Type>::type->dtor = &node;
 
@@ -342,8 +341,8 @@ public:
                 }
             };
 
-            assert(!duplicate(hashed_string{str}, node.next));
-            assert((!internal::meta_info<Type>::template data<Data>));
+            ENTT_ASSERT(!duplicate(hashed_string{str}, node.next));
+            ENTT_ASSERT((!internal::meta_info<Type>::template data<Data>));
             internal::meta_info<Type>::template data<Data> = &node;
             type->data = &node;
         } else {
@@ -364,8 +363,8 @@ public:
                 }
             };
 
-            assert(!duplicate(hashed_string{str}, node.next));
-            assert((!internal::meta_info<Type>::template data<Data>));
+            ENTT_ASSERT(!duplicate(hashed_string{str}, node.next));
+            ENTT_ASSERT((!internal::meta_info<Type>::template data<Data>));
             internal::meta_info<Type>::template data<Data> = &node;
             type->data = &node;
         }
@@ -397,8 +396,8 @@ public:
     template<auto Setter, auto Getter, typename... Property>
     meta_factory data(const char *str, Property &&... property) ENTT_NOEXCEPT {
         using owner_type = std::tuple<std::integral_constant<decltype(Setter), Setter>, std::integral_constant<decltype(Getter), Getter>>;
-        using data_type = std::invoke_result_t<decltype(Getter), Type *>;
-        static_assert(std::is_invocable_v<decltype(Setter), Type *, data_type>);
+        using underlying_type = std::invoke_result_t<decltype(Getter), Type *>;
+        static_assert(std::is_invocable_v<decltype(Setter), Type *, underlying_type>);
         auto * const type = internal::meta_info<Type>::resolve();
 
         static internal::meta_data_node node{
@@ -408,7 +407,7 @@ public:
             properties<owner_type>(std::forward<Property>(property)...),
             false,
             false,
-            &internal::meta_info<data_type>::resolve,
+            &internal::meta_info<underlying_type>::resolve,
             &internal::setter<false, Type, Setter>,
             &internal::getter<Type, Getter>,
             []() -> meta_data {
@@ -416,8 +415,8 @@ public:
             }
         };
 
-        assert(!duplicate(hashed_string{str}, node.next));
-        assert((!internal::meta_info<Type>::template data<Setter, Getter>));
+        ENTT_ASSERT(!duplicate(hashed_string{str}, node.next));
+        ENTT_ASSERT((!internal::meta_info<Type>::template data<Setter, Getter>));
         internal::meta_info<Type>::template data<Setter, Getter> = &node;
         type->data = &node;
 
@@ -461,8 +460,8 @@ public:
             }
         };
 
-        assert(!duplicate(hashed_string{str}, node.next));
-        assert((!internal::meta_info<Type>::template func<Func>));
+        ENTT_ASSERT(!duplicate(hashed_string{str}, node.next));
+        ENTT_ASSERT((!internal::meta_info<Type>::template func<Func>));
         internal::meta_info<Type>::template func<Func> = &node;
         type->func = &node;
 

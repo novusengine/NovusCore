@@ -4,7 +4,6 @@
 
 #include <vector>
 #include <memory>
-#include <cassert>
 #include <utility>
 #include <algorithm>
 #include <type_traits>
@@ -56,10 +55,10 @@ class scheduler {
     };
 
     struct continuation {
-        continuation(process_handler *handler)
-            : handler{handler}
+        continuation(process_handler *ref)
+            : handler{ref}
         {
-            assert(handler);
+            ENTT_ASSERT(handler);
         }
 
         template<typename Proc, typename... Args>
@@ -90,7 +89,8 @@ class scheduler {
         if(dead) {
             if(handler.next && !process->rejected()) {
                 handler = std::move(*handler.next);
-                dead = handler.update(handler, delta, data);
+                // forces the process to exit the uninitialized state
+                dead = handler.update(handler, {}, nullptr);
             } else {
                 handler.instance.reset();
             }
@@ -178,6 +178,8 @@ public:
         static_assert(std::is_base_of_v<process<Proc, Delta>, Proc>);
         auto proc = typename process_handler::instance_type{new Proc{std::forward<Args>(args)...}, &scheduler::deleter<Proc>};
         process_handler handler{std::move(proc), &scheduler::update<Proc>, &scheduler::abort<Proc>, nullptr};
+        // forces the process to exit the uninitialized state
+        handler.update(handler, {}, nullptr);
         return continuation{&handlers.emplace_back(std::move(handler))};
     }
 
@@ -190,12 +192,13 @@ public:
      * following:
      *
      * @code{.cpp}
-     * void(Delta delta, auto succeed, auto fail);
+     * void(Delta delta, void *data, auto succeed, auto fail);
      * @endcode
      *
      * Where:
      *
      * * `delta` is the elapsed time.
+     * * `data` is an opaque pointer to user data if any, `nullptr` otherwise.
      * * `succeed` is a function to call when a process terminates with success.
      * * `fail` is a function to call when a process terminates with errors.
      *
