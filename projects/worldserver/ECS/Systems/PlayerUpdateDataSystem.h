@@ -265,7 +265,7 @@ namespace PlayerUpdateDataSystem
                 clientUpdateData.positionUpdateData.clear();
             }
 
-            /*if (clientUpdateData.chatUpdateData.size() > 0)
+            if (clientUpdateData.chatUpdateData.size() > 0)
             {
 				ZoneScopedNC("ChatUpdate", tracy::Color::Yellow2)
                 for (ChatUpdateData chatData : clientUpdateData.chatUpdateData)
@@ -286,9 +286,10 @@ namespace PlayerUpdateDataSystem
 
                     playerUpdatesQueue.playerChatPacketQueue.push_back(chatPacket);
                 }
+
                 // Clear Chat Updates
-            }*/
-            clientUpdateData.chatUpdateData.clear();
+                clientUpdateData.chatUpdateData.clear();
+            }
         });
     }
 }

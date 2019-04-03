@@ -70,6 +70,14 @@ void WorldServerHandler::Stop()
 
 void WorldServerHandler::Run()
 {
+    if (!_mapLoader.Load())
+    {
+        Message exitMessage;
+        exitMessage.code = MSG_OUT_EXIT_CONFIRM;
+        _outputQueue.enqueue(exitMessage);
+        return;
+    }
+
     SetupUpdateFramework();
 
     _updateFramework.registry.create();
@@ -78,12 +86,6 @@ void WorldServerHandler::Run()
     PlayerUpdatesQueueSingleton& playerUpdatesQueueSingleton = _updateFramework.registry.set<PlayerUpdatesQueueSingleton>();
     DeletePlayerQueueSingleton& deletePlayerQueueSingleton = _updateFramework.registry.set<DeletePlayerQueueSingleton>();
     CharacterDatabaseCacheSingleton& characterDatabaseCacheSingleton = _updateFramework.registry.set<CharacterDatabaseCacheSingleton>();
-
-    /*SingletonComponent& singletonComponent = _updateFramework.registry.assign<SingletonComponent>(0);
-    CreatePlayerQueueSingleton& createPlayerQueueComponent = _updateFramework.registry.assign<CreatePlayerQueueSingleton>(0);
-    PlayerUpdatesQueueSingleton& playerUpdatesQueueSingleton = _updateFramework.registry.assign<PlayerUpdatesQueueSingleton>(0);
-    DeletePlayerQueueSingleton& deletePlayerQueueSingleton = _updateFramework.registry.assign<DeletePlayerQueueSingleton>(0);
-    CharacterDatabaseCacheSingleton& characterDatabaseCacheSingleton = _updateFramework.registry.assign<CharacterDatabaseCacheSingleton>(0);*/
    
     singletonComponent.worldServerHandler = this;
     singletonComponent.connection = _novusConnection;

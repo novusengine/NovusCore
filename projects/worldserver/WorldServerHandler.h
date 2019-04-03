@@ -24,6 +24,7 @@
 #pragma once
 #include <NovusTypes.h>
 #include "Utils/ConcurrentQueue.h"
+#include "Utils/MapLoader.h"
 #include "Message.h"
 #include <entt.hpp>
 #include <taskflow/taskflow.hpp>
@@ -96,4 +97,5 @@ private:
 	moodycamel::ConcurrentQueue<Message> _inputQueue;
 	moodycamel::ConcurrentQueue<Message> _outputQueue;
 	FrameworkRegistryPair _updateFramework;
+    MapLoader _mapLoader;
 };

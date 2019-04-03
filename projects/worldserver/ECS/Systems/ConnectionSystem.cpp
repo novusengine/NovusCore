@@ -219,11 +219,11 @@ namespace ConnectionSystem
                             }
 
                             /* Cheap Detection for now */
-                            if (opcodeTime == 0 ||
+                            /*if (opcodeTime == 0 ||
                                 (abs(clientPositionData.x - position_x) <= clientPositionData.maxDistanceToMove &&
                                     abs(clientPositionData.y - position_y) <= clientPositionData.maxDistanceToMove &&
                                     abs(clientPositionData.z - position_z) <= clientPositionData.maxDistanceToMove))
-                            {
+                            {*/
 								ZoneScopedNC("Packet::AntiSpeedhack", tracy::Color::Orange2)
 
                                 clientPositionData.lastMovementOpcodeTime[opcodeIndex] = gameTime;
@@ -254,7 +254,7 @@ namespace ConnectionSystem
                                 positionUpdateData.orientation = orientation;
 
                                 clientUpdateData.positionUpdateData.push_back(positionUpdateData);
-                            }
+                            /*}
                             else
                             {
                                 worldServerHandler.PrintMessage("Opcode(%u), X(%f) Y(%f) Z(%f)", opcode, abs(clientPositionData.x - position_x), abs(clientPositionData.y - position_y), abs(clientPositionData.z - position_z));
@@ -273,7 +273,7 @@ namespace ConnectionSystem
 
                                 novusHeader.CreateForwardHeader(clientConnection.accountGuid, opcode, movementPacket.size());
                                 novusConnection.SendPacket(novusHeader.BuildHeaderPacket(movementPacket));
-                            }
+                            }*/
                         }
 
                         packet.handled = true;

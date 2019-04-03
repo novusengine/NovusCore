@@ -67,7 +67,7 @@ i32 main()
         io_service.run();
     });
 
-    NC_LOG_MESSAGE("Worldserver established node connection to Relayserver.");
+    NC_LOG_SUCCESS("Worldserver established node connection to Relayserver.");
     Message setConnectionMessage;
     setConnectionMessage.code = MSG_IN_SET_CONNECTION;
     worldServerHandler.PassMessage(setConnectionMessage);
