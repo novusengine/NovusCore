@@ -23,12 +23,14 @@
 */
 #pragma once
 #include <NovusTypes.h>
+#include <Utils/StringHash.h>
 #include <entt.hpp>
 
 #include "../NovusEnums.h"
 #include "../Components/ConnectionComponent.h"
 #include "../Components/PlayerUpdateDataComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
+#include "../Components/Singletons/CommandDataSingleton.h"
 #include "../Components/Singletons/PlayerUpdatesQueueSingleton.h"
 
 namespace CommandParserSystem
@@ -44,74 +46,25 @@ namespace CommandParserSystem
 	void Update(entt::registry &registry) 
     {
         SingletonComponent& singleton = registry.ctx<SingletonComponent>();
+        CommandDataSingleton& commandData = registry.ctx<CommandDataSingleton>();
         NovusConnection& novusConnection = *singleton.connection;
 
         auto view = registry.view<ConnectionComponent, PlayerUpdateDataComponent>();
-
-        view.each([&singleton, &novusConnection](const auto, ConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData)
+        view.each([&singleton, &commandData, &novusConnection](const auto, ConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData)
         {
             for (ChatUpdateData& command : clientUpdateData.chatUpdateData)
             {
                 std::string commandMessage = command.message;
-
-                /* Check if we are dealing with a command */
-                if (commandMessage[0] == '.')
+                if (command.message[0] == '.')
                 {
-                    std::vector<std::string> splitCommand = SplitString(commandMessage);
+                    std::vector<std::string> commandStrings = SplitString(commandMessage);
 
-                    if (splitCommand[0] == ".level")
+                    std::string commandStr = commandStrings[0];
+                    auto itr = commandData.commandMap.find(detail::fnv1a_32(commandStr.c_str(), commandStr.length()));
+                    if (itr != commandData.commandMap.end())
                     {
-                        u32 playerLevel = clientUpdateData.GetFieldValue<u32>(UNIT_FIELD_LEVEL);
-                        if (splitCommand.size() >= 2)
-                        {
-                            try
-                            {
-                                u32 level = std::stoi(splitCommand[1]);
-                                if (level == 0)
-                                    level = 1;
-                                else if (level > 255)
-                                    level = 255;
-
-                                if (playerLevel != level)
-                                    clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_LEVEL, level);
-
-                                /* I put this in here so that we can unlock the achievement frame when reaching level 10 */
-                                if (level >= 10 && playerLevel < 10)
-                                {
-                                    Common::ByteBuffer achivementData;
-                                    NovusHeader packetHeader;
-                                    packetHeader.command = NOVUS_FORWARDPACKET;
-                                    packetHeader.account = clientConnection.accountGuid;
-                                    packetHeader.opcode = Common::Opcode::SMSG_ACHIEVEMENT_EARNED;
-                                    packetHeader.size = 2 + 4 + 4 + 4;
-                                    packetHeader.AddTo(achivementData);
-
-                                    achivementData.AppendGuid(clientConnection.characterGuid);
-                                    achivementData.Write<u32>(6); // Level 10
-
-                                    tm lt;
-                                    time_t const tmpServerTime = time(nullptr);
-                                    localtime_s(&lt, &tmpServerTime);
-                                    achivementData.Write<u32>(((lt.tm_year - 100) << 24 | lt.tm_mon << 20 | (lt.tm_mday - 1) << 14 | lt.tm_wday << 11 | lt.tm_hour << 6 | lt.tm_min));
-                                    achivementData.Write<u32>(0);
-
-                                    novusConnection.SendPacket(achivementData);
-                                }
-
-                                command.handled = true;
-                            }
-                            catch (std::exception e)
-                            {
-
-                            }
-                        }
-                        else
-                        {
-                            if (playerLevel < 255)
-                                clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_LEVEL, playerLevel + 1);
-
+                        if (itr->second.handler(commandStrings, clientConnection, clientUpdateData))
                             command.handled = true;
-                        }
                     }
                 }
             }

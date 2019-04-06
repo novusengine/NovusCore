@@ -20,7 +20,11 @@
 #include "ECS/Components/Singletons/PlayerUpdatesQueueSingleton.h"
 #include "ECS/Components/Singletons/DeletePlayerQueueSingleton.h"
 #include "ECS/Components/Singletons/CharacterDatabaseCacheSingleton.h"
+#include "ECS/Components/Singletons/CommandDataSingleton.h"
 #include "Connections/NovusConnection.h"
+
+// Game
+#include "Game/Commands/Commands.h"
 
 WorldServerHandler::WorldServerHandler(f32 targetTickRate)
     : _isRunning(false)
@@ -96,6 +100,8 @@ void WorldServerHandler::Run()
 
     characterDatabaseCacheSingleton.cache = new CharacterDatabaseCache();
     characterDatabaseCacheSingleton.cache->Load();
+
+    Commands::LoadCommands(_updateFramework.registry);
 
     Timer timer;
     while (true)

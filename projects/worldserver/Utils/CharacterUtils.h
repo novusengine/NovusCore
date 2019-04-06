@@ -1,5 +1,7 @@
 #pragma once
 #include <NovusTypes.h>
+#include <Networking/ByteBuffer.h>
+#include <Networking/Opcode/Opcode.h>
 #include "../DatabaseCache/CharacterDatabaseCache.h"
 
 namespace CharacterUtils
@@ -213,5 +215,60 @@ namespace CharacterUtils
         }
 
         return opcodeIndex;
+    }
+
+    inline void BuildSpeedChangePacket(u32 accountGuid, u64 characterGuid, f32 speed, Common::Opcode opcode, Common::ByteBuffer& buffer)
+    {
+        Common::ByteBuffer speedBuffer;
+        speedBuffer.AppendGuid(characterGuid);
+        speedBuffer.Write<u32>(0);
+
+        /* Convert speed to a multiplicative of base speed */
+        if (opcode == Common::Opcode::SMSG_FORCE_WALK_SPEED_CHANGE)
+        {
+            speed *= 2.5f;
+        }
+        else if (opcode == Common::Opcode::SMSG_FORCE_RUN_SPEED_CHANGE)
+        {
+            // Write extra bit added in 2.1.0
+            speedBuffer.Write<u8>(1);
+            speed *= 7.1111f;
+        }
+        else if (opcode == Common::Opcode::SMSG_FORCE_RUN_BACK_SPEED_CHANGE)
+        {
+            speed *= 4.5f;
+        }
+        else if (opcode == Common::Opcode::SMSG_FORCE_SWIM_SPEED_CHANGE)
+        {
+            speed *= 4.722222f;
+        }
+        else if (opcode == Common::Opcode::SMSG_FORCE_SWIM_BACK_SPEED_CHANGE)
+        {
+            speed *= 2.5f;
+        }
+        else if (opcode == Common::Opcode::SMSG_FORCE_FLIGHT_SPEED_CHANGE)
+        {
+            speed *= 7.1111f;
+        }
+        else if (opcode == Common::Opcode::SMSG_FORCE_FLIGHT_BACK_SPEED_CHANGE)
+        {
+            speed *= 4.5f;
+        }
+
+        speedBuffer.Write<f32>(speed);
+
+        NovusHeader header;
+        header.CreateForwardHeader(accountGuid, opcode, speedBuffer.GetActualSize());
+        buffer = header.BuildHeaderPacket(speedBuffer);
+    }
+    inline void BuildFlyModePacket(u32 accountGuid, u64 characterGuid, bool canFly, Common::ByteBuffer& buffer)
+    {
+        Common::ByteBuffer canFlyBuffer;
+        canFlyBuffer.AppendGuid(characterGuid);
+        canFlyBuffer.Write<u32>(0); // Unk
+
+        NovusHeader header;
+        header.CreateForwardHeader(accountGuid, canFly ? Common::Opcode::SMSG_MOVE_SET_CAN_FLY : Common::Opcode::SMSG_MOVE_UNSET_CAN_FLY, canFlyBuffer.GetActualSize());
+        buffer = header.BuildHeaderPacket(canFlyBuffer);
     }
 }

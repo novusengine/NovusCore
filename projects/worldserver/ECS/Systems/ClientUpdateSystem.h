@@ -58,8 +58,8 @@ namespace ClientUpdateSystem
                 }
                 else if (playerUpdatePacket.updateType == UPDATETYPE_VALUES)
                 {
-					// Currently we have not observed any issues with sending private field flags to any other client but themselves, this offers a good speed increase but if we see issues in the future we should recheck this.
-                    //if (playerUpdatePacket.characterGuid != clientConnection.characterGuid)
+                    // So far we have not observed any issues with sending private field flags to any other client but themselves, this offers a good speed increase but if we see issues in the future we should recheck this.
+                    // if (playerUpdatePacket.characterGuid != clientConnection.characterGuid)
                     {
                         novusHeader.CreateForwardHeader(clientConnection.accountGuid, playerUpdatePacket.opcode, playerUpdatePacket.data.size());
                         novusConnection.SendPacket(novusHeader.BuildHeaderPacket(playerUpdatePacket.data));
@@ -80,6 +80,17 @@ namespace ClientUpdateSystem
             {
                 novusHeader.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_MESSAGECHAT, chatPacket.data.size());
                 novusConnection.SendPacket(novusHeader.BuildHeaderPacket(chatPacket.data));
+            }
+
+            // These packets should already include headers and data.
+            if (clientUpdateData.packetUpdateData.size() != 0)
+            {
+                for (Common::ByteBuffer packet : clientUpdateData.packetUpdateData)
+                {
+                    novusConnection.SendPacket(packet);
+                }
+
+                clientUpdateData.packetUpdateData.clear();
             }
         });
 
