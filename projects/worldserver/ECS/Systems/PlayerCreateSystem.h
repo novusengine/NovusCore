@@ -39,7 +39,7 @@
 #include "../Components/Singletons/PlayerCreateQueueSingleton.h"
 #include "../Components/Singletons/CharacterDatabaseCacheSingleton.h"
 
-namespace CreatePlayerSystem
+namespace PlayerCreateSystem
 {
     void Update(entt::registry &registry)
     {

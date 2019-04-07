@@ -1,4 +1,4 @@
-#include "ConnectionSystem.h"
+#include "PlayerConnectionSystem.h"
 #include <Networking/Opcode/Opcode.h>
 #include <Utils/DebugHandler.h>
 #include <Utils/AtomicLock.h>
@@ -19,7 +19,7 @@ namespace ConnectionSystem
     void Update(entt::registry &registry)
     {
 		SingletonComponent& singleton = registry.ctx<SingletonComponent>();
-        PlayerDeleteQueueSingleton& deletePlayerQueue = registry.ctx<PlayerDeleteQueueSingleton>();
+        PlayerDeleteQueueSingleton& playerDeleteQueue = registry.ctx<PlayerDeleteQueueSingleton>();
         CharacterDatabaseCacheSingleton& characterDatabase = registry.ctx<CharacterDatabaseCacheSingleton>();
 		NovusConnection& novusConnection = *singleton.connection;
 		WorldServerHandler& worldServerHandler = *singleton.worldServerHandler;
@@ -34,7 +34,7 @@ namespace ConnectionSystem
 		LockWrite(PlayerPositionComponent);
 	
         auto view = registry.view<PlayerConnectionComponent, PlayerUpdateDataComponent, PlayerPositionComponent>();
-        view.each([&singleton, &deletePlayerQueue, &characterDatabase, &novusConnection, &worldServerHandler](const auto, PlayerConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData, PlayerPositionComponent& clientPositionData)
+        view.each([&singleton, &playerDeleteQueue, &characterDatabase, &novusConnection, &worldServerHandler](const auto, PlayerConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData, PlayerPositionComponent& clientPositionData)
         {
 			ZoneScopedNC("Connection", tracy::Color::Orange2)
 
@@ -77,8 +77,9 @@ namespace ConnectionSystem
 
                         ExpiredPlayerData expiredPlayerData;
                         expiredPlayerData.entityGuid = clientConnection.entityGuid;
+                        expiredPlayerData.accountGuid = clientConnection.accountGuid;
                         expiredPlayerData.characterGuid = clientConnection.characterGuid;
-                        deletePlayerQueue.expiredEntityQueue->enqueue(expiredPlayerData);
+                        playerDeleteQueue.expiredEntityQueue->enqueue(expiredPlayerData);
 
                         packet.handled = true;
                         break;

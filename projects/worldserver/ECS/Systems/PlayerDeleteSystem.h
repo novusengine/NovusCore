@@ -34,7 +34,7 @@
 #include "../Components/Singletons/SingletonComponent.h"
 #include "../Components/Singletons/PlayerDeleteQueueSingleton.h"
 
-namespace DeletePlayerSystem
+namespace PlayerDeleteSystem
 {
     void Update(entt::registry &registry)
     {
@@ -52,6 +52,7 @@ namespace DeletePlayerSystem
             updateData.AddGuid(expiredPlayerData.characterGuid);
             deletedEntities.push_back(expiredPlayerData.characterGuid);
             registry.destroy(expiredPlayerData.entityGuid);
+            singleton.accountToEntityMap.erase(expiredPlayerData.accountGuid);
         }
 
         if (!updateData.IsEmpty())

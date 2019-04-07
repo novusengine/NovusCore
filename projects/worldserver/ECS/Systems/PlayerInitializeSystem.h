@@ -1,4 +1,4 @@
-#include "ConnectionSystem.h"
+#include "PlayerConnectionSystem.h"
 #include <Networking/Opcode/Opcode.h>
 #include <NovusTypes.h>
 #include "../NovusEnums.h"

@@ -6,14 +6,14 @@
 #include <tracy/Tracy.hpp>
 
 // Systems
-#include "ECS/Systems/ConnectionSystem.h"
+#include "ECS/Systems/PlayerConnectionSystem.h"
 #include "ECS/Systems/PlayerInitializeSystem.h"
 #include "ECS/Systems/CommandParserSystem.h"
 #include "ECS/Systems/PlayerCreateDataSystem.h"
 #include "ECS/Systems/PlayerUpdateDataSystem.h"
 #include "ECS/Systems/ClientUpdateSystem.h"
-#include "ECS/Systems/CreatePlayerSystem.h"
-#include "ECS/Systems/DeletePlayerSystem.h"
+#include "ECS/Systems/PlayerCreateSystem.h"
+#include "ECS/Systems/PlayerDeleteSystem.h"
 
 #include "ECS/Components/Singletons/SingletonComponent.h"
 #include "ECS/Components/Singletons/PlayerCreateQueueSingleton.h"
@@ -267,7 +267,7 @@ void WorldServerHandler::SetupUpdateFramework()
     tf::Task createPlayerSystemTask = framework.emplace([&registry]()
     {
         ZoneScopedNC("CreatePlayerSystem", tracy::Color::Blue2)
-        CreatePlayerSystem::Update(registry);
+        PlayerCreateSystem::Update(registry);
     });
     createPlayerSystemTask.gather(clientUpdateSystemTask); 
 
@@ -275,7 +275,7 @@ void WorldServerHandler::SetupUpdateFramework()
     tf::Task deletePlayerSystemTask = framework.emplace([&registry]()
     {
         ZoneScopedNC("DeletePlayerSystem", tracy::Color::Blue2)
-        DeletePlayerSystem::Update(registry);
+        PlayerDeleteSystem::Update(registry);
     });
     deletePlayerSystemTask.gather(createPlayerSystemTask);
 }
