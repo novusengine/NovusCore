@@ -26,7 +26,7 @@
 #include <robin_hood.h>
 #include <vector>
 
-#include "../PlayerUpdateDataComponent.h"
+#include "../playerFieldDataComponent.h"
 
 // Nix: I decided to make a struct for the handler because in the future we will want permissions and potentially other variables for each command.
 typedef bool(*CommandHandler)(std::vector<std::string>, PlayerConnectionComponent&);

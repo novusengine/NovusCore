@@ -6,6 +6,7 @@
 
 #include "../DatabaseCache/CharacterDatabaseCache.h"
 
+#include "../Components/PlayerFieldDataComponent.h"
 #include "../Components/PlayerSpellStorageComponent.h"
 #include "../Components/PlayerSkillStorageComponent.h"
 #include "../Components/PlayerInitializeComponent.h"
@@ -20,8 +21,8 @@ namespace PlayerInitializeSystem
         CharacterDatabaseCacheSingleton& characterDatabase = registry.ctx<CharacterDatabaseCacheSingleton>();
         NovusConnection& novusConnection = *singleton.connection;
 
-        auto view = registry.view<PlayerInitializeComponent, PlayerUpdateDataComponent, PlayerPositionComponent, PlayerSpellStorageComponent, PlayerSkillStorageComponent>();
-        view.each([&characterDatabase, &novusConnection](const auto, PlayerInitializeComponent& clientInitializeData, PlayerUpdateDataComponent& clientUpdateData, PlayerPositionComponent& clientPositionData, PlayerSpellStorageComponent& spellStorageData, PlayerSkillStorageComponent& skillStorageData)
+        auto view = registry.view<PlayerInitializeComponent, PlayerFieldDataComponent, PlayerPositionComponent, PlayerSpellStorageComponent, PlayerSkillStorageComponent>();
+        view.each([&characterDatabase, &novusConnection](const auto, PlayerInitializeComponent& clientInitializeData, PlayerFieldDataComponent& clientFieldData, PlayerPositionComponent& clientPositionData, PlayerSpellStorageComponent& spellStorageData, PlayerSkillStorageComponent& skillStorageData)
         {
             /* Load Cached Data for character */
             std::vector<CharacterSpellStorage> characterSpellStorage;
@@ -56,7 +57,7 @@ namespace PlayerInitializeSystem
             packetHeader.account = clientInitializeData.accountGuid;
 
             /* Login Code Here */
-            clientUpdateData.ResetFields();
+            clientFieldData.ResetFields();
 
             /* SMSG_LOGIN_VERIFY_WORLD */
             Common::ByteBuffer verifyWorld;
@@ -187,108 +188,108 @@ namespace PlayerInitializeSystem
             CharacterVisualData characterVisualData;
             characterDatabase.cache->GetCharacterVisualData(clientInitializeData.characterGuid, characterVisualData);
 
-            clientUpdateData.SetGuidValue(OBJECT_FIELD_GUID, characterData.guid);
-            clientUpdateData.SetFieldValue<u32>(OBJECT_FIELD_TYPE, 0x19); // Object Type Player (Player, Unit, Object)
-            clientUpdateData.SetFieldValue<f32>(OBJECT_FIELD_SCALE_X, 1.0f);
+            clientFieldData.SetGuidValue(OBJECT_FIELD_GUID, characterData.guid);
+            clientFieldData.SetFieldValue<u32>(OBJECT_FIELD_TYPE, 0x19); // Object Type Player (Player, Unit, Object)
+            clientFieldData.SetFieldValue<f32>(OBJECT_FIELD_SCALE_X, 1.0f);
 
-            clientUpdateData.SetFieldValue<u8>(UNIT_FIELD_BYTES_0, characterData.race, 0);
-            clientUpdateData.SetFieldValue<u8>(UNIT_FIELD_BYTES_0, characterData.classId, 1);
-            clientUpdateData.SetFieldValue<u8>(UNIT_FIELD_BYTES_0, characterData.gender, 2);
-            clientUpdateData.SetFieldValue<u8>(UNIT_FIELD_BYTES_0, 1, 3);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_HEALTH, 60);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_POWER1, 0);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_POWER2, 0);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_POWER3, 100);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_POWER4, 100);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_POWER5, 0);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_POWER6, 8);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_POWER7, 1000);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_MAXHEALTH, 60);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER1, 0);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER2, 1000);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER3, 100);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER4, 100);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER5, 0);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER6, 8);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER7, 1000);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_LEVEL, characterData.level);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_FACTIONTEMPLATE, 14);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_FLAGS, 0x00000008);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_FLAGS_2, 0x00000800);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_BASEATTACKTIME + 0, 2900);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_BASEATTACKTIME + 1, 2000);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_RANGEDATTACKTIME, 0);
-            clientUpdateData.SetFieldValue<f32>(UNIT_FIELD_BOUNDINGRADIUS, 0.208000f);
-            clientUpdateData.SetFieldValue<f32>(UNIT_FIELD_COMBATREACH, 1.5f);
+            clientFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_0, characterData.race, 0);
+            clientFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_0, characterData.classId, 1);
+            clientFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_0, characterData.gender, 2);
+            clientFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_0, 1, 3);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_HEALTH, 60);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_POWER1, 0);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_POWER2, 0);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_POWER3, 100);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_POWER4, 100);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_POWER5, 0);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_POWER6, 8);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_POWER7, 1000);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_MAXHEALTH, 60);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER1, 0);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER2, 1000);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER3, 100);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER4, 100);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER5, 0);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER6, 8);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER7, 1000);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_LEVEL, characterData.level);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_FACTIONTEMPLATE, 14);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_FLAGS, 0x00000008);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_FLAGS_2, 0x00000800);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_BASEATTACKTIME + 0, 2900);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_BASEATTACKTIME + 1, 2000);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_RANGEDATTACKTIME, 0);
+            clientFieldData.SetFieldValue<f32>(UNIT_FIELD_BOUNDINGRADIUS, 0.208000f);
+            clientFieldData.SetFieldValue<f32>(UNIT_FIELD_COMBATREACH, 1.5f);
 
             u32 displayId = 0;
             CharacterUtils::GetDisplayIdFromRace(characterData, displayId);
 
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_DISPLAYID, displayId);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_NATIVEDISPLAYID, displayId);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_MOUNTDISPLAYID, 0);
-            clientUpdateData.SetFieldValue<f32>(UNIT_FIELD_MINDAMAGE, 9.007143f);
-            clientUpdateData.SetFieldValue<f32>(UNIT_FIELD_MAXDAMAGE, 11.007143f);
-            clientUpdateData.SetFieldValue<f32>(UNIT_FIELD_MINOFFHANDDAMAGE, 0);
-            clientUpdateData.SetFieldValue<f32>(UNIT_FIELD_MAXOFFHANDDAMAGE, 0);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_BYTES_1, 0);
-            clientUpdateData.SetFieldValue<f32>(UNIT_MOD_CAST_SPEED, 1);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_DISPLAYID, displayId);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_NATIVEDISPLAYID, displayId);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_MOUNTDISPLAYID, 0);
+            clientFieldData.SetFieldValue<f32>(UNIT_FIELD_MINDAMAGE, 9.007143f);
+            clientFieldData.SetFieldValue<f32>(UNIT_FIELD_MAXDAMAGE, 11.007143f);
+            clientFieldData.SetFieldValue<f32>(UNIT_FIELD_MINOFFHANDDAMAGE, 0);
+            clientFieldData.SetFieldValue<f32>(UNIT_FIELD_MAXOFFHANDDAMAGE, 0);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_BYTES_1, 0);
+            clientFieldData.SetFieldValue<f32>(UNIT_MOD_CAST_SPEED, 1);
 
             for (i32 i = 0; i < 5; i++)
             {
-                clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_STAT0 + i, 20);
-                clientUpdateData.SetFieldValue<i32>(UNIT_FIELD_POSSTAT0 + i, 0);
-                clientUpdateData.SetFieldValue<i32>(UNIT_FIELD_NEGSTAT0 + i, 0);
+                clientFieldData.SetFieldValue<u32>(UNIT_FIELD_STAT0 + i, 20);
+                clientFieldData.SetFieldValue<i32>(UNIT_FIELD_POSSTAT0 + i, 0);
+                clientFieldData.SetFieldValue<i32>(UNIT_FIELD_NEGSTAT0 + i, 0);
             }
 
             for (i32 i = 0; i < 7; i++)
             {
-                clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_RESISTANCES + i, 0);
-                clientUpdateData.SetFieldValue<i32>(UNIT_FIELD_RESISTANCEBUFFMODSPOSITIVE + i, 0);
-                clientUpdateData.SetFieldValue<i32>(UNIT_FIELD_RESISTANCEBUFFMODSNEGATIVE + i, 0);
+                clientFieldData.SetFieldValue<u32>(UNIT_FIELD_RESISTANCES + i, 0);
+                clientFieldData.SetFieldValue<i32>(UNIT_FIELD_RESISTANCEBUFFMODSPOSITIVE + i, 0);
+                clientFieldData.SetFieldValue<i32>(UNIT_FIELD_RESISTANCEBUFFMODSNEGATIVE + i, 0);
             }
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_STAT0, 42);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_STAT0, 42);
 
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_BASE_MANA, 0);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_BASE_HEALTH, 20);
-            clientUpdateData.SetFieldValue<u8>(UNIT_FIELD_BYTES_2, 0);
-            clientUpdateData.SetFieldValue<u8>(UNIT_FIELD_BYTES_2, 0x05, 1);
-            clientUpdateData.SetFieldValue<u8>(UNIT_FIELD_BYTES_2, 0, 2);
-            clientUpdateData.SetFieldValue<u8>(UNIT_FIELD_BYTES_2, 0, 3);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_ATTACK_POWER, 29);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_ATTACK_POWER_MODS, 0);
-            clientUpdateData.SetFieldValue<f32>(UNIT_FIELD_ATTACK_POWER_MULTIPLIER, 1.0f);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_RANGED_ATTACK_POWER, 0);
-            clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_RANGED_ATTACK_POWER_MODS, 0);
-            clientUpdateData.SetFieldValue<f32>(UNIT_FIELD_RANGED_ATTACK_POWER_MULTIPLIER, 1.0f);
-            clientUpdateData.SetFieldValue<f32>(UNIT_FIELD_MINRANGEDDAMAGE, 0);
-            clientUpdateData.SetFieldValue<f32>(UNIT_FIELD_MAXRANGEDDAMAGE, 0);
-            clientUpdateData.SetFieldValue<f32>(UNIT_FIELD_HOVERHEIGHT, 1);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_BASE_MANA, 0);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_BASE_HEALTH, 20);
+            clientFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_2, 0);
+            clientFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_2, 0x05, 1);
+            clientFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_2, 0, 2);
+            clientFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_2, 0, 3);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_ATTACK_POWER, 29);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_ATTACK_POWER_MODS, 0);
+            clientFieldData.SetFieldValue<f32>(UNIT_FIELD_ATTACK_POWER_MULTIPLIER, 1.0f);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_RANGED_ATTACK_POWER, 0);
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_RANGED_ATTACK_POWER_MODS, 0);
+            clientFieldData.SetFieldValue<f32>(UNIT_FIELD_RANGED_ATTACK_POWER_MULTIPLIER, 1.0f);
+            clientFieldData.SetFieldValue<f32>(UNIT_FIELD_MINRANGEDDAMAGE, 0);
+            clientFieldData.SetFieldValue<f32>(UNIT_FIELD_MAXRANGEDDAMAGE, 0);
+            clientFieldData.SetFieldValue<f32>(UNIT_FIELD_HOVERHEIGHT, 1);
 
-            clientUpdateData.SetFieldValue<u32>(PLAYER_FLAGS, 0);
-            clientUpdateData.SetFieldValue<u8>(PLAYER_BYTES, characterVisualData.skin);
-            clientUpdateData.SetFieldValue<u8>(PLAYER_BYTES, characterVisualData.face, 1);
-            clientUpdateData.SetFieldValue<u8>(PLAYER_BYTES, characterVisualData.hairStyle, 2);
-            clientUpdateData.SetFieldValue<u8>(PLAYER_BYTES, characterVisualData.hairColor, 3);
-            clientUpdateData.SetFieldValue<u8>(PLAYER_BYTES_2, characterVisualData.facialStyle, 0);
-            clientUpdateData.SetFieldValue<u8>(PLAYER_BYTES_2, 0, 1);
-            clientUpdateData.SetFieldValue<u8>(PLAYER_BYTES_2, 0, 2);
-            clientUpdateData.SetFieldValue<u8>(PLAYER_BYTES_2, 3, 3);
-            clientUpdateData.SetFieldValue<u8>(PLAYER_BYTES_3, characterData.gender);
-            clientUpdateData.SetFieldValue<u8>(PLAYER_BYTES_3, 0, 1);
-            clientUpdateData.SetFieldValue<u8>(PLAYER_BYTES_3, 0, 2);
-            clientUpdateData.SetFieldValue<u8>(PLAYER_BYTES_3, 0, 3);
+            clientFieldData.SetFieldValue<u32>(PLAYER_FLAGS, 0);
+            clientFieldData.SetFieldValue<u8>(PLAYER_BYTES, characterVisualData.skin);
+            clientFieldData.SetFieldValue<u8>(PLAYER_BYTES, characterVisualData.face, 1);
+            clientFieldData.SetFieldValue<u8>(PLAYER_BYTES, characterVisualData.hairStyle, 2);
+            clientFieldData.SetFieldValue<u8>(PLAYER_BYTES, characterVisualData.hairColor, 3);
+            clientFieldData.SetFieldValue<u8>(PLAYER_BYTES_2, characterVisualData.facialStyle, 0);
+            clientFieldData.SetFieldValue<u8>(PLAYER_BYTES_2, 0, 1);
+            clientFieldData.SetFieldValue<u8>(PLAYER_BYTES_2, 0, 2);
+            clientFieldData.SetFieldValue<u8>(PLAYER_BYTES_2, 3, 3);
+            clientFieldData.SetFieldValue<u8>(PLAYER_BYTES_3, characterData.gender);
+            clientFieldData.SetFieldValue<u8>(PLAYER_BYTES_3, 0, 1);
+            clientFieldData.SetFieldValue<u8>(PLAYER_BYTES_3, 0, 2);
+            clientFieldData.SetFieldValue<u8>(PLAYER_BYTES_3, 0, 3);
 
             for (u8 slot = 0; slot < 19; ++slot)
             {
-                clientUpdateData.SetGuidValue(PLAYER_FIELD_INV_SLOT_HEAD + (slot * 2), 0);
+                clientFieldData.SetGuidValue(PLAYER_FIELD_INV_SLOT_HEAD + (slot * 2), 0);
 
-                clientUpdateData.SetFieldValue<u32>(PLAYER_VISIBLE_ITEM_1_ENTRYID + (slot * 2), 0);
-                clientUpdateData.SetFieldValue<u32>(PLAYER_VISIBLE_ITEM_1_ENCHANTMENT + (slot * 2), 0);
+                clientFieldData.SetFieldValue<u32>(PLAYER_VISIBLE_ITEM_1_ENTRYID + (slot * 2), 0);
+                clientFieldData.SetFieldValue<u32>(PLAYER_VISIBLE_ITEM_1_ENCHANTMENT + (slot * 2), 0);
             }
 
-            clientUpdateData.SetFieldValue<u32>(PLAYER_XP, 0);
-            clientUpdateData.SetFieldValue<u32>(PLAYER_NEXT_LEVEL_XP, 400);
+            clientFieldData.SetFieldValue<u32>(PLAYER_XP, 0);
+            clientFieldData.SetFieldValue<u32>(PLAYER_NEXT_LEVEL_XP, 400);
 
             i32 skillSize = i32(skillStorageData.skills.size());
             for (i32 i = 0; i < 127; ++i)
@@ -296,55 +297,55 @@ namespace PlayerInitializeSystem
                 if (i < skillSize)
                 {
                     skillData skill = skillStorageData.skills.at(i);
-                    clientUpdateData.SetFieldValue<u16>((PLAYER_SKILL_INFO_1_1 + ((i) * 3)), skill.id);
-                    clientUpdateData.SetFieldValue<u16>((PLAYER_SKILL_INFO_1_1 + ((i) * 3)), 0, 2);
+                    clientFieldData.SetFieldValue<u16>((PLAYER_SKILL_INFO_1_1 + ((i) * 3)), skill.id);
+                    clientFieldData.SetFieldValue<u16>((PLAYER_SKILL_INFO_1_1 + ((i) * 3)), 0, 2);
 
-                    clientUpdateData.SetFieldValue<u16>((PLAYER_SKILL_INFO_1_1 + ((i) * 3)) + 1, skill.value);
-                    clientUpdateData.SetFieldValue<u16>((PLAYER_SKILL_INFO_1_1 + ((i) * 3)) + 1, skill.maxValue, 2);
+                    clientFieldData.SetFieldValue<u16>((PLAYER_SKILL_INFO_1_1 + ((i) * 3)) + 1, skill.value);
+                    clientFieldData.SetFieldValue<u16>((PLAYER_SKILL_INFO_1_1 + ((i) * 3)) + 1, skill.maxValue, 2);
 
-                    clientUpdateData.SetFieldValue<u32>((PLAYER_SKILL_INFO_1_1 + ((i) * 3)) + 2, 0);
+                    clientFieldData.SetFieldValue<u32>((PLAYER_SKILL_INFO_1_1 + ((i) * 3)) + 2, 0);
                 }
                 else
                 {
-                    clientUpdateData.SetFieldValue<u32>((PLAYER_SKILL_INFO_1_1 + ((i) * 3)), 0);
-                    clientUpdateData.SetFieldValue<u32>((PLAYER_SKILL_INFO_1_1 + ((i) * 3)) + 1, 0);
-                    clientUpdateData.SetFieldValue<u32>((PLAYER_SKILL_INFO_1_1 + ((i) * 3)) + 2, 0);
+                    clientFieldData.SetFieldValue<u32>((PLAYER_SKILL_INFO_1_1 + ((i) * 3)), 0);
+                    clientFieldData.SetFieldValue<u32>((PLAYER_SKILL_INFO_1_1 + ((i) * 3)) + 1, 0);
+                    clientFieldData.SetFieldValue<u32>((PLAYER_SKILL_INFO_1_1 + ((i) * 3)) + 2, 0);
                 }
             }
 
-            clientUpdateData.SetFieldValue<u32>(PLAYER_CHARACTER_POINTS1, 0);
-            clientUpdateData.SetFieldValue<u32>(PLAYER_CHARACTER_POINTS2, 2);
-            clientUpdateData.SetFieldValue<f32>(PLAYER_BLOCK_PERCENTAGE, 4.0f);
-            clientUpdateData.SetFieldValue<f32>(PLAYER_DODGE_PERCENTAGE, 4.0f);
-            clientUpdateData.SetFieldValue<f32>(PLAYER_PARRY_PERCENTAGE, 4.0f);
-            clientUpdateData.SetFieldValue<f32>(PLAYER_CRIT_PERCENTAGE, 4.0f);
-            clientUpdateData.SetFieldValue<f32>(PLAYER_RANGED_CRIT_PERCENTAGE, 4.0f);
-            clientUpdateData.SetFieldValue<f32>(PLAYER_OFFHAND_CRIT_PERCENTAGE, 4.0f);
+            clientFieldData.SetFieldValue<u32>(PLAYER_CHARACTER_POINTS1, 0);
+            clientFieldData.SetFieldValue<u32>(PLAYER_CHARACTER_POINTS2, 2);
+            clientFieldData.SetFieldValue<f32>(PLAYER_BLOCK_PERCENTAGE, 4.0f);
+            clientFieldData.SetFieldValue<f32>(PLAYER_DODGE_PERCENTAGE, 4.0f);
+            clientFieldData.SetFieldValue<f32>(PLAYER_PARRY_PERCENTAGE, 4.0f);
+            clientFieldData.SetFieldValue<f32>(PLAYER_CRIT_PERCENTAGE, 4.0f);
+            clientFieldData.SetFieldValue<f32>(PLAYER_RANGED_CRIT_PERCENTAGE, 4.0f);
+            clientFieldData.SetFieldValue<f32>(PLAYER_OFFHAND_CRIT_PERCENTAGE, 4.0f);
 
             for (i32 i = 0; i < 127; i++)
-                clientUpdateData.SetFieldValue<u32>(PLAYER_EXPLORED_ZONES_1 + i, 0xFFFFFFFF);
+                clientFieldData.SetFieldValue<u32>(PLAYER_EXPLORED_ZONES_1 + i, 0xFFFFFFFF);
 
-            clientUpdateData.SetFieldValue<i32>(PLAYER_REST_STATE_EXPERIENCE, 0);
-            clientUpdateData.SetFieldValue<u32>(PLAYER_FIELD_COINAGE, 5000000);
+            clientFieldData.SetFieldValue<i32>(PLAYER_REST_STATE_EXPERIENCE, 0);
+            clientFieldData.SetFieldValue<u32>(PLAYER_FIELD_COINAGE, 5000000);
 
             for (i32 i = 0; i < 7; i++)
             {
-                clientUpdateData.SetFieldValue<i32>(PLAYER_FIELD_MOD_DAMAGE_DONE_POS + i, 0);
-                clientUpdateData.SetFieldValue<i32>(PLAYER_FIELD_MOD_DAMAGE_DONE_NEG + i, 0);
-                clientUpdateData.SetFieldValue<f32>(PLAYER_FIELD_MOD_DAMAGE_DONE_PCT + i, 1.0f);
+                clientFieldData.SetFieldValue<i32>(PLAYER_FIELD_MOD_DAMAGE_DONE_POS + i, 0);
+                clientFieldData.SetFieldValue<i32>(PLAYER_FIELD_MOD_DAMAGE_DONE_NEG + i, 0);
+                clientFieldData.SetFieldValue<f32>(PLAYER_FIELD_MOD_DAMAGE_DONE_PCT + i, 1.0f);
             }
 
-            clientUpdateData.SetFieldValue<i32>(PLAYER_FIELD_WATCHED_FACTION_INDEX, -1);
-            clientUpdateData.SetFieldValue<u32>(PLAYER_FIELD_MAX_LEVEL, 80);
+            clientFieldData.SetFieldValue<i32>(PLAYER_FIELD_WATCHED_FACTION_INDEX, -1);
+            clientFieldData.SetFieldValue<u32>(PLAYER_FIELD_MAX_LEVEL, 80);
 
             for (i32 i = 0; i < 3; i++)
             {
-                clientUpdateData.SetFieldValue<f32>(PLAYER_RUNE_REGEN_1 + i, 0.1f);
+                clientFieldData.SetFieldValue<f32>(PLAYER_RUNE_REGEN_1 + i, 0.1f);
             }
 
             for (i32 i = 0; i < 5; i++)
             {
-                clientUpdateData.SetFieldValue<f32>(PLAYER_FIELD_GLYPH_SLOTS_1 + i, f32(21 + i));
+                clientFieldData.SetFieldValue<f32>(PLAYER_FIELD_GLYPH_SLOTS_1 + i, f32(21 + i));
             }
         });
     }

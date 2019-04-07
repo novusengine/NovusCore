@@ -30,6 +30,7 @@
 
 #include "../Connections/NovusConnection.h"
 #include "../Components/PlayerConnectionComponent.h"
+#include "../Components/PlayerFieldDataComponent.h"
 #include "../Components/PlayerUpdateDataComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
 #include "../Components/Singletons/PlayerUpdatesQueueSingleton.h"
@@ -38,9 +39,9 @@
 
 namespace PlayerUpdateDataSystem
 {
-    Common::ByteBuffer BuildPlayerUpdateData(u64 playerGuid, u32 visibleFlags, PlayerUpdateDataComponent& playerUpdateData, u16& opcode)
+    Common::ByteBuffer BuildPlayerUpdateData(u64 playerGuid, u32 visibleFlags, PlayerFieldDataComponent& playerFieldData, u16& opcode)
     {
-		ZoneScopedNC("BuildPlayerUpdateData", tracy::Color::Yellow2)
+		ZoneScopedNC("BuildplayerFieldData", tracy::Color::Yellow2)
 
         Common::ByteBuffer buffer(500);
         buffer.Write<u8>(UPDATETYPE_VALUES);
@@ -54,17 +55,17 @@ namespace PlayerUpdateDataSystem
         u16 fieldNotifyFlags = UF_FLAG_DYNAMIC;
 
 		{
-			ZoneScopedNC("BuildPlayerUpdateData::Loop", tracy::Color::Yellow2)
+			ZoneScopedNC("BuildplayerFieldData::Loop", tracy::Color::Yellow2)
 			for (u16 index = 0; index < PLAYER_END; ++index)
 			{
 				if (fieldNotifyFlags & flags[index] || ((flags[index] & visibleFlags) & UF_FLAG_SPECIAL_INFO) ||
-					(playerUpdateData.changesMask.IsSet(index) && (flags[index] & visibleFlags)))
+					(playerFieldData.changesMask.IsSet(index) && (flags[index] & visibleFlags)))
 				{
 					updateMask.SetBit(index);
 
 					if (index == UNIT_NPC_FLAGS)
 					{
-						u32 appendValue = playerUpdateData.playerFields.ReadAt<u32>(UNIT_NPC_FLAGS * 4);
+						u32 appendValue = playerFieldData.playerFields.ReadAt<u32>(UNIT_NPC_FLAGS * 4);
 
 						/*if (creature)
 							if (!target->CanSeeSpellClickOn(creature))
@@ -75,7 +76,7 @@ namespace PlayerUpdateDataSystem
 					else if (index == UNIT_FIELD_AURASTATE)
 					{
 						// Check per caster aura states to not enable using a spell in client if specified aura is not by target
-						u32 auraState = playerUpdateData.playerFields.ReadAt<u32>(UNIT_FIELD_AURASTATE * 4) &~(((1 << (14 - 1)) | (1 << (16 - 1))));
+						u32 auraState = playerFieldData.playerFields.ReadAt<u32>(UNIT_FIELD_AURASTATE * 4) &~(((1 << (14 - 1)) | (1 << (16 - 1))));
 
 						fieldBuffer.Write<u32>(auraState);
 					}
@@ -84,7 +85,7 @@ namespace PlayerUpdateDataSystem
 					else if (index >= UNIT_FIELD_BASEATTACKTIME && index <= UNIT_FIELD_RANGEDATTACKTIME)
 					{
 					// convert from f32 to uint32 and send
-					fieldBuffer.Write<u32>(u32(playerUpdateData.playerFields.ReadAt<i32>(index * 4)));
+					fieldBuffer.Write<u32>(u32(playerFieldData.playerFields.ReadAt<i32>(index * 4)));
 					}
 					// there are some (said f32 in TC, but all these are ints)int values which may be negative or can't get negative due to other checks
 					else if ((index >= UNIT_FIELD_NEGSTAT0 && index <= UNIT_FIELD_NEGSTAT4) ||
@@ -92,12 +93,12 @@ namespace PlayerUpdateDataSystem
 					(index >= UNIT_FIELD_RESISTANCEBUFFMODSNEGATIVE && index <= (UNIT_FIELD_RESISTANCEBUFFMODSNEGATIVE + 6)) ||
 					(index >= UNIT_FIELD_POSSTAT0 && index <= UNIT_FIELD_POSSTAT4))
 					{
-					fieldBuffer.Write<u32>(u32(playerUpdateData.playerFields.ReadAt<i32>(index * 4)));
+					fieldBuffer.Write<u32>(u32(playerFieldData.playerFields.ReadAt<i32>(index * 4)));
 					}
 					// Gamemasters should be always able to select units - remove not selectable flag
 					else if (index == UNIT_FIELD_FLAGS)
 					{
-					u32 appendValue = playerUpdateData.playerFields.ReadAt<u32>(UNIT_FIELD_FLAGS * 4);
+					u32 appendValue = playerFieldData.playerFields.ReadAt<u32>(UNIT_FIELD_FLAGS * 4);
 					//if (target->IsGameMaster())
 						//appendValue &= ~UNIT_FLAG_NOT_SELECTABLE;
 
@@ -106,7 +107,7 @@ namespace PlayerUpdateDataSystem
 					// use modelid_a if not gm, _h if gm for CREATURE_FLAG_EXTRA_TRIGGER creatures
 					else if (index == UNIT_FIELD_DISPLAYID)
 					{
-					u32 displayId = playerUpdateData.playerFields.ReadAt<u32>(UNIT_FIELD_DISPLAYID * 4);
+					u32 displayId = playerFieldData.playerFields.ReadAt<u32>(UNIT_FIELD_DISPLAYID * 4);
 					/*if (creature)
 					{
 						CreatureTemplate const* cinfo = creature->GetCreatureTemplate();
@@ -129,7 +130,7 @@ namespace PlayerUpdateDataSystem
 					// hide lootable animation for unallowed players
 					else if (index == UNIT_DYNAMIC_FLAGS)
 					{
-					u32 dynamicFlags = playerUpdateData.playerFields.ReadAt<u32>(UNIT_DYNAMIC_FLAGS * 4) & ~(0x4 | 0x08); // UNIT_DYNFLAG_TAPPED | UNIT_DYNFLAG_TAPPED_BY_PLAYER
+					u32 dynamicFlags = playerFieldData.playerFields.ReadAt<u32>(UNIT_DYNAMIC_FLAGS * 4) & ~(0x4 | 0x08); // UNIT_DYNFLAG_TAPPED | UNIT_DYNFLAG_TAPPED_BY_PLAYER
 
 					/*if (creature)
 					{
@@ -170,19 +171,19 @@ namespace PlayerUpdateDataSystem
 							//fieldBuffer << m_uint32Values[index];
 					//}
 					//else
-					fieldBuffer.Write(playerUpdateData.playerFields.GetDataPointer() + index * 4, 4);
+					fieldBuffer.Write(playerFieldData.playerFields.GetDataPointer() + index * 4, 4);
 					}
 					else
 					{
 					// send in current format (f32 as f32, uint32 as uint32)
-					fieldBuffer.Write(playerUpdateData.playerFields.GetDataPointer() + index * 4, 4);
+					fieldBuffer.Write(playerFieldData.playerFields.GetDataPointer() + index * 4, 4);
 					}
 				}
 			}
 		}
 
 		{
-			ZoneScopedNC("BuildPlayerUpdateData::GetBlocks", tracy::Color::Yellow2)
+			ZoneScopedNC("BuildplayerFieldData::GetBlocks", tracy::Color::Yellow2)
 			buffer.Write<u8>(updateMask.GetBlocks());
 			updateMask.AddTo(buffer);
 			buffer.Append(fieldBuffer);
@@ -190,13 +191,13 @@ namespace PlayerUpdateDataSystem
         
 		UpdateData updateData;
 		{
-			ZoneScopedNC("BuildPlayerUpdateData::AddBlock", tracy::Color::Yellow2)
+			ZoneScopedNC("BuildplayerFieldData::AddBlock", tracy::Color::Yellow2)
 			updateData.AddBlock(buffer);
 		}
 
         Common::ByteBuffer tempBuffer;
 		{
-			ZoneScopedNC("BuildPlayerUpdateData::Build", tracy::Color::Yellow2)
+			ZoneScopedNC("BuildplayerFieldData::Build", tracy::Color::Yellow2)
 			updateData.Build(tempBuffer, opcode);
 		}
 
@@ -209,12 +210,12 @@ namespace PlayerUpdateDataSystem
         PlayerUpdatesQueueSingleton& playerUpdatesQueue = registry.ctx<PlayerUpdatesQueueSingleton>();
 		NovusConnection& novusConnection = *singleton.connection;
 
-        auto view = registry.view<PlayerConnectionComponent, PlayerUpdateDataComponent, PlayerPositionComponent>();
-        view.each([&novusConnection, &playerUpdatesQueue](const auto, PlayerConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData, PlayerPositionComponent& clientPositionData)
+        auto view = registry.view<PlayerConnectionComponent, PlayerFieldDataComponent, PlayerUpdateDataComponent, PlayerPositionComponent>();
+        view.each([&novusConnection, &playerUpdatesQueue](const auto, PlayerConnectionComponent& clientConnection, PlayerFieldDataComponent& clientFieldData, PlayerUpdateDataComponent& clientUpdateData, PlayerPositionComponent& clientPositionData)
         {
 			ZoneScopedNC("Connection", tracy::Color::Yellow2)
             /* Only Build Packet if any fields were changed */
-            if (clientUpdateData.changesMask.Any())
+            if (clientFieldData.changesMask.Any())
             {
 				ZoneScopedNC("Build Packet", tracy::Color::Yellow2)
                 /* Build Self Packet, must be sent immediately */
@@ -223,7 +224,7 @@ namespace PlayerUpdateDataSystem
 
 				// Currently we have not observed any issues with sending private field flags to any other client but themselves, this offers a good speed increase but if we see issues in the future we should recheck this.
                 /*NovusHeader novusHeader;
-                Common::ByteBuffer selfPlayerUpdate = BuildPlayerUpdateData(clientConnection.characterGuid, selfVisibleFlags, clientUpdateData, buildOpcode);
+                Common::ByteBuffer selfPlayerUpdate = BuildplayerFieldData(clientConnection.characterGuid, selfVisibleFlags, clientFieldData, buildOpcode);
                 novusHeader.CreateForwardHeader(clientConnection.accountGuid, buildOpcode, selfPlayerUpdate.GetActualSize());
                 novusConnection.SendPacket(novusHeader.BuildHeaderPacket(selfPlayerUpdate));*/
 				
@@ -232,15 +233,15 @@ namespace PlayerUpdateDataSystem
                 PlayerUpdatePacket playerUpdatePacket;
                 playerUpdatePacket.characterGuid = clientConnection.characterGuid;
                 playerUpdatePacket.updateType = UPDATETYPE_VALUES;
-                playerUpdatePacket.data = BuildPlayerUpdateData(clientConnection.characterGuid, selfVisibleFlags, clientUpdateData, buildOpcode);
+                playerUpdatePacket.data = BuildPlayerUpdateData(clientConnection.characterGuid, selfVisibleFlags, clientFieldData, buildOpcode);
                 playerUpdatePacket.opcode = buildOpcode;
                 playerUpdatesQueue.playerUpdatePacketQueue.push_back(playerUpdatePacket);
 
                 // Clear Updates
-                clientUpdateData.changesMask.Reset();
+                clientFieldData.changesMask.Reset();
             }
 
-            if(clientUpdateData.positionUpdateData.size() > 0)
+            if (clientUpdateData.positionUpdateData.size() > 0)
             {
 				ZoneScopedNC("PositionUpdate", tracy::Color::Yellow2)
                 for (PositionUpdateData positionData : clientUpdateData.positionUpdateData)

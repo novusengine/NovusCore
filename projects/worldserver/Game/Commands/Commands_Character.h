@@ -23,11 +23,11 @@ namespace Commands_Character
                     level = 255;
 
                 PlayerPacketQueueSingleton& playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
-                PlayerUpdateDataComponent& clientUpdateData = _registry->get<PlayerUpdateDataComponent>(clientConnection.entityGuid);
-                u32 playerLevel = clientUpdateData.GetFieldValue<u32>(UNIT_FIELD_LEVEL);
+                PlayerFieldDataComponent& clientFieldData = _registry->get<PlayerFieldDataComponent>(clientConnection.entityGuid);
+                u32 playerLevel = clientFieldData.GetFieldValue<u32>(UNIT_FIELD_LEVEL);
                 if (playerLevel != level)
                 {
-                    clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_LEVEL, level);
+                    clientFieldData.SetFieldValue<u32>(UNIT_FIELD_LEVEL, level);
 
                     //I put this in here so that we can unlock the achievement frame when reaching level 10
                     if (level >= 10 && playerLevel < 10)
@@ -67,7 +67,7 @@ namespace Commands_Character
                     speed = 50;
 
                 PlayerPacketQueueSingleton& playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
-                PlayerUpdateDataComponent& clientUpdateData = _registry->get<PlayerUpdateDataComponent>(clientConnection.entityGuid);
+                PlayerFieldDataComponent& clientFieldData = _registry->get<PlayerFieldDataComponent>(clientConnection.entityGuid);
 
                 Common::ByteBuffer speedChange;
                 CharacterUtils::BuildSpeedChangePacket(clientConnection.accountGuid, clientConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_WALK_SPEED_CHANGE, speedChange);
@@ -107,7 +107,7 @@ namespace Commands_Character
                 bool canFly = std::stoi(commandStrings[2]);
 
                 PlayerPacketQueueSingleton& playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
-                PlayerUpdateDataComponent& clientUpdateData = _registry->get<PlayerUpdateDataComponent>(clientConnection.entityGuid);
+                PlayerFieldDataComponent& clientFieldData = _registry->get<PlayerFieldDataComponent>(clientConnection.entityGuid);
 
                 Common::ByteBuffer setFly;
                 CharacterUtils::BuildFlyModePacket(clientConnection.accountGuid, clientConnection.characterGuid, canFly, setFly);
@@ -132,7 +132,7 @@ namespace Commands_Character
 
                 SingletonComponent& singletonData = _registry->ctx<SingletonComponent>();
                 PlayerPacketQueueSingleton& playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
-                PlayerUpdateDataComponent& clientUpdateData = _registry->get<PlayerUpdateDataComponent>(clientConnection.entityGuid);
+                PlayerFieldDataComponent& clientFieldData = _registry->get<PlayerFieldDataComponent>(clientConnection.entityGuid);
                 PlayerPositionComponent& clientPositionData = _registry->get<PlayerPositionComponent>(clientConnection.entityGuid);
 
                 Common::ByteBuffer buffer;
@@ -178,7 +178,7 @@ namespace Commands_Character
                 transfer.Write<u32>(mapId);
 
                 header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_TRANSFER_PENDING, transfer.GetActualSize());
-                clientUpdateData.packetUpdateData.push_back(header.BuildHeaderPacket(transfer));
+                clientFieldData.packetUpdateData.push_back(header.BuildHeaderPacket(transfer));
 
                 Common::ByteBuffer newWorld;
                 newWorld.Write<u32>(mapId);
@@ -188,7 +188,7 @@ namespace Commands_Character
                 newWorld.Write<f32>(0);
 
                 header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_NEW_WORLD, newWorld.GetActualSize());
-                clientUpdateData.packetUpdateData.push_back(header.BuildHeaderPacket(newWorld));
+                clientFieldData.packetUpdateData.push_back(header.BuildHeaderPacket(newWorld));
 
                 return true;
             }

@@ -31,6 +31,8 @@
 
 #include "../Connections/NovusConnection.h"
 #include "../Components/PlayerConnectionComponent.h"
+#include "../Components/PlayerFieldDataComponent.h"
+#include "../Components/PlayerUpdateDataComponent.h"
 #include "../Components/PlayerPositionComponent.h"
 #include "../Components/PlayerSpellStorageComponent.h"
 #include "../Components/PlayerSkillStorageComponent.h"
@@ -50,21 +52,21 @@ namespace PlayerCreateSystem
         Message message;
         while (createPlayerQueue.newEntityQueue->try_dequeue(message))
         {
-            u64 playerGuid = 0;
-            message.packet.Read<u64>(playerGuid); 
+            u64 characterGuid = 0;
+            message.packet.Read<u64>(characterGuid);
             
             CharacterData characterData;
-            if (characterDatabase.cache->GetCharacterData(playerGuid, characterData))
+            if (characterDatabase.cache->GetCharacterData(characterGuid, characterData))
             {
                 u32 entity = registry.create();
-                registry.assign<PlayerConnectionComponent>(entity, entity, u32(message.account), playerGuid);
-                registry.assign<PlayerInitializeComponent>(entity, u32(message.account), playerGuid);
+                registry.assign<PlayerConnectionComponent>(entity, entity, u32(message.account), characterGuid);
+                registry.assign<PlayerInitializeComponent>(entity, u32(message.account), characterGuid);
 
-                // -8949.950195f, -132.492996f, 83.531197f, 0.f
+                registry.assign<PlayerFieldDataComponent>(entity);
                 registry.assign<PlayerUpdateDataComponent>(entity);
-                /* 8.53332f is the amount of yards a player can move over a duration of 1.2 seconds with base speed,
-                this should be updated in the future to include the player's actual speed upon login, such as the player being mounted up from a previous session */
-                registry.assign<PlayerPositionComponent>(entity, characterData.mapId, characterData.coordinateX, characterData.coordinateY, characterData.coordinateZ, characterData.orientation, characterData.coordinateX, characterData.coordinateY, characterData.coordinateZ, characterData.orientation, 8.53332f);
+
+                // Human Starting Location: -8949.950195f, -132.492996f, 83.531197f, 0.f
+                registry.assign<PlayerPositionComponent>(entity, characterData.mapId, characterData.coordinateX, characterData.coordinateY, characterData.coordinateZ, characterData.orientation);
                 registry.assign<PlayerSpellStorageComponent>(entity);
                 registry.assign<PlayerSkillStorageComponent>(entity);
 

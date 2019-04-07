@@ -27,8 +27,6 @@
 #include <vector>
 
 #include "../NovusEnums.h"
-#include "../Utils/UpdateMask.h"
-#include "../Connections/NovusConnection.h"
 
 struct PositionUpdateData
 {
@@ -54,34 +52,8 @@ struct ChatUpdateData
 
 struct PlayerUpdateDataComponent
 {
-    PlayerUpdateDataComponent() : changesMask(PLAYER_END), playerFields(PLAYER_END * 4) { }
+    PlayerUpdateDataComponent() { }
 
-    void SetGuidValue(u16 index, u64 value)
-    {
-        playerFields.WriteAt<u64>(value, index * 4);
-        changesMask.SetBit(index);
-        changesMask.SetBit(index + 1);
-    }
-    template <typename T>
-    void SetFieldValue(u16 index, T value, u8 offset = 0)
-    {
-        playerFields.WriteAt<T>(value, (index * 4) + offset);
-        changesMask.SetBit(index);
-    }
-    template <typename T>
-    T GetFieldValue(u16 index, u8 offset = 0)
-    {
-        return playerFields.ReadAt<T>((index * 4) + offset);
-    }
-    void ResetFields()
-    {
-        playerFields.Clean();
-        playerFields.Resize(PLAYER_END * 4);
-        changesMask.Reset();
-    }
-
-    UpdateMask<1344> changesMask;
-    Common::ByteBuffer playerFields;
     std::vector<u64> visibleGuids;
     std::vector<PositionUpdateData> positionUpdateData;
     std::vector<ChatUpdateData> chatUpdateData;

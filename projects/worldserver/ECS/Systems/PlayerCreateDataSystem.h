@@ -34,13 +34,13 @@
 #include "../Components/PlayerConnectionComponent.h"
 #include "../Components/PlayerPositionComponent.h"
 #include "../Components/PlayerInitializeComponent.h"
-#include "../Components/PlayerUpdateDataComponent.h"
+#include "../Components/PlayerFieldDataComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
 #include "../Components/Singletons/PlayerUpdatesQueueSingleton.h"
 
 namespace PlayerCreateDataSystem
 {
-    Common::ByteBuffer BuildPlayerCreateData(u64 playerGuid, u8 updateType, u16 updateFlags, u32 visibleFlags, u32 lifeTimeInMS, PlayerUpdateDataComponent& playerUpdateData, PlayerPositionComponent position, u16& opcode)
+    Common::ByteBuffer BuildPlayerCreateData(u64 playerGuid, u8 updateType, u16 updateFlags, u32 visibleFlags, u32 lifeTimeInMS, PlayerFieldDataComponent& playerFieldData, PlayerPositionComponent position, u16& opcode)
     {
         Common::ByteBuffer buffer(500);
         buffer.Write<u8>(updateType);
@@ -104,14 +104,14 @@ namespace PlayerCreateDataSystem
         for (u16 index = 0; index < PLAYER_END; ++index)
         {
             if (fieldNotifyFlags & flags[index] || ((flags[index] & visibleFlags) & UF_FLAG_SPECIAL_INFO)
-                || ((updateType == 0 ? playerUpdateData.changesMask.IsSet(index) : playerUpdateData.playerFields.ReadAt<i32>(index * 4))
+                || ((updateType == 0 ? playerFieldData.changesMask.IsSet(index) : playerFieldData.playerFields.ReadAt<i32>(index * 4))
                     && (flags[index] & visibleFlags)))
             {
                 updateMask.SetBit(index);
 
                 if (index == UNIT_NPC_FLAGS)
                 {
-                    u32 appendValue = playerUpdateData.playerFields.ReadAt<u32>(UNIT_NPC_FLAGS * 4);
+                    u32 appendValue = playerFieldData.playerFields.ReadAt<u32>(UNIT_NPC_FLAGS * 4);
 
                     /*if (creature)
                         if (!target->CanSeeSpellClickOn(creature))
@@ -122,7 +122,7 @@ namespace PlayerCreateDataSystem
                 else if (index == UNIT_FIELD_AURASTATE)
                 {
                     // Check per caster aura states to not enable using a spell in client if specified aura is not by target
-                    u32 auraState = playerUpdateData.playerFields.ReadAt<u32>(UNIT_FIELD_AURASTATE * 4) &~(((1 << (14 - 1)) | (1 << (16 - 1))));
+                    u32 auraState = playerFieldData.playerFields.ReadAt<u32>(UNIT_FIELD_AURASTATE * 4) &~(((1 << (14 - 1)) | (1 << (16 - 1))));
 
                     fieldBuffer.Write<u32>(auraState);
                 }
@@ -131,7 +131,7 @@ namespace PlayerCreateDataSystem
                 else if (index >= UNIT_FIELD_BASEATTACKTIME && index <= UNIT_FIELD_RANGEDATTACKTIME)
                 {
                     // convert from f32 to uint32 and send
-                    fieldBuffer.Write<u32>(u32(playerUpdateData.playerFields.ReadAt<i32>(index * 4)));
+                    fieldBuffer.Write<u32>(u32(playerFieldData.playerFields.ReadAt<i32>(index * 4)));
                 }
                 // there are some (said f32 in TC, but all these are ints)int values which may be negative or can't get negative due to other checks
                 else if ((index >= UNIT_FIELD_NEGSTAT0 && index <= UNIT_FIELD_NEGSTAT4) ||
@@ -139,12 +139,12 @@ namespace PlayerCreateDataSystem
                     (index >= UNIT_FIELD_RESISTANCEBUFFMODSNEGATIVE && index <= (UNIT_FIELD_RESISTANCEBUFFMODSNEGATIVE + 6)) ||
                     (index >= UNIT_FIELD_POSSTAT0 && index <= UNIT_FIELD_POSSTAT4))
                 {
-                    fieldBuffer.Write<u32>(u32(playerUpdateData.playerFields.ReadAt<i32>(index * 4)));
+                    fieldBuffer.Write<u32>(u32(playerFieldData.playerFields.ReadAt<i32>(index * 4)));
                 }
                 // Gamemasters should be always able to select units - remove not selectable flag
                 else if (index == UNIT_FIELD_FLAGS)
                 {
-                    u32 appendValue = playerUpdateData.playerFields.ReadAt<u32>(UNIT_FIELD_FLAGS * 4);
+                    u32 appendValue = playerFieldData.playerFields.ReadAt<u32>(UNIT_FIELD_FLAGS * 4);
                     //if (target->IsGameMaster())
                         //appendValue &= ~UNIT_FLAG_NOT_SELECTABLE;
 
@@ -153,7 +153,7 @@ namespace PlayerCreateDataSystem
                 // use modelid_a if not gm, _h if gm for CREATURE_FLAG_EXTRA_TRIGGER creatures
                 else if (index == UNIT_FIELD_DISPLAYID)
                 {
-                    u32 displayId = playerUpdateData.playerFields.ReadAt<u32>(UNIT_FIELD_DISPLAYID * 4);
+                    u32 displayId = playerFieldData.playerFields.ReadAt<u32>(UNIT_FIELD_DISPLAYID * 4);
                     /*if (creature)
                     {
                         CreatureTemplate const* cinfo = creature->GetCreatureTemplate();
@@ -176,7 +176,7 @@ namespace PlayerCreateDataSystem
                 // hide lootable animation for unallowed players
                 else if (index == UNIT_DYNAMIC_FLAGS)
                 {
-                    u32 dynamicFlags = playerUpdateData.playerFields.ReadAt<u32>(UNIT_DYNAMIC_FLAGS * 4) & ~(0x4 | 0x08); // UNIT_DYNFLAG_TAPPED | UNIT_DYNFLAG_TAPPED_BY_PLAYER
+                    u32 dynamicFlags = playerFieldData.playerFields.ReadAt<u32>(UNIT_DYNAMIC_FLAGS * 4) & ~(0x4 | 0x08); // UNIT_DYNFLAG_TAPPED | UNIT_DYNFLAG_TAPPED_BY_PLAYER
 
                     /*if (creature)
                     {
@@ -217,12 +217,12 @@ namespace PlayerCreateDataSystem
                             //fieldBuffer << m_uint32Values[index];
                     //}
                     //else
-                    fieldBuffer.Write(playerUpdateData.playerFields.GetDataPointer() + index * 4, 4);
+                    fieldBuffer.Write(playerFieldData.playerFields.GetDataPointer() + index * 4, 4);
                 }
                 else
                 {
                     // send in current format (f32 as f32, uint32 as uint32)
-                    fieldBuffer.Write(playerUpdateData.playerFields.GetDataPointer() + index * 4, 4);
+                    fieldBuffer.Write(playerFieldData.playerFields.GetDataPointer() + index * 4, 4);
                 }
             }
         }
@@ -242,7 +242,7 @@ namespace PlayerCreateDataSystem
 
     void Update(entt::registry &registry)
     {
-        auto view = registry.view<PlayerInitializeComponent, PlayerUpdateDataComponent, PlayerPositionComponent>();
+        auto view = registry.view<PlayerInitializeComponent, PlayerFieldDataComponent, PlayerPositionComponent>();
         if (!view.empty())
         {
             SingletonComponent& singleton = registry.ctx<SingletonComponent>();
@@ -250,8 +250,8 @@ namespace PlayerCreateDataSystem
             NovusConnection& novusConnection = *singleton.connection;
             u32 lifeTimeInMS = u32(singleton.lifeTimeInMS);
 
-            auto subView = registry.view<PlayerConnectionComponent, PlayerUpdateDataComponent, PlayerPositionComponent>();
-            view.each([&novusConnection, &playerUpdatesQueue, lifeTimeInMS, subView](const auto, PlayerInitializeComponent& clientInitializeData, PlayerUpdateDataComponent& clientUpdateData, PlayerPositionComponent& clientPositionData)
+            auto subView = registry.view<PlayerConnectionComponent, PlayerFieldDataComponent, PlayerPositionComponent>();
+            view.each([&novusConnection, &playerUpdatesQueue, lifeTimeInMS, subView](const auto, PlayerInitializeComponent& clientInitializeData, PlayerFieldDataComponent& clientFieldData, PlayerPositionComponent& clientPositionData)
             {
                 /* Build Self Packet, must be sent immediately */
                 u8 updateType = UPDATETYPE_CREATE_OBJECT2;
@@ -260,7 +260,7 @@ namespace PlayerCreateDataSystem
                 u16 buildOpcode = 0;
 
                 NovusHeader novusHeader;
-                Common::ByteBuffer selfPlayerUpdate = BuildPlayerCreateData(clientInitializeData.characterGuid, updateType, selfUpdateFlag, selfVisibleFlags, lifeTimeInMS, clientUpdateData, clientPositionData, buildOpcode);
+                Common::ByteBuffer selfPlayerUpdate = BuildPlayerCreateData(clientInitializeData.characterGuid, updateType, selfUpdateFlag, selfVisibleFlags, lifeTimeInMS, clientFieldData, clientPositionData, buildOpcode);
                 novusHeader.CreateForwardHeader(clientInitializeData.accountGuid, buildOpcode, selfPlayerUpdate.GetActualSize());
                 novusConnection.SendPacket(novusHeader.BuildHeaderPacket(selfPlayerUpdate));
 
@@ -271,11 +271,11 @@ namespace PlayerCreateDataSystem
                 PlayerUpdatePacket playerUpdatePacket;
                 playerUpdatePacket.characterGuid = clientInitializeData.characterGuid;
                 playerUpdatePacket.updateType = updateType;
-                playerUpdatePacket.data = BuildPlayerCreateData(clientInitializeData.characterGuid, updateType, publicUpdateFlag, publicVisibleFlags, lifeTimeInMS, clientUpdateData, clientPositionData, buildOpcode);
+                playerUpdatePacket.data = BuildPlayerCreateData(clientInitializeData.characterGuid, updateType, publicUpdateFlag, publicVisibleFlags, lifeTimeInMS, clientFieldData, clientPositionData, buildOpcode);
                 playerUpdatePacket.opcode = buildOpcode;
                 playerUpdatesQueue.playerUpdatePacketQueue.push_back(playerUpdatePacket);
 
-                subView.each([&novusConnection, &playerUpdatesQueue, &clientInitializeData, lifeTimeInMS](const auto, PlayerConnectionComponent& connection, PlayerUpdateDataComponent& updateData, PlayerPositionComponent& positionData)
+                subView.each([&novusConnection, &playerUpdatesQueue, &clientInitializeData, lifeTimeInMS](const auto, PlayerConnectionComponent& connection, PlayerFieldDataComponent& fieldData, PlayerPositionComponent& positionData)
                 {
                     if (clientInitializeData.characterGuid != connection.characterGuid)
                     {
@@ -288,7 +288,7 @@ namespace PlayerCreateDataSystem
                         PlayerUpdatePacket playerUpdatePacket;
                         playerUpdatePacket.characterGuid = connection.characterGuid;
                         playerUpdatePacket.updateType = updateType;
-                        playerUpdatePacket.data = BuildPlayerCreateData(connection.characterGuid, updateType, publicUpdateFlag, publicVisibleFlags, lifeTimeInMS, updateData, positionData, buildOpcode);
+                        playerUpdatePacket.data = BuildPlayerCreateData(connection.characterGuid, updateType, publicUpdateFlag, publicVisibleFlags, lifeTimeInMS, fieldData, positionData, buildOpcode);
                         playerUpdatePacket.opcode = buildOpcode;
                         playerUpdatesQueue.playerUpdatePacketQueue.push_back(playerUpdatePacket);
                     }

@@ -1,4 +1,3 @@
-#pragma once
 /*
     MIT License
 
@@ -22,19 +21,41 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
 */
+#pragma once
 #include <NovusTypes.h>
-#include <vector>
 #include <Networking/ByteBuffer.h>
 
-#define MAX_MOVEMENT_OPCODES 27
-struct PlayerPositionComponent 
-{
-	u32 mapId;
-	f32 x;
-	f32 y;
-	f32 z;
-	f32 orientation;
+#include "../NovusEnums.h"
+#include "../Utils/UpdateMask.h"
 
-    u32 lastMovementOpcodeTime[MAX_MOVEMENT_OPCODES];
-    std::vector<PositionUpdateData> positionUpdateData;
+struct PlayerFieldDataComponent
+{
+    PlayerFieldDataComponent() : changesMask(PLAYER_END), playerFields(PLAYER_END * 4) { }
+
+    void SetGuidValue(u16 index, u64 value)
+    {
+        playerFields.WriteAt<u64>(value, index * 4);
+        changesMask.SetBit(index);
+        changesMask.SetBit(index + 1);
+    }
+    template <typename T>
+    void SetFieldValue(u16 index, T value, u8 offset = 0)
+    {
+        playerFields.WriteAt<T>(value, (index * 4) + offset);
+        changesMask.SetBit(index);
+    }
+    template <typename T>
+    T GetFieldValue(u16 index, u8 offset = 0)
+    {
+        return playerFields.ReadAt<T>((index * 4) + offset);
+    }
+    void ResetFields()
+    {
+        playerFields.Clean();
+        playerFields.Resize(PLAYER_END * 4);
+        changesMask.Reset();
+    }
+
+    UpdateMask<1344> changesMask;
+    Common::ByteBuffer playerFields;
 };

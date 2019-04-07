@@ -2,6 +2,7 @@
 #include <NovusTypes.h>
 #include <Networking/ByteBuffer.h>
 #include <Networking/Opcode/Opcode.h>
+#include "../Connections/NovusConnection.h"
 #include "../DatabaseCache/CharacterDatabaseCache.h"
 
 namespace CharacterUtils
