@@ -76,7 +76,7 @@ struct CharacterVisualData
 private:
     CharacterDatabaseCache* _cache;
 };
-// character_spell_storage table in DB
+// default_spells table in DB
 struct DefaultSpellStorage
 {
     DefaultSpellStorage() { }
@@ -99,7 +99,7 @@ struct DefaultSpellStorage
 private:
     CharacterDatabaseCache* _cache;
 };
-// character_skill_storage table in DB
+// default_skills table in DB
 struct DefaultSkillStorage
 {
     DefaultSkillStorage() { }
@@ -119,6 +119,39 @@ struct DefaultSkillStorage
     u16 id;
     u16 value;
     u16 maxValue;
+
+    void UpdateCache()
+    {
+    }
+private:
+    CharacterDatabaseCache* _cache;
+};
+// default_spawns table in DB
+struct DefaultSpawnStorage
+{
+    DefaultSpawnStorage() { }
+    DefaultSpawnStorage(CharacterDatabaseCache* cache) { _cache = cache; }
+    DefaultSpawnStorage(const DefaultSpawnStorage& data)
+    {
+        raceMask = data.raceMask;
+        classMask = data.classMask;
+        mapId = data.mapId;
+        zoneId = data.zoneId;
+        coordinate_x = data.coordinate_x;
+        coordinate_y = data.coordinate_y;
+        coordinate_z = data.coordinate_z;
+        orientation = data.orientation;
+        _cache = data._cache;
+    }
+
+    i16 raceMask;
+    i16 classMask;
+    u16 mapId;
+    u16 zoneId;
+    f32 coordinate_x;
+    f32 coordinate_y;
+    f32 coordinate_z;
+    f32 orientation;
 
     void UpdateCache()
     {
@@ -146,10 +179,12 @@ public:
 
     const std::vector<DefaultSpellStorage> GetDefaultSpellStorageData();
     const std::vector<DefaultSkillStorage> GetDefaultSkillStorageData();
+    const std::vector<DefaultSpawnStorage> GetDefaultSpawnStorageData();
 
 private:
     robin_hood::unordered_map<u64, CharacterData> _characterDataCache;
     robin_hood::unordered_map<u64, CharacterVisualData> _characterVisualDataCache;
     std::vector<DefaultSpellStorage> _defaultSpellStorageCache;
     std::vector<DefaultSkillStorage> _defaultSkillStorageCache;
+    std::vector<DefaultSpawnStorage> _defaultSpawnStorageCache;
 };

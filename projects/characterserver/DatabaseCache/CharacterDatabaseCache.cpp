@@ -17,7 +17,7 @@ void CharacterDatabaseCache::Load()
     assert(result);
 
     amy::result_set resultSet;
-    connector->Query("SELECT characters.guid, characters.account, characters.name, characters.race, characters.gender, characters.class, characters.level, characters.map_id, characters.zone_id, characters.coordinate_x, characters.coordinate_y, characters.coordinate_z, characters.orientation, character_visual_data.skin, character_visual_data.face, character_visual_data.facial_style, character_visual_data.hair_style, character_visual_data.hair_color FROM characters INNER JOIN character_visual_data ON characters.guid = character_visual_data.guid;", resultSet);
+    connector->Query("SELECT characters.guid, characters.account, characters.name, characters.race, characters.gender, characters.class, characters.level, characters.mapId, characters.zoneId, characters.coordinate_x, characters.coordinate_y, characters.coordinate_z, characters.orientation, character_visual_data.skin, character_visual_data.face, character_visual_data.facial_style, character_visual_data.hair_style, character_visual_data.hair_color FROM characters INNER JOIN character_visual_data ON characters.guid = character_visual_data.guid;", resultSet);
 
     if (resultSet.affected_rows() > 0)
     {
@@ -69,7 +69,6 @@ void CharacterDatabaseCache::Load()
         }
     }
 
-
     connector->Query("SELECT raceMask, classMask, skill, value, default_skills.maxValue FROM default_skills;", resultSet);
     if (resultSet.affected_rows() > 0)
     {
@@ -84,6 +83,27 @@ void CharacterDatabaseCache::Load()
 
             _accessMutex.lock();
             _defaultSkillStorageCache.push_back(newDefaultSkillStorage);
+            _accessMutex.unlock();
+        }
+    }
+
+    connector->Query("SELECT raceMask, classMask, mapId, zoneId, coordinate_x, coordinate_y, coordinate_z, orientation FROM default_spawns;", resultSet);
+    if (resultSet.affected_rows() > 0)
+    {
+        for (auto row : resultSet)
+        {
+            DefaultSpawnStorage newDefaultSpawnStorage(this);
+            newDefaultSpawnStorage.raceMask = row[0].as<amy::sql_smallint>();
+            newDefaultSpawnStorage.classMask = row[1].as<amy::sql_smallint>();
+            newDefaultSpawnStorage.mapId = row[2].as<amy::sql_smallint_unsigned>();
+            newDefaultSpawnStorage.zoneId = row[3].as<amy::sql_smallint_unsigned>();
+            newDefaultSpawnStorage.coordinate_x = row[4].as<amy::sql_float>();
+            newDefaultSpawnStorage.coordinate_y = row[5].as<amy::sql_float>();
+            newDefaultSpawnStorage.coordinate_z = row[6].as<amy::sql_float>();
+            newDefaultSpawnStorage.orientation = row[7].as<amy::sql_float>();
+
+            _accessMutex.lock();
+            _defaultSpawnStorageCache.push_back(newDefaultSpawnStorage);
             _accessMutex.unlock();
         }
     }
@@ -205,4 +225,8 @@ const std::vector<DefaultSpellStorage> CharacterDatabaseCache::GetDefaultSpellSt
 const std::vector<DefaultSkillStorage> CharacterDatabaseCache::GetDefaultSkillStorageData()
 {
     return _defaultSkillStorageCache;
+}
+const std::vector<DefaultSpawnStorage> CharacterDatabaseCache::GetDefaultSpawnStorageData()
+{
+    return _defaultSpawnStorageCache;
 }

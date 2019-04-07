@@ -312,7 +312,7 @@ bool NovusConnection::HandleCommandForwardPacket()
         }
         case Common::Opcode::CMSG_CHAR_ENUM:
         {
-            PreparedStatement stmt("SELECT characters.guid, characters.name, characters.race, characters.class, characters.gender, character_visual_data.skin, character_visual_data.face, character_visual_data.hair_style, character_visual_data.hair_color, character_visual_data.facial_style, characters.level, characters.zone_id, characters.map_id, characters.coordinate_x, characters.coordinate_y, characters.coordinate_z FROM characters INNER JOIN character_visual_data ON characters.guid=character_visual_data.guid WHERE characters.account={u};");
+            PreparedStatement stmt("SELECT characters.guid, characters.name, characters.race, characters.class, characters.gender, character_visual_data.skin, character_visual_data.face, character_visual_data.hair_style, character_visual_data.hair_color, character_visual_data.facial_style, characters.level, characters.zoneId, characters.mapId, characters.coordinate_x, characters.coordinate_y, characters.coordinate_z FROM characters INNER JOIN character_visual_data ON characters.guid=character_visual_data.guid WHERE characters.account={u};");
             stmt.Bind(header->account);
             DatabaseConnector::QueryAsync(DATABASE_TYPE::CHARSERVER, stmt, [this, header](amy::result_set& results, DatabaseConnector& connector)
             {
@@ -343,8 +343,8 @@ bool NovusConnection::HandleCommandForwardPacket()
                     charEnum.Write<u8>(row[9].GetU8()); // Facialstyle
 
                     charEnum.Write<u8>(row[10].GetU8()); // Level
-                    charEnum.Write<u32>(row[11].GetU8()); // Zone Id
-                    charEnum.Write<u32>(row[12].GetU8()); // Map Id
+                    charEnum.Write<u32>(row[11].GetU16()); // Zone Id
+                    charEnum.Write<u32>(row[12].GetU16()); // Map Id
 
                     charEnum.Write<f32>(row[13].GetF32()); // X
                     charEnum.Write<f32>(row[14].GetF32()); // Y
@@ -408,17 +408,27 @@ bool NovusConnection::HandleCommandForwardPacket()
                 std::transform(createData->charName.begin(), createData->charName.end(), createData->charName.begin(), ::tolower);
                 createData->charName[0] = std::toupper(createData->charName[0]);
 
-                PreparedStatement characterBaseData("INSERT INTO characters(account, name, race, gender, class, map_id, zone_id, coordinate_x, coordinate_y, coordinate_z) VALUES({u}, {s}, {u}, {u}, {u}, {i}, {i}, {f}, {f}, {f});");
+                CharacterUtils::SpawnPosition spawnPosition;
+                if (!CharacterUtils::BuildGetDefaultSpawn(_cache.GetDefaultSpawnStorageData(), createData->charRace, createData->charClass, spawnPosition))
+                {
+                    forwardPacket.Write<u8>(CHAR_CREATE_DISABLED);
+                    SendPacket(forwardPacket);
+                    delete createData;
+                    return;
+                }
+
+                PreparedStatement characterBaseData("INSERT INTO characters(account, name, race, gender, class, map_id, zone_id, coordinate_x, coordinate_y, coordinate_z, orientation) VALUES({u}, {s}, {u}, {u}, {u}, {i}, {i}, {f}, {f}, {f}, {f});");
                 characterBaseData.Bind(header->account);
                 characterBaseData.Bind(createData->charName);
                 characterBaseData.Bind(createData->charRace);
                 characterBaseData.Bind(createData->charGender);
                 characterBaseData.Bind(createData->charClass);
-                characterBaseData.Bind(0);
-                characterBaseData.Bind(12);
-                characterBaseData.Bind(-8949.950195f);
-                characterBaseData.Bind(-132.492996f);
-                characterBaseData.Bind(83.531197f);
+                characterBaseData.Bind(spawnPosition.mapId);
+                characterBaseData.Bind(spawnPosition.zoneId);
+                characterBaseData.Bind(spawnPosition.coordinate_x);
+                characterBaseData.Bind(spawnPosition.coordinate_y);
+                characterBaseData.Bind(spawnPosition.coordinate_z);
+                characterBaseData.Bind(spawnPosition.orientation);
                 connector.Execute(characterBaseData);
 
                 // This needs to be non-async as we rely on LAST_INSERT_ID() to retrieve the character's guid
