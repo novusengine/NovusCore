@@ -36,7 +36,7 @@
 #include "../Components/SkillStorageComponent.h"
 #include "../Components/PlayerInitializeComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
-#include "../Components/Singletons/CreatePlayerQueueSingleton.h"
+#include "../Components/Singletons/PlayerCreateQueueSingleton.h"
 #include "../Components/Singletons/CharacterDatabaseCacheSingleton.h"
 
 namespace CreatePlayerSystem
@@ -44,7 +44,7 @@ namespace CreatePlayerSystem
     void Update(entt::registry &registry)
     {
 		SingletonComponent& singleton = registry.ctx<SingletonComponent>();
-        CreatePlayerQueueSingleton& createPlayerQueue = registry.ctx<CreatePlayerQueueSingleton>();
+        PlayerCreateQueueSingleton& createPlayerQueue = registry.ctx<PlayerCreateQueueSingleton>();
         CharacterDatabaseCacheSingleton& characterDatabase = registry.ctx<CharacterDatabaseCacheSingleton>();
 
         Message message;
@@ -57,7 +57,7 @@ namespace CreatePlayerSystem
             if (characterDatabase.cache->GetCharacterData(playerGuid, characterData))
             {
                 u32 entity = registry.create();
-                registry.assign<ConnectionComponent>(entity, u32(message.account), playerGuid);
+                registry.assign<ConnectionComponent>(entity, entity, u32(message.account), playerGuid);
                 registry.assign<PlayerInitializeComponent>(entity, u32(message.account), playerGuid);
 
                 // -8949.950195f, -132.492996f, 83.531197f, 0.f

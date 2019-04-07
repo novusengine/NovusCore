@@ -85,5 +85,4 @@ struct PlayerUpdateDataComponent
     std::vector<u64> visibleGuids;
     std::vector<PositionUpdateData> positionUpdateData;
     std::vector<ChatUpdateData> chatUpdateData;
-    std::vector<Common::ByteBuffer> packetUpdateData;
 };

@@ -28,11 +28,11 @@
 
 struct ExpiredPlayerData
 {
-    u32 account;
-    u64 guid;
+    u32 entityGuid;
+    u64 characterGuid;
 };
 
-struct DeletePlayerQueueSingleton
+struct PlayerDeleteQueueSingleton
 {
 	moodycamel::ConcurrentQueue<ExpiredPlayerData>* expiredEntityQueue;
 };

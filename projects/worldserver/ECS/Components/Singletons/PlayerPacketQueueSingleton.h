@@ -23,10 +23,10 @@
 */
 #pragma once
 #include <NovusTypes.h>
-#include "../Message.h"
+#include <Networking/ByteBuffer.h>
 #include "Utils/ConcurrentQueue.h"
 
-struct CreatePlayerQueueSingleton
+struct PlayerPacketQueueSingleton
 {
-	moodycamel::ConcurrentQueue<Message>* newEntityQueue;
+	moodycamel::ConcurrentQueue<Common::ByteBuffer>* packetQueue;
 };

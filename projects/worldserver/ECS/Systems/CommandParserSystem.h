@@ -63,7 +63,7 @@ namespace CommandParserSystem
                     auto itr = commandData.commandMap.find(detail::fnv1a_32(commandStr.c_str(), commandStr.length()));
                     if (itr != commandData.commandMap.end())
                     {
-                        if (itr->second.handler(commandStrings, clientConnection, clientUpdateData))
+                        if (itr->second.handler(commandStrings, clientConnection))
                             command.handled = true;
                     }
                 }

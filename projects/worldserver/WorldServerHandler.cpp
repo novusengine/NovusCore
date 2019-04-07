@@ -16,11 +16,12 @@
 #include "ECS/Systems/DeletePlayerSystem.h"
 
 #include "ECS/Components/Singletons/SingletonComponent.h"
-#include "ECS/Components/Singletons/CreatePlayerQueueSingleton.h"
+#include "ECS/Components/Singletons/PlayerCreateQueueSingleton.h"
 #include "ECS/Components/Singletons/PlayerUpdatesQueueSingleton.h"
-#include "ECS/Components/Singletons/DeletePlayerQueueSingleton.h"
+#include "ECS/Components/Singletons/PlayerDeleteQueueSingleton.h"
 #include "ECS/Components/Singletons/CharacterDatabaseCacheSingleton.h"
 #include "ECS/Components/Singletons/CommandDataSingleton.h"
+#include "ECS/Components/Singletons/PlayerPacketQueueSingleton.h"
 #include "Connections/NovusConnection.h"
 
 // Game
@@ -86,17 +87,19 @@ void WorldServerHandler::Run()
 
     _updateFramework.registry.create();
     SingletonComponent& singletonComponent = _updateFramework.registry.set<SingletonComponent>();
-    CreatePlayerQueueSingleton& createPlayerQueueComponent = _updateFramework.registry.set<CreatePlayerQueueSingleton>();
+    PlayerCreateQueueSingleton& playerCreateQueueComponent = _updateFramework.registry.set<PlayerCreateQueueSingleton>();
     PlayerUpdatesQueueSingleton& playerUpdatesQueueSingleton = _updateFramework.registry.set<PlayerUpdatesQueueSingleton>();
-    DeletePlayerQueueSingleton& deletePlayerQueueSingleton = _updateFramework.registry.set<DeletePlayerQueueSingleton>();
+    PlayerDeleteQueueSingleton& playerdeleteQueueSingleton = _updateFramework.registry.set<PlayerDeleteQueueSingleton>();
     CharacterDatabaseCacheSingleton& characterDatabaseCacheSingleton = _updateFramework.registry.set<CharacterDatabaseCacheSingleton>();
+    PlayerPacketQueueSingleton& playerPacketQueueSingleton = _updateFramework.registry.set<PlayerPacketQueueSingleton>();
    
     singletonComponent.worldServerHandler = this;
     singletonComponent.connection = _novusConnection;
     singletonComponent.deltaTime = 1.0f;
 
-    createPlayerQueueComponent.newEntityQueue = new moodycamel::ConcurrentQueue<Message>(256);
-    deletePlayerQueueSingleton.expiredEntityQueue = new moodycamel::ConcurrentQueue<ExpiredPlayerData>(256);
+    playerCreateQueueComponent.newEntityQueue = new moodycamel::ConcurrentQueue<Message>(256);
+    playerdeleteQueueSingleton.expiredEntityQueue = new moodycamel::ConcurrentQueue<ExpiredPlayerData>(256);
+    playerPacketQueueSingleton.packetQueue = new moodycamel::ConcurrentQueue<Common::ByteBuffer>(256);
 
     characterDatabaseCacheSingleton.cache = new CharacterDatabaseCache();
     characterDatabaseCacheSingleton.cache->Load();
@@ -186,7 +189,7 @@ bool WorldServerHandler::Update()
                 if (Common::Opcode((u16)message.opcode) == Common::Opcode::CMSG_PLAYER_LOGIN)
                 {
                     ZoneScopedNC("LoginMessage", tracy::Color::Green3)
-                    _updateFramework.registry.ctx<CreatePlayerQueueSingleton>().newEntityQueue->enqueue(message);
+                    _updateFramework.registry.ctx<PlayerCreateQueueSingleton>().newEntityQueue->enqueue(message);
                 }
                 else
                 {

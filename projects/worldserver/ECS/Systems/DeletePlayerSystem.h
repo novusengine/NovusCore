@@ -32,14 +32,14 @@
 #include "../Components/ConnectionComponent.h"
 #include "../Components/PlayerUpdateDataComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
-#include "../Components/Singletons/DeletePlayerQueueSingleton.h"
+#include "../Components/Singletons/PlayerDeleteQueueSingleton.h"
 
 namespace DeletePlayerSystem
 {
     void Update(entt::registry &registry)
     {
 		SingletonComponent& singleton = registry.ctx<SingletonComponent>();
-        DeletePlayerQueueSingleton& deletePlayerQueue = registry.ctx<DeletePlayerQueueSingleton>();
+        PlayerDeleteQueueSingleton& deletePlayerQueue = registry.ctx<PlayerDeleteQueueSingleton>();
         NovusConnection& novusConnection = *singleton.connection;
         
         Common::ByteBuffer buildPacket;
@@ -49,14 +49,9 @@ namespace DeletePlayerSystem
         ExpiredPlayerData expiredPlayerData;
         while (deletePlayerQueue.expiredEntityQueue->try_dequeue(expiredPlayerData))
         {
-            auto itr = singleton.accountToEntityMap.find(expiredPlayerData.account);
-            if (itr != singleton.accountToEntityMap.end())
-            {
-                updateData.AddGuid(expiredPlayerData.guid);
-                deletedEntities.push_back(expiredPlayerData.guid);
-                registry.destroy(itr->second);
-                singleton.accountToEntityMap.erase(expiredPlayerData.account);
-            }
+            updateData.AddGuid(expiredPlayerData.characterGuid);
+            deletedEntities.push_back(expiredPlayerData.characterGuid);
+            registry.destroy(expiredPlayerData.entityGuid);
         }
 
         if (!updateData.IsEmpty())

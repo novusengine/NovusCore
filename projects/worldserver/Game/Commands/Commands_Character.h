@@ -3,14 +3,15 @@
 #include <Utils/StringHash.h>
 #include <../ECS/Components/ConnectionComponent.h>
 #include <../ECS/Components/Singletons/CommandDataSingleton.h>
+#include <../ECS/Components/Singletons/PlayerPacketQueueSingleton.h>
 
 namespace Commands_Character
 {
     static robin_hood::unordered_map<u32, CommandEntry> characterCommandMap;
+    static entt::registry* _registry = nullptr;
     
-    bool _Level(std::vector<std::string> commandStrings, ConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData)
+    bool _Level(std::vector<std::string> commandStrings, ConnectionComponent& clientConnection)
     {
-        u32 playerLevel = clientUpdateData.GetFieldValue<u32>(UNIT_FIELD_LEVEL);
         if (commandStrings.size() >= 3)
         {
             try
@@ -21,6 +22,9 @@ namespace Commands_Character
                 else if (level > 255)
                     level = 255;
 
+                PlayerPacketQueueSingleton& playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
+                PlayerUpdateDataComponent& clientUpdateData = _registry->get<PlayerUpdateDataComponent>(clientConnection.entityGuid);
+                u32 playerLevel = clientUpdateData.GetFieldValue<u32>(UNIT_FIELD_LEVEL);
                 if (playerLevel != level)
                 {
                     clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_LEVEL, level);
@@ -41,21 +45,16 @@ namespace Commands_Character
 
                         NovusHeader header;
                         header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_ACHIEVEMENT_EARNED, achievementData.GetActualSize());
-                        clientUpdateData.packetUpdateData.push_back(header.BuildHeaderPacket(achievementData));
+                        playerPacketQueue.packetQueue->enqueue(header.BuildHeaderPacket(achievementData));
                     }
                 }
             }
             catch (std::exception) { }
         }
-        else
-        {
-            if (playerLevel < 255)
-                clientUpdateData.SetFieldValue<u32>(UNIT_FIELD_LEVEL, playerLevel + 1);
-        }
 
         return true;
     }
-    bool _Speed(std::vector<std::string> commandStrings, ConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData)
+    bool _Speed(std::vector<std::string> commandStrings, ConnectionComponent& clientConnection)
     {
         if (commandStrings.size() >= 3)
         {
@@ -67,27 +66,30 @@ namespace Commands_Character
                 else if (speed > 50)
                     speed = 50;
 
+                PlayerPacketQueueSingleton& playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
+                PlayerUpdateDataComponent& clientUpdateData = _registry->get<PlayerUpdateDataComponent>(clientConnection.entityGuid);
+
                 Common::ByteBuffer speedChange;
                 CharacterUtils::BuildSpeedChangePacket(clientConnection.accountGuid, clientConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_WALK_SPEED_CHANGE, speedChange);
-                clientUpdateData.packetUpdateData.push_back(speedChange);
+                playerPacketQueue.packetQueue->enqueue(speedChange);
 
                 CharacterUtils::BuildSpeedChangePacket(clientConnection.accountGuid, clientConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_RUN_SPEED_CHANGE, speedChange);
-                clientUpdateData.packetUpdateData.push_back(speedChange);
+                playerPacketQueue.packetQueue->enqueue(speedChange);
 
                 CharacterUtils::BuildSpeedChangePacket(clientConnection.accountGuid, clientConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_RUN_BACK_SPEED_CHANGE, speedChange);
-                clientUpdateData.packetUpdateData.push_back(speedChange);
+                playerPacketQueue.packetQueue->enqueue(speedChange);
 
                 CharacterUtils::BuildSpeedChangePacket(clientConnection.accountGuid, clientConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_SWIM_SPEED_CHANGE, speedChange);
-                clientUpdateData.packetUpdateData.push_back(speedChange);
+                playerPacketQueue.packetQueue->enqueue(speedChange);
 
                 CharacterUtils::BuildSpeedChangePacket(clientConnection.accountGuid, clientConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_SWIM_BACK_SPEED_CHANGE, speedChange);
-                clientUpdateData.packetUpdateData.push_back(speedChange);
+                playerPacketQueue.packetQueue->enqueue(speedChange);
 
                 CharacterUtils::BuildSpeedChangePacket(clientConnection.accountGuid, clientConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_FLIGHT_SPEED_CHANGE, speedChange);
-                clientUpdateData.packetUpdateData.push_back(speedChange);
+                playerPacketQueue.packetQueue->enqueue(speedChange);
 
                 CharacterUtils::BuildSpeedChangePacket(clientConnection.accountGuid, clientConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_FLIGHT_BACK_SPEED_CHANGE, speedChange);
-                clientUpdateData.packetUpdateData.push_back(speedChange);
+                playerPacketQueue.packetQueue->enqueue(speedChange);
 
                 return true;
             }
@@ -96,7 +98,7 @@ namespace Commands_Character
 
         return false;
     }
-    bool _Fly(std::vector<std::string> commandStrings, ConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData)
+    bool _Fly(std::vector<std::string> commandStrings, ConnectionComponent& clientConnection)
     {
         if (commandStrings.size() >= 3)
         {
@@ -104,9 +106,12 @@ namespace Commands_Character
             {
                 bool canFly = std::stoi(commandStrings[2]);
 
+                PlayerPacketQueueSingleton& playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
+                PlayerUpdateDataComponent& clientUpdateData = _registry->get<PlayerUpdateDataComponent>(clientConnection.entityGuid);
+
                 Common::ByteBuffer setFly;
                 CharacterUtils::BuildFlyModePacket(clientConnection.accountGuid, clientConnection.characterGuid, canFly, setFly);
-                clientUpdateData.packetUpdateData.push_back(setFly);
+                playerPacketQueue.packetQueue->enqueue(setFly);
 
                 return true;
             }
@@ -115,7 +120,7 @@ namespace Commands_Character
 
         return false;
     }
-    bool _Tele(std::vector<std::string> commandStrings, ConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData)
+    bool _Tele(std::vector<std::string> commandStrings, ConnectionComponent& clientConnection)
     {
         if (commandStrings.size() >= 5)
         {
@@ -125,6 +130,11 @@ namespace Commands_Character
                 f32 y = std::stof(commandStrings[3]);
                 f32 z = std::stof(commandStrings[4]);
 
+                SingletonComponent& singletonData = _registry->ctx<SingletonComponent>();
+                PlayerPacketQueueSingleton& playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
+                PlayerUpdateDataComponent& clientUpdateData = _registry->get<PlayerUpdateDataComponent>(clientConnection.entityGuid);
+                PositionComponent& clientPositionData = _registry->get<PositionComponent>(clientConnection.entityGuid);
+
                 Common::ByteBuffer buffer;
                 buffer.AppendGuid(clientConnection.characterGuid);
                 buffer.Write<u32>(0); // Teleport Count
@@ -132,18 +142,18 @@ namespace Commands_Character
                 /* Movement */
                 buffer.Write<u32>(0);
                 buffer.Write<u16>(0);
-                buffer.Write<u32>(0);
+                buffer.Write<u32>((u32)singletonData.lifeTimeInMS);
 
                 buffer.Write<f32>(x);
                 buffer.Write<f32>(y);
                 buffer.Write<f32>(z);
-                buffer.Write<f32>(0);
+                buffer.Write<f32>(clientPositionData.orientation);
 
                 buffer.Write<u32>(0);
 
                 NovusHeader header;
                 header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::MSG_MOVE_TELEPORT_ACK, buffer.GetActualSize());
-                clientUpdateData.packetUpdateData.push_back(header.BuildHeaderPacket(buffer));
+                playerPacketQueue.packetQueue->enqueue(header.BuildHeaderPacket(buffer));
 
                 return true;
             }
@@ -152,9 +162,9 @@ namespace Commands_Character
 
         return false;
     }
-    bool _TeleToMap(std::vector<std::string> commandStrings, ConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData)
+    bool _TeleToMap(std::vector<std::string> commandStrings, ConnectionComponent& clientConnection)
     {
-        if (commandStrings.size() >= 6)
+        /*if (commandStrings.size() >= 6)
         {
             try
             {
@@ -183,25 +193,27 @@ namespace Commands_Character
                 return true;
             }
             catch (std::exception) {}
-        }
+        }*/
 
         return false;
     }
 
-    bool CharacterCommand(std::vector<std::string> commandStrings, ConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData)
+    bool CharacterCommand(std::vector<std::string> commandStrings, ConnectionComponent& clientConnection)
     {
         std::string subCommand = commandStrings[1];
 
         auto itr = characterCommandMap.find(detail::fnv1a_32(subCommand.c_str(), subCommand.length()));
         if (itr != characterCommandMap.end())
         {
-            return itr->second.handler(commandStrings, clientConnection, clientUpdateData);
+            return itr->second.handler(commandStrings, clientConnection);
         }
 
         return false;
     }
     void LoadCharacterCommands(entt::registry& registry, CommandDataSingleton& commandData)
     {
+        _registry = &registry;
+
         commandData.commandMap[".char"_h] = CommandEntry(CharacterCommand);
         commandData.commandMap[".character"_h] = CommandEntry(CharacterCommand);
 

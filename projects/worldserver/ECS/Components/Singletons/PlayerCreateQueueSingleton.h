@@ -22,22 +22,11 @@
     SOFTWARE.
 */
 #pragma once
-#include <NovusTypes.h> 
-#include <robin_hood.h>
-#include <vector>
+#include <NovusTypes.h>
+#include "../Message.h"
+#include "Utils/ConcurrentQueue.h"
 
-#include "../PlayerUpdateDataComponent.h"
-
-// Nix: I decided to make a struct for the handler because in the future we will want permissions and potentially other variables for each command.
-typedef bool(*CommandHandler)(std::vector<std::string>, ConnectionComponent&);
-struct CommandEntry
+struct PlayerCreateQueueSingleton
 {
-    CommandEntry() {}
-    CommandEntry(CommandHandler commandHandler) : handler(commandHandler) { }
-    CommandHandler handler;
-};
-struct CommandDataSingleton
-{
-    CommandDataSingleton() : commandMap() { }
-    robin_hood::unordered_map<u32, CommandEntry> commandMap;
+	moodycamel::ConcurrentQueue<Message>* newEntityQueue;
 };

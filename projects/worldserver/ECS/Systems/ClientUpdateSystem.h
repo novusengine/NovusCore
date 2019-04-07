@@ -30,6 +30,7 @@
 #include "../Components/UnitStatusComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
 #include "../Components/Singletons/PlayerUpdatesQueueSingleton.h"
+#include "../Components/Singletons/PlayerPacketQueueSingleton.h"
 
 namespace ClientUpdateSystem
 {
@@ -37,6 +38,7 @@ namespace ClientUpdateSystem
     {
         SingletonComponent& singleton = registry.ctx<SingletonComponent>();
         PlayerUpdatesQueueSingleton& playerUpdatesQueue = registry.ctx<PlayerUpdatesQueueSingleton>();
+        PlayerPacketQueueSingleton& playerPacketQueue = registry.ctx<PlayerPacketQueueSingleton>();
         NovusConnection& novusConnection = *singleton.connection;
 
         auto view = registry.view<ConnectionComponent, PlayerUpdateDataComponent>();
@@ -81,18 +83,14 @@ namespace ClientUpdateSystem
                 novusHeader.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_MESSAGECHAT, chatPacket.data.size());
                 novusConnection.SendPacket(novusHeader.BuildHeaderPacket(chatPacket.data));
             }
-
-            // These packets should already include headers and data.
-            if (clientUpdateData.packetUpdateData.size() != 0)
-            {
-                for (Common::ByteBuffer packet : clientUpdateData.packetUpdateData)
-                {
-                    novusConnection.SendPacket(packet);
-                }
-
-                clientUpdateData.packetUpdateData.clear();
-            }
         });
+
+        // These packets should already include headers and data.
+        Common::ByteBuffer packet;
+        while (playerPacketQueue.packetQueue->try_dequeue(packet))
+        {
+            novusConnection.SendPacket(packet);
+        }
 
         // Clear Queues
         if (playerUpdatesQueue.playerUpdatePacketQueue.size() != 0)

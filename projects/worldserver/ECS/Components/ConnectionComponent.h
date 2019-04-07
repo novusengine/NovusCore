@@ -35,6 +35,7 @@ struct OpcodePacket
 
 struct ConnectionComponent
 {
+    u32 entityGuid;
 	u32 accountGuid;
 	u64 characterGuid;
     std::vector<OpcodePacket> packets;

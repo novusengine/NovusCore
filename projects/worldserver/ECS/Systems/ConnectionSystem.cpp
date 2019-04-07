@@ -9,7 +9,7 @@
 #include "../WorldServerHandler.h"
 
 #include "../Components/Singletons/SingletonComponent.h"
-#include "../Components/Singletons/DeletePlayerQueueSingleton.h"
+#include "../Components/Singletons/PlayerDeleteQueueSingleton.h"
 #include "../Components/Singletons/CharacterDatabaseCacheSingleton.h"
 
 #include <tracy/Tracy.hpp>
@@ -19,13 +19,13 @@ namespace ConnectionSystem
     void Update(entt::registry &registry)
     {
 		SingletonComponent& singleton = registry.ctx<SingletonComponent>();
-        DeletePlayerQueueSingleton& deletePlayerQueue = registry.ctx<DeletePlayerQueueSingleton>();
+        PlayerDeleteQueueSingleton& deletePlayerQueue = registry.ctx<PlayerDeleteQueueSingleton>();
         CharacterDatabaseCacheSingleton& characterDatabase = registry.ctx<CharacterDatabaseCacheSingleton>();
 		NovusConnection& novusConnection = *singleton.connection;
 		WorldServerHandler& worldServerHandler = *singleton.worldServerHandler;
 
 		LockRead(SingletonComponent);
-		LockRead(DeletePlayerQueueSingleton);
+		LockRead(PlayerDeleteQueueSingleton);
 		LockRead(CharacterDatabaseCacheSingleton);
 		LockRead(NovusConnection);
 
@@ -76,8 +76,8 @@ namespace ConnectionSystem
                         novusConnection.SendPacket(logoutRequest);
 
                         ExpiredPlayerData expiredPlayerData;
-                        expiredPlayerData.account = clientConnection.accountGuid;
-                        expiredPlayerData.guid = clientConnection.characterGuid;
+                        expiredPlayerData.entityGuid = clientConnection.entityGuid;
+                        expiredPlayerData.characterGuid = clientConnection.characterGuid;
                         deletePlayerQueue.expiredEntityQueue->enqueue(expiredPlayerData);
 
                         packet.handled = true;
