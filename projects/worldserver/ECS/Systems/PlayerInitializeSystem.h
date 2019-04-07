@@ -6,8 +6,8 @@
 
 #include "../DatabaseCache/CharacterDatabaseCache.h"
 
-#include "../Components/SpellStorageComponent.h"
-#include "../Components/SkillStorageComponent.h"
+#include "../Components/PlayerSpellStorageComponent.h"
+#include "../Components/PlayerSkillStorageComponent.h"
 #include "../Components/PlayerInitializeComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
 #include "../Components/Singletons/CharacterDatabaseCacheSingleton.h"
@@ -20,8 +20,8 @@ namespace PlayerInitializeSystem
         CharacterDatabaseCacheSingleton& characterDatabase = registry.ctx<CharacterDatabaseCacheSingleton>();
         NovusConnection& novusConnection = *singleton.connection;
 
-        auto view = registry.view<PlayerInitializeComponent, PlayerUpdateDataComponent, PositionComponent, SpellStorageComponent, SkillStorageComponent>();
-        view.each([&characterDatabase, &novusConnection](const auto, PlayerInitializeComponent& clientInitializeData, PlayerUpdateDataComponent& clientUpdateData, PositionComponent& clientPositionData, SpellStorageComponent& spellStorageData, SkillStorageComponent& skillStorageData)
+        auto view = registry.view<PlayerInitializeComponent, PlayerUpdateDataComponent, PlayerPositionComponent, PlayerSpellStorageComponent, PlayerSkillStorageComponent>();
+        view.each([&characterDatabase, &novusConnection](const auto, PlayerInitializeComponent& clientInitializeData, PlayerUpdateDataComponent& clientUpdateData, PlayerPositionComponent& clientPositionData, PlayerSpellStorageComponent& spellStorageData, PlayerSkillStorageComponent& skillStorageData)
         {
             /* Load Cached Data for character */
             std::vector<CharacterSpellStorage> characterSpellStorage;

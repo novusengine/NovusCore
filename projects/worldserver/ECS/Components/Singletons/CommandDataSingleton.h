@@ -29,7 +29,7 @@
 #include "../PlayerUpdateDataComponent.h"
 
 // Nix: I decided to make a struct for the handler because in the future we will want permissions and potentially other variables for each command.
-typedef bool(*CommandHandler)(std::vector<std::string>, ConnectionComponent&);
+typedef bool(*CommandHandler)(std::vector<std::string>, PlayerConnectionComponent&);
 struct CommandEntry
 {
     CommandEntry() {}

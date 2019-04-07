@@ -24,15 +24,23 @@
 */
 #include <NovusTypes.h>
 #include <vector>
+#include <Networking/ByteBuffer.h>
 
-struct skillData
+#define MAX_MOVEMENT_OPCODES 27
+struct PlayerPositionComponent 
 {
-    u16 id;
-    u16 value;
-    u16 maxValue;
-};
+	u32 mapId;
+	f32 x;
+	f32 y;
+	f32 z;
+	f32 orientation;
 
-struct SkillStorageComponent
-{
-    std::vector<skillData> skills;
+    f32 safe_x;
+    f32 safe_y;
+    f32 safe_z;
+    f32 safe_orientation;
+
+    f32 maxDistanceToMove;
+    u32 lastMovementOpcodeTime[MAX_MOVEMENT_OPCODES];
+    std::vector<PositionUpdateData> positionUpdateData;
 };

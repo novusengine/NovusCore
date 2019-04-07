@@ -26,7 +26,7 @@
 #include <entt.hpp>
 
 #include "../NovusEnums.h"
-#include "../Components/PositionComponent.h"
+#include "../Components/PlayerPositionComponent.h"
 #include "../Components/UnitStatusComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
 #include "../Components/Singletons/PlayerUpdatesQueueSingleton.h"
@@ -41,8 +41,8 @@ namespace ClientUpdateSystem
         PlayerPacketQueueSingleton& playerPacketQueue = registry.ctx<PlayerPacketQueueSingleton>();
         NovusConnection& novusConnection = *singleton.connection;
 
-        auto view = registry.view<ConnectionComponent, PlayerUpdateDataComponent>();
-        view.each([&novusConnection, playerUpdatesQueue](const auto, ConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData)
+        auto view = registry.view<PlayerConnectionComponent, PlayerUpdateDataComponent>();
+        view.each([&novusConnection, playerUpdatesQueue](const auto, PlayerConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData)
         {
             NovusHeader novusHeader;
             for (PlayerUpdatePacket playerUpdatePacket : playerUpdatesQueue.playerUpdatePacketQueue)

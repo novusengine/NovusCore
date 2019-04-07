@@ -29,12 +29,12 @@ namespace ConnectionSystem
 		LockRead(CharacterDatabaseCacheSingleton);
 		LockRead(NovusConnection);
 
-		LockWrite(ConnectionComponent);
+		LockWrite(PlayerConnectionComponent);
 		LockWrite(PlayerUpdateDataComponent);
-		LockWrite(PositionComponent);
+		LockWrite(PlayerPositionComponent);
 	
-        auto view = registry.view<ConnectionComponent, PlayerUpdateDataComponent, PositionComponent>();
-        view.each([&singleton, &deletePlayerQueue, &characterDatabase, &novusConnection, &worldServerHandler](const auto, ConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData, PositionComponent& clientPositionData)
+        auto view = registry.view<PlayerConnectionComponent, PlayerUpdateDataComponent, PlayerPositionComponent>();
+        view.each([&singleton, &deletePlayerQueue, &characterDatabase, &novusConnection, &worldServerHandler](const auto, PlayerConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData, PlayerPositionComponent& clientPositionData)
         {
 			ZoneScopedNC("Connection", tracy::Color::Orange2)
 

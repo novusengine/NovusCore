@@ -27,7 +27,7 @@
 #include <entt.hpp>
 
 #include "../NovusEnums.h"
-#include "../Components/ConnectionComponent.h"
+#include "../Components/PlayerConnectionComponent.h"
 #include "../Components/PlayerUpdateDataComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
 #include "../Components/Singletons/CommandDataSingleton.h"
@@ -49,8 +49,8 @@ namespace CommandParserSystem
         CommandDataSingleton& commandData = registry.ctx<CommandDataSingleton>();
         NovusConnection& novusConnection = *singleton.connection;
 
-        auto view = registry.view<ConnectionComponent, PlayerUpdateDataComponent>();
-        view.each([&singleton, &commandData, &novusConnection](const auto, ConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData)
+        auto view = registry.view<PlayerConnectionComponent, PlayerUpdateDataComponent>();
+        view.each([&singleton, &commandData, &novusConnection](const auto, PlayerConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData)
         {
             for (ChatUpdateData& command : clientUpdateData.chatUpdateData)
             {

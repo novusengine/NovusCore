@@ -30,10 +30,10 @@
 #include "../DatabaseCache/CharacterDatabaseCache.h"
 
 #include "../Connections/NovusConnection.h"
-#include "../Components/ConnectionComponent.h"
-#include "../Components/PositionComponent.h"
-#include "../Components/SpellStorageComponent.h"
-#include "../Components/SkillStorageComponent.h"
+#include "../Components/PlayerConnectionComponent.h"
+#include "../Components/PlayerPositionComponent.h"
+#include "../Components/PlayerSpellStorageComponent.h"
+#include "../Components/PlayerSkillStorageComponent.h"
 #include "../Components/PlayerInitializeComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
 #include "../Components/Singletons/PlayerCreateQueueSingleton.h"
@@ -57,16 +57,16 @@ namespace CreatePlayerSystem
             if (characterDatabase.cache->GetCharacterData(playerGuid, characterData))
             {
                 u32 entity = registry.create();
-                registry.assign<ConnectionComponent>(entity, entity, u32(message.account), playerGuid);
+                registry.assign<PlayerConnectionComponent>(entity, entity, u32(message.account), playerGuid);
                 registry.assign<PlayerInitializeComponent>(entity, u32(message.account), playerGuid);
 
                 // -8949.950195f, -132.492996f, 83.531197f, 0.f
                 registry.assign<PlayerUpdateDataComponent>(entity);
                 /* 8.53332f is the amount of yards a player can move over a duration of 1.2 seconds with base speed,
                 this should be updated in the future to include the player's actual speed upon login, such as the player being mounted up from a previous session */
-                registry.assign<PositionComponent>(entity, characterData.mapId, characterData.coordinateX, characterData.coordinateY, characterData.coordinateZ, characterData.orientation, characterData.coordinateX, characterData.coordinateY, characterData.coordinateZ, characterData.orientation, 8.53332f);
-                registry.assign<SpellStorageComponent>(entity);
-                registry.assign<SkillStorageComponent>(entity);
+                registry.assign<PlayerPositionComponent>(entity, characterData.mapId, characterData.coordinateX, characterData.coordinateY, characterData.coordinateZ, characterData.orientation, characterData.coordinateX, characterData.coordinateY, characterData.coordinateZ, characterData.orientation, 8.53332f);
+                registry.assign<PlayerSpellStorageComponent>(entity);
+                registry.assign<PlayerSkillStorageComponent>(entity);
 
                 singleton.accountToEntityMap[u32(message.account)] = entity;
             }

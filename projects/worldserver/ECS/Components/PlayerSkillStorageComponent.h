@@ -1,3 +1,4 @@
+#pragma once
 /*
     MIT License
 
@@ -21,22 +22,17 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
 */
-#pragma once
 #include <NovusTypes.h>
-#include <Networking/ByteBuffer.h>
 #include <vector>
 
-struct OpcodePacket
+struct skillData
 {
-    u16 opcode;
-    bool handled;
-    Common::ByteBuffer data;
+    u16 id;
+    u16 value;
+    u16 maxValue;
 };
 
-struct ConnectionComponent
+struct PlayerSkillStorageComponent
 {
-    u32 entityGuid;
-	u32 accountGuid;
-	u64 characterGuid;
-    std::vector<OpcodePacket> packets;
+    std::vector<skillData> skills;
 };

@@ -29,7 +29,7 @@
 #include "../NovusEnums.h"
 
 #include "../Connections/NovusConnection.h"
-#include "../Components/ConnectionComponent.h"
+#include "../Components/PlayerConnectionComponent.h"
 #include "../Components/PlayerUpdateDataComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
 #include "../Components/Singletons/PlayerUpdatesQueueSingleton.h"
@@ -209,8 +209,8 @@ namespace PlayerUpdateDataSystem
         PlayerUpdatesQueueSingleton& playerUpdatesQueue = registry.ctx<PlayerUpdatesQueueSingleton>();
 		NovusConnection& novusConnection = *singleton.connection;
 
-        auto view = registry.view<ConnectionComponent, PlayerUpdateDataComponent, PositionComponent>();
-        view.each([&novusConnection, &playerUpdatesQueue](const auto, ConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData, PositionComponent& clientPositionData)
+        auto view = registry.view<PlayerConnectionComponent, PlayerUpdateDataComponent, PlayerPositionComponent>();
+        view.each([&novusConnection, &playerUpdatesQueue](const auto, PlayerConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData, PlayerPositionComponent& clientPositionData)
         {
 			ZoneScopedNC("Connection", tracy::Color::Yellow2)
             /* Only Build Packet if any fields were changed */

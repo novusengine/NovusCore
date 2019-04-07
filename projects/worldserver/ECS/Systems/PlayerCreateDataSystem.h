@@ -31,8 +31,8 @@
 #include "../Utils/UpdateMask.h"
 
 #include "../Connections/NovusConnection.h"
-#include "../Components/ConnectionComponent.h"
-#include "../Components/PositionComponent.h"
+#include "../Components/PlayerConnectionComponent.h"
+#include "../Components/PlayerPositionComponent.h"
 #include "../Components/PlayerInitializeComponent.h"
 #include "../Components/PlayerUpdateDataComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
@@ -40,7 +40,7 @@
 
 namespace PlayerCreateDataSystem
 {
-    Common::ByteBuffer BuildPlayerCreateData(u64 playerGuid, u8 updateType, u16 updateFlags, u32 visibleFlags, u32 lifeTimeInMS, PlayerUpdateDataComponent& playerUpdateData, PositionComponent position, u16& opcode)
+    Common::ByteBuffer BuildPlayerCreateData(u64 playerGuid, u8 updateType, u16 updateFlags, u32 visibleFlags, u32 lifeTimeInMS, PlayerUpdateDataComponent& playerUpdateData, PlayerPositionComponent position, u16& opcode)
     {
         Common::ByteBuffer buffer(500);
         buffer.Write<u8>(updateType);
@@ -242,7 +242,7 @@ namespace PlayerCreateDataSystem
 
     void Update(entt::registry &registry)
     {
-        auto view = registry.view<PlayerInitializeComponent, PlayerUpdateDataComponent, PositionComponent>();
+        auto view = registry.view<PlayerInitializeComponent, PlayerUpdateDataComponent, PlayerPositionComponent>();
         if (!view.empty())
         {
             SingletonComponent& singleton = registry.ctx<SingletonComponent>();
@@ -250,8 +250,8 @@ namespace PlayerCreateDataSystem
             NovusConnection& novusConnection = *singleton.connection;
             u32 lifeTimeInMS = u32(singleton.lifeTimeInMS);
 
-            auto subView = registry.view<ConnectionComponent, PlayerUpdateDataComponent, PositionComponent>();
-            view.each([&novusConnection, &playerUpdatesQueue, lifeTimeInMS, subView](const auto, PlayerInitializeComponent& clientInitializeData, PlayerUpdateDataComponent& clientUpdateData, PositionComponent& clientPositionData)
+            auto subView = registry.view<PlayerConnectionComponent, PlayerUpdateDataComponent, PlayerPositionComponent>();
+            view.each([&novusConnection, &playerUpdatesQueue, lifeTimeInMS, subView](const auto, PlayerInitializeComponent& clientInitializeData, PlayerUpdateDataComponent& clientUpdateData, PlayerPositionComponent& clientPositionData)
             {
                 /* Build Self Packet, must be sent immediately */
                 u8 updateType = UPDATETYPE_CREATE_OBJECT2;
@@ -275,7 +275,7 @@ namespace PlayerCreateDataSystem
                 playerUpdatePacket.opcode = buildOpcode;
                 playerUpdatesQueue.playerUpdatePacketQueue.push_back(playerUpdatePacket);
 
-                subView.each([&novusConnection, &playerUpdatesQueue, &clientInitializeData, lifeTimeInMS](const auto, ConnectionComponent& connection, PlayerUpdateDataComponent& updateData, PositionComponent& positionData)
+                subView.each([&novusConnection, &playerUpdatesQueue, &clientInitializeData, lifeTimeInMS](const auto, PlayerConnectionComponent& connection, PlayerUpdateDataComponent& updateData, PlayerPositionComponent& positionData)
                 {
                     if (clientInitializeData.characterGuid != connection.characterGuid)
                     {

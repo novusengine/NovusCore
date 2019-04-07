@@ -1,7 +1,7 @@
 #pragma once
 #include <NovusTypes.h>
 #include <Utils/StringHash.h>
-#include <../ECS/Components/ConnectionComponent.h>
+#include <../ECS/Components/PlayerConnectionComponent.h>
 #include <../ECS/Components/Singletons/CommandDataSingleton.h>
 #include <../ECS/Components/Singletons/PlayerPacketQueueSingleton.h>
 
@@ -10,7 +10,7 @@ namespace Commands_Character
     static robin_hood::unordered_map<u32, CommandEntry> characterCommandMap;
     static entt::registry* _registry = nullptr;
     
-    bool _Level(std::vector<std::string> commandStrings, ConnectionComponent& clientConnection)
+    bool _Level(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
     {
         if (commandStrings.size() >= 3)
         {
@@ -54,7 +54,7 @@ namespace Commands_Character
 
         return true;
     }
-    bool _Speed(std::vector<std::string> commandStrings, ConnectionComponent& clientConnection)
+    bool _Speed(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
     {
         if (commandStrings.size() >= 3)
         {
@@ -98,7 +98,7 @@ namespace Commands_Character
 
         return false;
     }
-    bool _Fly(std::vector<std::string> commandStrings, ConnectionComponent& clientConnection)
+    bool _Fly(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
     {
         if (commandStrings.size() >= 3)
         {
@@ -120,7 +120,7 @@ namespace Commands_Character
 
         return false;
     }
-    bool _Tele(std::vector<std::string> commandStrings, ConnectionComponent& clientConnection)
+    bool _Tele(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
     {
         if (commandStrings.size() >= 5)
         {
@@ -133,7 +133,7 @@ namespace Commands_Character
                 SingletonComponent& singletonData = _registry->ctx<SingletonComponent>();
                 PlayerPacketQueueSingleton& playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
                 PlayerUpdateDataComponent& clientUpdateData = _registry->get<PlayerUpdateDataComponent>(clientConnection.entityGuid);
-                PositionComponent& clientPositionData = _registry->get<PositionComponent>(clientConnection.entityGuid);
+                PlayerPositionComponent& clientPositionData = _registry->get<PlayerPositionComponent>(clientConnection.entityGuid);
 
                 Common::ByteBuffer buffer;
                 buffer.AppendGuid(clientConnection.characterGuid);
@@ -162,7 +162,7 @@ namespace Commands_Character
 
         return false;
     }
-    bool _TeleToMap(std::vector<std::string> commandStrings, ConnectionComponent& clientConnection)
+    bool _TeleToMap(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
     {
         /*if (commandStrings.size() >= 6)
         {
@@ -198,7 +198,7 @@ namespace Commands_Character
         return false;
     }
 
-    bool CharacterCommand(std::vector<std::string> commandStrings, ConnectionComponent& clientConnection)
+    bool CharacterCommand(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
     {
         std::string subCommand = commandStrings[1];
 

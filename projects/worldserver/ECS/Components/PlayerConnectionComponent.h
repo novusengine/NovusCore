@@ -1,4 +1,3 @@
-#pragma once
 /*
     MIT License
 
@@ -22,25 +21,22 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
 */
+#pragma once
 #include <NovusTypes.h>
-#include <vector>
 #include <Networking/ByteBuffer.h>
+#include <vector>
 
-#define MAX_MOVEMENT_OPCODES 27
-struct PositionComponent 
+struct OpcodePacket
 {
-	u32 mapId;
-	f32 x;
-	f32 y;
-	f32 z;
-	f32 orientation;
+    u16 opcode;
+    bool handled;
+    Common::ByteBuffer data;
+};
 
-    f32 safe_x;
-    f32 safe_y;
-    f32 safe_z;
-    f32 safe_orientation;
-
-    f32 maxDistanceToMove;
-    u32 lastMovementOpcodeTime[MAX_MOVEMENT_OPCODES];
-    std::vector<PositionUpdateData> positionUpdateData;
+struct PlayerConnectionComponent
+{
+    u32 entityGuid;
+	u32 accountGuid;
+	u64 characterGuid;
+    std::vector<OpcodePacket> packets;
 };

@@ -199,7 +199,7 @@ bool WorldServerHandler::Update()
                     auto itr = singletonComponent.accountToEntityMap.find(u32(message.account));
                     if (itr != singletonComponent.accountToEntityMap.end())
                     {
-                        ConnectionComponent& connection = _updateFramework.registry.get<ConnectionComponent>(itr->second);
+                        PlayerConnectionComponent& connection = _updateFramework.registry.get<PlayerConnectionComponent>(itr->second);
                         connection.packets.push_back({ u32(message.opcode), false, message.packet });
                     }
                 }

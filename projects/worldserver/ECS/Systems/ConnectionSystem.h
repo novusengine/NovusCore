@@ -26,9 +26,9 @@
 #include <NovusTypes.h>
 
 #include "../Connections/NovusConnection.h"
-#include "../Components/ConnectionComponent.h"
+#include "../Components/PlayerConnectionComponent.h"
 #include "../Components/PlayerUpdateDataComponent.h"
-#include "../Components/PositionComponent.h"
+#include "../Components/PlayerPositionComponent.h"
 
 namespace ConnectionSystem
 {

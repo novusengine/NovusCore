@@ -29,7 +29,7 @@
 #include "../Message.h"
 
 #include "../Connections/NovusConnection.h"
-#include "../Components/ConnectionComponent.h"
+#include "../Components/PlayerConnectionComponent.h"
 #include "../Components/PlayerUpdateDataComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
 #include "../Components/Singletons/PlayerDeleteQueueSingleton.h"
@@ -59,8 +59,8 @@ namespace DeletePlayerSystem
             u16 buildOpcode = 0;
             updateData.Build(buildPacket, buildOpcode);
 
-            auto view = registry.view<ConnectionComponent, PlayerUpdateDataComponent>();
-            view.each([&novusConnection, &buildPacket, &deletedEntities, buildOpcode](const auto, ConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData)
+            auto view = registry.view<PlayerConnectionComponent, PlayerUpdateDataComponent>();
+            view.each([&novusConnection, &buildPacket, &deletedEntities, buildOpcode](const auto, PlayerConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData)
             {
                 NovusHeader novusHeader;
                 novusHeader.CreateForwardHeader(clientConnection.accountGuid, buildOpcode, buildPacket.GetActualSize());
