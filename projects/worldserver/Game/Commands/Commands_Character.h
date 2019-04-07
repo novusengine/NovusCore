@@ -115,6 +115,78 @@ namespace Commands_Character
 
         return false;
     }
+    bool _Tele(std::vector<std::string> commandStrings, ConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData)
+    {
+        if (commandStrings.size() >= 5)
+        {
+            try
+            {
+                f32 x = std::stof(commandStrings[2]);
+                f32 y = std::stof(commandStrings[3]);
+                f32 z = std::stof(commandStrings[4]);
+
+                Common::ByteBuffer buffer;
+                buffer.AppendGuid(clientConnection.characterGuid);
+                buffer.Write<u32>(0); // Teleport Count
+
+                /* Movement */
+                buffer.Write<u32>(0);
+                buffer.Write<u16>(0);
+                buffer.Write<u32>(0);
+
+                buffer.Write<f32>(x);
+                buffer.Write<f32>(y);
+                buffer.Write<f32>(z);
+                buffer.Write<f32>(0);
+
+                buffer.Write<u32>(0);
+
+                NovusHeader header;
+                header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::MSG_MOVE_TELEPORT_ACK, buffer.GetActualSize());
+                clientUpdateData.packetUpdateData.push_back(header.BuildHeaderPacket(buffer));
+
+                return true;
+            }
+            catch (std::exception) {}
+        }
+
+        return false;
+    }
+    bool _TeleToMap(std::vector<std::string> commandStrings, ConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData)
+    {
+        if (commandStrings.size() >= 6)
+        {
+            try
+            {
+                u32 mapId = std::stoi(commandStrings[2]);
+                f32 x = std::stof(commandStrings[3]);
+                f32 y = std::stof(commandStrings[4]);
+                f32 z = std::stof(commandStrings[5]);
+
+                NovusHeader header;
+                Common::ByteBuffer transfer;
+                transfer.Write<u32>(mapId);
+
+                header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_TRANSFER_PENDING, transfer.GetActualSize());
+                clientUpdateData.packetUpdateData.push_back(header.BuildHeaderPacket(transfer));
+
+                Common::ByteBuffer newWorld;
+                newWorld.Write<u32>(mapId);
+                newWorld.Write<f32>(x);
+                newWorld.Write<f32>(y);
+                newWorld.Write<f32>(z);
+                newWorld.Write<f32>(0);
+
+                header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_NEW_WORLD, newWorld.GetActualSize());
+                clientUpdateData.packetUpdateData.push_back(header.BuildHeaderPacket(newWorld));
+
+                return true;
+            }
+            catch (std::exception) {}
+        }
+
+        return false;
+    }
 
     bool CharacterCommand(std::vector<std::string> commandStrings, ConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData)
     {
@@ -136,5 +208,7 @@ namespace Commands_Character
         characterCommandMap["level"_h] = CommandEntry(_Level);
         characterCommandMap["speed"_h] = CommandEntry(_Speed);
         characterCommandMap["fly"_h] = CommandEntry(_Fly);
+        characterCommandMap["tele"_h] = CommandEntry(_Tele);
+        characterCommandMap["teletomap"_h] = CommandEntry(_TeleToMap);
     }
 }
