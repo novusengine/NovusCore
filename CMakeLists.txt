@@ -20,8 +20,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# CMake >= 3.1
-cmake_minimum_required(VERSION 3.1)
+# CMake >= 3.12
+cmake_minimum_required(VERSION 3.12)
 
 # add this options before PROJECT keyword
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
