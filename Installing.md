@@ -40,7 +40,7 @@ I recommend getting [Visual Studio Community Edition](https://visualstudio.micro
 	D. Press Generate. This will generate the project files.
 	
 If everything has gone right the Open Project button should be clickable and CMake should look something like this:
-![alt text](https://i.imgur.com/kIR1b3A.png "CMake Result")
+![alt text](https://i.imgur.com/7xNTjHe.png "CMake Result")
 
 3. Open the Project. Either by pressing Open Project in CMake or by navigating to the folder and opening the relevant project file (NovusCore.sln if using Visual Studio for other IDEs the file should have the same name but a different file ending).
 
@@ -56,4 +56,20 @@ There you will find 4 exe files.
 Copy those to an empty folder from which you want to run the server.
 
 ## Step 3 Setting up the database.
+By now you should have a MySQL server set up.
+
+**NovusCore requires 4 databases**
+1. Authserver
+(For account data such as username and password)
+2. Characterserver
+(For Character data such as names, class, level, etc)
+3. Worldserver
+(Empty right now)
+4. DBCData
+(Empty right now)
+
+The Authserver, Characterserver and Worldserver currently have template SQL files in [*Resources/Database Files/Templates*](https://github.com/novuscore/NovusCore/tree/master/resources/Database%20Files/Templates) which was included in the downloaded source. To run these files you can use a MySQL client like [HeidiSQL](https://www.heidisql.com/download.php) or [MySQL Workbench](https://www.mysql.com/products/workbench/). 
+
+DBCData is currently unused and you only need to create a new empty database called "DBCData" to satisfy the servers. *Note that this may change in the future*
+
 
