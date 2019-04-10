@@ -31,22 +31,6 @@ PreparedStatement& PreparedStatement::Bind(std::string value)
 	return *this;
 }
 
-PreparedStatement& PreparedStatement::Bind(u32 value)
-{
-    size_t replacePos = _statement.find("{u}");
-
-    if (replacePos != std::string::npos)
-    {
-        _statement.replace(replacePos, 3, std::to_string(value));
-    }
-    else
-    {
-        std::cout << "Error: Could not find token {u} in statement: " << _statement << std::endl;
-        assert(false);
-    }
-
-    return *this;
-}
 PreparedStatement& PreparedStatement::Bind(u8 value)
 {
     size_t replacePos = _statement.find("{u}");
@@ -63,7 +47,8 @@ PreparedStatement& PreparedStatement::Bind(u8 value)
 
     return *this;
 }
-PreparedStatement& PreparedStatement::Bind(u64 value)
+
+PreparedStatement& PreparedStatement::Bind(u16 value)
 {
     size_t replacePos = _statement.find("{u}");
 
@@ -74,6 +59,23 @@ PreparedStatement& PreparedStatement::Bind(u64 value)
     else
     {
         std::cout << "Error: Could not find token {u} in statement: " << _statement << std::endl;
+        assert(false);
+    }
+
+    return *this;
+}
+
+PreparedStatement& PreparedStatement::Bind(i16 value)
+{
+    size_t replacePos = _statement.find("{i}");
+
+    if (replacePos != std::string::npos)
+    {
+        _statement.replace(replacePos, 3, std::to_string(value));
+    }
+    else
+    {
+        std::cout << "Error: Could not find token {i} in statement: " << _statement << std::endl;
         assert(false);
     }
 
@@ -95,6 +97,23 @@ PreparedStatement& PreparedStatement::Bind(i32 value)
 	}
 
 	return *this;
+}
+
+PreparedStatement& PreparedStatement::Bind(u32 value)
+{
+    size_t replacePos = _statement.find("{u}");
+
+    if (replacePos != std::string::npos)
+    {
+        _statement.replace(replacePos, 3, std::to_string(value));
+    }
+    else
+    {
+        std::cout << "Error: Could not find token {u} in statement: " << _statement << std::endl;
+        assert(false);
+    }
+
+    return *this;
 }
 
 PreparedStatement& PreparedStatement::Bind(f32 value)
@@ -129,6 +148,23 @@ PreparedStatement& PreparedStatement::Bind(f64 value)
 	}
 
 	return *this;
+}
+
+PreparedStatement& PreparedStatement::Bind(u64 value)
+{
+    size_t replacePos = _statement.find("{u}");
+
+    if (replacePos != std::string::npos)
+    {
+        _statement.replace(replacePos, 3, std::to_string(value));
+    }
+    else
+    {
+        std::cout << "Error: Could not find token {u} in statement: " << _statement << std::endl;
+        assert(false);
+    }
+
+    return *this;
 }
 
 bool PreparedStatement::Verify()

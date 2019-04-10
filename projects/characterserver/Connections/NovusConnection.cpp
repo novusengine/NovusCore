@@ -417,7 +417,7 @@ bool NovusConnection::HandleCommandForwardPacket()
                     return;
                 }
 
-                PreparedStatement characterBaseData("INSERT INTO characters(account, name, race, gender, class, mapId, zoneId, coordinate_x, coordinate_y, coordinate_z, orientation) VALUES({u}, {s}, {u}, {u}, {u}, {i}, {i}, {f}, {f}, {f}, {f});");
+                PreparedStatement characterBaseData("INSERT INTO characters(account, name, race, gender, class, mapId, zoneId, coordinate_x, coordinate_y, coordinate_z, orientation) VALUES({u}, {s}, {u}, {u}, {u}, {u}, {u}, {f}, {f}, {f}, {f});");
                 characterBaseData.Bind(header->account);
                 characterBaseData.Bind(createData->charName);
                 characterBaseData.Bind(createData->charRace);

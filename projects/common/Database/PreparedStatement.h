@@ -38,8 +38,10 @@ class PreparedStatement
 public:
 	PreparedStatement(std::string statement);
 
+    PreparedStatement& Bind(std::string value);
     PreparedStatement& Bind(u8 value);
-	PreparedStatement& Bind(std::string value);
+    PreparedStatement& Bind(u16 value);
+    PreparedStatement& Bind(i16 value);
     PreparedStatement& Bind(u32 value);
 	PreparedStatement& Bind(i32 value);
 	PreparedStatement& Bind(f32 value);
