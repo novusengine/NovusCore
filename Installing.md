@@ -19,7 +19,7 @@
 [MySQL Community Server 8.0.15](https://dev.mysql.com/downloads/mysql/)
 
 **To build the Server from source you will need a way to compile.**
-I recommend getting [Visual Studio Community Edition](https://visualstudio.microsoft.com/) but any IDE supported by CMake should work so use whichever you are comfortable with.
+I recommend getting [Visual Studio Community Edition](https://visualstudio.microsoft.com/) but any IDE supported by CMake should work so use whichever you are prefer.
 
 ## Part 2: Building the Server from source.
 
@@ -31,12 +31,12 @@ I recommend getting [Visual Studio Community Edition](https://visualstudio.micro
   
 	B. Where to build the binaries is the folder where the generated project files will be.
   
-	C. Press Configure. It will ask you to select a generator. Choose your IDE, "Use default native compiler" and then finish.
+	C. Press Configure. It will ask you to select a generator. Choose your IDE, Select x64 as the platform, "Use default native compiler" and then finish.
 	
 	D. Press Generate. This will generate the project files.
 	
 If everything has gone right the Open Project button should be clickable and CMake should look something like this:
-![alt text](https://i.imgur.com/7xNTjHe.png "CMake Result")
+![alt text](https://i.imgur.com/5akkUtr.png "CMake Result")
 
 3. Open the Project. Either by pressing Open Project in CMake or by navigating to the folder and opening the relevant project file (NovusCore.sln if using Visual Studio for other IDEs the file should have the same name but a different file ending).
 
@@ -49,10 +49,12 @@ There you will find 4 exe files.
 - *Relayserver.exe*
 - *Characterserver.exe*
 - *Worldserver.exe*
-These will be used to launch the server.
 
+![alt text](https://i.imgur.com/wWaK98L.png "Exe files")
+
+These will be used to launch the server.
 ## Part 3 Setting up the database.
-By now you should have a MySQL server set up.
+By now you need to have an MySQL server set up.
 
 **NovusCore uses 4 databases**
 1. Authserver
@@ -64,7 +66,9 @@ By now you should have a MySQL server set up.
 4. DBCData
 (Empty right now)
 
-There are template files for these databases in [*Resources/Database Files/Templates*](https://github.com/novuscore/NovusCore/tree/master/resources/Database%20Files/Templates) which was included in the downloaded source. 
+There are template files for these databases in [*Resources/Database Files/Templates*](https://github.com/novuscore/NovusCore/tree/master/resources/Database%20Files/Templates) which was included in the downloaded source.
+
+![alt text](https://i.imgur.com/dehUFcs.png "Template Files")
 
 To run these files you can use a MySQL client like [HeidiSQL](https://www.heidisql.com/download.php) or [MySQL Workbench](https://www.mysql.com/products/workbench/) **or** run the following command from the commandline:
 
@@ -79,8 +83,8 @@ For example it should look something like his:
 That's all you need to do for the database set up.
 ## Part 4 Map and DBC Data
 
-***TODO As of writing this there is no way to actually set this up by yourself...***
--. 
+***TODO As of writing this there is no way to actually set this up by yourself BUT the server also doesn't require either (at the time of writing) so it should be fine anyway. Ignore the step in Part 5 where you are told to copy the map data***
+ 
 ## Part 5 Finishing up
 Now you should have the executables built, database set up and prerequisites installed. Now you only need to put it all together.
 
@@ -88,11 +92,12 @@ Now you should have the executables built, database set up and prerequisites ins
 2. Copy the 4 exe files that you built in part 2 from the *build folder* (Should be inside of where you put the sourcecode)
 3. Copy the Configuration Templates from *Resources/Configuration Templates* to the server folder you created.
 4. Edit *database_configuration.json* and put in the IP, Username & password for your MySQL database in each field.
-5. Go to where you installed the MySQL connector and into *lib* folder. From there copy *libmysql.dll* into your server folder.
+5. Go to where you installed the MySQL connector and into the *lib* folder. From there copy *libmysql.dll* into your server folder.
 6. Go to where you installed OpenSSL and copy *libeay32.dll* to your server folder.
 7. Copy the map data created in *Part 4* into a new folder inside of your server folder called *maps*
 
-***TODO Image showing final server folder***
+![alt text](https://i.imgur.com/XnwK2tq.png "Final server folder")
+*The final server folder should look something like this.*
 
 Now everything is ready for the last step...
 
@@ -125,5 +130,3 @@ This server handles the world. Everything from NPCs to walking around happens on
 Now you should have a working\* NovusCore server running and ready to be played on!
 
 \**Note: By working we are not saying that every feature has been fully or at all implemented.*
-
-***TODO Image showing all 4 servers up and running***
