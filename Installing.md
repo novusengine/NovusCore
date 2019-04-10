@@ -97,7 +97,6 @@ Now you should have the executables built, database set up and prerequisites ins
 7. Copy the map data created in *Part 4* into a new folder inside of your server folder called *maps*
 
 ![alt text](https://i.imgur.com/XnwK2tq.png "Final server folder")
-*The final server folder should look something like this.*
 
 Now everything is ready for the last step...
 
