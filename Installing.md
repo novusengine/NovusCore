@@ -23,11 +23,7 @@ I recommend getting [Visual Studio Community Edition](https://visualstudio.micro
 
 ## Part 2: Building the Server from source.
 
-1.Clone the NovusCore repository from Github using git or a program like Github Desktop. (Recommended as it is easier to update in the future)
-
-	*OR* 
-	
-	Download the NovusCore repository from Github as a zip file and extract it.
+1.Clone the NovusCore repository from Github using git or a program like Github Desktop (Recommended as it is easier to update in the future) **OR** Download the NovusCore repository from Github as a zip file and extract it.
 
 2. Open CMake.
 
@@ -60,7 +56,7 @@ By now you should have a MySQL server set up.
 
 **NovusCore uses 4 databases**
 1. Authserver
-(For account data such as username and password)
+(For account data such as username)
 2. Characterserver
 (For Character data such as names, class, level, etc)
 3. Worldserver
@@ -81,10 +77,10 @@ For example it should look something like his:
 ```mysql -h127.0.0.1 -u root -proot < authserver.sql```
 
 That's all you need to do for the database set up.
-## Part 4 Map Data
+## Part 4 Map and DBC Data
 
-*TODO*
-
+***TODO As of writing this there is no way to actually set this up by yourself...***
+-. 
 ## Part 5 Finishing up
 Now you should have the executables built, database set up and prerequisites installed. Now you only need to put it all together.
 
@@ -92,10 +88,13 @@ Now you should have the executables built, database set up and prerequisites ins
 2. Copy the 4 exe files that you built in part 2 from the *build folder* (Should be inside of where you put the sourcecode)
 3. Copy the Configuration Templates from *Resources/Configuration Templates* to the server folder you created.
 4. Edit *database_configuration.json* and put in the IP, Username & password for your MySQL database in each field.
-5. Go to where you installed the MySQL connector and *lib* folder. From there copy *libmysql.dll* into your server folder.
+5. Go to where you installed the MySQL connector and into *lib* folder. From there copy *libmysql.dll* into your server folder.
 6. Go to where you installed OpenSSL and copy *libeay32.dll* to your server folder.
+7. Copy the map data created in *Part 4* into a new folder inside of your server folder called *maps*
 
-And those are the last preparations needed to be done.
+***TODO Image showing final server folder***
+
+Now everything is ready for the last step...
 
 ## Part 6 Starting the Server
 Some useful information to know before starting the server(s):
@@ -117,4 +116,14 @@ This server handles the world. Everything from NPCs to walking around happens on
 1. The Relay server needs the Authentication server to work correctly.
 2. All servers except the authentication server rely on the Relay server to work correctly.
 
-So to start up the server ***first*** start the Authentication server and ***secondly*** the Relay server and after that the rest of them.
+**The start order which you need to follow is then:**
+1. Auth Server
+2. Relay Server
+3. Character Server & World Server
+*If you don't launch the servers in this order there will be problems.*
+
+Now you should have a working\* NovusCore server running and ready to be played on!
+
+\**Note: By working we are not saying that every feature has been fully or at all implemented.*
+
+***TODO Image showing all 4 servers up and running***
