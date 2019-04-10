@@ -7,7 +7,7 @@
 [CMake 3.12 or newer](https://cmake.org/download/)
 (Required for building from source)
 
-[OpenSSL 1.0.2q/r](http://slproweb.com/products/Win32OpenSSL.html)
+[OpenSSL 1.0.x](http://slproweb.com/products/Win32OpenSSL.html)
 (1.1 is not supported)
 
 [MySQL C Connector 6.0 (libmysqlcclient) or newer](https://dev.mysql.com/downloads/connector/c/)
