@@ -42,7 +42,7 @@ If everything has gone right the Open Project button should be clickable and CMa
 
 4. Build the project using your chosen IDE. (In Visual Studio this is done by pressing Build -> Build Solution or pressing F6)
 
-Building the project might take a bit of time depending on your set up but once it is done the output .exe files should be found by the source code inside of the *build* folder.
+Building the project might take a bit of time depending on your set up. Once it's done building the output should be found by the source code inside of the *build* folder.
 
 There you will find 4 exe files.
 - *Authserver.exe*
