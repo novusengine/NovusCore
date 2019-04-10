@@ -40,9 +40,7 @@ struct CharacterData
     f32 coordinateZ;
     f32 orientation;
 
-    void UpdateCache()
-    {
-    }
+    void UpdateCache(u64 characterGuid);
 private:
     CharacterDatabaseCache* _cache;
 };
@@ -69,8 +67,9 @@ struct CharacterVisualData
     u8 hairStyle;
     u8 hairColor;
 
-    void UpdateCache()
+    void UpdateCache(u64 characterGuid)
     {
+        //_cache->_characterVisualDataCache[characterGuid] = *this;
     }
 private:
     CharacterDatabaseCache* _cache;
@@ -88,8 +87,13 @@ struct CharacterSpellStorage
 
     u32 id;
 
-    void UpdateCache()
+    void UpdateCache(u64 characterGuid)
     {
+        //_cache->_characterSpellStorageCache[characterGuid][id] = *this;
+    }
+    void EraseCache(u64 characterGuid)
+    {
+        //_cache->_characterSpellStorageCache[characterGuid].erase(id);
     }
 private:
     CharacterDatabaseCache* _cache;
@@ -111,8 +115,13 @@ struct CharacterSkillStorage
     u16 value;
     u16 maxValue;
 
-    void UpdateCache()
+    void UpdateCache(u64 characterGuid)
     {
+        //_cache->_characterSkillStorageCache[characterGuid][id] = *this;
+    }
+    void EraseCache(u64 characterGuid)
+    {
+        //_cache->_characterSkillStorageCache[characterGuid].erase(id);
     }
 private:
     CharacterDatabaseCache* _cache;
@@ -128,6 +137,10 @@ public:
     void LoadAsync() override;
     void Save() override;
     void SaveAsync() override;
+    
+    void SaveAndUnloadCharacter(u64 guid);
+    void SaveCharacter(u64 guid);
+    void UnloadCharacter(u64 guid);
 
     // Character cache
     bool GetCharacterData(u64 guid, CharacterData& output);
@@ -136,14 +149,13 @@ public:
     bool GetCharacterVisualData(u64 guid, CharacterVisualData& output);
 
     // Character Spell Storage cache
-    bool GetCharacterSpellStorage(u64 guid, std::vector<CharacterSpellStorage>& output);
+    bool GetCharacterSpellStorage(u64 characterGuid, robin_hood::unordered_map<u32, CharacterSpellStorage>& output);
 
     // Character Skill Storage cache
-    bool GetCharacterSkillStorage(u64 guid, std::vector<CharacterSkillStorage>& output);
+    bool GetCharacterSkillStorage(u64 characterGuid, robin_hood::unordered_map<u32, CharacterSkillStorage>& output);
 
-private:
-    robin_hood::unordered_map<u64, CharacterData> _characterDataCache;
-    robin_hood::unordered_map<u64, CharacterVisualData> _characterVisualDataCache;
-    robin_hood::unordered_map<u64, std::vector<CharacterSpellStorage>> _characterSpellStorageCache;
-    robin_hood::unordered_map<u64, std::vector<CharacterSkillStorage>> _characterSkillStorageCache;
+    robin_hood::unordered_map<u64, CharacterData> _characterDataCache; // Character Guid
+    robin_hood::unordered_map<u64, CharacterVisualData> _characterVisualDataCache; // Character Guid
+    robin_hood::unordered_map<u64, robin_hood::unordered_map<u32, CharacterSpellStorage>> _characterSpellStorageCache; // Character Guid, Spell Id
+    robin_hood::unordered_map<u64, robin_hood::unordered_map<u32, CharacterSkillStorage>> _characterSkillStorageCache; // Character Guid, Skill Id
 };

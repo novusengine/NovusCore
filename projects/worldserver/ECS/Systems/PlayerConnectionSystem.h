@@ -70,7 +70,7 @@ namespace ConnectionSystem
         {
             ZoneScopedNC("Connection", tracy::Color::Orange2)
 
-                NovusHeader packetHeader;
+            NovusHeader packetHeader;
             packetHeader.command = NOVUS_FORWARDPACKET;
             packetHeader.account = clientConnection.accountGuid;
 
@@ -78,7 +78,7 @@ namespace ConnectionSystem
             {
                 ZoneScopedNC("Packet", tracy::Color::Orange2)
 
-                    Common::Opcode opcode = Common::Opcode(packet.opcode);
+                Common::Opcode opcode = Common::Opcode(packet.opcode);
                 switch (Common::Opcode(packet.opcode))
                 {
                 case Common::Opcode::CMSG_SET_ACTIVE_MOVER:
@@ -100,7 +100,7 @@ namespace ConnectionSystem
                 {
                     ZoneScopedNC("Packet::LogoutRequest", tracy::Color::Orange2)
 
-                        packetHeader.opcode = Common::Opcode::SMSG_LOGOUT_COMPLETE;
+                    packetHeader.opcode = Common::Opcode::SMSG_LOGOUT_COMPLETE;
                     packetHeader.size = 0;
 
                     Common::ByteBuffer logoutRequest(0);
@@ -113,6 +113,18 @@ namespace ConnectionSystem
                     expiredPlayerData.characterGuid = clientConnection.characterGuid;
                     playerDeleteQueue.expiredEntityQueue->enqueue(expiredPlayerData);
 
+                    CharacterData characterData;
+                    characterDatabase.cache->GetCharacterData(clientConnection.characterGuid, characterData);
+
+                    characterData.mapId = clientPositionData.mapId;
+                    characterData.coordinateX = clientPositionData.x;
+                    characterData.coordinateY = clientPositionData.y;
+                    characterData.coordinateZ = clientPositionData.z;
+                    characterData.orientation = clientPositionData.orientation;
+                    characterData.UpdateCache(clientConnection.characterGuid);
+
+                    characterDatabase.cache->SaveAndUnloadCharacter(clientConnection.characterGuid);
+
                     packet.handled = true;
                     break;
                 }
@@ -120,7 +132,7 @@ namespace ConnectionSystem
                 {
                     ZoneScopedNC("Packet::StandStateChange", tracy::Color::Orange2)
 
-                        u32 standState = 0;
+                    u32 standState = 0;
                     packet.data.Read<u32>(standState);
 
                     /* Should Update Unit Field Here */
@@ -141,7 +153,7 @@ namespace ConnectionSystem
                 {
                     ZoneScopedNC("Packet::SetSelection", tracy::Color::Orange2)
 
-                        u64 selectedGuid = 0;
+                    u64 selectedGuid = 0;
                     packet.data.ReadPackedGUID(selectedGuid);
 
                     clientFieldData.SetGuidValue(UNIT_FIELD_TARGET, selectedGuid);
@@ -152,7 +164,7 @@ namespace ConnectionSystem
                 {
                     ZoneScopedNC("Packet::NameQuery", tracy::Color::Orange2)
 
-                        u64 guid;
+                    u64 guid;
                     packet.data.Read<u64>(guid);
 
                     NovusHeader novusHeader;
@@ -216,8 +228,8 @@ namespace ConnectionSystem
                 {
                     ZoneScopedNC("Packet::Passthrough", tracy::Color::Orange2)
 
-                        // Read GUID here as packed
-                        u64 guid;
+                    // Read GUID here as packed
+                    u64 guid;
                     packet.data.ReadPackedGUID(guid);
 
                     u32 movementFlags;
@@ -270,8 +282,6 @@ namespace ConnectionSystem
                 case Common::Opcode::CMSG_MESSAGECHAT:
                 {
                     ZoneScopedNC("Packet::MessageChat", tracy::Color::Orange2)
-
-                        packet.handled = true;
 
                     u32 msgType;
                     u32 msgLang;
@@ -328,13 +338,15 @@ namespace ConnectionSystem
                     chatUpdateData.message = msgOutput;
                     chatUpdateData.handled = false;
                     clientUpdateData.chatUpdateData.push_back(chatUpdateData);
+
+                    packet.handled = true;
                     break;
                 }
                 case Common::Opcode::CMSG_ATTACKSWING:
                 {
                     ZoneScopedNC("Packet::AttackSwing", tracy::Color::Orange2)
 
-                        u64 attackGuid;
+                    u64 attackGuid;
                     packet.data.Read<u64>(attackGuid);
 
                     NovusHeader novusHeader;
@@ -390,7 +402,7 @@ namespace ConnectionSystem
                 {
                     ZoneScopedNC("Packet::SetSheathed", tracy::Color::Orange2)
 
-                        u32 state;
+                    u32 state;
                     packet.data.Read<u32>(state);
 
                     clientFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_2, u8(state));
@@ -402,7 +414,7 @@ namespace ConnectionSystem
                     ZoneScopedNC("Packet::Unhandled", tracy::Color::Orange2)
                     {
                         ZoneScopedNC("Packet::Unhandled::Log", tracy::Color::Orange2)
-                            worldServerHandler.PrintMessage("Account(%u), Character(%u) sent unhandled opcode %u", clientConnection.accountGuid, clientConnection.characterGuid, opcode);
+                        worldServerHandler.PrintMessage("Account(%u), Character(%u) sent unhandled opcode %u", clientConnection.accountGuid, clientConnection.characterGuid, opcode);
                     }
 
                     // Mark all unhandled opcodes as handled to prevent the queue from trying to handle them every tick.
@@ -415,8 +427,8 @@ namespace ConnectionSystem
 
             if (clientConnection.packets.size() > 0)
             {
-                ZoneScopedNC("Packet::MovementCull", tracy::Color::Orange2)
-                    clientConnection.packets.erase(std::remove_if(clientConnection.packets.begin(), clientConnection.packets.end(), [](OpcodePacket& packet)
+                ZoneScopedNC("Packet::PacketClear", tracy::Color::Orange2)
+                clientConnection.packets.erase(std::remove_if(clientConnection.packets.begin(), clientConnection.packets.end(), [](OpcodePacket& packet)
                 {
                     return packet.handled;
                 }), clientConnection.packets.end());

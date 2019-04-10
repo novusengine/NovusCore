@@ -5,7 +5,6 @@
 CharacterDatabaseCache::CharacterDatabaseCache()
 {
 }
-
 CharacterDatabaseCache::~CharacterDatabaseCache()
 {
 }
@@ -63,7 +62,7 @@ void CharacterDatabaseCache::Load()
             newCharacterSpellStorage.id = row[1].GetU32();
 
             _accessMutex.lock();
-            _characterSpellStorageCache[guid].push_back(newCharacterSpellStorage);
+            _characterSpellStorageCache[guid][newCharacterSpellStorage.id] = newCharacterSpellStorage;
             _accessMutex.unlock();
         }
     }
@@ -81,22 +80,226 @@ void CharacterDatabaseCache::Load()
             newCharacterSkillStorage.maxValue = row[3].GetU16();
 
             _accessMutex.lock();
-            _characterSkillStorageCache[guid].push_back(newCharacterSkillStorage);
+            _characterSkillStorageCache[guid][newCharacterSkillStorage.id] = newCharacterSkillStorage;
             _accessMutex.unlock();
         }
     }
 }
-
 void CharacterDatabaseCache::LoadAsync()
 {
 }
 
 void CharacterDatabaseCache::Save()
 {
-}
+    DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, [this](std::shared_ptr<DatabaseConnector>& connector)
+    {
 
+        for (auto itr : _characterDataCache)
+        {
+            CharacterData characterData = itr.second;
+            PreparedStatement characterBaseData("UPDATE characters set mapId={u}, zoneId={u}, coordinate_x={f}, coordinate_y={f}, coordinate_z={f}, orientation={f} WHERE guid={u};");
+            characterBaseData.Bind(characterData.mapId);
+            characterBaseData.Bind(characterData.zoneId);
+            characterBaseData.Bind(characterData.coordinateX);
+            characterBaseData.Bind(characterData.coordinateY);
+            characterBaseData.Bind(characterData.coordinateZ);
+            characterBaseData.Bind(characterData.orientation);
+            characterBaseData.Bind(characterData.guid);
+
+            connector->Execute(characterBaseData);
+        }
+
+        for (auto itr : _characterVisualDataCache)
+        {
+            CharacterVisualData characterVisualData = itr.second;
+            PreparedStatement characterBaseVisualData("UPDATE character_visual_data set skin={u}, face={u}, facial_style={u}, hair_style={u}, hair_color={u} WHERE guid={u};");
+            characterBaseVisualData.Bind(characterVisualData.skin);
+            characterBaseVisualData.Bind(characterVisualData.face);
+            characterBaseVisualData.Bind(characterVisualData.facialStyle);
+            characterBaseVisualData.Bind(characterVisualData.hairStyle);
+            characterBaseVisualData.Bind(characterVisualData.hairColor);
+            characterBaseVisualData.Bind(characterVisualData.guid);
+
+            connector->Execute(characterBaseVisualData);
+        }
+
+        for (auto itr : _characterSpellStorageCache)
+        {
+            std::stringstream ss;
+            bool first = true;
+
+            ss << "DELETE FROM character_spell_storage WHERE guid={u} AND spell NOT IN (";
+            for (auto itr2 : itr.second)
+            {
+                CharacterSpellStorage characterSpellStorage = itr2.second;
+                PreparedStatement characterSpellStorageData("INSERT IGNORE INTO character_spell_storage(guid, spell) VALUES({u}, {u});");
+                characterSpellStorageData.Bind(itr.first);
+                characterSpellStorageData.Bind(characterSpellStorage.id);
+
+                connector->Execute(characterSpellStorageData);
+
+                if (!first)
+                {
+                    ss << ", " << characterSpellStorage.id;
+                }
+                else
+                {
+                    ss << characterSpellStorage.id;
+                    first = false;
+                }
+            }
+            ss << ");";
+
+            PreparedStatement characterSpellStorageData(ss.str());
+            characterSpellStorageData.Bind(itr.first);
+            connector->Execute(characterSpellStorageData);
+        }
+
+        for (auto itr : _characterSkillStorageCache)
+        {
+            std::stringstream ss;
+            bool first = true;
+
+            ss << "DELETE FROM character_skill_storage WHERE guid={u} AND skill NOT IN (";
+            for (auto itr2 : itr.second)
+            {
+                CharacterSkillStorage characterSkillStorage = itr2.second;
+                PreparedStatement characterSkillStorageData("INSERT INTO character_skill_storage(guid, skill, value, character_skill_storage.maxValue) VALUES({u}, {u}, {u}, {u}) ON DUPLICATE KEY UPDATE value={u}, character_skill_storage.maxValue={u};");
+                characterSkillStorageData.Bind(itr.first);
+                characterSkillStorageData.Bind(characterSkillStorage.id);
+                characterSkillStorageData.Bind(characterSkillStorage.value);
+                characterSkillStorageData.Bind(characterSkillStorage.maxValue);
+                characterSkillStorageData.Bind(characterSkillStorage.value);
+                characterSkillStorageData.Bind(characterSkillStorage.maxValue);
+
+                connector->Execute(characterSkillStorageData);
+
+                if (!first)
+                {
+                    ss << ", " << characterSkillStorage.id;
+                }
+                else
+                {
+                    ss << characterSkillStorage.id;
+                    first = false;
+                }
+            }
+            ss << ");";
+
+            PreparedStatement characterSkillStorageData(ss.str());
+            characterSkillStorageData.Bind(itr.first);
+            connector->Execute(characterSkillStorageData);
+        }
+    });
+}
 void CharacterDatabaseCache::SaveAsync()
 {
+}
+
+void CharacterDatabaseCache::SaveAndUnloadCharacter(u64 characterGuid)
+{
+    SaveCharacter(characterGuid);
+    UnloadCharacter(characterGuid);
+}
+void CharacterDatabaseCache::SaveCharacter(u64 characterGuid)
+{
+    DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, [this, characterGuid](std::shared_ptr<DatabaseConnector>& connector)
+    {
+        CharacterData characterData = _characterDataCache[characterGuid];
+        PreparedStatement characterBaseData("UPDATE characters set mapId={u}, zoneId={u}, coordinate_x={f}, coordinate_y={f}, coordinate_z={f}, orientation={f} WHERE guid={u};");
+        characterBaseData.Bind(characterData.mapId);
+        characterBaseData.Bind(characterData.zoneId);
+        characterBaseData.Bind(characterData.coordinateX);
+        characterBaseData.Bind(characterData.coordinateY);
+        characterBaseData.Bind(characterData.coordinateZ);
+        characterBaseData.Bind(characterData.orientation);
+        characterBaseData.Bind(characterGuid);
+        connector->Execute(characterBaseData);
+
+        // Save Visual Data
+        CharacterVisualData characterVisualData = _characterVisualDataCache[characterGuid];
+        PreparedStatement characterBaseVisualData("UPDATE character_visual_data set skin={u}, face={u}, facial_style={u}, hair_style={u}, hair_color={u} WHERE guid={u};");
+        characterBaseVisualData.Bind(characterVisualData.skin);
+        characterBaseVisualData.Bind(characterVisualData.face);
+        characterBaseVisualData.Bind(characterVisualData.facialStyle);
+        characterBaseVisualData.Bind(characterVisualData.hairStyle);
+        characterBaseVisualData.Bind(characterVisualData.hairColor);
+        characterBaseVisualData.Bind(characterGuid);
+        connector->Execute(characterBaseVisualData);
+
+        // Save Spells
+        {
+            std::stringstream ss;
+            bool first = true;
+
+            ss << "DELETE FROM character_spell_storage WHERE guid={u} AND spell NOT IN (";
+            for (auto itr : _characterSpellStorageCache[characterGuid])
+            {
+                CharacterSpellStorage characterSpellStorage = itr.second;
+                PreparedStatement characterSpellStorageData("INSERT IGNORE INTO character_spell_storage(guid, spell) VALUES({u}, {u});");
+                characterSpellStorageData.Bind(characterGuid);
+                characterSpellStorageData.Bind(characterSpellStorage.id);
+                connector->Execute(characterSpellStorageData);
+
+                if (!first)
+                {
+                    ss << ", " << characterSpellStorage.id;
+                }
+                else
+                {
+                    ss << characterSpellStorage.id;
+                    first = false;
+                }
+            }
+            ss << ");";
+
+            PreparedStatement characterSpellStorageData(ss.str());
+            characterSpellStorageData.Bind(characterGuid);
+            connector->Execute(characterSpellStorageData);
+        }
+
+        // Save Skills
+        {
+            std::stringstream ss;
+            bool first = true;
+
+            ss << "DELETE FROM character_skill_storage WHERE guid={u} AND skill NOT IN (";
+            for (auto itr2 : _characterSkillStorageCache[characterGuid])
+            {
+                CharacterSkillStorage characterSkillStorage = itr2.second;
+                PreparedStatement characterSkillStorageData("INSERT INTO character_skill_storage(guid, skill, value, character_skill_storage.maxValue) VALUES({u}, {u}, {u}, {u}) ON DUPLICATE KEY UPDATE value={u}, character_skill_storage.maxValue={u};");
+                characterSkillStorageData.Bind(characterGuid);
+                characterSkillStorageData.Bind(characterSkillStorage.id);
+                characterSkillStorageData.Bind(characterSkillStorage.value);
+                characterSkillStorageData.Bind(characterSkillStorage.maxValue);
+                characterSkillStorageData.Bind(characterSkillStorage.value);
+                characterSkillStorageData.Bind(characterSkillStorage.maxValue);
+                connector->Execute(characterSkillStorageData);
+
+                if (!first)
+                {
+                    ss << ", " << characterSkillStorage.id;
+                }
+                else
+                {
+                    ss << characterSkillStorage.id;
+                    first = false;
+                }
+            }
+            ss << ");";
+
+            PreparedStatement characterSkillStorageData(ss.str());
+            characterSkillStorageData.Bind(characterGuid);
+            connector->Execute(characterSkillStorageData);
+        }
+    });
+}
+void CharacterDatabaseCache::UnloadCharacter(u64 characterGuid)
+{
+    _characterDataCache.erase(characterGuid);
+    _characterVisualDataCache.erase(characterGuid);
+    _characterSpellStorageCache.erase(characterGuid);
+    _characterSkillStorageCache.erase(characterGuid);
 }
 
 bool CharacterDatabaseCache::GetCharacterData(u64 guid, CharacterData& output)
@@ -200,13 +403,13 @@ bool CharacterDatabaseCache::GetCharacterVisualData(u64 guid, CharacterVisualDat
         return true;
     }
 }
-bool CharacterDatabaseCache::GetCharacterSpellStorage(u64 guid, std::vector<CharacterSpellStorage>& output)
+bool CharacterDatabaseCache::GetCharacterSpellStorage(u64 guid, robin_hood::unordered_map<u32, CharacterSpellStorage>& output)
 {
     auto cache = _characterSpellStorageCache.find(guid);
     if (cache != _characterSpellStorageCache.end())
     {
         _accessMutex.lock_shared();
-        std::vector<CharacterSpellStorage> characterSpellStorageData = cache->second;
+        robin_hood::unordered_map<u32, CharacterSpellStorage> characterSpellStorageData = cache->second;
         _accessMutex.unlock_shared();
 
         output = characterSpellStorageData;
@@ -235,7 +438,7 @@ bool CharacterDatabaseCache::GetCharacterSpellStorage(u64 guid, std::vector<Char
             u64 guid = row[0].GetU64();
             newCharacterSpellStorage.id = row[1].GetU32();
 
-            _characterSpellStorageCache[guid].push_back(newCharacterSpellStorage);
+            _characterSpellStorageCache[guid][newCharacterSpellStorage.id] = newCharacterSpellStorage;
         }
         _accessMutex.unlock();
 
@@ -243,13 +446,13 @@ bool CharacterDatabaseCache::GetCharacterSpellStorage(u64 guid, std::vector<Char
         return true;
     }
 }
-bool CharacterDatabaseCache::GetCharacterSkillStorage(u64 guid, std::vector<CharacterSkillStorage>& output)
+bool CharacterDatabaseCache::GetCharacterSkillStorage(u64 guid, robin_hood::unordered_map<u32, CharacterSkillStorage>& output)
 {
     auto cache = _characterSkillStorageCache.find(guid);
     if (cache != _characterSkillStorageCache.end())
     {
         _accessMutex.lock_shared();
-        std::vector<CharacterSkillStorage> characterSkillStorageData = cache->second;
+        robin_hood::unordered_map<u32, CharacterSkillStorage> characterSkillStorageData = cache->second;
         _accessMutex.unlock_shared();
 
         output = characterSkillStorageData;
@@ -280,11 +483,16 @@ bool CharacterDatabaseCache::GetCharacterSkillStorage(u64 guid, std::vector<Char
             newCharacterSkillStorage.value = row[2].GetU16();
             newCharacterSkillStorage.maxValue = row[3].GetU16();
 
-            _characterSkillStorageCache[guid].push_back(newCharacterSkillStorage);
+            _characterSkillStorageCache[guid][newCharacterSkillStorage.id] = newCharacterSkillStorage;
         }
         _accessMutex.unlock();
 
         output = _characterSkillStorageCache[guid];
         return true;
     }
+}
+
+void CharacterData::UpdateCache(u64 characterGuid)
+{
+    _cache->_characterDataCache[characterGuid] = *this;
 }

@@ -25,20 +25,22 @@ namespace PlayerInitializeSystem
         view.each([&characterDatabase, &novusConnection](const auto, PlayerInitializeComponent& clientInitializeData, PlayerFieldDataComponent& clientFieldData, PlayerPositionComponent& clientPositionData, PlayerSpellStorageComponent& spellStorageData, PlayerSkillStorageComponent& skillStorageData)
         {
             /* Load Cached Data for character */
-            std::vector<CharacterSpellStorage> characterSpellStorage;
+            robin_hood::unordered_map<u32, CharacterSpellStorage> characterSpellStorage;
             if (characterDatabase.cache->GetCharacterSpellStorage(clientInitializeData.characterGuid, characterSpellStorage))
             {
-                for (CharacterSpellStorage spell : characterSpellStorage)
+                for (auto itr : characterSpellStorage)
                 {
-                    spellStorageData.spells.push_back(spell.id);
+                    spellStorageData.spells.push_back(itr.first);
                 }
             }
 
-            std::vector<CharacterSkillStorage> characterSkillStorage;
+            robin_hood::unordered_map<u32, CharacterSkillStorage> characterSkillStorage;
             if (characterDatabase.cache->GetCharacterSkillStorage(clientInitializeData.characterGuid, characterSkillStorage))
             {
-                for (CharacterSkillStorage skill : characterSkillStorage)
+                for (auto itr : characterSkillStorage)
                 {
+                    CharacterSkillStorage skill = itr.second;
+
                     skillData newSkill;
                     newSkill.id = skill.id;
                     newSkill.value = skill.value;
