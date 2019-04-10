@@ -154,6 +154,12 @@ public:
     // Character Skill Storage cache
     bool GetCharacterSkillStorage(u64 characterGuid, robin_hood::unordered_map<u32, CharacterSkillStorage>& output);
 
+private:
+    friend CharacterData;
+    friend CharacterVisualData;
+    friend CharacterSpellStorage;
+    friend CharacterSkillStorage;
+
     robin_hood::unordered_map<u64, CharacterData> _characterDataCache; // Character Guid
     robin_hood::unordered_map<u64, CharacterVisualData> _characterVisualDataCache; // Character Guid
     robin_hood::unordered_map<u64, robin_hood::unordered_map<u32, CharacterSpellStorage>> _characterSpellStorageCache; // Character Guid, Spell Id
