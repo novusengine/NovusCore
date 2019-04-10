@@ -77,10 +77,10 @@ void WorldServerHandler::Run()
 {
     if (!_mapLoader.Load())
     {
-        Message exitMessage;
+        /*Message exitMessage;
         exitMessage.code = MSG_OUT_EXIT_CONFIRM;
         _outputQueue.enqueue(exitMessage);
-        return;
+        return;*/
     }
 
     SetupUpdateFramework();

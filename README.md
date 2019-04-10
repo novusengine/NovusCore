@@ -21,7 +21,7 @@ You will find the developers to be active on the discord and always up for answe
 
 
 ### Dependencies
-* [OpenSSL 1.0.2q](http://slproweb.com/products/Win32OpenSSL.html)
+* [OpenSSL 1.0.x](https://www.openssl.org/source/)
 * [MySQL C Connector 5.6 (libmysqlcclient) or newer](https://dev.mysql.com/downloads/connector/c/)
 * [CMAKE 3.12 or newer](https://cmake.org/download/)
 
