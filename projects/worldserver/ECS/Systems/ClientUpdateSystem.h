@@ -44,7 +44,6 @@ namespace ClientUpdateSystem
         auto view = registry.view<PlayerConnectionComponent, PlayerUpdateDataComponent>();
         view.each([&novusConnection, playerUpdatesQueue](const auto, PlayerConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData)
         {
-            NovusHeader novusHeader;
             for (PlayerUpdatePacket playerUpdatePacket : playerUpdatesQueue.playerUpdatePacketQueue)
             {
                 if ((playerUpdatePacket.updateType == UPDATETYPE_CREATE_OBJECT ||
@@ -53,8 +52,7 @@ namespace ClientUpdateSystem
                 {
                     if (std::find(clientUpdateData.visibleGuids.begin(), clientUpdateData.visibleGuids.end(), playerUpdatePacket.characterGuid) == clientUpdateData.visibleGuids.end())
                     {
-                        novusHeader.CreateForwardHeader(clientConnection.accountGuid, playerUpdatePacket.opcode, playerUpdatePacket.data.size());
-                        novusConnection.SendPacket(novusHeader.BuildHeaderPacket(playerUpdatePacket.data));
+                        novusConnection.SendPacket(clientConnection.accountGuid, playerUpdatePacket.data, playerUpdatePacket.opcode);
                         clientUpdateData.visibleGuids.push_back(playerUpdatePacket.characterGuid);
                     }
                 }
@@ -63,8 +61,7 @@ namespace ClientUpdateSystem
                     // So far we have not observed any issues with sending private field flags to any other client but themselves, this offers a good speed increase but if we see issues in the future we should recheck this.
                     // if (playerUpdatePacket.characterGuid != clientConnection.characterGuid)
                     {
-                        novusHeader.CreateForwardHeader(clientConnection.accountGuid, playerUpdatePacket.opcode, playerUpdatePacket.data.size());
-                        novusConnection.SendPacket(novusHeader.BuildHeaderPacket(playerUpdatePacket.data));
+                        novusConnection.SendPacket(clientConnection.accountGuid, playerUpdatePacket.data, playerUpdatePacket.opcode);
                     }
                 }
             }
@@ -73,15 +70,13 @@ namespace ClientUpdateSystem
             {
                 if (clientConnection.characterGuid != movementPacket.characterGuid)
                 {
-                    novusHeader.CreateForwardHeader(clientConnection.accountGuid, movementPacket.opcode, movementPacket.data.size());
-                    novusConnection.SendPacket(novusHeader.BuildHeaderPacket(movementPacket.data));
+                    novusConnection.SendPacket(clientConnection.accountGuid, movementPacket.data, movementPacket.opcode);
                 }
             }
 
             for (ChatPacket chatPacket : playerUpdatesQueue.playerChatPacketQueue)
             {
-                novusHeader.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_MESSAGECHAT, chatPacket.data.size());
-                novusConnection.SendPacket(novusHeader.BuildHeaderPacket(chatPacket.data));
+                novusConnection.SendPacket(clientConnection.accountGuid, chatPacket.data, Common::Opcode::SMSG_MESSAGECHAT);
             }
         });
 

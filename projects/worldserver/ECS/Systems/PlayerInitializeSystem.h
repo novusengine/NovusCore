@@ -54,31 +54,22 @@ namespace PlayerInitializeSystem
                 clientPositionData.lastMovementOpcodeTime[i] = 0;
             }
             
-            NovusHeader packetHeader;
-            packetHeader.command = NOVUS_FORWARDPACKET;
-            packetHeader.account = clientInitializeData.accountGuid;
-
             /* Login Code Here */
             clientFieldData.ResetFields();
 
             /* SMSG_LOGIN_VERIFY_WORLD */
             Common::ByteBuffer verifyWorld;
-            packetHeader.opcode = Common::Opcode::SMSG_LOGIN_VERIFY_WORLD;
-            packetHeader.size = 4 + (4 * 4);
-            packetHeader.AddTo(verifyWorld);
-
-            verifyWorld.Write<u32>(clientPositionData.mapId); // Map (0 == Eastern Kingdom) & Elwynn Forest (Zone is 12) & Northshire (Area is 9)
+            verifyWorld.Write<u32>(clientPositionData.mapId);
             verifyWorld.Write<f32>(clientPositionData.x);
             verifyWorld.Write<f32>(clientPositionData.y);
             verifyWorld.Write<f32>(clientPositionData.z);
             verifyWorld.Write<f32>(clientPositionData.y);
-            novusConnection.SendPacket(verifyWorld);
+            novusConnection.SendPacket(clientInitializeData.accountGuid, verifyWorld, Common::Opcode::SMSG_LOGIN_VERIFY_WORLD);
 
             /* SMSG_ACCOUNT_DATA_TIMES */
-            Common::ByteBuffer accountDataTimes;
-            packetHeader.opcode = Common::Opcode::SMSG_ACCOUNT_DATA_TIMES;
-
             u32 mask = 0xEA;
+
+            Common::ByteBuffer accountDataTimes;
             accountDataTimes.Write<u32>((u32)time(nullptr)); // Unix Time
             accountDataTimes.Write<u8>(1); // bitmask blocks count
             accountDataTimes.Write<u32>(mask); // PER_CHARACTER_CACHE_MASK
@@ -89,60 +80,43 @@ namespace PlayerInitializeSystem
                     accountDataTimes.Write<u32>(0);
             }
             
-            novusConnection.SendPacket(packetHeader.BuildHeaderPacket(accountDataTimes));
+            novusConnection.SendPacket(clientInitializeData.accountGuid, accountDataTimes, Common::Opcode::SMSG_ACCOUNT_DATA_TIMES);
 
 
             /* SMSG_FEATURE_SYSTEM_STATUS */
             Common::ByteBuffer featureSystemStatus;
-            packetHeader.opcode = Common::Opcode::SMSG_FEATURE_SYSTEM_STATUS;
-            packetHeader.size = 1 + 1;
-            packetHeader.AddTo(featureSystemStatus);
-
             featureSystemStatus.Write<u8>(2);
             featureSystemStatus.Write<u8>(0);
-            novusConnection.SendPacket(featureSystemStatus);
-
+            novusConnection.SendPacket(clientInitializeData.accountGuid, featureSystemStatus, Common::Opcode::SMSG_FEATURE_SYSTEM_STATUS);
 
             /* SMSG_MOTD */
             Common::ByteBuffer motd;
-            packetHeader.opcode = Common::Opcode::SMSG_MOTD;
-            packetHeader.AddTo(motd);
-
             motd.Write<u32>(0);
             motd.WriteString("Welcome to NovusCore.");
 
-            novusConnection.SendPacket(packetHeader.BuildHeaderPacket(motd));
+            novusConnection.SendPacket(clientInitializeData.accountGuid, motd, Common::Opcode::SMSG_MOTD);
 
 
             /* SMSG_LEARNED_DANCE_MOVES */
             Common::ByteBuffer learnedDanceMoves;
-            packetHeader.opcode = Common::Opcode::SMSG_LEARNED_DANCE_MOVES;
-            packetHeader.size = 4 + 4;
-            packetHeader.AddTo(learnedDanceMoves);
-
             learnedDanceMoves.Write<u32>(0);
             learnedDanceMoves.Write<u32>(0);
-            novusConnection.SendPacket(learnedDanceMoves);
+            novusConnection.SendPacket(clientInitializeData.accountGuid, learnedDanceMoves, Common::Opcode::SMSG_LEARNED_DANCE_MOVES);
 
 
             /* SMSG_ACTION_BUTTONS */
             Common::ByteBuffer actionButtons;
-            packetHeader.opcode = Common::Opcode::SMSG_ACTION_BUTTONS;
-            packetHeader.size = 1 + (4 * 144);
-            packetHeader.AddTo(actionButtons);
-
             actionButtons.Write<u8>(1);
             for (u8 button = 0; button < 144; ++button)
             {
                 actionButtons.Write<u32>(0);
             }
-            novusConnection.SendPacket(actionButtons);
+            novusConnection.SendPacket(clientInitializeData.accountGuid, actionButtons, Common::Opcode::SMSG_ACTION_BUTTONS);
 
 
             /* SMSG_INITIAL_SPELLS */
             if (spellStorageData.spells.size() > 0)
             {
-                packetHeader.opcode = Common::Opcode::SMSG_INITIAL_SPELLS;
                 Common::ByteBuffer initialSpells;
                 initialSpells.Write<u8>(0);
                 initialSpells.Write<u16>(u16(spellStorageData.spells.size()));
@@ -154,35 +128,27 @@ namespace PlayerInitializeSystem
                 }
 
                 initialSpells.Write<u16>(0); // Cooldown History Size
-                novusConnection.SendPacket(packetHeader.BuildHeaderPacket(initialSpells));
+                novusConnection.SendPacket(clientInitializeData.accountGuid, initialSpells, Common::Opcode::SMSG_INITIAL_SPELLS);
             }
 
 
             /* SMSG_ALL_ACHIEVEMENT_DATA */
-            Common::ByteBuffer achivementData;
-            packetHeader.opcode = Common::Opcode::SMSG_ALL_ACHIEVEMENT_DATA;
-            packetHeader.size = 4 + 4;
-            packetHeader.AddTo(achivementData);
-
-            achivementData.Write<i32>(-1);
-            achivementData.Write<i32>(-1);
-            novusConnection.SendPacket(achivementData);
+            Common::ByteBuffer achievementData;
+            achievementData.Write<i32>(-1);
+            achievementData.Write<i32>(-1);
+            novusConnection.SendPacket(clientInitializeData.accountGuid, achievementData, Common::Opcode::SMSG_ALL_ACHIEVEMENT_DATA);
 
 
             /* SMSG_LOGIN_SETTIMESPEED */
-            Common::ByteBuffer loginSetTimeSpeed;
-            packetHeader.opcode = Common::Opcode::SMSG_LOGIN_SETTIMESPEED;
-            packetHeader.size = 4 + 4 + 4;
-            packetHeader.AddTo(loginSetTimeSpeed);
-
             tm lt;
             time_t const tmpServerTime = time(nullptr);
             localtime_s(&lt, &tmpServerTime);
 
+            Common::ByteBuffer loginSetTimeSpeed;
             loginSetTimeSpeed.Write<u32>(((lt.tm_year - 100) << 24 | lt.tm_mon << 20 | (lt.tm_mday - 1) << 14 | lt.tm_wday << 11 | lt.tm_hour << 6 | lt.tm_min));
             loginSetTimeSpeed.Write<f32>(0.01666667f);
             loginSetTimeSpeed.Write<u32>(0);
-            novusConnection.SendPacket(loginSetTimeSpeed);
+            novusConnection.SendPacket(clientInitializeData.accountGuid, loginSetTimeSpeed, Common::Opcode::SMSG_LOGIN_SETTIMESPEED);
 
             /* Set Initial Fields */
             CharacterData characterData;

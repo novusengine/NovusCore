@@ -259,10 +259,8 @@ namespace PlayerCreateDataSystem
                 u32 selfVisibleFlags = (UF_FLAG_PUBLIC | UF_FLAG_PRIVATE);
                 u16 buildOpcode = 0;
 
-                NovusHeader novusHeader;
                 Common::ByteBuffer selfPlayerUpdate = BuildPlayerCreateData(clientInitializeData.characterGuid, updateType, selfUpdateFlag, selfVisibleFlags, lifeTimeInMS, clientFieldData, clientPositionData, buildOpcode);
-                novusHeader.CreateForwardHeader(clientInitializeData.accountGuid, buildOpcode, selfPlayerUpdate.GetActualSize());
-                novusConnection.SendPacket(novusHeader.BuildHeaderPacket(selfPlayerUpdate));
+                novusConnection.SendPacket(clientInitializeData.accountGuid, selfPlayerUpdate, buildOpcode);
 
                 /* Build Self Packet for public */
                 u16 publicUpdateFlag = (UPDATEFLAG_LIVING | UPDATEFLAG_STATIONARY_POSITION);

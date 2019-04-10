@@ -200,3 +200,12 @@ void NovusConnection::SendPacket(Common::ByteBuffer& packet)
     _crypto->Encrypt(packet.GetReadPointer(), packet.GetActualSize());
     Send(packet);
 }
+void NovusConnection::SendPacket(u32 accountId, Common::ByteBuffer& packet, u16 opcode)
+{
+    NovusHeader header;
+    header.CreateForwardHeader(accountId, opcode, packet.GetActualSize());
+
+    Common::ByteBuffer buffer = header.BuildHeaderPacket(packet);
+    _crypto->Encrypt(buffer.GetReadPointer(), buffer.GetActualSize());
+    Send(buffer);
+}

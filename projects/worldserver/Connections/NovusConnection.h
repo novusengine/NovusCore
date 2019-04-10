@@ -124,6 +124,7 @@ public:
     bool HandleCommandForwardPacket();
 
     void SendPacket(Common::ByteBuffer& packet);
+    void SendPacket(u32 accountId, Common::ByteBuffer& packet, u16 opcode);
 
     NovusStatus _status;
 private:

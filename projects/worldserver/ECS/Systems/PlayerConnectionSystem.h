@@ -70,10 +70,6 @@ namespace ConnectionSystem
         {
             ZoneScopedNC("Connection", tracy::Color::Orange2)
 
-            NovusHeader packetHeader;
-            packetHeader.command = NOVUS_FORWARDPACKET;
-            packetHeader.account = clientConnection.accountGuid;
-
             for (OpcodePacket& packet : clientConnection.packets)
             {
                 ZoneScopedNC("Packet", tracy::Color::Orange2)
@@ -85,14 +81,9 @@ namespace ConnectionSystem
                 {
                     ZoneScopedNC("Packet::SetActiveMover", tracy::Color::Orange2)
 
-                    packetHeader.opcode = Common::Opcode::SMSG_TIME_SYNC_REQ;
-                    packetHeader.size = 4;
-
                     Common::ByteBuffer timeSync(9 + 4);
-                    packetHeader.AddTo(timeSync);
-
                     timeSync.Write<u32>(0);
-                    novusConnection.SendPacket(timeSync);
+                    novusConnection.SendPacket(clientConnection.accountGuid, timeSync, Common::Opcode::SMSG_TIME_SYNC_REQ);
                     packet.handled = true;
                     break;
                 }
@@ -100,12 +91,8 @@ namespace ConnectionSystem
                 {
                     ZoneScopedNC("Packet::LogoutRequest", tracy::Color::Orange2)
 
-                    packetHeader.opcode = Common::Opcode::SMSG_LOGOUT_COMPLETE;
-                    packetHeader.size = 0;
-
                     Common::ByteBuffer logoutRequest(0);
-                    packetHeader.AddTo(logoutRequest);
-                    novusConnection.SendPacket(logoutRequest);
+                    novusConnection.SendPacket(clientConnection.accountGuid, logoutRequest, Common::Opcode::SMSG_LOGOUT_COMPLETE);
 
                     ExpiredPlayerData expiredPlayerData;
                     expiredPlayerData.entityGuid = clientConnection.entityGuid;
@@ -136,17 +123,11 @@ namespace ConnectionSystem
                     u32 standState = 0;
                     packet.data.Read<u32>(standState);
 
-                    /* Should Update Unit Field Here */
                     clientFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_1, u8(standState));
 
-                    packetHeader.opcode = Common::Opcode::SMSG_STANDSTATE_UPDATE;
-                    packetHeader.size = 1;
-
                     Common::ByteBuffer standStateChange(0);
-                    packetHeader.AddTo(standStateChange);
-
                     standStateChange.Write<u8>(u8(standState));
-                    novusConnection.SendPacket(standStateChange);
+                    novusConnection.SendPacket(clientConnection.accountGuid, standStateChange, Common::Opcode::SMSG_STANDSTATE_UPDATE);
                     packet.handled = true;
                     break;
                 }
@@ -168,7 +149,6 @@ namespace ConnectionSystem
                     u64 guid;
                     packet.data.Read<u64>(guid);
 
-                    NovusHeader novusHeader;
                     Common::ByteBuffer nameQuery;
                     nameQuery.AppendGuid(guid);
 
@@ -193,8 +173,7 @@ namespace ConnectionSystem
                     }
                     nameQuery.Write<u8>(0);
 
-                    novusHeader.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_NAME_QUERY_RESPONSE, nameQuery.GetActualSize());
-                    novusConnection.SendPacket(novusHeader.BuildHeaderPacket(nameQuery));
+                    novusConnection.SendPacket(clientConnection.accountGuid, nameQuery, Common::Opcode::SMSG_NAME_QUERY_RESPONSE);
                     packet.handled = true;
                     break;
                 }
@@ -203,7 +182,6 @@ namespace ConnectionSystem
                     u32 itemEntry;
                     packet.data.Read<u32>(itemEntry);
 
-                    NovusHeader novusHeader;
                     Common::ByteBuffer itemQuery;
                     itemQuery.Write<u32>(itemEntry);
                     itemQuery.Write<u32>(15); // Class
@@ -306,8 +284,7 @@ namespace ConnectionSystem
                     itemQuery.Write<u32>(0); // ItemLimitCategory
                     itemQuery.Write<u32>(0); // HolidayId
 
-                    novusHeader.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_ITEM_QUERY_SINGLE_RESPONSE, itemQuery.GetActualSize());
-                    novusConnection.SendPacket(novusHeader.BuildHeaderPacket(itemQuery));
+                    novusConnection.SendPacket(clientConnection.accountGuid, itemQuery, Common::Opcode::SMSG_ITEM_QUERY_SINGLE_RESPONSE);
 
                     packet.handled = true;
                     break;
@@ -464,15 +441,10 @@ namespace ConnectionSystem
                     u64 attackGuid;
                     packet.data.Read<u64>(attackGuid);
 
-                    NovusHeader novusHeader;
                     Common::ByteBuffer attackStart;
-                    novusHeader.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_ATTACKSTART, 16);
-                    novusHeader.AddTo(attackStart);
-
                     attackStart.Write<u64>(clientConnection.characterGuid);
                     attackStart.Write<u64>(attackGuid);
-
-                    novusConnection.SendPacket(attackStart);
+                    novusConnection.SendPacket(clientConnection.accountGuid, attackStart, Common::Opcode::SMSG_ATTACKSTART);
 
                     Common::ByteBuffer attackerStateUpdate;
                     attackerStateUpdate.Write<u32>(0);
@@ -489,9 +461,7 @@ namespace ConnectionSystem
                     attackerStateUpdate.Write<u8>(0);
                     attackerStateUpdate.Write<u32>(0);
                     attackerStateUpdate.Write<u32>(0);
-
-                    novusHeader.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_ATTACKERSTATEUPDATE, 0);
-                    novusConnection.SendPacket(novusHeader.BuildHeaderPacket(attackerStateUpdate));
+                    novusConnection.SendPacket(clientConnection.accountGuid, attackerStateUpdate, Common::Opcode::SMSG_ATTACKERSTATEUPDATE);
 
                     packet.handled = true;
                     break;
@@ -506,10 +476,8 @@ namespace ConnectionSystem
                     attackStop.AppendGuid(clientConnection.characterGuid);
                     attackStop.AppendGuid(attackGuid);
                     attackStop.Write<u32>(0);
+                    novusConnection.SendPacket(clientConnection.accountGuid, attackStop, Common::Opcode::SMSG_ATTACKSTOP);
 
-                    NovusHeader novusHeader;
-                    novusHeader.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_ATTACKSTOP, 20);
-                    novusConnection.SendPacket(novusHeader.BuildHeaderPacket(attackStop));
                     packet.handled = true;
                     break;
                 }
