@@ -20,6 +20,10 @@ The project has an official [Discord](https://discord.gg/gz6FMZa).
 You will find the developers to be active on the discord and always up for answering any questions you might have regarding the project. Despite NovusCore not currently being ready for production level use, we are always welcoming any users that want to try using it.
 
 
+### How to install NovusCore
+[Guide by Grim](https://github.com/novuscore/NovusCore/blob/master/Installing.md)
+
+
 ### Dependencies
 * [OpenSSL 1.0.x](https://www.openssl.org/source/)
 * [MySQL C Connector 5.6 (libmysqlcclient) or newer](https://dev.mysql.com/downloads/connector/c/)
