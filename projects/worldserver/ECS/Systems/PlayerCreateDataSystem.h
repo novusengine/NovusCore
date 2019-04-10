@@ -40,11 +40,11 @@
 
 namespace PlayerCreateDataSystem
 {
-    Common::ByteBuffer BuildPlayerCreateData(u64 playerGuid, u8 updateType, u16 updateFlags, u32 visibleFlags, u32 lifeTimeInMS, PlayerFieldDataComponent& playerFieldData, PlayerPositionComponent position, u16& opcode)
+    Common::ByteBuffer BuildPlayerCreateData(u64 characterGuid, u8 updateType, u16 updateFlags, u32 visibleFlags, u32 lifeTimeInMS, PlayerFieldDataComponent& playerFieldData, PlayerPositionComponent position, u16& opcode)
     {
         Common::ByteBuffer buffer(500);
         buffer.Write<u8>(updateType);
-        buffer.AppendGuid(playerGuid);
+        buffer.AppendGuid(characterGuid);
 
         buffer.Write<u8>(4); // TYPEID_PLAYER
 

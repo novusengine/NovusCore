@@ -85,7 +85,7 @@ namespace ConnectionSystem
                 {
                     ZoneScopedNC("Packet::SetActiveMover", tracy::Color::Orange2)
 
-                        packetHeader.opcode = Common::Opcode::SMSG_TIME_SYNC_REQ;
+                    packetHeader.opcode = Common::Opcode::SMSG_TIME_SYNC_REQ;
                     packetHeader.size = 4;
 
                     Common::ByteBuffer timeSync(9 + 4);
@@ -116,6 +116,7 @@ namespace ConnectionSystem
                     CharacterData characterData;
                     characterDatabase.cache->GetCharacterData(clientConnection.characterGuid, characterData);
 
+                    characterData.level = clientFieldData.GetFieldValue<u32>(UNIT_FIELD_LEVEL);
                     characterData.mapId = clientPositionData.mapId;
                     characterData.coordinateX = clientPositionData.x;
                     characterData.coordinateY = clientPositionData.y;
@@ -194,6 +195,120 @@ namespace ConnectionSystem
 
                     novusHeader.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_NAME_QUERY_RESPONSE, nameQuery.GetActualSize());
                     novusConnection.SendPacket(novusHeader.BuildHeaderPacket(nameQuery));
+                    packet.handled = true;
+                    break;
+                }
+                case Common::Opcode::CMSG_ITEM_QUERY_SINGLE:
+                {
+                    u32 itemEntry;
+                    packet.data.Read<u32>(itemEntry);
+
+                    NovusHeader novusHeader;
+                    Common::ByteBuffer itemQuery;
+                    itemQuery.Write<u32>(itemEntry);
+                    itemQuery.Write<u32>(15); // Class
+                    itemQuery.Write<u32>(0); // SubClass
+                    itemQuery.Write<i32>(0); // SoundOverrideSubclass
+                    itemQuery.WriteString("Unknown"); // Name1
+                    itemQuery.Write<u8>(0); // Name2
+                    itemQuery.Write<u8>(0); // Name3
+                    itemQuery.Write<u8>(0); // Name4
+                    itemQuery.Write<u32>(31007); // DisplayInfo
+                    itemQuery.Write<u32>(4); // Quality
+                    itemQuery.Write<u32>(0); // Flags1
+                    itemQuery.Write<u32>(8192); // Flags2
+                    itemQuery.Write<i32>(0); // BuyPrice
+                    itemQuery.Write<u32>(0); // SellPrice
+                    itemQuery.Write<u32>(0); // InventoryType
+                    itemQuery.Write<u32>(0); // AllowableClass
+                    itemQuery.Write<u32>(0); // AllowableRace
+                    itemQuery.Write<u32>(0); // ItemLevel
+                    itemQuery.Write<u32>(20); // RequiredLevel
+                    itemQuery.Write<u32>(0); // RequiredSkill
+                    itemQuery.Write<u32>(0); // RequiredSkillRank
+                    itemQuery.Write<u32>(0); // RequiredSpell
+                    itemQuery.Write<u32>(0); // RequiredHonorRank
+                    itemQuery.Write<u32>(0); // RequiredCityRank
+                    itemQuery.Write<u32>(0); // RequiredReputationFaction
+                    itemQuery.Write<u32>(0); // RequiredReputationRank
+                    itemQuery.Write<i32>(0); // MaxCount
+                    itemQuery.Write<i32>(1); // Stackable
+                    itemQuery.Write<u32>(0); // ContainerSlots
+                    itemQuery.Write<u32>(0); // StatsCount
+
+                    /* For Each Stat */
+                    // ItemStatType, ItemStatValue
+
+                    itemQuery.Write<u32>(0); // ScalingStatDistribution
+                    itemQuery.Write<u32>(0); // ScalingStatValue
+
+                    /* Item Damage */
+                    for (u32 i = 0; i < 2; i++)
+                    {
+                        itemQuery.Write<f32>(0); // DamageMin
+                        itemQuery.Write<f32>(0); // DamageMax
+                        itemQuery.Write<u32>(0); // DamageType
+                    }
+
+                    /* Item Resistances */
+                    for (u32 i = 0; i < 7; i++)
+                    {
+                        itemQuery.Write<u32>(0); // Resistance
+                    }
+
+                    itemQuery.Write<u32>(0); // Delay
+                    itemQuery.Write<u32>(0); // AmmoType
+                    itemQuery.Write<f32>(0); // RangedModRange
+
+                    /* Item Spells */
+                    for (u32 i = 0; i < 5; i++)
+                    {
+                        itemQuery.Write<u32>(0); // SpellId
+                        itemQuery.Write<u32>(0); // SpellTrigger
+                        itemQuery.Write<u32>(0); // SpellCharges
+                        itemQuery.Write<u32>(-1); // SpellCooldown
+                        itemQuery.Write<u32>(0); // SpellCategory
+                        itemQuery.Write<u32>(-1); // SpellCategoryCooldown
+                    }
+
+                    itemQuery.Write<u32>(0); // Bonding
+                    itemQuery.WriteString(""); // Description
+                    itemQuery.Write<u32>(0); // PageText
+                    itemQuery.Write<u32>(0); // LanguageID
+                    itemQuery.Write<u32>(0); // PageMaterial
+                    itemQuery.Write<u32>(0); // StartQuest
+                    itemQuery.Write<u32>(0); // LockID
+                    itemQuery.Write<i32>(0); // Material
+                    itemQuery.Write<u32>(0); // Sheath
+                    itemQuery.Write<i32>(0); // RandomProperty
+                    itemQuery.Write<i32>(0); // RandomSuffix
+                    itemQuery.Write<u32>(0); // Sheath
+                    itemQuery.Write<u32>(0); // Block
+                    itemQuery.Write<u32>(0); // ItemSet
+                    itemQuery.Write<u32>(0); // MaxDurability
+                    itemQuery.Write<u32>(0); // Area
+                    itemQuery.Write<u32>(0); // Map
+                    itemQuery.Write<u32>(0); // BagFamily
+                    itemQuery.Write<u32>(0); // TotemCategory
+
+                    /* Item Sockets */
+                    for (u32 i = 0; i < 3; i++)
+                    {
+                        itemQuery.Write<u32>(0); // SocketColor
+                        itemQuery.Write<u32>(0); // SocketContent
+                    }
+
+                    itemQuery.Write<u32>(0); // SocketBonus
+                    itemQuery.Write<u32>(0); // GemProperties
+                    itemQuery.Write<u32>(0); // RequiredDisenchantSkill
+                    itemQuery.Write<f32>(0); // ArmorDamageModifier
+                    itemQuery.Write<u32>(0); // Duration
+                    itemQuery.Write<u32>(0); // ItemLimitCategory
+                    itemQuery.Write<u32>(0); // HolidayId
+
+                    novusHeader.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_ITEM_QUERY_SINGLE_RESPONSE, itemQuery.GetActualSize());
+                    novusConnection.SendPacket(novusHeader.BuildHeaderPacket(itemQuery));
+
                     packet.handled = true;
                     break;
                 }

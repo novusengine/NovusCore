@@ -206,7 +206,8 @@ void CharacterDatabaseCache::SaveCharacter(u64 characterGuid)
     DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, [this, characterGuid](std::shared_ptr<DatabaseConnector>& connector)
     {
         CharacterData characterData = _characterDataCache[characterGuid];
-        PreparedStatement characterBaseData("UPDATE characters set mapId={u}, zoneId={u}, coordinate_x={f}, coordinate_y={f}, coordinate_z={f}, orientation={f} WHERE guid={u};");
+        PreparedStatement characterBaseData("UPDATE characters set level={u}, mapId={u}, zoneId={u}, coordinate_x={f}, coordinate_y={f}, coordinate_z={f}, orientation={f} WHERE guid={u};");
+        characterBaseData.Bind(characterData.level);
         characterBaseData.Bind(characterData.mapId);
         characterBaseData.Bind(characterData.zoneId);
         characterBaseData.Bind(characterData.coordinateX);
