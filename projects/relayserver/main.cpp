@@ -31,12 +31,22 @@
 #include "ConnectionHandlers\ClientRelayConnectionHandler.h"
 #include "ConnectionHandlers\NovusConnectionHandler.h"
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 NovusConnectionHandler*         NovusConnectionHandler::_instance       = nullptr;
 ClientRelayConnectionHandler*   ClientRelayConnectionHandler::_instance = nullptr;
+
+//The name of the console window.
+#define WINDOWNAME "Relay Server"
+
 i32 main()
 {
-    /* Initialize Debug Handler */
-    //InitDebugger(PROGRAM_TYPE::Relay);
+	/* Set up console window title */
+#ifdef _WIN32  //Windows
+	SetConsoleTitle(WINDOWNAME);
+#endif
 
     /* Load Database Config Handler for server */
     if (!ConfigHandler::Load("database_configuration.json"))
