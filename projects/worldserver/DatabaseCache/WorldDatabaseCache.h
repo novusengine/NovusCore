@@ -6,37 +6,40 @@
 class WorldDatabaseCache;
 struct ItemStatInfo
 {
-    ItemStatInfo() : statType(0), statValue(0) { }
+    ItemStatInfo() { }
     ItemStatInfo(u32 type, i32 value) : statType(type), statValue(value) { }
-    u32 statType;
-    i32 statValue;
+
+    u32 statType = 0;
+    i32 statValue = 0;
 };
 struct ItemDamageInfo
 {
-    ItemDamageInfo() : damageMin(0), damageMax(0), damageType(0) { }
+    ItemDamageInfo() { }
     ItemDamageInfo(f32 min, f32 max, u32 type) : damageMin(min), damageMax(max), damageType(type) { }
-    f32 damageMin;
-    f32 damageMax;
-    u32 damageType;
+
+    f32 damageMin = 0;
+    f32 damageMax = 0;
+    u32 damageType = 0;
 };
 struct ItemSpellInfo
 {
-    ItemSpellInfo() : spellId(0), spellTrigger(0), spellCharges(0), spellCooldown(-1), spellCategory(0), spellCategoryCooldown(-1) { }
+    ItemSpellInfo() { }
     ItemSpellInfo(u32 id, u32 trigger, i32 charges, i32 cooldown, u32 category, i32 categoryCooldown) : spellId(id), spellTrigger(trigger), spellCharges(charges), spellCooldown(cooldown), spellCategory(category), spellCategoryCooldown(categoryCooldown) { }
 
-    u32 spellId;
-    u32 spellTrigger;
-    i32 spellCharges;
-    i32 spellCooldown;
-    u32 spellCategory;
-    i32 spellCategoryCooldown;
+    u32 spellId = 0;
+    u32 spellTrigger = 0;
+    i32 spellCharges = 0;
+    i32 spellCooldown = -1;
+    u32 spellCategory = 0;
+    i32 spellCategoryCooldown = -1;
 };
 struct ItemSocketInfo
 {
-    ItemSocketInfo() : socketType(0), socketAmount(0) { }
+    ItemSocketInfo() { }
     ItemSocketInfo(u32 type, u32 amount) : socketType(type), socketAmount(amount) { }
-    u32 socketType;
-    u32 socketAmount;
+
+    u32 socketType = 0;
+    u32 socketAmount = 0;
 };
 struct ItemTemplate
 {
