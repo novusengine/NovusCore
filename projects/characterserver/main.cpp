@@ -29,10 +29,19 @@
 #include "Connections\NovusConnection.h"
 #include "../DatabaseCache/CharacterDatabaseCache.h"
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
+//The name of the console window.
+#define WINDOWNAME "Character Server"
+
 i32 main()
 {
-    /* Initialize Debug Handler */
-    //InitDebugger(PROGRAM_TYPE::Char);
+	/* Set up console window title */
+#ifdef _WIN32  //Windows
+	SetConsoleTitle(WINDOWNAME);
+#endif
 
     /* Load Database Config Handler for server */
     if (!ConfigHandler::Load("database_configuration.json"))
