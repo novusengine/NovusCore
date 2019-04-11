@@ -29,7 +29,7 @@ public:
         if (!_nonVisibleGuids.empty())
         {
             buffer.Write<u8>(4); // UPDATETYPE_OUT_OF_RANGE_OBJECTS
-            buffer.Write<u32>(u32(_nonVisibleGuids.size()));
+            buffer.Write<u32>(static_cast<u32>(_nonVisibleGuids.size()));
 
             for (u64 guid : _nonVisibleGuids)
             {
@@ -74,9 +74,9 @@ private:
     {
         z_stream c_stream;
 
-        c_stream.zalloc = (alloc_func)nullptr;
-        c_stream.zfree = (free_func)nullptr;
-        c_stream.opaque = (voidpf)nullptr;
+        c_stream.zalloc = static_cast<alloc_func>(nullptr);
+        c_stream.zfree = static_cast<free_func>(nullptr);
+        c_stream.opaque = static_cast<voidpf>(nullptr);
 
         // default Z_BEST_SPEED (1)
         i32 z_res = deflateInit(&c_stream, 1); // 1 - 9 (9 Being best)
@@ -88,10 +88,10 @@ private:
             return;
         }
 
-        c_stream.next_out = (Bytef*)dst;
+        c_stream.next_out = static_cast<Bytef*>(dst);
         c_stream.avail_out = *dst_size;
-        c_stream.next_in = (Bytef*)src;
-        c_stream.avail_in = (uInt)src_size;
+        c_stream.next_in = static_cast<Bytef*>(src);
+        c_stream.avail_in = static_cast<uInt>(src_size);
 
         z_res = deflate(&c_stream, Z_NO_FLUSH);
         if (z_res != Z_OK)

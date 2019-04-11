@@ -82,7 +82,7 @@ struct sAuthChallenge
 
     void AddTo(Common::ByteBuffer& buffer)
     {
-        buffer.Append((u8*)this, sizeof(sAuthChallenge));
+        buffer.Append(reinterpret_cast<u8*>(this), sizeof(sAuthChallenge));
     }
 
     void Append(u8* dest, const u8* src, size_t size)
@@ -195,7 +195,7 @@ bool RelayConnection::HandleHeaderRead()
 bool RelayConnection::HandlePacketRead()
 {
     Common::ClientPacketHeader* header = reinterpret_cast<Common::ClientPacketHeader*>(_headerBuffer.GetReadPointer());
-    Common::Opcode opcode = (Common::Opcode)header->command;
+    Common::Opcode opcode = static_cast<Common::Opcode>(header->command);
 
     switch (opcode)
     {
@@ -313,7 +313,7 @@ void RelayConnection::HandleAuthSession()
         if (size > 0 && size < 0xFFFFF)
         {
             uLongf uSize = size;
-            u32 pos = (u32)AddonInfo._readPos;
+            u32 pos = static_cast<u32>(AddonInfo._readPos);
 
             Common::ByteBuffer addonInfo;
             addonInfo.Resize(size);

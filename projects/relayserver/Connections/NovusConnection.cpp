@@ -119,7 +119,7 @@ void NovusConnection::HandleRead()
         }
         else
         {
-            u16 size = u16(itr->second.packetSize);
+            u16 size = static_cast<u16>(itr->second.packetSize);
             if (buffer.GetActualSize() < size)
                 break;
 

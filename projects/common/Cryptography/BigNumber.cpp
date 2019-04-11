@@ -47,13 +47,13 @@ void BigNumber::SetUInt32(u32 val)
 }
 void BigNumber::SetUInt64(u64 val)
 {
-    SetUInt32((u32)(val >> 32));
+    SetUInt32(static_cast<u32>(val >> 32));
     BN_lshift(_bigNum, _bigNum, 32);
-    SetUInt32((u32)(val & 0xFFFFFFFF));
+    SetUInt32(static_cast<u32>(val & 0xFFFFFFFF));
 }
 u32 BigNumber::GetUInt32()
 {
-    return (u32)BN_get_word(_bigNum);
+    return static_cast<u32>(BN_get_word(_bigNum));
 }
 
 std::string BigNumber::BN2Hex() const
@@ -88,7 +88,7 @@ void BigNumber::Bin2BN(u8 const* data, i32 size)
 std::unique_ptr<u8[]> BigNumber::BN2BinArray(size_t size, bool littleEndian)
 {
     i32 numBytes = GetBytes();
-    i32 neededSize = ((i32)size >= numBytes) ? (i32)size : numBytes;
+    i32 neededSize = (static_cast<i32>(size) >= numBytes) ? static_cast<i32>(size) : numBytes;
 
     u8* array = new u8[neededSize];
 
@@ -108,7 +108,7 @@ std::unique_ptr<u8[]> BigNumber::BN2BinArray(size_t size, bool littleEndian)
 
 void BigNumber::Rand(size_t bits)
 {
-    BN_rand(_bigNum, (i32)bits, 0, 1);
+    BN_rand(_bigNum, static_cast<i32>(bits), 0, 1);
 }
 BigNumber BigNumber::Exponential(BigNumber const& bigNum)
 {

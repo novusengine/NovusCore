@@ -71,7 +71,7 @@ i32 main()
     }
     characterDatabaseCache.Load();
 
-    srand((u32)time(NULL));
+    srand(static_cast<u32>(time(NULL)));
     std::thread run_thread([&]
     {
         io_service.run();

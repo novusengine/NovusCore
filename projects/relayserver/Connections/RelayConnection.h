@@ -66,7 +66,7 @@ class RelayConnection : public Common::BaseSocket
 public:
     RelayConnection(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), account(0), worldId(255), _headerBuffer(), _packetBuffer()
     {
-        _seed = (u32)rand();
+        _seed = static_cast<u32>(rand());
         _headerBuffer.Resize(sizeof(Common::ClientPacketHeader));
         sessionKey = new BigNumber();
     }
@@ -92,7 +92,7 @@ public:
 
     inline void apply(u16 *val)
     {
-        convert<sizeof(u16)>((char *)(val));
+        convert<sizeof(u16)>(reinterpret_cast<char *>(val));
     }
     inline void EndianConvertReverse(u16& val) { apply(&val); }
 

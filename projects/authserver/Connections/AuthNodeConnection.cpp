@@ -70,7 +70,7 @@ void AuthNodeConnection::HandleRead()
             return;
         }
 
-        u16 size = u16(itr->second.packetSize);
+        u16 size = static_cast<u16>(itr->second.packetSize);
         if (byteBuffer.GetActualSize() < size)
             break;
 

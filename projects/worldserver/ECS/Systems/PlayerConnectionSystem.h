@@ -74,8 +74,8 @@ namespace ConnectionSystem
             {
                 ZoneScopedNC("Packet", tracy::Color::Orange2)
 
-                Common::Opcode opcode = Common::Opcode(packet.opcode);
-                switch (Common::Opcode(packet.opcode))
+                Common::Opcode opcode = static_cast<Common::Opcode>(packet.opcode);
+                switch (static_cast<Common::Opcode>(packet.opcode))
                 {
                 case Common::Opcode::CMSG_SET_ACTIVE_MOVER:
                 {
@@ -123,10 +123,10 @@ namespace ConnectionSystem
                     u32 standState = 0;
                     packet.data.Read<u32>(standState);
 
-                    clientFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_1, u8(standState));
+                    clientFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_1, static_cast<u8>(standState));
 
                     Common::ByteBuffer standStateChange(0);
-                    standStateChange.Write<u8>(u8(standState));
+                    standStateChange.Write<u8>(static_cast<u8>(standState));
                     novusConnection.SendPacket(clientConnection.accountGuid, standStateChange, Common::Opcode::SMSG_STANDSTATE_UPDATE);
                     packet.handled = true;
                     break;
@@ -352,7 +352,7 @@ namespace ConnectionSystem
                         positionUpdateData.opcode = opcode;
                         positionUpdateData.movementFlags = movementFlags;
                         positionUpdateData.movementFlagsExtra = movementFlagsExtra;
-                        positionUpdateData.gameTime = u32(singleton.lifeTimeInMS);
+                        positionUpdateData.gameTime = static_cast<u32>(singleton.lifeTimeInMS);
                         positionUpdateData.fallTime = fallTime;
 
                         clientPositionData.x = position_x;
@@ -488,7 +488,7 @@ namespace ConnectionSystem
                     u32 state;
                     packet.data.Read<u32>(state);
 
-                    clientFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_2, u8(state));
+                    clientFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_2, static_cast<u8>(state));
                     packet.handled = true;
                     break;
                 }

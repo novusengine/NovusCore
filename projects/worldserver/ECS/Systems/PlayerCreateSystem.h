@@ -59,8 +59,8 @@ namespace PlayerCreateSystem
             if (characterDatabase.cache->GetCharacterData(characterGuid, characterData))
             {
                 u32 entity = registry.create();
-                registry.assign<PlayerConnectionComponent>(entity, entity, u32(message.account), characterGuid);
-                registry.assign<PlayerInitializeComponent>(entity, u32(message.account), characterGuid);
+                registry.assign<PlayerConnectionComponent>(entity, entity, static_cast<u32>(message.account), characterGuid);
+                registry.assign<PlayerInitializeComponent>(entity, static_cast<u32>(message.account), characterGuid);
 
                 registry.assign<PlayerFieldDataComponent>(entity);
                 registry.assign<PlayerUpdateDataComponent>(entity);
@@ -70,7 +70,7 @@ namespace PlayerCreateSystem
                 registry.assign<PlayerSpellStorageComponent>(entity);
                 registry.assign<PlayerSkillStorageComponent>(entity);
 
-                singleton.accountToEntityMap[u32(message.account)] = entity;
+                singleton.accountToEntityMap[static_cast<u32>(message.account)] = entity;
             }
         }
     }

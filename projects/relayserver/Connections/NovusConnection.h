@@ -70,7 +70,7 @@ struct NovusHeader
 
     void AddTo(Common::ByteBuffer& buffer)
     {
-        buffer.Append((u8*)this, sizeof(NovusHeader));
+        buffer.Append(reinterpret_cast<u8*>(this), sizeof(NovusHeader));
     }
 };
 
