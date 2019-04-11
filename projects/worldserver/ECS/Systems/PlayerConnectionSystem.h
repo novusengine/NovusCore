@@ -234,7 +234,7 @@ namespace ConnectionSystem
                         itemQuery.Write<u32>(0); // Resistance
                     }
 
-                    itemQuery.Write<u32>(0); // Delay
+                    itemQuery.Write<u32>(0); // AttackSpeed
                     itemQuery.Write<u32>(0); // AmmoType
                     itemQuery.Write<f32>(0); // RangedModRange
 
@@ -251,7 +251,7 @@ namespace ConnectionSystem
 
                     itemQuery.Write<u32>(0); // Bonding
                     itemQuery.WriteString(""); // Description
-                    itemQuery.Write<u32>(0); // PageText
+                    itemQuery.Write<u32>(0); // PageTextId
                     itemQuery.Write<u32>(0); // LanguageID
                     itemQuery.Write<u32>(0); // PageMaterial
                     itemQuery.Write<u32>(0); // StartQuest
@@ -260,7 +260,6 @@ namespace ConnectionSystem
                     itemQuery.Write<u32>(0); // Sheath
                     itemQuery.Write<i32>(0); // RandomProperty
                     itemQuery.Write<i32>(0); // RandomSuffix
-                    itemQuery.Write<u32>(0); // Sheath
                     itemQuery.Write<u32>(0); // Block
                     itemQuery.Write<u32>(0); // ItemSet
                     itemQuery.Write<u32>(0); // MaxDurability
@@ -374,6 +373,7 @@ namespace ConnectionSystem
                 case Common::Opcode::CMSG_MESSAGECHAT:
                 {
                     ZoneScopedNC("Packet::MessageChat", tracy::Color::Orange2)
+                    packet.handled = true;
 
                     u32 msgType;
                     u32 msgLang;
@@ -430,8 +430,6 @@ namespace ConnectionSystem
                     chatUpdateData.message = msgOutput;
                     chatUpdateData.handled = false;
                     clientUpdateData.chatUpdateData.push_back(chatUpdateData);
-
-                    packet.handled = true;
                     break;
                 }
                 case Common::Opcode::CMSG_ATTACKSWING:
