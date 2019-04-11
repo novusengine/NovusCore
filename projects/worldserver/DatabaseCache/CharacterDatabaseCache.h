@@ -138,15 +138,15 @@ public:
     void Save() override;
     void SaveAsync() override;
     
-    void SaveAndUnloadCharacter(u64 guid);
-    void SaveCharacter(u64 guid);
-    void UnloadCharacter(u64 guid);
+    void SaveAndUnloadCharacter(u64 characterGuid);
+    void SaveCharacter(u64 characterGuid);
+    void UnloadCharacter(u64 characterGuid);
 
     // Character cache
-    bool GetCharacterData(u64 guid, CharacterData& output);
+    bool GetCharacterData(u64 characterGuid, CharacterData& output);
 
     // Character Visual cache
-    bool GetCharacterVisualData(u64 guid, CharacterVisualData& output);
+    bool GetCharacterVisualData(u64 characterGuid, CharacterVisualData& output);
 
     // Character Spell Storage cache
     bool GetCharacterSpellStorage(u64 characterGuid, robin_hood::unordered_map<u32, CharacterSpellStorage>& output);

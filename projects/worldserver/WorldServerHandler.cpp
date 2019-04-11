@@ -20,6 +20,7 @@
 #include "ECS/Components/Singletons/PlayerUpdatesQueueSingleton.h"
 #include "ECS/Components/Singletons/PlayerDeleteQueueSingleton.h"
 #include "ECS/Components/Singletons/CharacterDatabaseCacheSingleton.h"
+#include "ECS/Components/Singletons/WorldDatabaseCacheSingleton.h"
 #include "ECS/Components/Singletons/CommandDataSingleton.h"
 #include "ECS/Components/Singletons/PlayerPacketQueueSingleton.h"
 #include "Connections/NovusConnection.h"
@@ -91,6 +92,7 @@ void WorldServerHandler::Run()
     PlayerUpdatesQueueSingleton& playerUpdatesQueueSingleton = _updateFramework.registry.set<PlayerUpdatesQueueSingleton>();
     PlayerDeleteQueueSingleton& playerdeleteQueueSingleton = _updateFramework.registry.set<PlayerDeleteQueueSingleton>();
     CharacterDatabaseCacheSingleton& characterDatabaseCacheSingleton = _updateFramework.registry.set<CharacterDatabaseCacheSingleton>();
+    WorldDatabaseCacheSingleton& worldDatabaseCacheSingleton = _updateFramework.registry.set<WorldDatabaseCacheSingleton>();
     PlayerPacketQueueSingleton& playerPacketQueueSingleton = _updateFramework.registry.set<PlayerPacketQueueSingleton>();
    
     singletonComponent.worldServerHandler = this;
@@ -103,6 +105,9 @@ void WorldServerHandler::Run()
 
     characterDatabaseCacheSingleton.cache = new CharacterDatabaseCache();
     characterDatabaseCacheSingleton.cache->Load();
+
+    worldDatabaseCacheSingleton.cache = new WorldDatabaseCache();
+    worldDatabaseCacheSingleton.cache->Load();
 
     Commands::LoadCommands(_updateFramework.registry);
 

@@ -46,8 +46,8 @@ void CharacterDatabaseCache::Load()
             newCharacterVisualData.hairColor = row[17].GetU8();
 
             _accessMutex.lock();
-            _characterDataCache.insert({ newCharacterData.guid, newCharacterData });
-            _characterVisualDataCache.insert({ newCharacterVisualData.guid, newCharacterVisualData });
+            _characterDataCache[newCharacterData.guid] = newCharacterData;
+            _characterVisualDataCache[newCharacterData.guid] = newCharacterVisualData;
             _accessMutex.unlock();
         }
     }
@@ -303,9 +303,9 @@ void CharacterDatabaseCache::UnloadCharacter(u64 characterGuid)
     _characterSkillStorageCache.erase(characterGuid);
 }
 
-bool CharacterDatabaseCache::GetCharacterData(u64 guid, CharacterData& output)
+bool CharacterDatabaseCache::GetCharacterData(u64 characterGuid, CharacterData& output)
 {
-    auto cache = _characterDataCache.find(guid);
+    auto cache = _characterDataCache.find(characterGuid);
     if (cache != _characterDataCache.end())
     {
         _accessMutex.lock_shared();
@@ -323,7 +323,7 @@ bool CharacterDatabaseCache::GetCharacterData(u64 guid, CharacterData& output)
         assert(result);
 
         PreparedStatement stmt("SELECT * FROM characters WHERE guid = {u};");
-        stmt.Bind(guid);
+        stmt.Bind(characterGuid);
 
         amy::result_set resultSet;
         connector->Query(stmt, resultSet);
@@ -351,16 +351,16 @@ bool CharacterDatabaseCache::GetCharacterData(u64 guid, CharacterData& output)
         newCharacterData.orientation = resultRow[12].GetF32();
 
         _accessMutex.lock();
-        _characterDataCache.insert({ guid, newCharacterData });
+        _characterDataCache[characterGuid] = newCharacterData;
         _accessMutex.unlock();
 
         output = newCharacterData;
         return true;
     }
 }
-bool CharacterDatabaseCache::GetCharacterVisualData(u64 guid, CharacterVisualData& output)
+bool CharacterDatabaseCache::GetCharacterVisualData(u64 characterGuid, CharacterVisualData& output)
 {
-    auto cache = _characterVisualDataCache.find(guid);
+    auto cache = _characterVisualDataCache.find(characterGuid);
     if (cache != _characterVisualDataCache.end())
     {
         _accessMutex.lock_shared();
@@ -378,7 +378,7 @@ bool CharacterDatabaseCache::GetCharacterVisualData(u64 guid, CharacterVisualDat
         assert(result);
 
         PreparedStatement stmt("SELECT * FROM character_visual_data WHERE guid = {u};");
-        stmt.Bind(guid);
+        stmt.Bind(characterGuid);
 
         amy::result_set resultSet;
         connector->Query(stmt, resultSet);
@@ -397,16 +397,16 @@ bool CharacterDatabaseCache::GetCharacterVisualData(u64 guid, CharacterVisualDat
         newCharacterVisualData.hairColor = resultRow[5].GetU8();
 
         _accessMutex.lock();
-        _characterVisualDataCache.insert({ guid, newCharacterVisualData });
+        _characterVisualDataCache[characterGuid] = newCharacterVisualData;
         _accessMutex.unlock();
 
         output = newCharacterVisualData;
         return true;
     }
 }
-bool CharacterDatabaseCache::GetCharacterSpellStorage(u64 guid, robin_hood::unordered_map<u32, CharacterSpellStorage>& output)
+bool CharacterDatabaseCache::GetCharacterSpellStorage(u64 characterGuid, robin_hood::unordered_map<u32, CharacterSpellStorage>& output)
 {
-    auto cache = _characterSpellStorageCache.find(guid);
+    auto cache = _characterSpellStorageCache.find(characterGuid);
     if (cache != _characterSpellStorageCache.end())
     {
         _accessMutex.lock_shared();
@@ -424,7 +424,7 @@ bool CharacterDatabaseCache::GetCharacterSpellStorage(u64 guid, robin_hood::unor
         assert(result);
 
         PreparedStatement stmt("SELECT guid, spell FROM character_spell_storage WHERE guid = {u};");
-        stmt.Bind(guid);
+        stmt.Bind(characterGuid);
 
         amy::result_set resultSet;
         connector->Query(stmt, resultSet);
@@ -443,13 +443,13 @@ bool CharacterDatabaseCache::GetCharacterSpellStorage(u64 guid, robin_hood::unor
         }
         _accessMutex.unlock();
 
-        output = _characterSpellStorageCache[guid];
+        output = _characterSpellStorageCache[characterGuid];
         return true;
     }
 }
-bool CharacterDatabaseCache::GetCharacterSkillStorage(u64 guid, robin_hood::unordered_map<u32, CharacterSkillStorage>& output)
+bool CharacterDatabaseCache::GetCharacterSkillStorage(u64 characterGuid, robin_hood::unordered_map<u32, CharacterSkillStorage>& output)
 {
-    auto cache = _characterSkillStorageCache.find(guid);
+    auto cache = _characterSkillStorageCache.find(characterGuid);
     if (cache != _characterSkillStorageCache.end())
     {
         _accessMutex.lock_shared();
@@ -467,7 +467,7 @@ bool CharacterDatabaseCache::GetCharacterSkillStorage(u64 guid, robin_hood::unor
         assert(result);
 
         PreparedStatement stmt("SELECT guid, skill, value, character_skill_storage.maxValue FROM character_skill_storage WHERE guid = {u};");
-        stmt.Bind(guid);
+        stmt.Bind(characterGuid);
 
         amy::result_set resultSet;
         connector->Query(stmt, resultSet);
@@ -488,7 +488,7 @@ bool CharacterDatabaseCache::GetCharacterSkillStorage(u64 guid, robin_hood::unor
         }
         _accessMutex.unlock();
 
-        output = _characterSkillStorageCache[guid];
+        output = _characterSkillStorageCache[characterGuid];
         return true;
     }
 }
