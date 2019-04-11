@@ -61,7 +61,7 @@ i32 main()
     }
 	worldServerHandler.SetNovusConnection(novusConnection);
 
-    srand((u32)time(NULL));
+    srand(static_cast<u32>(time(NULL)));
     std::thread run_thread([&]
     {
         io_service.run();

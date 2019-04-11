@@ -65,7 +65,7 @@ i32 main()
     clientAuthConnectionHandler.Start();
     relayNodeConnectionHandler.Start();
 
-    srand((u32)time(NULL));
+    srand(static_cast<u32>(time(NULL)));
     std::thread run_thread([&]
     {
         io_service.run();

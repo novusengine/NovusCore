@@ -142,7 +142,7 @@ namespace Commands_Character
                 /* Movement */
                 buffer.Write<u32>(0);
                 buffer.Write<u16>(0);
-                buffer.Write<u32>((u32)singletonData.lifeTimeInMS);
+                buffer.Write<u32>(static_cast<u32>(singletonData.lifeTimeInMS));
 
                 buffer.Write<f32>(x);
                 buffer.Write<f32>(y);

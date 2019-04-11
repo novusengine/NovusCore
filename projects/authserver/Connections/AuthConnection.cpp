@@ -53,7 +53,7 @@ struct sAuthLogonChallengeHeader
 
     void AddTo(Common::ByteBuffer& buffer)
     {
-        buffer.Append((u8*)this, sizeof(sAuthLogonChallengeHeader));
+        buffer.Append(reinterpret_cast<u8*>(this), sizeof(sAuthLogonChallengeHeader));
     }
 };
 
@@ -70,7 +70,7 @@ struct sAuthLogonChallengeData
 
     void AddTo(Common::ByteBuffer& buffer)
     {
-        buffer.Append((u8*)this, sizeof(sAuthLogonChallengeData));
+        buffer.Append(reinterpret_cast<u8*>(this), sizeof(sAuthLogonChallengeData));
     }
 
     void Append(u8* dest, const u8* src, size_t size)
@@ -191,7 +191,7 @@ void AuthConnection::HandleRead()
             ++packetsReadThisRead[command];
         }
 
-        u16 size = u16(itr->second.packetSize);
+        u16 size = static_cast<u16>(itr->second.packetSize);
         if (byteBuffer.GetActualSize() < size)
             break;
 
@@ -226,7 +226,7 @@ bool AuthConnection::HandleCommandChallenge()
     _status = STATUS_CLOSED;
 
     cAuthLogonChallenge* logonChallenge = reinterpret_cast<cAuthLogonChallenge*>(GetByteBuffer().GetReadPointer());
-    std::string login((char const*)logonChallenge->username_pointer, logonChallenge->username_length);
+    std::string login(reinterpret_cast<char const*>(logonChallenge->username_pointer), logonChallenge->username_length);
     username = login;
 
     PreparedStatement stmt("SELECT guid, salt, verifier FROM accounts WHERE username={s};");
@@ -425,7 +425,7 @@ bool AuthConnection::HandleCommandReconnectChallenge()
     // Check if account exists
     if (login != username)
     {
-        pkt.Write<u8>(u8(0x03)); //WOW_FAIL_UNKNOWN_ACCOUNT);
+        pkt.Write<u8>(static_cast<u8>(0x03); //WOW_FAIL_UNKNOWN_ACCOUNT);
         Send(pkt);
         return true;
     }
@@ -436,8 +436,8 @@ bool AuthConnection::HandleCommandReconnectChallenge()
     pkt.Write<u8>(0); // WOW_SUCCESS
     pkt.Append(_reconnectProof.BN2BinArray(16).get(), 16);  // 16 bytes random
     u64 zeros = 0x00;
-    pkt.Append((u8*)&zeros, sizeof(zeros));                 // 8 bytes zeros
-    pkt.Append((u8*)&zeros, sizeof(zeros));                 // 8 bytes zeros
+    pkt.Append(reinterpret_cast<u8*>(&zeros), sizeof(zeros));                 // 8 bytes zeros
+    pkt.Append(reinterpret_cast<u8*>(&zeros), sizeof(zeros));                 // 8 bytes zeros
 
     Send(pkt);*/
 }
@@ -465,7 +465,7 @@ bool AuthConnection::HandleCommandReconnectProof()
         pkt.Write<u8>(AUTH_RECONNECT_PROOF);
         pkt.Write<u8>(0x00);
         u16 unk1 = 0x00;
-        pkt.Append((u8*)&unk1, sizeof(unk1));  // 2 bytes zeros
+        pkt.Append(reinterpret_cast<u8*>(&unk1), sizeof(unk1));  // 2 bytes zeros
         Send(pkt);
         _status = STATUS_AUTHED;
         return true;
@@ -520,7 +520,7 @@ bool AuthConnection::HandleCommandGameServerList()
 
         Common::ByteBuffer RealmListSizeBuffer;
         RealmListSizeBuffer.Write<u32>(0);
-        RealmListSizeBuffer.Write<u16>(u16(results.affected_rows()));
+        RealmListSizeBuffer.Write<u16>(static_cast<u16>(results.affected_rows()));
 
         Common::ByteBuffer hdr;
         hdr.Write<u8>(AUTH_GAMESERVER_LIST);

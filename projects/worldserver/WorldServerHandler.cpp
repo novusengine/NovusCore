@@ -186,7 +186,7 @@ bool WorldServerHandler::Update()
             if (message.code == MSG_IN_FOWARD_PACKET)
             {
                 // Create Entity if it doesn't exist, otherwise add 
-                if (Common::Opcode((u16)message.opcode) == Common::Opcode::CMSG_PLAYER_LOGIN)
+                if (static_cast<Common::Opcode>(static_cast<u16>(message.opcode)) == Common::Opcode::CMSG_PLAYER_LOGIN)
                 {
                     ZoneScopedNC("LoginMessage", tracy::Color::Green3)
                     _updateFramework.registry.ctx<PlayerCreateQueueSingleton>().newEntityQueue->enqueue(message);
@@ -196,11 +196,11 @@ bool WorldServerHandler::Update()
                     ZoneScopedNC("ForwardMessage", tracy::Color::Green3)
                     SingletonComponent& singletonComponent = _updateFramework.registry.ctx<SingletonComponent>();
 
-                    auto itr = singletonComponent.accountToEntityMap.find(u32(message.account));
+                    auto itr = singletonComponent.accountToEntityMap.find(static_cast<u32>(message.account));
                     if (itr != singletonComponent.accountToEntityMap.end())
                     {
                         PlayerConnectionComponent& connection = _updateFramework.registry.get<PlayerConnectionComponent>(itr->second);
-                        connection.packets.push_back({ u32(message.opcode), false, message.packet });
+                        connection.packets.push_back({ static_cast<u32>(message.opcode), false, message.packet });
                     }
                 }
             }

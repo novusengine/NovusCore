@@ -26,6 +26,7 @@
 #include "../NovusTypes.h"
 #include <vector>
 #include <cassert>
+#include <string>
 
 namespace Common
 {
@@ -51,11 +52,11 @@ namespace Common
 
             for (i32 i = 0; i < 8; ++i)
             {
-                if (guidmark & (u8(1) << i))
+                if (guidmark & (static_cast<u8>(1) << i))
                 {
                     u8 bit;
                     Read(&bit, 1);
-                    guid |= (u64(bit) << (i * 8));
+                    guid |= (static_cast<u64>(bit) << (i * 8));
                 }
             }
         }
@@ -63,13 +64,13 @@ namespace Common
         template <typename T>
         void Read(T& destination)
         {
-            destination = *((T const*)&_bufferData[_readPos]);
+            destination = *(reinterpret_cast<T const*>(&_bufferData[_readPos]));
             _readPos += sizeof(T);
         }
         template <typename T>
         T ReadAt(size_t position)
         {
-            return *((T const*)&_bufferData[position]);
+            return *(reinterpret_cast<T const*>(&_bufferData[position]));
         }
         void Read(void* destination, size_t length)
         {
@@ -95,7 +96,7 @@ namespace Common
         }
         char Read(size_t position)
         {
-            char val = *((char const*)&_bufferData[position]);
+            char val = *(reinterpret_cast<char const*>(&_bufferData[position]));
             return val;
         }
 
@@ -116,19 +117,19 @@ namespace Common
         template <typename T>
         void Write(T const value)
         {
-            Append((u8*)&value, sizeof(value));
+            Append(reinterpret_cast<const u8*>(&value), sizeof(value));
         }
         template <typename T>
         void WriteAt(T const value, size_t position)
         {
             assert(_bufferData.size() > position);
-            std::memcpy(&_bufferData[position], (u8*)&value, sizeof(T));
+            std::memcpy(&_bufferData[position], reinterpret_cast<const u8*>(&value), sizeof(T));
         }
 
         template <typename T>
         void Replace(size_t position, T Value)
         {
-            _replace(position, (u8*)&Value, sizeof(Value));
+            _replace(position, reinterpret_cast<u8*>(&Value), sizeof(Value));
         }
         void _replace(size_t position, u8 const* src, size_t content)
         {
@@ -233,16 +234,16 @@ namespace Common
         {
             if (GetSpaceLeft() == 0)
             {
-                _bufferData.resize((u64)(_bufferData.size() * 1.5f));
+                _bufferData.resize(static_cast<u64>(_bufferData.size() * 1.5f));
             }
         }
 
         u8* GetDataPointer() { return _bufferData.data(); }
         u8* GetReadPointer() { return _bufferData.data() + _readPos; }
         u8* GetWritePointer() { return _bufferData.data() + _writePos; }
-        u32 GetActualSize() { return (u32)(_writePos - _readPos); }
-        u32 GetSpaceLeft() { return (u32)(_bufferData.size() - _writePos); }
-        u32 size() const { return (u32)(_bufferData.size()); }
+        u32 GetActualSize() { return static_cast<u32>(_writePos - _readPos); }
+        u32 GetSpaceLeft() { return static_cast<u32>(_bufferData.size() - _writePos); }
+        u32 size() const { return static_cast<u32>(_bufferData.size()); }
         bool empty() const { return _bufferData.empty(); }
 
         size_t _readPos, _writePos;

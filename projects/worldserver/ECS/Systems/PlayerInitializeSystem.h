@@ -70,7 +70,7 @@ namespace PlayerInitializeSystem
             u32 mask = 0xEA;
 
             Common::ByteBuffer accountDataTimes;
-            accountDataTimes.Write<u32>((u32)time(nullptr)); // Unix Time
+            accountDataTimes.Write<u32>(static_cast<u32>(time(nullptr))); // Unix Time
             accountDataTimes.Write<u8>(1); // bitmask blocks count
             accountDataTimes.Write<u32>(mask); // PER_CHARACTER_CACHE_MASK
 
@@ -119,7 +119,7 @@ namespace PlayerInitializeSystem
             {
                 Common::ByteBuffer initialSpells;
                 initialSpells.Write<u8>(0);
-                initialSpells.Write<u16>(u16(spellStorageData.spells.size()));
+                initialSpells.Write<u16>(static_cast<u16>(spellStorageData.spells.size()));
 
                 for (u32 spell : spellStorageData.spells)
                 {

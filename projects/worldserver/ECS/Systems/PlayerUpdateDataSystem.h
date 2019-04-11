@@ -85,7 +85,7 @@ namespace PlayerUpdateDataSystem
 					else if (index >= UNIT_FIELD_BASEATTACKTIME && index <= UNIT_FIELD_RANGEDATTACKTIME)
 					{
 					// convert from f32 to uint32 and send
-					fieldBuffer.Write<u32>(u32(playerFieldData.playerFields.ReadAt<i32>(index * 4)));
+					fieldBuffer.Write<u32>(static_cast<u32>(playerFieldData.playerFields.ReadAt<i32>(index * 4)));
 					}
 					// there are some (said f32 in TC, but all these are ints)int values which may be negative or can't get negative due to other checks
 					else if ((index >= UNIT_FIELD_NEGSTAT0 && index <= UNIT_FIELD_NEGSTAT4) ||
@@ -93,7 +93,7 @@ namespace PlayerUpdateDataSystem
 					(index >= UNIT_FIELD_RESISTANCEBUFFMODSNEGATIVE && index <= (UNIT_FIELD_RESISTANCEBUFFMODSNEGATIVE + 6)) ||
 					(index >= UNIT_FIELD_POSSTAT0 && index <= UNIT_FIELD_POSSTAT4))
 					{
-					fieldBuffer.Write<u32>(u32(playerFieldData.playerFields.ReadAt<i32>(index * 4)));
+					fieldBuffer.Write<u32>(static_cast<u32>(playerFieldData.playerFields.ReadAt<i32>(index * 4)));
 					}
 					// Gamemasters should be always able to select units - remove not selectable flag
 					else if (index == UNIT_FIELD_FLAGS)
@@ -281,7 +281,7 @@ namespace PlayerUpdateDataSystem
                     // This is based on chatType
                     chatPacket.data.Write<u64>(0); // Receiver (0) for none
 
-                    chatPacket.data.Write<u32>(u32(chatData.message.length()) + 1);
+                    chatPacket.data.Write<u32>(static_cast<u32>(chatData.message.length()) + 1);
                     chatPacket.data.WriteString(chatData.message);
                     chatPacket.data.Write<u8>(0); // Chat Tag
 

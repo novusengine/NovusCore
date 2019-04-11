@@ -179,7 +179,7 @@ void NovusConnection::HandleRead()
         }
         else
         {
-            u16 size = u16(itr->second.packetSize);
+            u16 size = static_cast<u16>(itr->second.packetSize);
             if (buffer.GetActualSize() < size)
                 break;
 
@@ -225,7 +225,7 @@ bool NovusConnection::HandleCommandForwardPacket()
     NovusHeader* header = reinterpret_cast<NovusHeader*>(_headerBuffer.GetReadPointer());
     //std::cout << "Received opcode: 0x" << std::hex << std::uppercase << header->opcode << std::endl;
 
-    switch ((Common::Opcode)header->opcode)
+    switch (static_cast<Common::Opcode>(header->opcode))
     {
         case Common::Opcode::CMSG_READY_FOR_ACCOUNT_DATA_TIMES:
         {
@@ -242,7 +242,7 @@ bool NovusConnection::HandleCommandForwardPacket()
             packetHeader.opcode = Common::Opcode::SMSG_ACCOUNT_DATA_TIMES;
 
             u32 mask = 0x15;
-            accountDataTimes.Write<u32>((u32)time(nullptr));
+            accountDataTimes.Write<u32>(static_cast<u32>(time(nullptr)));
             accountDataTimes.Write<u8>(1); // bitmask blocks count
             accountDataTimes.Write<u32>(mask); // PER_CHARACTER_CACHE_MASK
 
@@ -252,7 +252,7 @@ bool NovusConnection::HandleCommandForwardPacket()
                     accountDataTimes.Write<u32>(0);
             }
 
-            packetHeader.size = (u16)accountDataTimes.GetActualSize();
+            packetHeader.size = static_cast<u16>(accountDataTimes.GetActualSize());
             packetHeader.AddTo(accountDataForwardPacket);
             accountDataForwardPacket.Append(accountDataTimes);
 
@@ -325,7 +325,7 @@ bool NovusConnection::HandleCommandForwardPacket()
                 packetHeader.opcode = Common::Opcode::SMSG_CHAR_ENUM;
 
                 // Number of characters
-                charEnum.Write<u8>((u8)results.affected_rows());
+                charEnum.Write<u8>(static_cast<u8>(results.affected_rows()));
 
                 /* Template for loading a character */
                 for (auto& row : results)

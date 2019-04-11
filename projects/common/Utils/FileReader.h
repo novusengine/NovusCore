@@ -30,7 +30,7 @@ public:
         if (_length == 0)
             return;
 
-        _fileStream.read((char*)buffer.data(), length);
+        _fileStream.read(reinterpret_cast<char*>(buffer.data()), length);
     }
 
     std::string Path() { return _path; }
