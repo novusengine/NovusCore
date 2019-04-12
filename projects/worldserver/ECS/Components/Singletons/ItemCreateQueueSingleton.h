@@ -26,7 +26,14 @@
 #include "../Message.h"
 #include "Utils/ConcurrentQueue.h"
 
-struct PlayerCreateQueueSingleton
+struct ItemCreationInformation
 {
-	moodycamel::ConcurrentQueue<Message>* newPlayerQueue;
+    u32 itemEntry = 0;
+    u32 clientEntityGuid = 0;
+    u32 accountGuid = 0;
+    u64 characterGuid = 0;
+};
+struct ItemCreateQueueSingleton
+{
+    moodycamel::ConcurrentQueue<ItemCreationInformation>* newItemQueue;
 };

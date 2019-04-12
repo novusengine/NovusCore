@@ -37,6 +37,7 @@
 #include "../Components/PlayerFieldDataComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
 #include "../Components/Singletons/PlayerUpdatesQueueSingleton.h"
+#include "../Components/Singletons/ItemCreateQueueSingleton.h"
 
 namespace PlayerCreateDataSystem
 {
@@ -101,7 +102,7 @@ namespace PlayerCreateDataSystem
         u32* flags = UnitUpdateFieldFlags;
         u16 fieldNotifyFlags = UF_FLAG_DYNAMIC;
 
-        for (u16 index = 0; index < PLAYER_END; ++index)
+        for (u16 index = 0; index < PLAYER_END; index++)
         {
             if (fieldNotifyFlags & flags[index] || ((flags[index] & visibleFlags) & UF_FLAG_SPECIAL_INFO)
                 || ((updateType == 0 ? playerFieldData.changesMask.IsSet(index) : playerFieldData.playerFields.ReadAt<i32>(index * 4))

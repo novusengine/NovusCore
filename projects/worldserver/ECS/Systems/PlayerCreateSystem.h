@@ -50,7 +50,7 @@ namespace PlayerCreateSystem
         CharacterDatabaseCacheSingleton& characterDatabase = registry.ctx<CharacterDatabaseCacheSingleton>();
 
         Message message;
-        while (createPlayerQueue.newEntityQueue->try_dequeue(message))
+        while (createPlayerQueue.newPlayerQueue->try_dequeue(message))
         {
             u64 characterGuid = 0;
             message.packet.Read<u64>(characterGuid);

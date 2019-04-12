@@ -4,6 +4,18 @@
 #include <bitset>
 
 #define CLIENT_UPDATE_MASK_BITS 32
+
+/* How to calculate size
+
+Example for player:
+PLAYER_END == 1326, knowing this we need to
+calculate how many blocks we would have, so
+we do that by doing the following
+_blockCount = (valuesCount + CLIENT_UPDATE_MASK_BITS - 1) / CLIENT_UPDATE_MASK_BITS;
+
+_blockCount will return 42 which we can know times by CLIENT_UPDATE_MASK_BITS to get 1344
+
+*/
 template <size_t size>
 class UpdateMask
 {

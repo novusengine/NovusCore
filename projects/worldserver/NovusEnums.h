@@ -34,6 +34,57 @@ enum EObjectFields
     OBJECT_END = 0x0006
 };
 
+enum EItemFields
+{
+    ITEM_FIELD_OWNER = OBJECT_END + 0x0000, // Size: 2, Type: LONG, Flags: PUBLIC
+    ITEM_FIELD_CONTAINED = OBJECT_END + 0x0002, // Size: 2, Type: LONG, Flags: PUBLIC
+    ITEM_FIELD_CREATOR = OBJECT_END + 0x0004, // Size: 2, Type: LONG, Flags: PUBLIC
+    ITEM_FIELD_GIFTCREATOR = OBJECT_END + 0x0006, // Size: 2, Type: LONG, Flags: PUBLIC
+    ITEM_FIELD_STACK_COUNT = OBJECT_END + 0x0008, // Size: 1, Type: INT, Flags: OWNER, ITEM_OWNER
+    ITEM_FIELD_DURATION = OBJECT_END + 0x0009, // Size: 1, Type: INT, Flags: OWNER, ITEM_OWNER
+    ITEM_FIELD_SPELL_CHARGES = OBJECT_END + 0x000A, // Size: 5, Type: INT, Flags: OWNER, ITEM_OWNER
+    ITEM_FIELD_FLAGS = OBJECT_END + 0x000F, // Size: 1, Type: INT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_1_1 = OBJECT_END + 0x0010, // Size: 2, Type: INT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_1_3 = OBJECT_END + 0x0012, // Size: 1, Type: TWO_SHORT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_2_1 = OBJECT_END + 0x0013, // Size: 2, Type: INT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_2_3 = OBJECT_END + 0x0015, // Size: 1, Type: TWO_SHORT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_3_1 = OBJECT_END + 0x0016, // Size: 2, Type: INT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_3_3 = OBJECT_END + 0x0018, // Size: 1, Type: TWO_SHORT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_4_1 = OBJECT_END + 0x0019, // Size: 2, Type: INT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_4_3 = OBJECT_END + 0x001B, // Size: 1, Type: TWO_SHORT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_5_1 = OBJECT_END + 0x001C, // Size: 2, Type: INT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_5_3 = OBJECT_END + 0x001E, // Size: 1, Type: TWO_SHORT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_6_1 = OBJECT_END + 0x001F, // Size: 2, Type: INT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_6_3 = OBJECT_END + 0x0021, // Size: 1, Type: TWO_SHORT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_7_1 = OBJECT_END + 0x0022, // Size: 2, Type: INT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_7_3 = OBJECT_END + 0x0024, // Size: 1, Type: TWO_SHORT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_8_1 = OBJECT_END + 0x0025, // Size: 2, Type: INT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_8_3 = OBJECT_END + 0x0027, // Size: 1, Type: TWO_SHORT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_9_1 = OBJECT_END + 0x0028, // Size: 2, Type: INT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_9_3 = OBJECT_END + 0x002A, // Size: 1, Type: TWO_SHORT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_10_1 = OBJECT_END + 0x002B, // Size: 2, Type: INT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_10_3 = OBJECT_END + 0x002D, // Size: 1, Type: TWO_SHORT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_11_1 = OBJECT_END + 0x002E, // Size: 2, Type: INT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_11_3 = OBJECT_END + 0x0030, // Size: 1, Type: TWO_SHORT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_12_1 = OBJECT_END + 0x0031, // Size: 2, Type: INT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_12_3 = OBJECT_END + 0x0033, // Size: 1, Type: TWO_SHORT, Flags: PUBLIC
+    ITEM_FIELD_PROPERTY_SEED = OBJECT_END + 0x0034, // Size: 1, Type: INT, Flags: PUBLIC
+    ITEM_FIELD_RANDOM_PROPERTIES_ID = OBJECT_END + 0x0035, // Size: 1, Type: INT, Flags: PUBLIC
+    ITEM_FIELD_DURABILITY = OBJECT_END + 0x0036, // Size: 1, Type: INT, Flags: OWNER, ITEM_OWNER
+    ITEM_FIELD_MAXDURABILITY = OBJECT_END + 0x0037, // Size: 1, Type: INT, Flags: OWNER, ITEM_OWNER
+    ITEM_FIELD_CREATE_PLAYED_TIME = OBJECT_END + 0x0038, // Size: 1, Type: INT, Flags: PUBLIC
+    ITEM_FIELD_PAD = OBJECT_END + 0x0039, // Size: 1, Type: INT, Flags: NONE
+    ITEM_END = OBJECT_END + 0x003A
+};
+
+enum EContainerFields
+{
+    CONTAINER_FIELD_NUM_SLOTS = ITEM_END + 0x0000, // Size: 1, Type: INT, Flags: PUBLIC
+    CONTAINER_ALIGN_PAD = ITEM_END + 0x0001, // Size: 1, Type: BYTES, Flags: NONE
+    CONTAINER_FIELD_SLOT_1 = ITEM_END + 0x0002, // Size: 72, Type: LONG, Flags: PUBLIC
+    CONTAINER_END = ITEM_END + 0x004A
+};
+
 enum EUnitFields
 {
     UNIT_FIELD_CHARM = OBJECT_END + 0x0000, // Size: 2, Type: LONG, Flags: PUBLIC
@@ -356,6 +407,147 @@ enum UpdatefieldFlags
     UF_FLAG_PARTY_MEMBER = 0x040,
     UF_FLAG_UNUSED2 = 0x080,
     UF_FLAG_DYNAMIC = 0x100
+};
+u32 ItemUpdateFieldFlags[CONTAINER_END] =
+{
+    UF_FLAG_PUBLIC,                                         // OBJECT_FIELD_GUID
+    UF_FLAG_PUBLIC,                                         // OBJECT_FIELD_GUID+1
+    UF_FLAG_PUBLIC,                                         // OBJECT_FIELD_TYPE
+    UF_FLAG_PUBLIC,                                         // OBJECT_FIELD_ENTRY
+    UF_FLAG_PUBLIC,                                         // OBJECT_FIELD_SCALE_X
+    UF_FLAG_NONE,                                           // OBJECT_FIELD_PADDING
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_OWNER
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_OWNER+1
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_CONTAINED
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_CONTAINED+1
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_CREATOR
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_CREATOR+1
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_GIFTCREATOR
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_GIFTCREATOR+1
+    UF_FLAG_OWNER | UF_FLAG_ITEM_OWNER,                     // ITEM_FIELD_STACK_COUNT
+    UF_FLAG_OWNER | UF_FLAG_ITEM_OWNER,                     // ITEM_FIELD_DURATION
+    UF_FLAG_OWNER | UF_FLAG_ITEM_OWNER,                     // ITEM_FIELD_SPELL_CHARGES
+    UF_FLAG_OWNER | UF_FLAG_ITEM_OWNER,                     // ITEM_FIELD_SPELL_CHARGES+1
+    UF_FLAG_OWNER | UF_FLAG_ITEM_OWNER,                     // ITEM_FIELD_SPELL_CHARGES+2
+    UF_FLAG_OWNER | UF_FLAG_ITEM_OWNER,                     // ITEM_FIELD_SPELL_CHARGES+3
+    UF_FLAG_OWNER | UF_FLAG_ITEM_OWNER,                     // ITEM_FIELD_SPELL_CHARGES+4
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_FLAGS
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_1_1
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_1_1+1
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_1_3
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_2_1
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_2_1+1
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_2_3
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_3_1
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_3_1+1
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_3_3
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_4_1
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_4_1+1
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_4_3
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_5_1
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_5_1+1
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_5_3
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_6_1
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_6_1+1
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_6_3
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_7_1
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_7_1+1
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_7_3
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_8_1
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_8_1+1
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_8_3
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_9_1
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_9_1+1
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_9_3
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_10_1
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_10_1+1
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_10_3
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_11_1
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_11_1+1
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_11_3
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_12_1
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_12_1+1
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_12_3
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_PROPERTY_SEED
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_RANDOM_PROPERTIES_ID
+    UF_FLAG_OWNER | UF_FLAG_ITEM_OWNER,                     // ITEM_FIELD_DURABILITY
+    UF_FLAG_OWNER | UF_FLAG_ITEM_OWNER,                     // ITEM_FIELD_MAXDURABILITY
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_CREATE_PLAYED_TIME
+    UF_FLAG_NONE,                                           // ITEM_FIELD_PAD
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_NUM_SLOTS
+    UF_FLAG_NONE,                                           // CONTAINER_ALIGN_PAD
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+1
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+2
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+3
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+4
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+5
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+6
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+7
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+8
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+9
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+10
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+11
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+12
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+13
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+14
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+15
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+16
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+17
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+18
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+19
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+20
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+21
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+22
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+23
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+24
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+25
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+26
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+27
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+28
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+29
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+30
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+31
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+32
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+33
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+34
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+35
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+36
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+37
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+38
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+39
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+40
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+41
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+42
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+43
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+44
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+45
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+46
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+47
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+48
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+49
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+50
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+51
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+52
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+53
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+54
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+55
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+56
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+57
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+58
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+59
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+60
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+61
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+62
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+63
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+64
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+65
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+66
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+67
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+68
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+69
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+70
+    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+71
 };
 static u32 UnitUpdateFieldFlags[PLAYER_END] =
 {

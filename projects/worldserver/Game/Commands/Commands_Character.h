@@ -2,14 +2,16 @@
 #include <NovusTypes.h>
 #include <Utils/StringHash.h>
 #include <../ECS/Components/PlayerConnectionComponent.h>
+#include <../ECS/Components/PlayerFieldDataComponent.h>
 #include <../ECS/Components/Singletons/CommandDataSingleton.h>
 #include <../ECS/Components/Singletons/PlayerPacketQueueSingleton.h>
+#include <../ECS/Components/Singletons/WorldDatabaseCacheSingleton.h>
 
 namespace Commands_Character
 {
     static robin_hood::unordered_map<u32, CommandEntry> characterCommandMap;
     static entt::registry* _registry = nullptr;
-    
+
     bool _Level(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
     {
         if (commandStrings.size() >= 3)
@@ -49,7 +51,7 @@ namespace Commands_Character
                     }
                 }
             }
-            catch (std::exception) { }
+            catch (std::exception) {}
         }
 
         return true;
@@ -197,6 +199,66 @@ namespace Commands_Character
 
         return false;
     }
+    bool _AddItem(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
+    {
+        if (commandStrings.size() >= 3)
+        {
+            try
+            {
+                u32 itemEntry = std::stoi(commandStrings[2]);
+                WorldDatabaseCacheSingleton& worldDatabaseCache = _registry->ctx<WorldDatabaseCacheSingleton>();
+
+                ItemTemplate itemTemplate;
+                if (!worldDatabaseCache.cache->GetItemTemplate(itemEntry, itemTemplate))
+                {
+                    return false;
+                }
+
+                PlayerPacketQueueSingleton& playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
+                PlayerFieldDataComponent& playerFieldData = _registry->get<PlayerFieldDataComponent>(clientConnection.entityGuid);
+
+                ItemCreationInformation itemCreationInformation;
+                itemCreationInformation.itemEntry = itemTemplate.entry;
+                itemCreationInformation.clientEntityGuid = clientConnection.entityGuid;
+                itemCreationInformation.accountGuid = clientConnection.accountGuid;
+                itemCreationInformation.characterGuid = clientConnection.characterGuid;
+
+                u64 itemGuid = (static_cast<u64>(2) | (static_cast<u64>(itemTemplate.entry) << 24) | (static_cast<u64>(0x4000) << 48));
+                playerFieldData.SetGuidValue(PLAYER_FIELD_PACK_SLOT_1, itemGuid);
+                _registry->ctx<ItemCreateQueueSingleton>().newItemQueue->enqueue(itemCreationInformation);
+                return true;
+            }
+            catch (std::exception) {}
+        }
+
+        return false;
+    }
+    bool _DebugItem(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
+    {
+        if (commandStrings.size() >= 3)
+        {
+            try
+            {
+                u32 itemEntry = std::stoi(commandStrings[2]);
+                WorldDatabaseCacheSingleton& worldDatabaseCache = _registry->ctx<WorldDatabaseCacheSingleton>();
+
+                ItemTemplate itemTemplate;
+                if (!worldDatabaseCache.cache->GetItemTemplate(itemEntry, itemTemplate))
+                {
+                    return false;
+                }
+
+                PlayerFieldDataComponent& playerFieldData = _registry->get<PlayerFieldDataComponent>(clientConnection.entityGuid);
+
+                u64 itemGuid = (static_cast<u64>(2) | (static_cast<u64>(itemTemplate.entry) << 24) | (static_cast<u64>(0x4000) << 48));
+                playerFieldData.SetGuidValue(PLAYER_FIELD_PACK_SLOT_1, itemGuid);
+                return true;
+            }
+            catch (std::exception) {}
+        }
+
+        return false;
+    }
 
     bool CharacterCommand(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
     {
@@ -222,5 +284,7 @@ namespace Commands_Character
         characterCommandMap["fly"_h] = CommandEntry(_Fly);
         characterCommandMap["tele"_h] = CommandEntry(_Tele);
         characterCommandMap["teletomap"_h] = CommandEntry(_TeleToMap);
+        characterCommandMap["additem"_h] = CommandEntry(_AddItem);
+        characterCommandMap["debugitem"_h] = CommandEntry(_DebugItem);
     }
 }

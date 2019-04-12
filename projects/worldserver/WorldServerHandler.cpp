@@ -8,11 +8,14 @@
 // Systems
 #include "ECS/Systems/PlayerConnectionSystem.h"
 #include "ECS/Systems/PlayerInitializeSystem.h"
+#include "ECS/Systems/ItemInitializeSystem.h"
 #include "ECS/Systems/CommandParserSystem.h"
 #include "ECS/Systems/PlayerCreateDataSystem.h"
+#include "ECS/Systems/ItemCreateDataSystem.h"
 #include "ECS/Systems/PlayerUpdateDataSystem.h"
 #include "ECS/Systems/ClientUpdateSystem.h"
 #include "ECS/Systems/PlayerCreateSystem.h"
+#include "ECS/Systems/ItemCreateSystem.h"
 #include "ECS/Systems/PlayerDeleteSystem.h"
 
 #include "ECS/Components/Singletons/SingletonComponent.h"
@@ -23,6 +26,7 @@
 #include "ECS/Components/Singletons/WorldDatabaseCacheSingleton.h"
 #include "ECS/Components/Singletons/CommandDataSingleton.h"
 #include "ECS/Components/Singletons/PlayerPacketQueueSingleton.h"
+#include "ECS/Components/Singletons/ItemCreateQueueSingleton.h"
 #include "Connections/NovusConnection.h"
 
 // Game
@@ -94,14 +98,17 @@ void WorldServerHandler::Run()
     CharacterDatabaseCacheSingleton& characterDatabaseCacheSingleton = _updateFramework.registry.set<CharacterDatabaseCacheSingleton>();
     WorldDatabaseCacheSingleton& worldDatabaseCacheSingleton = _updateFramework.registry.set<WorldDatabaseCacheSingleton>();
     PlayerPacketQueueSingleton& playerPacketQueueSingleton = _updateFramework.registry.set<PlayerPacketQueueSingleton>();
+    ItemCreateQueueSingleton& itemCreateQueueComponent = _updateFramework.registry.set<ItemCreateQueueSingleton>();
    
     singletonComponent.worldServerHandler = this;
     singletonComponent.connection = _novusConnection;
     singletonComponent.deltaTime = 1.0f;
 
-    playerCreateQueueComponent.newEntityQueue = new moodycamel::ConcurrentQueue<Message>(256);
+    playerCreateQueueComponent.newPlayerQueue = new moodycamel::ConcurrentQueue<Message>(256);
     playerdeleteQueueSingleton.expiredEntityQueue = new moodycamel::ConcurrentQueue<ExpiredPlayerData>(256);
     playerPacketQueueSingleton.packetQueue = new moodycamel::ConcurrentQueue<Common::ByteBuffer>(256);
+
+    itemCreateQueueComponent.newItemQueue = new moodycamel::ConcurrentQueue<ItemCreationInformation>(256);
 
     characterDatabaseCacheSingleton.cache = new CharacterDatabaseCache();
     characterDatabaseCacheSingleton.cache->Load();
@@ -194,7 +201,7 @@ bool WorldServerHandler::Update()
                 if (static_cast<Common::Opcode>(static_cast<u16>(message.opcode)) == Common::Opcode::CMSG_PLAYER_LOGIN)
                 {
                     ZoneScopedNC("LoginMessage", tracy::Color::Green3)
-                    _updateFramework.registry.ctx<PlayerCreateQueueSingleton>().newEntityQueue->enqueue(message);
+                    _updateFramework.registry.ctx<PlayerCreateQueueSingleton>().newPlayerQueue->enqueue(message);
                 }
                 else
                 {
@@ -240,17 +247,33 @@ void WorldServerHandler::SetupUpdateFramework()
     tf::Task playerInitializeSystemTask = framework.emplace([&registry]()
     {
         ZoneScopedNC("PlayerInitializeSystem", tracy::Color::Blue2)
-        PlayerInitializeSystem::Update(registry);
+            PlayerInitializeSystem::Update(registry);
     });
     playerInitializeSystemTask.gather(commandParserSystemTask);
 
+    // ItemInitializeSystem
+    tf::Task itemInitializeSystemTask = framework.emplace([&registry]()
+    {
+        ZoneScopedNC("ItemInitializeSystem", tracy::Color::Blue2)
+            ItemInitializeSystem::Update(registry);
+    });
+    itemInitializeSystemTask.gather(playerInitializeSystemTask);
+
     // PlayerCreateDataSystem
-    tf::Task playerCreateDataSystem = framework.emplace([&registry]()
+    tf::Task playerCreateDataSystemTask = framework.emplace([&registry]()
     {
         ZoneScopedNC("PlayerCreateDataSystem", tracy::Color::Blue2)
         PlayerCreateDataSystem::Update(registry);
     });
-    playerCreateDataSystem.gather(playerInitializeSystemTask);
+    playerCreateDataSystemTask.gather(itemInitializeSystemTask);
+
+    // ItemCreateDataSystem
+    tf::Task itemCreateDataSystemTask = framework.emplace([&registry]()
+    {
+        ZoneScopedNC("ItemCreateDataSystem", tracy::Color::Blue2)
+            ItemCreateDataSystem::Update(registry);
+    });
+    itemCreateDataSystemTask.gather(playerCreateDataSystemTask);
 
     // PlayerUpdateDataSystem
     tf::Task playerUpdateDataSystemTask = framework.emplace([&registry]()
@@ -258,7 +281,7 @@ void WorldServerHandler::SetupUpdateFramework()
         ZoneScopedNC("PlayerUpdateDataSystem", tracy::Color::Yellow2)
         PlayerUpdateDataSystem::Update(registry);
     });
-    playerUpdateDataSystemTask.gather(playerCreateDataSystem);
+    playerUpdateDataSystemTask.gather(itemCreateDataSystemTask);
 
     // ClientUpdateSystem
     tf::Task clientUpdateSystemTask = framework.emplace([&registry]() 
@@ -268,21 +291,29 @@ void WorldServerHandler::SetupUpdateFramework()
     });
     clientUpdateSystemTask.gather(playerUpdateDataSystemTask);
 
-    // CreatePlayerSystem
-    tf::Task createPlayerSystemTask = framework.emplace([&registry]()
+    // PlayerCreateSystem
+    tf::Task playerCreateSystemTask = framework.emplace([&registry]()
     {
-        ZoneScopedNC("CreatePlayerSystem", tracy::Color::Blue2)
-        PlayerCreateSystem::Update(registry);
+        ZoneScopedNC("PlayerCreateSystem", tracy::Color::Blue2)
+            PlayerCreateSystem::Update(registry);
     });
-    createPlayerSystemTask.gather(clientUpdateSystemTask); 
+    playerCreateSystemTask.gather(clientUpdateSystemTask);
 
-    // DeletePlayerSystem
-    tf::Task deletePlayerSystemTask = framework.emplace([&registry]()
+    // ItemCreateSystem
+    tf::Task itemCreateSystemTask = framework.emplace([&registry]()
     {
-        ZoneScopedNC("DeletePlayerSystem", tracy::Color::Blue2)
+        ZoneScopedNC("ItemCreateSystem", tracy::Color::Blue2)
+            ItemCreateSystem::Update(registry);
+    });
+    itemCreateSystemTask.gather(playerCreateSystemTask);
+
+    // PlayerDeleteSystem
+    tf::Task playerDeleteSystemTask = framework.emplace([&registry]()
+    {
+        ZoneScopedNC("PlayerDeleteSystem", tracy::Color::Blue2)
         PlayerDeleteSystem::Update(registry);
     });
-    deletePlayerSystemTask.gather(createPlayerSystemTask);
+    playerDeleteSystemTask.gather(itemCreateSystemTask);
 }
 
 void WorldServerHandler::UpdateSystems()

@@ -23,10 +23,39 @@
 */
 #pragma once
 #include <NovusTypes.h>
-#include "../Message.h"
-#include "Utils/ConcurrentQueue.h"
+#include <Networking/ByteBuffer.h>
 
-struct PlayerCreateQueueSingleton
+#include "../NovusEnums.h"
+#include "../Utils/UpdateMask.h"
+
+struct ItemFieldDataComponent
 {
-	moodycamel::ConcurrentQueue<Message>* newPlayerQueue;
+    ItemFieldDataComponent() : changesMask(ITEM_END), itemFields(ITEM_END * 4) { }
+
+    void SetGuidValue(u16 index, u64 value)
+    {
+        itemFields.WriteAt<u64>(value, index * 4);
+        changesMask.SetBit(index);
+        changesMask.SetBit(index + 1);
+    }
+    template <typename T>
+    void SetFieldValue(u16 index, T value, u8 offset = 0)
+    {
+        itemFields.WriteAt<T>(value, (index * 4) + offset);
+        changesMask.SetBit(index);
+    }
+    template <typename T>
+    T GetFieldValue(u16 index, u8 offset = 0)
+    {
+        return itemFields.ReadAt<T>((index * 4) + offset);
+    }
+    void ResetFields()
+    {
+        itemFields.Clean();
+        itemFields.Resize(ITEM_END * 4);
+        changesMask.Reset();
+    }
+
+    UpdateMask<64> changesMask;
+    Common::ByteBuffer itemFields;
 };

@@ -23,10 +23,13 @@
 */
 #pragma once
 #include <NovusTypes.h>
-#include "../Message.h"
-#include "Utils/ConcurrentQueue.h"
+#include <Networking/ByteBuffer.h>
+#include <vector>
 
-struct PlayerCreateQueueSingleton
+struct ItemDataComponent
 {
-	moodycamel::ConcurrentQueue<Message>* newPlayerQueue;
+    u32 entityGuid;
+    u32 itemEntry;
+    u32 accountGuid;
+    u64 characterGuid;
 };
