@@ -20,6 +20,9 @@ void WorldDatabaseCache::Load()
 
     if (resultSet.affected_rows() > 0)
     {
+        Common::ByteBuffer itemQuery(500);
+        itemQuery.Resize(500);
+
         for (auto row : resultSet)
         {
             ItemTemplate itemTemplate(this);
@@ -108,6 +111,112 @@ void WorldDatabaseCache::Load()
             itemTemplate.itemLimitCategory = row[124].GetU32();
             itemTemplate.holidayId = row[125].GetU32();
 
+            itemQuery.Clean();
+            itemQuery.Write<u32>(itemTemplate.entry);
+            itemQuery.Write<u32>(itemTemplate.itemClass);
+            itemQuery.Write<u32>(itemTemplate.itemSubClass);
+            itemQuery.Write<i32>(itemTemplate.soundOverrideSubclass);
+            itemQuery.WriteString(itemTemplate.name);
+            itemQuery.Write<u8>(0); // Name2
+            itemQuery.Write<u8>(0); // Name3
+            itemQuery.Write<u8>(0); // Name4
+            itemQuery.Write<u32>(itemTemplate.displayId);
+            itemQuery.Write<u32>(itemTemplate.quality);
+            itemQuery.Write<u32>(itemTemplate.flags);
+            itemQuery.Write<u32>(itemTemplate.flagsExtra);
+            itemQuery.Write<i32>(itemTemplate.buyPrice);
+            itemQuery.Write<u32>(itemTemplate.sellPrice);
+            itemQuery.Write<u32>(itemTemplate.inventoryType);
+            itemQuery.Write<u32>(itemTemplate.allowableClass);
+            itemQuery.Write<u32>(itemTemplate.allowableRace);
+            itemQuery.Write<u32>(itemTemplate.itemLevel);
+            itemQuery.Write<u32>(itemTemplate.requiredLevel);
+            itemQuery.Write<u32>(itemTemplate.requiredSkill);
+            itemQuery.Write<u32>(itemTemplate.requiredSkillRank);
+            itemQuery.Write<u32>(itemTemplate.requiredSpell);
+            itemQuery.Write<u32>(itemTemplate.requiredHonorRank);
+            itemQuery.Write<u32>(itemTemplate.requiredCityRank);
+            itemQuery.Write<u32>(itemTemplate.requiredReputationFaction);
+            itemQuery.Write<u32>(itemTemplate.requiredReputationRank);
+            itemQuery.Write<i32>(itemTemplate.maxCount);
+            itemQuery.Write<i32>(itemTemplate.stackable);
+            itemQuery.Write<u32>(itemTemplate.containerSlots);
+            itemQuery.Write<u32>(itemTemplate.statsCount);
+
+            /* Item Stats */
+            for (u32 i = 0; i < itemTemplate.statsCount; i++)
+            {
+                itemQuery.Write<u32>(itemTemplate.statInfo[i].statType);
+                itemQuery.Write<u32>(itemTemplate.statInfo[i].statValue);
+            }
+
+            itemQuery.Write<u32>(itemTemplate.scalingStatDistribution);
+            itemQuery.Write<u32>(itemTemplate.scalingStatValue);
+
+            /* Item Damage */
+            for (u32 i = 0; i < 2; i++)
+            {
+                itemQuery.Write<f32>(itemTemplate.damageInfo[i].damageMin);
+                itemQuery.Write<f32>(itemTemplate.damageInfo[i].damageMax);
+                itemQuery.Write<u32>(itemTemplate.damageInfo[i].damageType);
+            }
+
+            /* Item Resistances */
+            for (u32 i = 0; i < 7; i++)
+            {
+                itemQuery.Write<u32>(itemTemplate.resistances[i]);
+            }
+
+            itemQuery.Write<u32>(itemTemplate.attackSpeed);
+            itemQuery.Write<u32>(itemTemplate.ammoType);
+            itemQuery.Write<f32>(itemTemplate.rangeModifier);
+
+            /* Item Spells */
+            for (u32 i = 0; i < 5; i++)
+            {
+                itemQuery.Write<u32>(itemTemplate.spellInfo[i].spellId);
+                itemQuery.Write<u32>(itemTemplate.spellInfo[i].spellTrigger);
+                itemQuery.Write<u32>(static_cast<u32>(-abs(itemTemplate.spellInfo[i].spellCharges)));
+                itemQuery.Write<u32>(static_cast<u32>(itemTemplate.spellInfo[i].spellCooldown));
+                itemQuery.Write<u32>(itemTemplate.spellInfo[i].spellCategory);
+                itemQuery.Write<u32>(static_cast<u32>(itemTemplate.spellInfo[i].spellCategoryCooldown));
+            }
+
+            itemQuery.Write<u32>(itemTemplate.bindType);
+            itemQuery.WriteString(itemTemplate.description);
+            itemQuery.Write<u32>(itemTemplate.pageTextId);
+            itemQuery.Write<u32>(itemTemplate.pageLanguageId);
+            itemQuery.Write<u32>(itemTemplate.pageTextureId);
+            itemQuery.Write<u32>(itemTemplate.startQuest);
+            itemQuery.Write<u32>(itemTemplate.lockId);
+            itemQuery.Write<i32>(itemTemplate.materialSound);
+            itemQuery.Write<u32>(itemTemplate.weaponSheath);
+            itemQuery.Write<i32>(itemTemplate.randomPropertyId);
+            itemQuery.Write<i32>(itemTemplate.randomSuffixId);
+            itemQuery.Write<u32>(itemTemplate.shieldBlock);
+            itemQuery.Write<u32>(itemTemplate.itemSetId);
+            itemQuery.Write<u32>(itemTemplate.itemDurability);
+            itemQuery.Write<u32>(itemTemplate.restrictUseToAreaId);
+            itemQuery.Write<u32>(itemTemplate.restrictUseToMapId);
+            itemQuery.Write<u32>(itemTemplate.bagFamilyBitmask);
+            itemQuery.Write<u32>(itemTemplate.toolCategoryId);
+
+            /* Item Sockets */
+            for (u32 i = 0; i < 3; i++)
+            {
+                itemQuery.Write<u32>(itemTemplate.socketInfo[i].socketType);
+                itemQuery.Write<u32>(itemTemplate.socketInfo[i].socketAmount);
+            }
+
+            itemQuery.Write<u32>(itemTemplate.socketBonusId);
+            itemQuery.Write<u32>(itemTemplate.gemPropertiesId);
+            itemQuery.Write<u32>(itemTemplate.requiredDisenchantSkill);
+            itemQuery.Write<f32>(itemTemplate.armorDamageModifier);
+            itemQuery.Write<u32>(itemTemplate.limitedDuration);
+            itemQuery.Write<u32>(itemTemplate.itemLimitCategory);
+            itemQuery.Write<u32>(itemTemplate.holidayId);
+
+            itemTemplate._packet = itemQuery;
             _itemTemplateCache[itemTemplate.entry] = itemTemplate;
         }
     }

@@ -43,6 +43,7 @@
 #include "../Components/Singletons/PlayerDeleteQueueSingleton.h"
 #include "../Components/Singletons/CharacterDatabaseCacheSingleton.h"
 #include "../Components/Singletons/WorldDatabaseCacheSingleton.h"
+#include "../Components/Singletons/PlayerPacketQueueSingleton.h"
 
 #include <tracy/Tracy.hpp>
 
@@ -54,13 +55,12 @@ namespace ConnectionSystem
         PlayerDeleteQueueSingleton& playerDeleteQueue = registry.ctx<PlayerDeleteQueueSingleton>();
         CharacterDatabaseCacheSingleton& characterDatabase = registry.ctx<CharacterDatabaseCacheSingleton>();
         WorldDatabaseCacheSingleton& worldDatabase = registry.ctx<WorldDatabaseCacheSingleton>();
-        NovusConnection& novusConnection = *singleton.connection;
+        PlayerPacketQueueSingleton& playerPacketQueue = registry.ctx<PlayerPacketQueueSingleton>();
         WorldServerHandler& worldServerHandler = *singleton.worldServerHandler;
 
         LockRead(SingletonComponent);
         LockRead(PlayerDeleteQueueSingleton);
         LockRead(CharacterDatabaseCacheSingleton);
-        LockRead(NovusConnection);
 
         LockWrite(PlayerConnectionComponent);
         LockWrite(PlayerFieldDataComponent);
@@ -68,7 +68,7 @@ namespace ConnectionSystem
         LockWrite(PlayerPositionComponent);
 
         auto view = registry.view<PlayerConnectionComponent, PlayerFieldDataComponent, PlayerUpdateDataComponent, PlayerPositionComponent>();
-        view.each([&singleton, &playerDeleteQueue, &characterDatabase, &worldDatabase, &novusConnection, &worldServerHandler](const auto, PlayerConnectionComponent& clientConnection, PlayerFieldDataComponent& clientFieldData, PlayerUpdateDataComponent& clientUpdateData, PlayerPositionComponent& clientPositionData)
+        view.each([&singleton, &playerDeleteQueue, &characterDatabase, &worldDatabase, &playerPacketQueue, &worldServerHandler](const auto, PlayerConnectionComponent& clientConnection, PlayerFieldDataComponent& clientFieldData, PlayerUpdateDataComponent& clientUpdateData, PlayerPositionComponent& clientPositionData)
         {
             ZoneScopedNC("Connection", tracy::Color::Orange2)
 
@@ -85,7 +85,10 @@ namespace ConnectionSystem
 
                             Common::ByteBuffer timeSync(9 + 4);
                         timeSync.Write<u32>(0);
-                        novusConnection.SendPacket(clientConnection.accountGuid, timeSync, Common::Opcode::SMSG_TIME_SYNC_REQ);
+
+                        NovusHeader header;
+                        header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_TIME_SYNC_REQ, timeSync.GetActualSize());
+                        playerPacketQueue.packetQueue->enqueue(header.BuildHeaderPacket(timeSync));
                         packet.handled = true;
                         break;
                     }
@@ -94,7 +97,10 @@ namespace ConnectionSystem
                         ZoneScopedNC("Packet::LogoutRequest", tracy::Color::Orange2)
 
                             Common::ByteBuffer logoutRequest(0);
-                        novusConnection.SendPacket(clientConnection.accountGuid, logoutRequest, Common::Opcode::SMSG_LOGOUT_COMPLETE);
+
+                        NovusHeader header;
+                        header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_LOGOUT_COMPLETE, logoutRequest.GetActualSize());
+                        playerPacketQueue.packetQueue->enqueue(header.BuildHeaderPacket(logoutRequest));
 
                         ExpiredPlayerData expiredPlayerData;
                         expiredPlayerData.entityGuid = clientConnection.entityGuid;
@@ -129,7 +135,11 @@ namespace ConnectionSystem
 
                         Common::ByteBuffer standStateChange(0);
                         standStateChange.Write<u8>(static_cast<u8>(standState));
-                        novusConnection.SendPacket(clientConnection.accountGuid, standStateChange, Common::Opcode::SMSG_STANDSTATE_UPDATE);
+
+                        NovusHeader header;
+                        header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_STANDSTATE_UPDATE, standStateChange.GetActualSize());
+                        playerPacketQueue.packetQueue->enqueue(header.BuildHeaderPacket(standStateChange));
+
                         packet.handled = true;
                         break;
                     }
@@ -175,7 +185,11 @@ namespace ConnectionSystem
                         }
                         nameQuery.Write<u8>(0);
 
-                        novusConnection.SendPacket(clientConnection.accountGuid, nameQuery, Common::Opcode::SMSG_NAME_QUERY_RESPONSE);
+
+                        NovusHeader header;
+                        header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_NAME_QUERY_RESPONSE, nameQuery.GetActualSize());
+                        playerPacketQueue.packetQueue->enqueue(header.BuildHeaderPacket(nameQuery));
+
                         packet.handled = true;
                         break;
                     }
@@ -193,112 +207,12 @@ namespace ConnectionSystem
                         }
                         else
                         {
-                            itemQuery.Write<u32>(itemTemplate.entry);
-                            itemQuery.Write<u32>(itemTemplate.itemClass);
-                            itemQuery.Write<u32>(itemTemplate.itemSubClass);
-                            itemQuery.Write<i32>(itemTemplate.soundOverrideSubclass);
-                            itemQuery.WriteString(itemTemplate.name);
-                            itemQuery.Write<u8>(0); // Name2
-                            itemQuery.Write<u8>(0); // Name3
-                            itemQuery.Write<u8>(0); // Name4
-                            itemQuery.Write<u32>(itemTemplate.displayId);
-                            itemQuery.Write<u32>(itemTemplate.quality);
-                            itemQuery.Write<u32>(itemTemplate.flags);
-                            itemQuery.Write<u32>(itemTemplate.flagsExtra);
-                            itemQuery.Write<i32>(itemTemplate.buyPrice);
-                            itemQuery.Write<u32>(itemTemplate.sellPrice);
-                            itemQuery.Write<u32>(itemTemplate.inventoryType);
-                            itemQuery.Write<u32>(itemTemplate.allowableClass);
-                            itemQuery.Write<u32>(itemTemplate.allowableRace);
-                            itemQuery.Write<u32>(itemTemplate.itemLevel);
-                            itemQuery.Write<u32>(itemTemplate.requiredLevel);
-                            itemQuery.Write<u32>(itemTemplate.requiredSkill);
-                            itemQuery.Write<u32>(itemTemplate.requiredSkillRank);
-                            itemQuery.Write<u32>(itemTemplate.requiredSpell);
-                            itemQuery.Write<u32>(itemTemplate.requiredHonorRank);
-                            itemQuery.Write<u32>(itemTemplate.requiredCityRank);
-                            itemQuery.Write<u32>(itemTemplate.requiredReputationFaction);
-                            itemQuery.Write<u32>(itemTemplate.requiredReputationRank);
-                            itemQuery.Write<i32>(itemTemplate.maxCount);
-                            itemQuery.Write<i32>(itemTemplate.stackable);
-                            itemQuery.Write<u32>(itemTemplate.containerSlots);
-                            itemQuery.Write<u32>(itemTemplate.statsCount);
-
-                            /* Item Stats */
-                            for (u32 i = 0; i < itemTemplate.statsCount; i++)
-                            {
-                                itemQuery.Write<u32>(itemTemplate.statInfo[i].statType);
-                                itemQuery.Write<u32>(itemTemplate.statInfo[i].statValue);
-                            }
-
-                            itemQuery.Write<u32>(itemTemplate.scalingStatDistribution);
-                            itemQuery.Write<u32>(itemTemplate.scalingStatValue);
-
-                            /* Item Damage */
-                            for (u32 i = 0; i < 2; i++)
-                            {
-                                itemQuery.Write<f32>(itemTemplate.damageInfo[i].damageMin);
-                                itemQuery.Write<f32>(itemTemplate.damageInfo[i].damageMax);
-                                itemQuery.Write<u32>(itemTemplate.damageInfo[i].damageType);
-                            }
-
-                            /* Item Resistances */
-                            for (u32 i = 0; i < 7; i++)
-                            {
-                                itemQuery.Write<u32>(itemTemplate.resistances[i]);
-                            }
-
-                            itemQuery.Write<u32>(itemTemplate.attackSpeed);
-                            itemQuery.Write<u32>(itemTemplate.ammoType);
-                            itemQuery.Write<f32>(itemTemplate.rangeModifier);
-
-                            /* Item Spells */
-                            for (u32 i = 0; i < 5; i++)
-                            {
-                                itemQuery.Write<u32>(itemTemplate.spellInfo[i].spellId);
-                                itemQuery.Write<u32>(itemTemplate.spellInfo[i].spellTrigger);
-                                itemQuery.Write<u32>(static_cast<u32>(-abs(itemTemplate.spellInfo[i].spellCharges)));
-                                itemQuery.Write<u32>(static_cast<u32>(itemTemplate.spellInfo[i].spellCooldown));
-                                itemQuery.Write<u32>(itemTemplate.spellInfo[i].spellCategory);
-                                itemQuery.Write<u32>(static_cast<u32>(itemTemplate.spellInfo[i].spellCategoryCooldown));
-                            }
-
-                            itemQuery.Write<u32>(itemTemplate.bindType);
-                            itemQuery.WriteString(itemTemplate.description);
-                            itemQuery.Write<u32>(itemTemplate.pageTextId);
-                            itemQuery.Write<u32>(itemTemplate.pageLanguageId);
-                            itemQuery.Write<u32>(itemTemplate.pageTextureId);
-                            itemQuery.Write<u32>(itemTemplate.startQuest);
-                            itemQuery.Write<u32>(itemTemplate.lockId);
-                            itemQuery.Write<i32>(itemTemplate.materialSound);
-                            itemQuery.Write<u32>(itemTemplate.weaponSheath);
-                            itemQuery.Write<i32>(itemTemplate.randomPropertyId);
-                            itemQuery.Write<i32>(itemTemplate.randomSuffixId);
-                            itemQuery.Write<u32>(itemTemplate.shieldBlock);
-                            itemQuery.Write<u32>(itemTemplate.itemSetId);
-                            itemQuery.Write<u32>(itemTemplate.itemDurability);
-                            itemQuery.Write<u32>(itemTemplate.restrictUseToAreaId);
-                            itemQuery.Write<u32>(itemTemplate.restrictUseToMapId);
-                            itemQuery.Write<u32>(itemTemplate.bagFamilyBitmask);
-                            itemQuery.Write<u32>(itemTemplate.toolCategoryId);
-
-                            /* Item Sockets */
-                            for (u32 i = 0; i < 3; i++)
-                            {
-                                itemQuery.Write<u32>(itemTemplate.socketInfo[i].socketType);
-                                itemQuery.Write<u32>(itemTemplate.socketInfo[i].socketAmount);
-                            }
-
-                            itemQuery.Write<u32>(itemTemplate.socketBonusId);
-                            itemQuery.Write<u32>(itemTemplate.gemPropertiesId);
-                            itemQuery.Write<u32>(itemTemplate.requiredDisenchantSkill);
-                            itemQuery.Write<f32>(itemTemplate.armorDamageModifier);
-                            itemQuery.Write<u32>(itemTemplate.limitedDuration);
-                            itemQuery.Write<u32>(itemTemplate.itemLimitCategory);
-                            itemQuery.Write<u32>(itemTemplate.holidayId);
+                            itemQuery = itemTemplate.GetQuerySinglePacket();
                         }
 
-                        novusConnection.SendPacket(clientConnection.accountGuid, itemQuery, Common::Opcode::SMSG_ITEM_QUERY_SINGLE_RESPONSE);
+                        NovusHeader header;
+                        header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_ITEM_QUERY_SINGLE_RESPONSE, itemQuery.GetActualSize());
+                        playerPacketQueue.packetQueue->enqueue(header.BuildHeaderPacket(itemQuery));
 
                         packet.handled = true;
                         break;
@@ -457,7 +371,10 @@ namespace ConnectionSystem
                         Common::ByteBuffer attackStart;
                         attackStart.Write<u64>(clientConnection.characterGuid);
                         attackStart.Write<u64>(attackGuid);
-                        novusConnection.SendPacket(clientConnection.accountGuid, attackStart, Common::Opcode::SMSG_ATTACKSTART);
+
+                        NovusHeader header;
+                        header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_ATTACKSTART, attackStart.GetActualSize());
+                        playerPacketQueue.packetQueue->enqueue(header.BuildHeaderPacket(attackStart));
 
                         Common::ByteBuffer attackerStateUpdate;
                         attackerStateUpdate.Write<u32>(0);
@@ -474,7 +391,9 @@ namespace ConnectionSystem
                         attackerStateUpdate.Write<u8>(0);
                         attackerStateUpdate.Write<u32>(0);
                         attackerStateUpdate.Write<u32>(0);
-                        novusConnection.SendPacket(clientConnection.accountGuid, attackerStateUpdate, Common::Opcode::SMSG_ATTACKERSTATEUPDATE);
+
+                        header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_ATTACKERSTATEUPDATE, attackerStateUpdate.GetActualSize());
+                        playerPacketQueue.packetQueue->enqueue(header.BuildHeaderPacket(attackerStateUpdate));
 
                         packet.handled = true;
                         break;
@@ -489,7 +408,10 @@ namespace ConnectionSystem
                         attackStop.AppendGuid(clientConnection.characterGuid);
                         attackStop.AppendGuid(attackGuid);
                         attackStop.Write<u32>(0);
-                        novusConnection.SendPacket(clientConnection.accountGuid, attackStop, Common::Opcode::SMSG_ATTACKSTOP);
+
+                        NovusHeader header;
+                        header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_ATTACKSTOP, attackStop.GetActualSize());
+                        playerPacketQueue.packetQueue->enqueue(header.BuildHeaderPacket(attackStop));
 
                         packet.handled = true;
                         break;
