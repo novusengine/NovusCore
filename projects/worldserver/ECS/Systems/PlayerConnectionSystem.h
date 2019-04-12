@@ -451,13 +451,13 @@ namespace ConnectionSystem
 						{
 							//The animation shouldn't play if the player is dead. In the future we should check for that.
 
-							Common::ByteBuffer Emote;
-							Emote.Write<u32>(animationID);
-							Emote.Write<u64>(clientConnection.characterGuid);
+							Common::ByteBuffer emote;
+							emote.Write<u32>(animationID);
+							emote.Write<u64>(clientConnection.characterGuid);
 
 							NovusHeader header;
-							header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_EMOTE, Emote.GetActualSize());
-							playerPacketQueue.packetQueue->enqueue(header.BuildHeaderPacket(Emote));
+							header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_EMOTE, emote.GetActualSize());
+							playerPacketQueue.packetQueue->enqueue(header.BuildHeaderPacket(emote));
 						}
 
 						/* Emote Chat Message Packet. */
@@ -467,23 +467,23 @@ namespace ConnectionSystem
 
 							u32 targetNameLength = static_cast<u32>(targetData.name.size());
 
-							Common::ByteBuffer TextEmote;
-							TextEmote.Write<u64>(clientConnection.characterGuid);
-							TextEmote.Write<u32>(textEmote);
-							TextEmote.Write<u32>(emoteNum);
-							TextEmote.Write<u32>(targetNameLength);
+							Common::ByteBuffer textEmote;
+							textEmote.Write<u64>(clientConnection.characterGuid);
+							textEmote.Write<u32>(textEmote);
+							textEmote.Write<u32>(emoteNum);
+							textEmote.Write<u32>(targetNameLength);
 							if (targetNameLength > 1)
 							{
-								TextEmote.Write(targetData.name);
+								textEmote.Write(targetData.name);
 							}
 							else
 							{
-								TextEmote.Write<u8>(0x00);
+								textEmote.Write<u8>(0x00);
 							}
 
 							NovusHeader header;
-							header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_TEXT_EMOTE, TextEmote.GetActualSize());
-							playerPacketQueue.packetQueue->enqueue(header.BuildHeaderPacket(TextEmote));
+							header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_TEXT_EMOTE, textEmote.GetActualSize());
+							playerPacketQueue.packetQueue->enqueue(header.BuildHeaderPacket(textEmote));
 						}
 
 						packet.handled = true;
