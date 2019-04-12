@@ -427,6 +427,67 @@ namespace ConnectionSystem
                         packet.handled = true;
                         break;
                     }
+                    case Common::Opcode::CMSG_TEXT_EMOTE:
+                    {
+                        ZoneScopedNC("Packet::Text_emote", tracy::Color::Orange2)
+
+                        u32 textEmote;
+                        u32 emoteNum;
+                        u64 targetGuid;
+
+                        packet.data.Read<u32>(textEmote);
+                        packet.data.Read<u32>(emoteNum);
+                        packet.data.Read<u64>(targetGuid);
+
+                        u32 animationID;
+                        /* Pulling animation ID from database code here. */
+
+                        animationID = 10;
+
+                        /* End pulling animation ID from database here. */
+
+                        /* Play animation packet. */
+                        {
+                            //The animation shouldn't play if the player is dead. In the future we should check for that.
+
+                            Common::ByteBuffer emote;
+                            emote.Write<u32>(animationID);
+                            emote.Write<u64>(clientConnection.characterGuid);
+
+                            NovusHeader header;
+                            header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_EMOTE, emote.GetActualSize());
+                            playerPacketQueue.packetQueue->enqueue(header.BuildHeaderPacket(emote));
+                        }
+
+                        /* Emote Chat Message Packet. */
+                        {
+                            CharacterData targetData;
+                            characterDatabase.cache->GetCharacterData(targetGuid, targetData);
+
+                            u32 targetNameLength = static_cast<u32>(targetData.name.size());
+
+                            Common::ByteBuffer textEmote;
+                            textEmote.Write<u64>(clientConnection.characterGuid);
+                            textEmote.Write<u32>(textEmote);
+                            textEmote.Write<u32>(emoteNum);
+                            textEmote.Write<u32>(targetNameLength);
+                            if (targetNameLength > 1)
+                            {
+                                textEmote.Write(targetData.name);
+                            }
+                            else
+                            {
+                                textEmote.Write<u8>(0x00);
+                            }
+
+                            NovusHeader header;
+                            header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_TEXT_EMOTE, textEmote.GetActualSize());
+                            playerPacketQueue.packetQueue->enqueue(header.BuildHeaderPacket(textEmote));
+                        }
+
+                        packet.handled = true;
+                        break;
+                    }
                     default:
                     {
                         ZoneScopedNC("Packet::Unhandled", tracy::Color::Orange2)
