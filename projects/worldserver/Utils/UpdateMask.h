@@ -8,12 +8,14 @@
 /* How to calculate size
 
 Example for player:
-PLAYER_END == 1326, knowing this we need to
-calculate how many blocks we would have, so
-we do that by doing the following
+CLIENT_UPDATE_MASK_BITS = 32
+PLAYER_END == 1326. 
+With that information, we need to calculate how many blocks we would have.
+We start by running the following expression.
 _blockCount = (valuesCount + CLIENT_UPDATE_MASK_BITS - 1) / CLIENT_UPDATE_MASK_BITS;
 
-_blockCount will return 42 which we can know times by CLIENT_UPDATE_MASK_BITS to get 1344
+We should have 42 as our result, notice that there may be decimals, but simply discard them.
+The final step is to take 42 and times it by CLIENT_UPDATE_MASK_BITS which gives us 1344.
 
 */
 template <size_t size>

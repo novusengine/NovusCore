@@ -466,23 +466,23 @@ namespace ConnectionSystem
 
                             u32 targetNameLength = static_cast<u32>(targetData.name.size());
 
-                            Common::ByteBuffer textEmote;
-                            textEmote.Write<u64>(clientConnection.characterGuid);
-                            textEmote.Write<u32>(textEmote);
-                            textEmote.Write<u32>(emoteNum);
-                            textEmote.Write<u32>(targetNameLength);
+                            Common::ByteBuffer textEmoteMessage;
+                            textEmoteMessage.Write<u64>(clientConnection.characterGuid);
+                            textEmoteMessage.Write<u32>(textEmote);
+                            textEmoteMessage.Write<u32>(emoteNum);
+                            textEmoteMessage.Write<u32>(targetNameLength);
                             if (targetNameLength > 1)
                             {
-                                textEmote.Write(targetData.name);
+                                textEmoteMessage.Write(targetData.name);
                             }
                             else
                             {
-                                textEmote.Write<u8>(0x00);
+                                textEmoteMessage.Write<u8>(0x00);
                             }
 
                             NovusHeader header;
-                            header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_TEXT_EMOTE, textEmote.GetActualSize());
-                            playerPacketQueue.packetQueue->enqueue(header.BuildHeaderPacket(textEmote));
+                            header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_TEXT_EMOTE, textEmoteMessage.GetActualSize());
+                            playerPacketQueue.packetQueue->enqueue(header.BuildHeaderPacket(textEmoteMessage));
                         }
 
                         packet.handled = true;

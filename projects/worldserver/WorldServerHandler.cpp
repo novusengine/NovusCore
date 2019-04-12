@@ -94,7 +94,7 @@ void WorldServerHandler::Run()
     SingletonComponent& singletonComponent = _updateFramework.registry.set<SingletonComponent>();
     PlayerCreateQueueSingleton& playerCreateQueueComponent = _updateFramework.registry.set<PlayerCreateQueueSingleton>();
     PlayerUpdatesQueueSingleton& playerUpdatesQueueSingleton = _updateFramework.registry.set<PlayerUpdatesQueueSingleton>();
-    PlayerDeleteQueueSingleton& playerdeleteQueueSingleton = _updateFramework.registry.set<PlayerDeleteQueueSingleton>();
+    PlayerDeleteQueueSingleton& playerDeleteQueueSingleton = _updateFramework.registry.set<PlayerDeleteQueueSingleton>();
     CharacterDatabaseCacheSingleton& characterDatabaseCacheSingleton = _updateFramework.registry.set<CharacterDatabaseCacheSingleton>();
     WorldDatabaseCacheSingleton& worldDatabaseCacheSingleton = _updateFramework.registry.set<WorldDatabaseCacheSingleton>();
     PlayerPacketQueueSingleton& playerPacketQueueSingleton = _updateFramework.registry.set<PlayerPacketQueueSingleton>();
@@ -105,7 +105,7 @@ void WorldServerHandler::Run()
     singletonComponent.deltaTime = 1.0f;
 
     playerCreateQueueComponent.newPlayerQueue = new moodycamel::ConcurrentQueue<Message>(256);
-    playerdeleteQueueSingleton.expiredEntityQueue = new moodycamel::ConcurrentQueue<ExpiredPlayerData>(256);
+    playerDeleteQueueSingleton.expiredEntityQueue = new moodycamel::ConcurrentQueue<ExpiredPlayerData>(256);
     playerPacketQueueSingleton.packetQueue = new moodycamel::ConcurrentQueue<Common::ByteBuffer>(256);
 
     itemCreateQueueComponent.newItemQueue = new moodycamel::ConcurrentQueue<ItemCreationInformation>(256);
