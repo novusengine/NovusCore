@@ -272,4 +272,24 @@ namespace CharacterUtils
         header.CreateForwardHeader(accountGuid, canFly ? Common::Opcode::SMSG_MOVE_SET_CAN_FLY : Common::Opcode::SMSG_MOVE_UNSET_CAN_FLY, canFlyBuffer.GetActualSize());
         buffer = header.BuildHeaderPacket(canFlyBuffer);
     }
+	inline Common::ByteBuffer BuildNotificationPacket(u32 accountGuid, std::string message)
+	{
+		Common::ByteBuffer buffer;
+
+		buffer.Write<u8>(0x00); // CHAT_MSG_SYSTEM
+		buffer.Write<i32>(0x00); // LANG_UNIVERSAL
+		buffer.Write<u64>(0);
+		buffer.Write<u32>(0); // Chat Flag (??)
+
+		// This is based on chatType
+		buffer.Write<u64>(0); // Receiver (0) for none
+
+		buffer.Write<u32>(static_cast<u32>(message.length()) + 1);
+		buffer.WriteString(message);
+		buffer.Write<u8>(0); // Chat Tag
+
+		NovusHeader header;
+		header.CreateForwardHeader(accountGuid, Common::Opcode::SMSG_MESSAGECHAT, buffer.GetActualSize());
+		return header.BuildHeaderPacket(buffer);
+	}
 }
