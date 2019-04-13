@@ -1,6 +1,7 @@
 #pragma once
 #include "../NovusTypes.h"
 #include <string>
+#include "Math.h"
 
 class Vector2;
 
@@ -29,49 +30,195 @@ public:
 	Vector3(Vector2& in);
 
 	// Returns the length of the vector
-	f32 Length();
+	inline f32 Length()
+	{
+		return Math::Sqrt(SqrLength());
+	}
+
 	// Returns the squared length of the vector
-	f32 SqrLength();
+	inline f32 SqrLength()
+	{
+		return x * x + y * y + z * z;
+	}
+
 	// Returns the dot product of the vector and another vector
-	f32 Dot(Vector3& other);
+	inline f32 Dot(Vector3& other)
+	{
+		return (x * other.x) + (y * other.y) + (z * other.z);
+	}
+
 	// Returns the vector with a length of 1, does not modify the original
-	Vector3 Normalize();
+	inline Vector3 Normalize()
+	{
+		f32 length = Length();
+		return Vector3(x / length, y / length, z / length);
+	}
 	// Returns a nicely formatted string of the vector
-	std::string ToString();
+	inline std::string ToString()
+	{
+		return "(" + std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z) + ")";
+	}
 
 	// Overloaded operators
-	Vector3 operator+ (Vector3);
-	Vector3 operator+ (f32);
-	Vector3 operator+ (u8);
-	Vector3 operator+ (u16);
-	Vector3 operator+ (u32);
-	Vector3 operator+ (i8);
-	Vector3 operator+ (i16);
-	Vector3 operator+ (i32);
-	Vector3 operator- (Vector3);
-	Vector3 operator- (f32);
-	Vector3 operator- (u8);
-	Vector3 operator- (u16);
-	Vector3 operator- (u32);
-	Vector3 operator- (i8);
-	Vector3 operator- (i16);
-	Vector3 operator- (i32);
-	Vector3 operator* (Vector3);
-	Vector3 operator* (f32);
-	Vector3 operator* (u8);
-	Vector3 operator* (u16);
-	Vector3 operator* (u32);
-	Vector3 operator* (i8);
-	Vector3 operator* (i16);
-	Vector3 operator* (i32);
-	Vector3 operator/ (Vector3);
-	Vector3 operator/ (f32);
-	Vector3 operator/ (u8);
-	Vector3 operator/ (u16);
-	Vector3 operator/ (u32);
-	Vector3 operator/ (i8);
-	Vector3 operator/ (i16);
-	Vector3 operator/ (i32);
+	inline Vector3 operator+ (Vector3 other)
+	{
+		return Vector3(x + other.x, y + other.y, z + other.z);
+	}
+
+	inline Vector3 operator+ (f32 other)
+	{
+		return Vector3(x + other, y + other, z + other);
+	}
+	
+	inline Vector3 operator+ (u8 other)
+	{
+		return Vector3(x + other, y + other, z + other);
+	}
+
+	inline Vector3 operator+ (u16 other)
+	{
+		return Vector3(x + other, y + other, z + other);
+	}
+
+	inline Vector3 operator+ (u32 other)
+	{
+		return Vector3(x + other, y + other, z + other);
+	}
+
+	inline Vector3 operator+ (i8 other)
+	{
+		return Vector3(x + other, y + other, z + other);
+	}
+
+	inline Vector3 operator+ (i16 other)
+	{
+		return Vector3(x + other, y + other, z + other);
+	}
+
+	inline Vector3 operator+ (i32 other)
+	{
+		return Vector3(x + other, y + other, z + other);
+	}
+
+	inline Vector3 operator- (Vector3 other)
+	{
+		return Vector3(x - other.x, y - other.y, z - other.z);
+	}
+
+	inline Vector3 operator- (f32 other)
+	{
+		return Vector3(x - other, y - other, z - other);
+	}
+
+	inline Vector3 operator- (u8 other)
+	{
+		return Vector3(x - other, y - other, z - other);
+	}
+
+	inline Vector3 operator- (u16 other)
+	{
+		return Vector3(x - other, y - other, z - other);
+	}
+
+	inline Vector3 operator- (u32 other)
+	{
+		return Vector3(x - other, y - other, z - other);
+	}
+
+	inline Vector3 operator- (i8 other)
+	{
+		return Vector3(x - other, y - other, z - other);
+	}
+
+	inline Vector3 operator- (i16 other)
+	{
+		return Vector3(x - other, y - other, z - other);
+	}
+
+	inline Vector3 operator- (i32 other)
+	{
+		return Vector3(x - other, y - other, z - other);
+	}
+
+	inline Vector3 operator* (Vector3 other)
+	{
+		return Vector3(x * other.x, y * other.y, z * other.z);
+	}
+
+	inline Vector3 operator* (f32 other)
+	{
+		return Vector3(x * other, y * other, z * other);
+	}
+
+	inline Vector3 operator* (u8 other)
+	{
+		return Vector3(x * other, y * other, z * other);
+	}
+
+	inline Vector3 operator* (u16 other)
+	{
+		return Vector3(x * other, y * other, z * other);
+	}
+
+	inline Vector3 operator* (u32 other)
+	{
+		return Vector3(x * other, y * other, z * other);
+	}
+
+	inline Vector3 operator* (i8 other)
+	{
+		return Vector3(x * other, y * other, z * other);
+	}
+
+	inline Vector3 operator* (i16 other)
+	{
+		return Vector3(x * other, y * other, z * other);
+	}
+
+	inline Vector3 operator* (i32 other)
+	{
+		return Vector3(x * other, y * other, z * other);
+	}
+
+	inline Vector3 operator/ (Vector3 other)
+	{
+		return Vector3(x / other.x, y / other.y, z / other.z);
+	}
+
+	inline Vector3 operator/ (f32 other)
+	{
+		return Vector3(x / other, y / other, z / other);
+	}
+
+	inline Vector3 operator/ (u8 other)
+	{
+		return Vector3(x / other, y / other, z / other);
+	}
+
+	inline Vector3 operator/ (u16 other)
+	{
+		return Vector3(x / other, y / other, z / other);
+	}
+
+	inline Vector3 operator/ (u32 other)
+	{
+		return Vector3(x / other, y / other, z / other);
+	}
+
+	inline Vector3 operator/ (i8 other)
+	{
+		return Vector3(x / other, y / other, z / other);
+	}
+
+	inline Vector3 operator/ (i16 other)
+	{
+		return Vector3(x / other, y / other, z / other);
+	}
+
+	inline Vector3 operator/ (i32 other)
+	{
+		return Vector3(x / other, y / other, z / other);
+	}
 
 public:
 	f32 x = 0.0f;
