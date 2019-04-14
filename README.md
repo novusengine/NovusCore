@@ -41,3 +41,7 @@ Here we include a honorable mention to all the libraries included directly into 
 * [Entt ECS](https://github.com/skypjack/entt/)
 * [Cpp-Taskflow](https://github.com/cpp-taskflow/cpp-taskflow)
 * [ZLIB](https://github.com/madler/zlib)
+
+### Tools
+DataExtractor is sub licensed under GPL-2.0. This is due to a dependency that is required for the extractor to work.
+* [Libmpq](https://github.com/ge0rg/libmpq)

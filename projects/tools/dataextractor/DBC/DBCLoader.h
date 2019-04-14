@@ -57,7 +57,7 @@ namespace DBCLoader
 					if (rows == 0) return false;
 
 					std::stringstream ss;
-					ss << "DELETE FROM map; INSERT INTO map(id, internalName, instanceType, flags, name, expansion, maxPlayers) VALUES";
+					ss << "DELETE FROM map;" << std::endl << "INSERT INTO map(id, internalName, instanceType, flags, name, expansion, maxPlayers) VALUES";
 
 					for (u32 i = 0; i < rows; i++)
 					{
