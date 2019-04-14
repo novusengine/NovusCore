@@ -1,11 +1,38 @@
+/*
+	MIT License
+
+	Copyright (c) 2018-2019 NovusCore
+
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so, subject to the following conditions:
+
+	The above copyright notice and this permission notice shall be included in all
+	copies or substantial portions of the Software.
+
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+	SOFTWARE.
+*/
+
 #pragma once
 #include <NovusTypes.h>
-#include <Utils/StringHash.h>
-#include <../ECS/Components/PlayerConnectionComponent.h>
-#include <../ECS/Components/PlayerFieldDataComponent.h>
-#include <../ECS/Components/Singletons/CommandDataSingleton.h>
-#include <../ECS/Components/Singletons/PlayerPacketQueueSingleton.h>
-#include <../ECS/Components/Singletons/WorldDatabaseCacheSingleton.h>
+#include <Utils/StringUtils.h>
+#include <Math/Math.h>
+#include <Math/Vector2.h>
+#include "../ECS/Components/PlayerConnectionComponent.h"
+#include "../ECS/Components/PlayerFieldDataComponent.h"
+#include "../ECS/Components/Singletons/CommandDataSingleton.h"
+#include "../ECS/Components/Singletons/PlayerPacketQueueSingleton.h"
+#include "../ECS/Components/Singletons/WorldDatabaseCacheSingleton.h"
+#include "../ECS/Components/Singletons/MapSingleton.h"
 
 namespace Commands_Character
 {
@@ -260,11 +287,29 @@ namespace Commands_Character
         return false;
     }
 
+	bool _GPS(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
+	{
+		PlayerPositionComponent& playerPos = _registry->get<PlayerPositionComponent>(clientConnection.entityGuid);
+		MapSingleton& mapSingleton = _registry->ctx<MapSingleton>();
+		PlayerPacketQueueSingleton& playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
+
+		u16 mapId = playerPos.mapId;
+		f32 x = playerPos.x;
+		f32 y = playerPos.y;
+		f32 z = playerPos.z;
+
+		f32 height = mapSingleton.maps[mapId].GetHeight(Vector2(x, y));
+
+		playerPacketQueue.packetQueue->enqueue(CharacterUtils::BuildNotificationPacket(clientConnection.accountGuid, "MapID: %u (%f, %f, %f) Height: %f", mapId, x, y, z, height));
+
+		return true;
+	}
+
     bool CharacterCommand(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
     {
         std::string subCommand = commandStrings[1];
 
-        auto itr = characterCommandMap.find(detail::fnv1a_32(subCommand.c_str(), subCommand.length()));
+        auto itr = characterCommandMap.find(StringUtils::fnv1a_32(subCommand.c_str(), subCommand.length()));
         if (itr != characterCommandMap.end())
         {
             return itr->second.handler(commandStrings, clientConnection);
@@ -286,5 +331,6 @@ namespace Commands_Character
         characterCommandMap["teletomap"_h] = CommandEntry(_TeleToMap);
         characterCommandMap["additem"_h] = CommandEntry(_AddItem);
         characterCommandMap["debugitem"_h] = CommandEntry(_DebugItem);
+		characterCommandMap["gps"_h] = CommandEntry(_GPS);
     }
 }

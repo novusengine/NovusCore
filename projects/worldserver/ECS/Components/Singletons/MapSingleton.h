@@ -23,18 +23,12 @@
 */
 #pragma once
 #include <NovusTypes.h>
-#include <Utils/FileReader.h>
-#include <entt.hpp>
-#include <vector>
-
+#include <robin_hood.h>
 #include "../Game/NovusMap.h"
 
-class MapLoader
+struct MapSingleton
 {
-public:
-    MapLoader() { }
-    bool Load(entt::registry& registry);
+	MapSingleton() {}
 
-private:
-    bool ExtractAdtInfo(FileReader& reader, NovusAdt& adt);
+	robin_hood::unordered_map<u16, NovusMap> maps;
 };

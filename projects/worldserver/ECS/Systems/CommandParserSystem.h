@@ -23,7 +23,7 @@
 */
 #pragma once
 #include <NovusTypes.h>
-#include <Utils/StringHash.h>
+#include <Utils/StringUtils.h>
 #include <entt.hpp>
 
 #include "../NovusEnums.h"
@@ -60,7 +60,7 @@ namespace CommandParserSystem
                     std::vector<std::string> commandStrings = SplitString(commandMessage);
 
                     std::string commandStr = commandStrings[0];
-                    auto itr = commandData.commandMap.find(detail::fnv1a_32(commandStr.c_str(), commandStr.length()));
+                    auto itr = commandData.commandMap.find(StringUtils::fnv1a_32(commandStr.c_str(), commandStr.length()));
                     if (itr != commandData.commandMap.end())
                     {
                         if (itr->second.handler(commandStrings, clientConnection))

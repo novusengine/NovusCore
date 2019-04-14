@@ -80,7 +80,7 @@ void WorldServerHandler::Stop()
 
 void WorldServerHandler::Run()
 {
-    if (!_mapLoader.Load())
+    if (!_mapLoader.Load(_updateFramework.registry))
     {
         /*Message exitMessage;
         exitMessage.code = MSG_OUT_EXIT_CONFIRM;

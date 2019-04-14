@@ -1,3 +1,26 @@
+/*
+	MIT License
+
+	Copyright (c) 2018-2019 NovusCore
+
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so, subject to the following conditions:
+
+	The above copyright notice and this permission notice shall be included in all
+	copies or substantial portions of the Software.
+
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+	SOFTWARE.
+*/
 #pragma once
 
 #include <map>
@@ -6,19 +29,11 @@
 #include <iterator>
 #include <functional>
 
-#include <Utils/StringHash.h>
+#include <Utils/StringUtils.h>
 #include <Utils/DebugHandler.h>
 
 #include "ConsoleCommands/QuitCommand.h"
 #include "ConsoleCommands/PingCommand.h"
-
-std::vector<std::string> SplitString(std::string string)
-{
-	std::istringstream iss(string);
-	std::vector<std::string> results(std::istream_iterator<std::string>{iss},
-		std::istream_iterator<std::string>());
-	return results;
-}
 
 class ConsoleCommandHandler
 {
@@ -34,8 +49,8 @@ public:
 		if (command.size() == 0)
 			return;
 
-		std::vector<std::string> splitCommand = SplitString(command);
-		u32 hashedCommand = detail::fnv1a_32(splitCommand[0].c_str(), splitCommand[0].size());
+		std::vector<std::string> splitCommand = StringUtils::SplitString(command);
+		u32 hashedCommand = StringUtils::fnv1a_32(splitCommand[0].c_str(), splitCommand[0].size());
 
 		auto commandHandler = commandHandlers.find(hashedCommand);
 		if (commandHandler != commandHandlers.end())

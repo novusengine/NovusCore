@@ -10,7 +10,7 @@ public:
 
     bool Open()
     {
-        _fileStream.open(_path);
+		_fileStream.open(_path, std::ios_base::in | std::ios_base::binary);
         if (!_fileStream)
             return false;
 
