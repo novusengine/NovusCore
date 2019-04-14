@@ -1,6 +1,6 @@
 # MIT License
 
-# Copyright (c) 2018 NovusCore
+# Copyright (c) 2018-2019 NovusCore
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,10 +20,19 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-add_subdirectory(asio)
-add_subdirectory(openssl)
-add_subdirectory(mysql)
-add_subdirectory(zlib)
-add_subdirectory(bzip2)
-add_subdirectory(libmpq)
-add_subdirectory(TracyProfiler)
+file(GLOB sources libmpq/*.c libmpq/*.h)
+add_library(mpq STATIC ${sources})
+set_target_properties(mpq PROPERTIES LINKER_LANGUAGE CXX)
+
+if(WIN32)
+  set(MPQ_WIN32_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/win)
+endif()
+
+target_include_directories(mpq PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${MPQ_WIN32_INCLUDES}
+    ${CMAKE_SOURCE_DIR}/dep/zlib
+    ${CMAKE_SOURCE_DIR}/dep/bzip2)
+
+target_link_libraries(mpq PUBLIC zlib bzip2)
+set_target_properties(mpq PROPERTIES FOLDER "dep")

@@ -1,6 +1,6 @@
 # MIT License
 
-# Copyright (c) 2018 NovusCore
+# Copyright (c) 2018-2019 NovusCore
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,10 +20,5 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-add_subdirectory(asio)
-add_subdirectory(openssl)
-add_subdirectory(mysql)
-add_subdirectory(zlib)
-add_subdirectory(bzip2)
-add_subdirectory(libmpq)
-add_subdirectory(TracyProfiler)
+# Include Project Directories
+add_subdirectory(dataextractor)
