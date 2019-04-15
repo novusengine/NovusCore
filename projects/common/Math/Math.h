@@ -27,7 +27,9 @@
 namespace Math
 {
 	const f32 PI = 3.1415926535f;
+	const f32 HALF_PI = PI / 2.0f;
 	const f32 TAU = 6.2831853071f; // Clearly superior
+	const f32 INV_TAU = 1.0f / TAU;
 
 	f32 Sqrt(f32 in);
 	
@@ -60,6 +62,39 @@ namespace Math
 	inline f32 Abs(f32 x)
 	{
 		return x < 0 ? -x : x;
+	}
+
+	inline f32 Hill(float x)
+	{
+		const f32 a0 = 1.0f;
+		const float a2 = 2.0f / PI - 12.0f / (PI * PI);
+		const float a3 = 16.0f / (PI * PI * PI) - 4.0f / (PI * PI);
+		const float xx = x * x;
+		const float xxx = xx * x;
+		return a0 + a2 * xx + a3 * xxx;
+	}
+
+	inline f32 Sin(float x)
+	{
+		const float a = x * INV_TAU;
+		x -= static_cast<i32>(a) * TAU;
+		if (x < 0.0f)
+			x += TAU;
+
+		// 4 pieces of hills
+		if (x < HALF_PI)
+			return Hill(HALF_PI - x);
+		else if (x < PI)
+			return Hill(x - HALF_PI);
+		else if (x < 3.0f * HALF_PI)
+			return -Hill(3.0f * HALF_PI - x);
+		else
+			return -Hill(x - 3.0f * HALF_PI);
+	}
+
+	inline f32 Cos(float x)
+	{
+		return Sin(x + HALF_PI);
 	}
 	
 };

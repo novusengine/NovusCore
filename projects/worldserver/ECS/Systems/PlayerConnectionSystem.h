@@ -29,7 +29,6 @@
 #include <Utils/AtomicLock.h>
 #include <Math/Math.h>
 #include <Math/Vector2.h>
-#include <stdio.h>
 
 #include "../NovusEnums.h"
 #include "../Utils/CharacterUtils.h"
@@ -514,8 +513,8 @@ namespace ConnectionSystem
 
 							for (u32 i = 0; i < 20; i++)
 							{
-								f32 newPositionX = clientPositionData.x + i * cosf(clientPositionData.orientation);
-								f32 newPositionY = clientPositionData.y + i * sinf(clientPositionData.orientation);
+								f32 newPositionX = clientPositionData.x + i * Math::Cos(clientPositionData.orientation);
+								f32 newPositionY = clientPositionData.y + i * Math::Sin(clientPositionData.orientation);
 								f32 height = mapSingleton.maps[clientPositionData.mapId].GetHeight(Vector2(newPositionX, newPositionY));
 								f32 deltaHeight = Math::Abs(tempHeight - height);
 
@@ -541,8 +540,8 @@ namespace ConnectionSystem
 							}
 
 
-							f32 newPositionX = clientPositionData.x + dest * cosf(clientPositionData.orientation);
-							f32 newPositionY = clientPositionData.y + dest * sinf(clientPositionData.orientation);
+							f32 newPositionX = clientPositionData.x + dest * Math::Cos(clientPositionData.orientation);
+							f32 newPositionY = clientPositionData.y + dest * Math::Sin(clientPositionData.orientation);
 
 							/*
 								Adding 2.0f to the final height will solve 90%+ of issues where we fall through the terrain, remove this to fully test blink's capabilities.
