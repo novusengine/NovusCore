@@ -101,7 +101,7 @@ namespace ItemCreateDataSystem
                 u32 selfVisibleFlags = (UF_FLAG_PUBLIC | UF_FLAG_OWNER);
                 u16 buildOpcode = 0;
 
-                u64 itemGuid = (static_cast<u64>(1) | (static_cast<u64>(itemInitializeData.itemEntry) << 24) | (static_cast<u64>(0x4000) << 48));
+				u64 itemGuid = itemFieldData.GetFieldValue<u64>(OBJECT_FIELD_GUID);
                 Common::ByteBuffer selfItemUpdate = BuildItemCreateData(itemGuid, updateType, selfUpdateFlag, selfVisibleFlags, itemFieldData, buildOpcode);
                 novusConnection.SendPacket(itemInitializeData.accountGuid, selfItemUpdate, buildOpcode);
 

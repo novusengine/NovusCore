@@ -488,6 +488,12 @@ namespace ConnectionSystem
                         packet.handled = true;
                         break;
                     }
+					case Common::Opcode::INTERNAL_FORWARD:
+					{
+						playerPacketQueue.packetQueue->enqueue(packet.data);
+						packet.handled = true;
+						break;
+					}
                     default:
                     {
                         ZoneScopedNC("Packet::Unhandled", tracy::Color::Orange2)

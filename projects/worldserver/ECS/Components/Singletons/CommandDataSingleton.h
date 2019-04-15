@@ -33,8 +33,9 @@ typedef bool(*CommandHandler)(std::vector<std::string>, PlayerConnectionComponen
 struct CommandEntry
 {
     CommandEntry() {}
-    CommandEntry(CommandHandler commandHandler) : handler(commandHandler) { }
+    CommandEntry(CommandHandler commandHandler, i32 inParameters) : handler(commandHandler), parameters(inParameters){ }
     CommandHandler handler;
+	i32 parameters;
 };
 struct CommandDataSingleton
 {

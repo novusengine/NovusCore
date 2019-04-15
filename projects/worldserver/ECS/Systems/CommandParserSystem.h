@@ -57,14 +57,40 @@ namespace CommandParserSystem
                 std::string commandMessage = command.message;
                 if (command.message[0] == '.')
                 {
-                    std::vector<std::string> commandStrings = SplitString(commandMessage);
-
-                    std::string commandStr = commandStrings[0];
-                    auto itr = commandData.commandMap.find(StringUtils::fnv1a_32(commandStr.c_str(), commandStr.length()));
+                    std::vector<std::string> commandStrings = SplitString(command.message.substr(1));
+                    auto itr = commandData.commandMap.find(StringUtils::fnv1a_32(commandStrings[0].c_str(), commandStrings[0].length()));
                     if (itr != commandData.commandMap.end())
                     {
-                        if (itr->second.handler(commandStrings, clientConnection))
-                            command.handled = true;
+						/* 
+							We might want to look at how we can improve this, I'm not sure if this is the best way
+							This is however a very cold path, so performance shouldn't be much of a worry.
+							In short we extract the parameters based on how many there are and the depth of the command
+						*/
+
+						i32 parameters = itr->second.parameters;
+						if (parameters == -1)
+						{
+							if (itr->second.handler(commandStrings, clientConnection))
+								command.handled = true;
+						}
+						else
+						{
+							std::vector<std::string> paramStrings;
+							if (parameters > 0)
+							{
+								// Skip if an insufficient amount of parameters were specified
+								if (commandStrings.size() - 1 < parameters)
+									continue;
+
+								for (i32 i = 1; i < parameters + 1; i++)
+								{
+									paramStrings.push_back(commandStrings[i]);
+								}
+							}
+
+							if (itr->second.handler(paramStrings, clientConnection))
+								command.handled = true;
+						}
                     }
                 }
             }

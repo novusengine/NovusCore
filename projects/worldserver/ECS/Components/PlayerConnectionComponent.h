@@ -25,6 +25,7 @@
 #include <NovusTypes.h>
 #include <Networking/ByteBuffer.h>
 #include <vector>
+#include "../Utils/CharacterUtils.h"
 
 struct OpcodePacket
 {
@@ -35,6 +36,15 @@ struct OpcodePacket
 
 struct PlayerConnectionComponent
 {
+	template <typename... Args>
+	void SendNotification(std::string message, Args... args)
+	{
+		OpcodePacket packet;
+		packet.opcode = Common::Opcode::INTERNAL_FORWARD;
+		packet.data = CharacterUtils::BuildNotificationPacket(accountGuid, message, std::forward<Args>(args)...);
+		packets.push_back(packet);
+	}
+
     u32 entityGuid;
 	u32 accountGuid;
 	u64 characterGuid;
