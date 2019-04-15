@@ -27,6 +27,9 @@
 #include <Networking/Opcode/Opcode.h>
 #include <Utils/DebugHandler.h>
 #include <Utils/AtomicLock.h>
+#include <Math/Math.h>
+#include <Math/Vector2.h>
+#include <stdio.h>
 
 #include "../NovusEnums.h"
 #include "../Utils/CharacterUtils.h"
@@ -44,6 +47,7 @@
 #include "../Components/Singletons/CharacterDatabaseCacheSingleton.h"
 #include "../Components/Singletons/WorldDatabaseCacheSingleton.h"
 #include "../Components/Singletons/PlayerPacketQueueSingleton.h"
+#include "../Components/Singletons/MapSingleton.h"
 
 #include <tracy/Tracy.hpp>
 
@@ -57,6 +61,7 @@ namespace ConnectionSystem
         WorldDatabaseCacheSingleton& worldDatabase = registry.ctx<WorldDatabaseCacheSingleton>();
         PlayerPacketQueueSingleton& playerPacketQueue = registry.ctx<PlayerPacketQueueSingleton>();
         WorldServerHandler& worldServerHandler = *singleton.worldServerHandler;
+		MapSingleton& mapSingleton = registry.ctx<MapSingleton>();
 
         LockRead(SingletonComponent);
         LockRead(PlayerDeleteQueueSingleton);
@@ -68,7 +73,7 @@ namespace ConnectionSystem
         LockWrite(PlayerPositionComponent);
 
         auto view = registry.view<PlayerConnectionComponent, PlayerFieldDataComponent, PlayerUpdateDataComponent, PlayerPositionComponent>();
-        view.each([&singleton, &playerDeleteQueue, &characterDatabase, &worldDatabase, &playerPacketQueue, &worldServerHandler](const auto, PlayerConnectionComponent& clientConnection, PlayerFieldDataComponent& clientFieldData, PlayerUpdateDataComponent& clientUpdateData, PlayerPositionComponent& clientPositionData)
+        view.each([&singleton, &playerDeleteQueue, &characterDatabase, &worldDatabase, &playerPacketQueue, &worldServerHandler, &mapSingleton](const auto, PlayerConnectionComponent& clientConnection, PlayerFieldDataComponent& clientFieldData, PlayerUpdateDataComponent& clientUpdateData, PlayerPositionComponent& clientPositionData)
         {
             ZoneScopedNC("Connection", tracy::Color::Orange2)
 
@@ -488,6 +493,108 @@ namespace ConnectionSystem
                         packet.handled = true;
                         break;
                     }
+					case Common::Opcode::CMSG_CAST_SPELL:
+					{
+						packet.handled = true;
+
+						u32 spellId = 0;
+						u8 castCount = 0, castFlags = 0;
+
+						packet.data.Read<u8>(castCount);
+						packet.data.Read<u32>(spellId);
+						packet.data.Read<u8>(castFlags);
+
+						// As far as I can tell, the client expects SMSG_SPELL_START followed by SMSG_SPELL_GO.
+
+						// Handle blink!
+						if (spellId == 1953)
+						{
+							f32 tempHeight = clientPositionData.z;
+							u32 dest = 20;
+
+							for (u32 i = 0; i < 20; i++)
+							{
+								f32 newPositionX = clientPositionData.x + i * cosf(clientPositionData.orientation);
+								f32 newPositionY = clientPositionData.y + i * sinf(clientPositionData.orientation);
+								f32 height = mapSingleton.maps[clientPositionData.mapId].GetHeight(Vector2(newPositionX, newPositionY));
+								f32 deltaHeight = Math::Abs(tempHeight - height);
+
+								if (deltaHeight <= 2.0f)
+								{
+									dest = i;
+									tempHeight = height;
+								}
+							}
+
+							if (dest == 20)
+							{
+								Common::ByteBuffer spellFailed;
+								spellFailed.AppendGuid(clientConnection.characterGuid);
+								spellFailed.Write<u8>(castCount);
+								spellFailed.Write<u32>(spellId);
+								spellFailed.Write<u8>(132); // SPELL_FAILED_TRY_AGAIN
+
+								NovusHeader header;
+								header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_CAST_FAILED, spellFailed.GetActualSize());
+								playerPacketQueue.packetQueue->enqueue(header.BuildHeaderPacket(spellFailed));
+								break;
+							}
+
+
+							f32 newPositionX = clientPositionData.x + dest * cosf(clientPositionData.orientation);
+							f32 newPositionY = clientPositionData.y + dest * sinf(clientPositionData.orientation);
+
+							/*
+								Adding 2.0f to the final height will solve 90%+ of issues where we fall through the terrain, remove this to fully test blink's capabilities.
+								This also introduce the bug where after a blink, you might appear a bit over the ground and fall down.
+							*/
+							f32 height = mapSingleton.maps[clientPositionData.mapId].GetHeight(Vector2(newPositionX, newPositionY));
+
+							Common::ByteBuffer buffer;
+							buffer.AppendGuid(clientConnection.characterGuid);
+							buffer.Write<u32>(0); // Teleport Count
+
+							/* Movement */
+							buffer.Write<u32>(0);
+							buffer.Write<u16>(0);
+							buffer.Write<u32>(static_cast<u32>(singleton.lifeTimeInMS));
+
+							buffer.Write<f32>(newPositionX);
+							buffer.Write<f32>(newPositionY);
+							buffer.Write<f32>(height);
+							buffer.Write<f32>(clientPositionData.orientation);
+
+							buffer.Write<u32>(0);
+
+							NovusHeader header;
+							header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::MSG_MOVE_TELEPORT_ACK, buffer.GetActualSize());
+							playerPacketQueue.packetQueue->enqueue(header.BuildHeaderPacket(buffer));
+						}
+
+						Common::ByteBuffer spellStart;
+						spellStart.AppendGuid(clientConnection.characterGuid);
+						spellStart.AppendGuid(clientConnection.characterGuid);
+						spellStart.Write<u8>(0); // CastCount
+						spellStart.Write<u32>(spellId);
+						spellStart.Write<u32>(0);
+						spellStart.Write<u32>(0);
+
+						NovusHeader header;
+						header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_SPELL_START, spellStart.GetActualSize());
+						playerPacketQueue.packetQueue->enqueue(header.BuildHeaderPacket(spellStart));
+
+						Common::ByteBuffer spellCast;
+						spellCast.AppendGuid(clientConnection.characterGuid);
+						spellCast.AppendGuid(clientConnection.characterGuid);
+						spellCast.Write<u8>(0); // CastCount
+						spellCast.Write<u32>(spellId);
+						spellCast.Write<u32>(0);
+						spellCast.Write<u32>(0);
+
+						header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_SPELL_GO, spellCast.GetActualSize());
+						playerPacketQueue.packetQueue->enqueue(header.BuildHeaderPacket(spellCast));
+						break;
+					}
 					case Common::Opcode::INTERNAL_FORWARD:
 					{
 						playerPacketQueue.packetQueue->enqueue(packet.data);

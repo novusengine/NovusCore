@@ -32,7 +32,6 @@
 #include "../ECS/Components/Singletons/CommandDataSingleton.h"
 #include "../ECS/Components/Singletons/PlayerPacketQueueSingleton.h"
 #include "../ECS/Components/Singletons/WorldDatabaseCacheSingleton.h"
-#include "../ECS/Components/Singletons/MapSingleton.h"
 
 namespace Commands_Character
 {
@@ -252,46 +251,6 @@ namespace Commands_Character
 
 		return false;
 	}
-	bool _DebugItem(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
-	{
-		try
-		{
-			u32 itemEntry = std::stoi(commandStrings[0]);
-			WorldDatabaseCacheSingleton& worldDatabaseCache = _registry->ctx<WorldDatabaseCacheSingleton>();
-
-			ItemTemplate itemTemplate;
-			if (!worldDatabaseCache.cache->GetItemTemplate(itemEntry, itemTemplate))
-			{
-				return false;
-			}
-
-			PlayerFieldDataComponent& playerFieldData = _registry->get<PlayerFieldDataComponent>(clientConnection.entityGuid);
-
-			u64 itemGuid = (static_cast<u64>(2) | (static_cast<u64>(itemTemplate.entry) << 24) | (static_cast<u64>(0x4000) << 48));
-			playerFieldData.SetGuidValue(PLAYER_FIELD_PACK_SLOT_1, itemGuid);
-			return true;
-		}
-		catch (std::exception) {}
-
-		return false;
-	}
-
-	bool _GPS(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
-	{
-		PlayerPositionComponent& playerPos = _registry->get<PlayerPositionComponent>(clientConnection.entityGuid);
-		MapSingleton& mapSingleton = _registry->ctx<MapSingleton>();
-		PlayerPacketQueueSingleton& playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
-
-		u16 mapId = playerPos.mapId;
-		f32 x = playerPos.x;
-		f32 y = playerPos.y;
-		f32 z = playerPos.z;
-
-		f32 height = mapSingleton.maps[mapId].GetHeight(Vector2(x, y));
-		clientConnection.SendNotification("MapID: %u (%f, %f, %f) Height: %f", mapId, x, y, z, height);
-
-		return true;
-	}
 
     bool CharacterCommand(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
     {
@@ -340,7 +299,5 @@ namespace Commands_Character
         characterCommandMap["tele"_h] = CommandEntry(_Tele, 3);
         characterCommandMap["teletomap"_h] = CommandEntry(_TeleToMap, 4);
         characterCommandMap["additem"_h] = CommandEntry(_AddItem, 1);
-        characterCommandMap["debugitem"_h] = CommandEntry(_DebugItem, 1);
-		characterCommandMap["gps"_h] = CommandEntry(_GPS, 0);
     }
 }
