@@ -126,6 +126,31 @@ struct CharacterSkillStorage
 private:
     CharacterDatabaseCache* _cache;
 };
+// character_items table in DB
+struct CharacterItemData
+{
+	CharacterItemData() { }
+	CharacterItemData(CharacterDatabaseCache* cache) { _cache = cache; }
+	CharacterItemData(const CharacterItemData& data)
+	{
+		lowGuid = data.lowGuid;
+		itemEntry = data.itemEntry;
+		bagSlot = data.bagSlot;
+		bagPosition = data.bagPosition;
+		characterGuid = data.characterGuid;
+		_cache = data._cache;
+	}
+
+	u32 lowGuid;
+	u32 itemEntry;
+	u8 bagSlot;
+	u32 bagPosition;
+	u64 characterGuid;
+
+	void UpdateCache(u64 characterGuid, u32 itemEntry);
+private:
+	CharacterDatabaseCache* _cache;
+};
 
 class CharacterDatabaseCache : BaseDatabaseCache
 {
@@ -151,17 +176,22 @@ public:
     // Character Spell Storage cache
     bool GetCharacterSpellStorage(u64 characterGuid, robin_hood::unordered_map<u32, CharacterSpellStorage>& output);
 
-    // Character Skill Storage cache
-    bool GetCharacterSkillStorage(u64 characterGuid, robin_hood::unordered_map<u32, CharacterSkillStorage>& output);
+	// Character Skill Storage cache
+	bool GetCharacterSkillStorage(u64 characterGuid, robin_hood::unordered_map<u32, CharacterSkillStorage>& output);
+
+	// Character Item cache
+	bool GetCharacterItemData(u64 characterGuid, robin_hood::unordered_map<u32, CharacterItemData>& output);
 
 private:
     friend CharacterData;
     friend CharacterVisualData;
     friend CharacterSpellStorage;
-    friend CharacterSkillStorage;
+	friend CharacterSkillStorage;
+	friend CharacterItemData;
 
     robin_hood::unordered_map<u64, CharacterData> _characterDataCache; // Character Guid
     robin_hood::unordered_map<u64, CharacterVisualData> _characterVisualDataCache; // Character Guid
     robin_hood::unordered_map<u64, robin_hood::unordered_map<u32, CharacterSpellStorage>> _characterSpellStorageCache; // Character Guid, Spell Id
     robin_hood::unordered_map<u64, robin_hood::unordered_map<u32, CharacterSkillStorage>> _characterSkillStorageCache; // Character Guid, Skill Id
+	robin_hood::unordered_map<u64, robin_hood::unordered_map<u32, CharacterItemData>> _characteritemDataCache; // Character Guid, Item LowGuid
 };

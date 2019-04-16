@@ -23,11 +23,14 @@
 */
 #pragma once
 #include <NovusTypes.h>
+#include "../Game/ObjectGuid/ObjectGuid.h"
 
 struct ItemInitializeComponent
 {
-    u32 itemEntry = 0;
     u32 clientEntityGuid = 0;
+	ObjectGuid itemGuid;
+	u8 bagSlot = 0;
+	u32 bagPosition = 0;
     u32 accountGuid = 0;
     u64 characterGuid = 0;
 };

@@ -49,8 +49,10 @@ namespace ItemCreateSystem
         while (createItemQueue.newItemQueue->try_dequeue(itemCreationInformation))
         {
             u32 entity = registry.create();
-            registry.assign<ItemDataComponent>(entity, entity, itemCreationInformation.itemEntry, itemCreationInformation.accountGuid, itemCreationInformation.characterGuid);
-            registry.assign<ItemInitializeComponent>(entity, itemCreationInformation.itemEntry, itemCreationInformation.clientEntityGuid, itemCreationInformation.accountGuid, itemCreationInformation.characterGuid);
+
+			ObjectGuid itemGuid(HighGuid::Item, itemCreationInformation.itemEntry, itemCreationInformation.lowGuid);
+            registry.assign<ItemDataComponent>(entity, entity, itemGuid, itemCreationInformation.bagSlot, itemCreationInformation.bagPosition, itemCreationInformation.accountGuid, itemCreationInformation.characterGuid);
+            registry.assign<ItemInitializeComponent>(entity, itemCreationInformation.clientEntityGuid, itemGuid, itemCreationInformation.bagSlot, itemCreationInformation.bagPosition, itemCreationInformation.accountGuid, itemCreationInformation.characterGuid);
 
             registry.assign<ItemFieldDataComponent>(entity);
         }

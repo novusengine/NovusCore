@@ -67,23 +67,40 @@ void CharacterDatabaseCache::Load()
         }
     }
 
+	connector->Query("SELECT guid, skill, value, character_skill_storage.maxValue FROM character_skill_storage;", resultSet);
+	if (resultSet.affected_rows() > 0)
+	{
+		for (auto row : resultSet)
+		{
+			CharacterSkillStorage newCharacterSkillStorage(this);
+			u64 guid = row[0].GetU64();
+			newCharacterSkillStorage.id = row[1].GetU16();
+			newCharacterSkillStorage.value = row[2].GetU16();
+			newCharacterSkillStorage.maxValue = row[3].GetU16();
 
-    connector->Query("SELECT guid, skill, value, character_skill_storage.maxValue FROM character_skill_storage;", resultSet);
-    if (resultSet.affected_rows() > 0)
-    {
-        for (auto row : resultSet)
-        {
-            CharacterSkillStorage newCharacterSkillStorage(this);
-            u64 guid = row[0].GetU64();
-            newCharacterSkillStorage.id = row[1].GetU16();
-            newCharacterSkillStorage.value = row[2].GetU16();
-            newCharacterSkillStorage.maxValue = row[3].GetU16();
+			_accessMutex.lock();
+			_characterSkillStorageCache[guid][newCharacterSkillStorage.id] = newCharacterSkillStorage;
+			_accessMutex.unlock();
+		}
+	}
 
-            _accessMutex.lock();
-            _characterSkillStorageCache[guid][newCharacterSkillStorage.id] = newCharacterSkillStorage;
-            _accessMutex.unlock();
-        }
-    }
+	connector->Query("SELECT lowGuid, itemEntry, bagSlot, bagPosition, characterGuid FROM character_items;", resultSet);
+	if (resultSet.affected_rows() > 0)
+	{
+		for (auto row : resultSet)
+		{
+			CharacterItemData newCharacterItemData(this);
+			newCharacterItemData.lowGuid = row[0].GetU32();
+			newCharacterItemData.itemEntry = row[1].GetU32();
+			newCharacterItemData.bagSlot = row[2].GetU8();
+			newCharacterItemData.bagPosition = row[3].GetU32();
+			newCharacterItemData.characterGuid = row[4].GetU32();
+
+			_accessMutex.lock();
+			_characteritemDataCache[newCharacterItemData.characterGuid][newCharacterItemData.lowGuid] = newCharacterItemData;
+			_accessMutex.unlock();
+		}
+	}
 }
 void CharacterDatabaseCache::LoadAsync()
 {
@@ -449,48 +466,94 @@ bool CharacterDatabaseCache::GetCharacterSpellStorage(u64 characterGuid, robin_h
 }
 bool CharacterDatabaseCache::GetCharacterSkillStorage(u64 characterGuid, robin_hood::unordered_map<u32, CharacterSkillStorage>& output)
 {
-    auto cache = _characterSkillStorageCache.find(characterGuid);
-    if (cache != _characterSkillStorageCache.end())
-    {
-        _accessMutex.lock_shared();
-        robin_hood::unordered_map<u32, CharacterSkillStorage> characterSkillStorageData = cache->second;
-        _accessMutex.unlock_shared();
+	auto cache = _characterSkillStorageCache.find(characterGuid);
+	if (cache != _characterSkillStorageCache.end())
+	{
+		_accessMutex.lock_shared();
+		robin_hood::unordered_map<u32, CharacterSkillStorage> characterSkillStorageData = cache->second;
+		_accessMutex.unlock_shared();
 
-        output = characterSkillStorageData;
-        return true;
-    }
-    else
-    {
-        // We don't have the character, so we load it
-        std::shared_ptr<DatabaseConnector> connector;
-        bool result = DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, connector);
-        assert(result);
+		output = characterSkillStorageData;
+		return true;
+	}
+	else
+	{
+		// We don't have the character, so we load it
+		std::shared_ptr<DatabaseConnector> connector;
+		bool result = DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, connector);
+		assert(result);
 
-        PreparedStatement stmt("SELECT guid, skill, value, character_skill_storage.maxValue FROM character_skill_storage WHERE guid = {u};");
-        stmt.Bind(characterGuid);
+		PreparedStatement stmt("SELECT guid, skill, value, character_skill_storage.maxValue FROM character_skill_storage WHERE guid = {u};");
+		stmt.Bind(characterGuid);
 
-        amy::result_set resultSet;
-        connector->Query(stmt, resultSet);
+		amy::result_set resultSet;
+		connector->Query(stmt, resultSet);
 
-        if (resultSet.affected_rows() == 0)
-            return false;
+		if (resultSet.affected_rows() == 0)
+			return false;
 
-        _accessMutex.lock();
-        for (auto row : resultSet)
-        {
-            CharacterSkillStorage newCharacterSkillStorage(this);
-            u64 guid = row[0].GetU64();
-            newCharacterSkillStorage.id = row[1].GetU16();
-            newCharacterSkillStorage.value = row[2].GetU16();
-            newCharacterSkillStorage.maxValue = row[3].GetU16();
+		_accessMutex.lock();
+		for (auto row : resultSet)
+		{
+			CharacterSkillStorage newCharacterSkillStorage(this);
+			u64 guid = row[0].GetU64();
+			newCharacterSkillStorage.id = row[1].GetU16();
+			newCharacterSkillStorage.value = row[2].GetU16();
+			newCharacterSkillStorage.maxValue = row[3].GetU16();
 
-            _characterSkillStorageCache[guid][newCharacterSkillStorage.id] = newCharacterSkillStorage;
-        }
-        _accessMutex.unlock();
+			_characterSkillStorageCache[guid][newCharacterSkillStorage.id] = newCharacterSkillStorage;
+		}
+		_accessMutex.unlock();
 
-        output = _characterSkillStorageCache[characterGuid];
-        return true;
-    }
+		output = _characterSkillStorageCache[characterGuid];
+		return true;
+	}
+}
+bool CharacterDatabaseCache::GetCharacterItemData(u64 characterGuid, robin_hood::unordered_map<u32, CharacterItemData>& output)
+{
+	auto cache = _characteritemDataCache.find(characterGuid);
+	if (cache != _characteritemDataCache.end())
+	{
+		_accessMutex.lock_shared();
+		robin_hood::unordered_map<u32, CharacterItemData> characterItemData = cache->second;
+		_accessMutex.unlock_shared();
+
+		output = characterItemData;
+		return true;
+	}
+	else
+	{
+		// We don't have the character, so we load it
+		std::shared_ptr<DatabaseConnector> connector;
+		bool result = DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, connector);
+		assert(result);
+
+		PreparedStatement stmt("SELECT lowGuid, itemEntry, bagSlot, bagPosition, characterGuid FROM character_items WHERE characterGuid = {u};");
+		stmt.Bind(characterGuid);
+
+		amy::result_set resultSet;
+		connector->Query(stmt, resultSet);
+
+		if (resultSet.affected_rows() == 0)
+			return false;
+
+		_accessMutex.lock();
+		for (auto row : resultSet)
+		{
+			CharacterItemData newCharacterItemData(this);
+			newCharacterItemData.lowGuid = row[0].GetU32();
+			newCharacterItemData.itemEntry = row[1].GetU32();
+			newCharacterItemData.bagSlot = row[2].GetU8();
+			newCharacterItemData.bagPosition = row[3].GetU32();
+			newCharacterItemData.characterGuid = row[4].GetU32();
+
+			_characteritemDataCache[newCharacterItemData.characterGuid][newCharacterItemData.lowGuid] = newCharacterItemData;
+		}
+		_accessMutex.unlock();
+
+		output = _characteritemDataCache[characterGuid];
+		return true;
+	}
 }
 
 void CharacterData::UpdateCache(u64 characterGuid)

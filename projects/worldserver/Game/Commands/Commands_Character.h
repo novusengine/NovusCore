@@ -235,6 +235,9 @@ namespace Commands_Character
 			PlayerFieldDataComponent& playerFieldData = _registry->get<PlayerFieldDataComponent>(clientConnection.entityGuid);
 
 			ItemCreationInformation itemCreationInformation;
+			itemCreationInformation.lowGuid = 2;
+			itemCreationInformation.bagSlot = 255;
+			itemCreationInformation.bagPosition = 23;
 			itemCreationInformation.itemEntry = itemTemplate.entry;
 			itemCreationInformation.clientEntityGuid = clientConnection.entityGuid;
 			itemCreationInformation.accountGuid = clientConnection.accountGuid;

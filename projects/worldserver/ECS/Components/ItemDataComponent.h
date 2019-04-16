@@ -25,11 +25,14 @@
 #include <NovusTypes.h>
 #include <Networking/ByteBuffer.h>
 #include <vector>
+#include "../Game/ObjectGuid/ObjectGuid.h"
 
 struct ItemDataComponent
 {
     u32 entityGuid;
-    u32 itemEntry;
+    ObjectGuid itemGuid;
+	u8 bagSlot;
+	u32 bagPosition;
     u32 accountGuid;
     u64 characterGuid;
 };

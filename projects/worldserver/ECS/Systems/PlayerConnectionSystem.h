@@ -518,7 +518,7 @@ namespace ConnectionSystem
 								f32 height = mapSingleton.maps[clientPositionData.mapId].GetHeight(Vector2(newPositionX, newPositionY));
 								f32 deltaHeight = Math::Abs(tempHeight - height);
 
-								if (deltaHeight <= 2.0f)
+								if (deltaHeight <= 2.0f || (i == 0 && deltaHeight <= 20))
 								{
 									dest = i;
 									tempHeight = height;

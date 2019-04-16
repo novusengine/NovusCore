@@ -38,6 +38,7 @@
 #include "../Components/Singletons/SingletonComponent.h"
 #include "../Components/Singletons/PlayerUpdatesQueueSingleton.h"
 #include "../Components/Singletons/ItemCreateQueueSingleton.h"
+#include "../Components/Singletons/CharacterDatabaseCacheSingleton.h"
 
 namespace PlayerCreateDataSystem
 {
@@ -248,11 +249,13 @@ namespace PlayerCreateDataSystem
         {
             SingletonComponent& singleton = registry.ctx<SingletonComponent>();
             PlayerUpdatesQueueSingleton& playerUpdatesQueue = registry.ctx<PlayerUpdatesQueueSingleton>();
+			ItemCreateQueueSingleton& itemCreateQueue = registry.ctx<ItemCreateQueueSingleton>();
+			CharacterDatabaseCacheSingleton& characterDatabase = registry.ctx<CharacterDatabaseCacheSingleton>();
             NovusConnection& novusConnection = *singleton.connection;
             u32 lifeTimeInMS = static_cast<u32>(singleton.lifeTimeInMS);
 
             auto subView = registry.view<PlayerConnectionComponent, PlayerFieldDataComponent, PlayerPositionComponent>();
-            view.each([&novusConnection, &playerUpdatesQueue, lifeTimeInMS, subView](const auto, PlayerInitializeComponent& clientInitializeData, PlayerFieldDataComponent& clientFieldData, PlayerPositionComponent& clientPositionData)
+            view.each([&novusConnection, &playerUpdatesQueue, &itemCreateQueue, &characterDatabase, lifeTimeInMS, subView](const auto, PlayerInitializeComponent& clientInitializeData, PlayerFieldDataComponent& clientFieldData, PlayerPositionComponent& clientPositionData)
             {
                 /* Build Self Packet, must be sent immediately */
                 u8 updateType = UPDATETYPE_CREATE_OBJECT2;
@@ -262,6 +265,26 @@ namespace PlayerCreateDataSystem
 
                 Common::ByteBuffer selfPlayerUpdate = BuildPlayerCreateData(clientInitializeData.characterGuid, updateType, selfUpdateFlag, selfVisibleFlags, lifeTimeInMS, clientFieldData, clientPositionData, buildOpcode);
                 novusConnection.SendPacket(clientInitializeData.accountGuid, selfPlayerUpdate, buildOpcode);
+
+				robin_hood::unordered_map<u32, CharacterItemData> characterItemData;
+				if (characterDatabase.cache->GetCharacterItemData(clientInitializeData.characterGuid, characterItemData))
+				{
+					ItemCreationInformation itemCreationInformation;
+					for (auto itr : characterItemData)
+					{
+						itemCreationInformation.lowGuid = itr.second.lowGuid;
+						itemCreationInformation.bagSlot = itr.second.bagSlot;
+						itemCreationInformation.bagPosition = itr.second.bagPosition;
+						itemCreationInformation.itemEntry = itr.second.itemEntry;
+						itemCreationInformation.clientEntityGuid = clientInitializeData.entityGuid;
+						itemCreationInformation.accountGuid = clientInitializeData.accountGuid;
+						itemCreationInformation.characterGuid = clientInitializeData.characterGuid;
+						itemCreateQueue.newItemQueue->enqueue(itemCreationInformation);
+
+						ObjectGuid itemGuid(HighGuid::Item, itemCreationInformation.itemEntry, itemCreationInformation.lowGuid);
+						clientFieldData.SetGuidValue(PLAYER_FIELD_PACK_SLOT_1 + (itemCreationInformation.bagPosition - 23), itemGuid);
+					}
+				}
 
                 /* Build Self Packet for public */
                 u16 publicUpdateFlag = (UPDATEFLAG_LIVING | UPDATEFLAG_STATIONARY_POSITION);

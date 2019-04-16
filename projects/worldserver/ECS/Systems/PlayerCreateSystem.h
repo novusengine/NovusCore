@@ -60,7 +60,7 @@ namespace PlayerCreateSystem
             {
                 u32 entity = registry.create();
                 registry.assign<PlayerConnectionComponent>(entity, entity, static_cast<u32>(message.account), characterGuid);
-                registry.assign<PlayerInitializeComponent>(entity, static_cast<u32>(message.account), characterGuid);
+                registry.assign<PlayerInitializeComponent>(entity, entity, static_cast<u32>(message.account), characterGuid);
 
                 registry.assign<PlayerFieldDataComponent>(entity);
                 registry.assign<PlayerUpdateDataComponent>(entity);

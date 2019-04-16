@@ -23,13 +23,11 @@ namespace ItemInitializeSystem
         itemView.each([&worldDatabase, &novusConnection](const auto, ItemInitializeComponent& itemInitializeData, ItemFieldDataComponent& itemFieldData)
         {
             ItemTemplate itemTemplate;
-            if (worldDatabase.cache->GetItemTemplate(itemInitializeData.itemEntry, itemTemplate))
+            if (worldDatabase.cache->GetItemTemplate(itemInitializeData.itemGuid.GetEntry(), itemTemplate))
             {
                 itemFieldData.ResetFields();
 
-                u64 itemGuid = (static_cast<u64>(2) | (static_cast<u64>(itemTemplate.entry) << 24) | (static_cast<u64>(0x4000) << 48));
-
-                itemFieldData.SetGuidValue(OBJECT_FIELD_GUID, itemGuid);
+                itemFieldData.SetGuidValue(OBJECT_FIELD_GUID, itemInitializeData.itemGuid);
                 itemFieldData.SetFieldValue<u32>(OBJECT_FIELD_TYPE, 0x3); // Object Type Item (Item, Object)
                 itemFieldData.SetFieldValue<u32>(OBJECT_FIELD_ENTRY, itemTemplate.entry);
                 itemFieldData.SetFieldValue<f32>(OBJECT_FIELD_SCALE_X, 1.0f);

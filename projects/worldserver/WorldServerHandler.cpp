@@ -32,6 +32,7 @@
 
 // Game
 #include "Game/Commands/Commands.h"
+#include "Game/ObjectGuid/ObjectGuid.h"
 
 WorldServerHandler::WorldServerHandler(f32 targetTickRate)
     : _isRunning(false)

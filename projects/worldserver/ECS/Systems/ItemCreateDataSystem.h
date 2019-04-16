@@ -101,8 +101,7 @@ namespace ItemCreateDataSystem
                 u32 selfVisibleFlags = (UF_FLAG_PUBLIC | UF_FLAG_OWNER);
                 u16 buildOpcode = 0;
 
-				u64 itemGuid = itemFieldData.GetFieldValue<u64>(OBJECT_FIELD_GUID);
-                Common::ByteBuffer selfItemUpdate = BuildItemCreateData(itemGuid, updateType, selfUpdateFlag, selfVisibleFlags, itemFieldData, buildOpcode);
+                Common::ByteBuffer selfItemUpdate = BuildItemCreateData(itemInitializeData.itemGuid, updateType, selfUpdateFlag, selfVisibleFlags, itemFieldData, buildOpcode);
                 novusConnection.SendPacket(itemInitializeData.accountGuid, selfItemUpdate, buildOpcode);
 
                 Common::ByteBuffer itemPushResult;
@@ -110,9 +109,9 @@ namespace ItemCreateDataSystem
                 itemPushResult.Write<u32>(0); // Received:     0 = Looted,   1 = By NPC
                 itemPushResult.Write<u32>(0); // Created:      0 = Received, 1 = Created
                 itemPushResult.Write<u32>(1); // Show in chat: 0 = No Print, 1 = Print
-                itemPushResult.Write<u8>(255); // BagSlot
-                itemPushResult.Write<u32>(23); // BagPosition
-                itemPushResult.Write<u32>(itemInitializeData.itemEntry);
+                itemPushResult.Write<u8>(itemInitializeData.bagSlot); // BagSlot
+                itemPushResult.Write<u32>(itemInitializeData.bagPosition); // BagPosition
+                itemPushResult.Write<u32>(itemInitializeData.itemGuid.GetEntry());
                 itemPushResult.Write<u32>(0);
                 itemPushResult.Write<u32>(0);
                 itemPushResult.Write<u32>(1);
