@@ -49,7 +49,6 @@ i32 main()
 		std::string sqlOutput = "";
 
 		std::vector<std::string> adtLocations;
-
 		if (DBCLoader::LoadMap(mpqHandler, sqlOutput, adtLocations))
 		{
 			MapLoader::LoadMaps(mpqHandler, adtLocations);

@@ -27,6 +27,7 @@
 #include "ECS/Components/Singletons/CommandDataSingleton.h"
 #include "ECS/Components/Singletons/PlayerPacketQueueSingleton.h"
 #include "ECS/Components/Singletons/ItemCreateQueueSingleton.h"
+#include "ECS/Components/Singletons/DBCDatabaseCacheSingleton.h"
 #include "Connections/NovusConnection.h"
 
 // Game
@@ -95,10 +96,12 @@ void WorldServerHandler::Run()
     PlayerCreateQueueSingleton& playerCreateQueueComponent = _updateFramework.registry.set<PlayerCreateQueueSingleton>();
     PlayerUpdatesQueueSingleton& playerUpdatesQueueSingleton = _updateFramework.registry.set<PlayerUpdatesQueueSingleton>();
     PlayerDeleteQueueSingleton& playerDeleteQueueSingleton = _updateFramework.registry.set<PlayerDeleteQueueSingleton>();
-    CharacterDatabaseCacheSingleton& characterDatabaseCacheSingleton = _updateFramework.registry.set<CharacterDatabaseCacheSingleton>();
-    WorldDatabaseCacheSingleton& worldDatabaseCacheSingleton = _updateFramework.registry.set<WorldDatabaseCacheSingleton>();
     PlayerPacketQueueSingleton& playerPacketQueueSingleton = _updateFramework.registry.set<PlayerPacketQueueSingleton>();
     ItemCreateQueueSingleton& itemCreateQueueComponent = _updateFramework.registry.set<ItemCreateQueueSingleton>();
+
+	WorldDatabaseCacheSingleton& worldDatabaseCacheSingleton = _updateFramework.registry.set<WorldDatabaseCacheSingleton>();
+	CharacterDatabaseCacheSingleton& characterDatabaseCacheSingleton = _updateFramework.registry.set<CharacterDatabaseCacheSingleton>();
+	DBCDatabaseCacheSingleton& dbcDatabaseCacheSingleton = _updateFramework.registry.set<DBCDatabaseCacheSingleton>();
    
     singletonComponent.worldServerHandler = this;
     singletonComponent.connection = _novusConnection;
@@ -115,6 +118,9 @@ void WorldServerHandler::Run()
 
     worldDatabaseCacheSingleton.cache = new WorldDatabaseCache();
     worldDatabaseCacheSingleton.cache->Load();
+
+	dbcDatabaseCacheSingleton.cache = new DBCDatabaseCache();
+	dbcDatabaseCacheSingleton.cache->Load();
 
     Commands::LoadCommands(_updateFramework.registry);
 
