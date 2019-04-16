@@ -4,12 +4,11 @@
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 
-
 CREATE DATABASE IF NOT EXISTS `dbcdata` /*!40100 DEFAULT CHARACTER SET latin1 */;
 USE `dbcdata`;
 
 CREATE TABLE IF NOT EXISTS `map` (
-  `id` int(10) unsigned NOT NULL,
+  `id` smallint(5) unsigned NOT NULL,
   `internalName` varchar(255) NOT NULL,
   `instanceType` int(10) unsigned NOT NULL,
   `flags` int(10) unsigned NOT NULL,
