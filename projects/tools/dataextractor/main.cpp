@@ -27,6 +27,7 @@
 #include <fstream>
 #include "MPQ/MPQHandler.h"
 #include "DBC/DBCLoader.h"
+#include "MAP/MAPLoader.h"
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -46,11 +47,21 @@ i32 main()
 	if (mpqHandler.Load())
 	{
 		std::string sqlOutput = "";
-		DBCLoader::LoadMap(mpqHandler, sqlOutput);
 
-		std::ofstream output(std::filesystem::current_path().string() + "/dbcdata.sql", std::ofstream::out);
+		std::vector<std::string> adtLocations;
+
+		if (DBCLoader::LoadMap(mpqHandler, sqlOutput, adtLocations))
+		{
+			MapLoader::LoadMaps(mpqHandler, adtLocations);
+		}
+
+		NC_LOG_MESSAGE("Building sql...");
+		std::ofstream output(std::filesystem::current_path().string() + "/exportedDbcData.sql", std::ofstream::out);
 		output << sqlOutput;
 		output.close();
+
+		mpqHandler.CloseAll();
+		NC_LOG_SUCCESS("Finished extracting all data");
 	}
 	else
 	{

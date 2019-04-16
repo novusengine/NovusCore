@@ -23,6 +23,20 @@ namespace StringUtils
 		return results;
 	}
 
+	inline std::string EscapeString(std::string const& string)
+	{
+		std::size_t n = string.length();
+		std::string escaped;
+		escaped.reserve(n * 2);        // pessimistic preallocation
+
+		for (std::size_t i = 0; i < n; ++i) {
+			if (string[i] == '\\' || string[i] == '\'')
+				escaped += '\\';
+			escaped += string[i];
+		}
+		return escaped;
+	}
+
 	// FNV-1a 32bit hashing algorithm.
 	constexpr u32 fnv1a_32(char const* s, std::size_t count)
 	{

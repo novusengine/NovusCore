@@ -23,6 +23,7 @@
 */
 #pragma once
 #include <Utils/DebugHandler.h>
+#include <Utils/StringUtils.h>
 #include <sstream>
 #include "../MPQ/MPQHandler.h"
 #include "DBCReader.h"
@@ -30,25 +31,12 @@
 
 namespace DBCLoader
 {
-	std::string EscapeString(std::string const& s)
-	{
-		std::size_t n = s.length();
-		std::string escaped;
-		escaped.reserve(n * 2);        // pessimistic preallocation
-
-		for (std::size_t i = 0; i < n; ++i) {
-			if (s[i] == '\\' || s[i] == '\'')
-				escaped += '\\';
-			escaped += s[i];
-		}
-		return escaped;
-	}
-
-	bool LoadMap(MPQHandler& handler, std::string& output)
+	bool LoadMap(MPQHandler& handler, std::string& sqlOutput, std::vector<std::string>& adtLocationOutput)
 	{
 		MPQFile file;
 		if (handler.GetFile("DBFilesClient\\Map.dbc", file))
 		{
+			NC_LOG_MESSAGE("Loading Map.dbc...");
 			if (DBCReader* dbcReader = DBCReader::GetReader())
 			{
 				if (dbcReader->Load(file.Buffer) == 0)
@@ -65,12 +53,16 @@ namespace DBCLoader
 						u32 fieldCount = dbcReader->GetNumFields();
 						DBCMap map;
 						map.Id = row.GetUInt32(0);
-						map.InternalName = EscapeString(row.GetString(row.GetUInt32(1)));
+						map.InternalName = StringUtils::EscapeString(row.GetString(row.GetUInt32(1)));
 						map.InstanceType = row.GetUInt32(2);
 						map.Flags = row.GetUInt32(3);
-						map.Name = EscapeString(row.GetString(row.GetUInt32(5)));
+						map.Name = StringUtils::EscapeString(row.GetString(row.GetUInt32(5)));
 						map.Expansion = row.GetUInt32(63);
 						map.MaxPlayers = row.GetUInt32(65);
+
+						// MapFlag 2 & 16, seem to be exclusive to Test / Development Maps
+						if ((map.Flags & 2) == 0 && (map.Flags & 16) == 0)
+							adtLocationOutput.push_back(row.GetString(row.GetUInt32(1)));
 
 						if (i != 0)
 							ss << ", ";
@@ -79,9 +71,13 @@ namespace DBCLoader
 					}
 
 					ss << ";";
-					output += ss.str();
+					sqlOutput += ss.str();
 				}
 			}
+		}
+		else
+		{
+			NC_LOG_ERROR("Failed to load Map.dbc");
 		}
 
 		return true;
