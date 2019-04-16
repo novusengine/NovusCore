@@ -282,7 +282,7 @@ namespace PlayerCreateDataSystem
 						itemCreateQueue.newItemQueue->enqueue(itemCreationInformation);
 
 						ObjectGuid itemGuid(HighGuid::Item, itemCreationInformation.itemEntry, itemCreationInformation.lowGuid);
-						clientFieldData.SetGuidValue(PLAYER_FIELD_PACK_SLOT_1 + (itemCreationInformation.bagPosition - 23), itemGuid);
+						clientFieldData.SetGuidValue(PLAYER_FIELD_PACK_SLOT_1 + (itemCreationInformation.bagPosition - 23) * 2, itemGuid);
 					}
 				}
 
