@@ -68,6 +68,6 @@ i32 main()
 		NC_LOG_ERROR("Failed to load any MPQs");
 	}
 
-	std::getchar();
+	system("pause");
 	return 0;
 }
