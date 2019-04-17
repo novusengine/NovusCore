@@ -496,12 +496,13 @@ namespace ConnectionSystem
 					{
 						packet.handled = true;
 
-						u32 spellId = 0;
+						u32 spellId = 0, targetFlags = 0;
 						u8 castCount = 0, castFlags = 0;
 
 						packet.data.Read<u8>(castCount);
 						packet.data.Read<u32>(spellId);
 						packet.data.Read<u8>(castFlags);
+						packet.data.Read<u32>(targetFlags);
 
 						// As far as I can tell, the client expects SMSG_SPELL_START followed by SMSG_SPELL_GO.
 
@@ -574,6 +575,7 @@ namespace ConnectionSystem
 						spellStart.AppendGuid(clientConnection.characterGuid);
 						spellStart.Write<u8>(0); // CastCount
 						spellStart.Write<u32>(spellId);
+						spellStart.Write<u32>(0x00000002);
 						spellStart.Write<u32>(0);
 						spellStart.Write<u32>(0);
 
@@ -586,24 +588,23 @@ namespace ConnectionSystem
 						spellCast.AppendGuid(clientConnection.characterGuid);
 						spellCast.Write<u8>(0); // CastCount
 						spellCast.Write<u32>(spellId);
-						spellCast.Write<u32>(0);
-						spellCast.Write<u32>(0);
+						spellCast.Write<u32>(0x00000100);
+						spellCast.Write<u32>(static_cast<u32>(singleton.lifeTimeInMS));
+
+						spellCast.Write<u8>(1); // Affected Targets
+						spellCast.Write<u64>(clientConnection.characterGuid); // Target GUID
+						spellCast.Write<u8>(0); // Resisted Targets
+
+						if (targetFlags == 0) // SELF
+						{
+							targetFlags = 0x02; // UNIT
+						}
+
+						spellCast.Write<u32>(targetFlags); // Target Flags
+						spellCast.Write<u8>(0); // Target Flags
 
 						header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_SPELL_GO, spellCast.GetActualSize());
 						playerPacketQueue.packetQueue->enqueue(header.BuildHeaderPacket(spellCast));
-
-						/* 
-							Not sure if this is actually correct, the opcode is named SMSG_CAST_FAILED, but it does solve the issue of the
-							spell icon being highlighted. I couldn't find a proper reference in the other cores yet, so I'm leaving it in 
-							here for now.
-						*/
-						Common::ByteBuffer spellSucceed;
-						spellSucceed.Write<u8>(castCount);
-						spellSucceed.Write<u32>(spellId);
-						spellSucceed.Write<u8>(0); // SPELL_SUCCESS
-
-						header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_CAST_FAILED, spellSucceed.GetActualSize());
-						playerPacketQueue.packetQueue->enqueue(header.BuildHeaderPacket(spellSucceed));
 						break;
 					}
 					case Common::Opcode::INTERNAL_FORWARD:
