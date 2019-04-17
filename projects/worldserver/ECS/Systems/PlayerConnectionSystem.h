@@ -528,10 +528,9 @@ namespace ConnectionSystem
 							if (dest == 20)
 							{
 								Common::ByteBuffer spellFailed;
-								spellFailed.AppendGuid(clientConnection.characterGuid);
 								spellFailed.Write<u8>(castCount);
 								spellFailed.Write<u32>(spellId);
-								spellFailed.Write<u8>(132); // SPELL_FAILED_TRY_AGAIN
+								spellFailed.Write<u8>(173); // SPELL_FAILED_TRY_AGAIN
 
 								NovusHeader header;
 								header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_CAST_FAILED, spellFailed.GetActualSize());
@@ -592,6 +591,19 @@ namespace ConnectionSystem
 
 						header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_SPELL_GO, spellCast.GetActualSize());
 						playerPacketQueue.packetQueue->enqueue(header.BuildHeaderPacket(spellCast));
+
+						/* 
+							Not sure if this is actually correct, the opcode is named SMSG_CAST_FAILED, but it does solve the issue of the
+							spell icon being highlighted. I couldn't find a proper reference in the other cores yet, so I'm leaving it in 
+							here for now.
+						*/
+						Common::ByteBuffer spellSucceed;
+						spellSucceed.Write<u8>(castCount);
+						spellSucceed.Write<u32>(spellId);
+						spellSucceed.Write<u8>(0); // SPELL_SUCCESS
+
+						header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_CAST_FAILED, spellSucceed.GetActualSize());
+						playerPacketQueue.packetQueue->enqueue(header.BuildHeaderPacket(spellSucceed));
 						break;
 					}
 					case Common::Opcode::INTERNAL_FORWARD:
