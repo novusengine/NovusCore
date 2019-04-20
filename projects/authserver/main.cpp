@@ -37,9 +37,9 @@
 
 i32 main()
 {
-	/* Set up console window title */
-#ifdef _WIN32  //Windows
-	SetConsoleTitle(WINDOWNAME);
+    /* Set up console window title */
+#ifdef _WIN32 //Windows
+    SetConsoleTitle(WINDOWNAME);
 #endif
 
     /* Load Database Config Handler for server */
@@ -50,12 +50,12 @@ i32 main()
     }
 
     /* Load Database Information here */
-    std::string hosts       [DATABASE_TYPE::COUNT]  = { ConfigHandler::GetOption<std::string>("auth_database_ip", "127.0.0.1"),         ConfigHandler::GetOption<std::string>("character_database_ip", "127.0.0.1"),        ConfigHandler::GetOption<std::string>("world_database_ip", "127.0.0.1"),        ConfigHandler::GetOption<std::string>("dbc_database_ip", "127.0.0.1") };   
-    u16 ports               [DATABASE_TYPE::COUNT]  = { ConfigHandler::GetOption<u16>("auth_database_port", 3306),                      ConfigHandler::GetOption<u16>("character_database_port", 3306),                     ConfigHandler::GetOption<u16>("world_database_port", 3306),                     ConfigHandler::GetOption<u16>("dbc_database_port", 3306) };   
-    std::string usernames   [DATABASE_TYPE::COUNT]  = { ConfigHandler::GetOption<std::string>("auth_database_user", "root"),            ConfigHandler::GetOption<std::string>("character_database_user", "root"),           ConfigHandler::GetOption<std::string>("world_database_user", "root"),           ConfigHandler::GetOption<std::string>("dbc_database_user", "root") };
-    std::string passwords   [DATABASE_TYPE::COUNT]  = { ConfigHandler::GetOption<std::string>("auth_database_password", ""),            ConfigHandler::GetOption<std::string>("character_database_password", ""),           ConfigHandler::GetOption<std::string>("world_database_password", ""),           ConfigHandler::GetOption<std::string>("dbc_database_password", "") };
-    std::string names       [DATABASE_TYPE::COUNT]  = { ConfigHandler::GetOption<std::string>("auth_database_name", "auth"),            ConfigHandler::GetOption<std::string>("character_database_name", "characters"),     ConfigHandler::GetOption<std::string>("world_database_name", "world"),          ConfigHandler::GetOption<std::string>("dbc_database_name", "dbcdata") };
-    
+    std::string hosts[DATABASE_TYPE::COUNT] = {ConfigHandler::GetOption<std::string>("auth_database_ip", "127.0.0.1"), ConfigHandler::GetOption<std::string>("character_database_ip", "127.0.0.1"), ConfigHandler::GetOption<std::string>("world_database_ip", "127.0.0.1"), ConfigHandler::GetOption<std::string>("dbc_database_ip", "127.0.0.1")};
+    u16 ports[DATABASE_TYPE::COUNT] = {ConfigHandler::GetOption<u16>("auth_database_port", 3306), ConfigHandler::GetOption<u16>("character_database_port", 3306), ConfigHandler::GetOption<u16>("world_database_port", 3306), ConfigHandler::GetOption<u16>("dbc_database_port", 3306)};
+    std::string usernames[DATABASE_TYPE::COUNT] = {ConfigHandler::GetOption<std::string>("auth_database_user", "root"), ConfigHandler::GetOption<std::string>("character_database_user", "root"), ConfigHandler::GetOption<std::string>("world_database_user", "root"), ConfigHandler::GetOption<std::string>("dbc_database_user", "root")};
+    std::string passwords[DATABASE_TYPE::COUNT] = {ConfigHandler::GetOption<std::string>("auth_database_password", ""), ConfigHandler::GetOption<std::string>("character_database_password", ""), ConfigHandler::GetOption<std::string>("world_database_password", ""), ConfigHandler::GetOption<std::string>("dbc_database_password", "")};
+    std::string names[DATABASE_TYPE::COUNT] = {ConfigHandler::GetOption<std::string>("auth_database_name", "auth"), ConfigHandler::GetOption<std::string>("character_database_name", "characters"), ConfigHandler::GetOption<std::string>("world_database_name", "world"), ConfigHandler::GetOption<std::string>("dbc_database_name", "dbcdata")};
+
     /* Pass Database Information to Setup */
     DatabaseConnector::Setup(hosts, ports, usernames, passwords, names);
 
@@ -71,8 +71,7 @@ i32 main()
     authConnectionHandler.Start();
 
     srand(static_cast<u32>(time(NULL)));
-    std::thread run_thread([&]
-    {
+    std::thread run_thread([&] {
         io_service.run();
     });
 
