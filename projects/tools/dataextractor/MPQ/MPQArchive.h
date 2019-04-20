@@ -32,108 +32,109 @@
 class MPQArchive
 {
 public:
-	MPQArchive() { }
-	MPQArchive(std::string path)
-	{
-		_path = path;
-	}
+    MPQArchive() {}
+    MPQArchive(std::string path)
+    {
+        _path = path;
+    }
 
-	bool Open()
-	{
-		i32 result = libmpq__archive_open(&_archive, _path.c_str(), 0); 
-		if (result)
-		{
-			switch (result)
-			{
-			case LIBMPQ_ERROR_OPEN:
-				NC_LOG_ERROR("Archive %s: Does not exist", _path.c_str());
-				break;
-			case LIBMPQ_ERROR_SEEK:
-				NC_LOG_ERROR("Archive %s: Failed seek", _path.c_str());
-				break;
-			case LIBMPQ_ERROR_READ:
-				NC_LOG_ERROR("Archive %s: Failed read", _path.c_str());
-				break;
-			case LIBMPQ_ERROR_MALLOC:
-				NC_LOG_ERROR("Archive %s: Insufficient memory", _path.c_str());
-				break;
-			case LIBMPQ_ERROR_FORMAT:
-				NC_LOG_ERROR("Archive %s: Incorrect file format", _path.c_str());
-				break;
-			default:
-				NC_LOG_ERROR("Archive %s. Error code unhandled", _path.c_str());
-				break;
-			}
+    bool Open()
+    {
+        i32 result = libmpq__archive_open(&_archive, _path.c_str(), 0);
+        if (result)
+        {
+            switch (result)
+            {
+            case LIBMPQ_ERROR_OPEN:
+                NC_LOG_ERROR("Archive %s: Does not exist", _path.c_str());
+                break;
+            case LIBMPQ_ERROR_SEEK:
+                NC_LOG_ERROR("Archive %s: Failed seek", _path.c_str());
+                break;
+            case LIBMPQ_ERROR_READ:
+                NC_LOG_ERROR("Archive %s: Failed read", _path.c_str());
+                break;
+            case LIBMPQ_ERROR_MALLOC:
+                NC_LOG_ERROR("Archive %s: Insufficient memory", _path.c_str());
+                break;
+            case LIBMPQ_ERROR_FORMAT:
+                NC_LOG_ERROR("Archive %s: Incorrect file format", _path.c_str());
+                break;
+            default:
+                NC_LOG_ERROR("Archive %s. Error code unhandled", _path.c_str());
+                break;
+            }
 
-			return false;
-		}
+            return false;
+        }
 
-		NC_LOG_SUCCESS("Archive Found: %s", _path.c_str());
-		return true;
-	}
-	void Close()
-	{
-		if (_archive)
-		{
-			libmpq__archive_close(_archive);
-		}
-	}
+        NC_LOG_SUCCESS("Archive Found: %s", _path.c_str());
+        return true;
+    }
+    void Close()
+    {
+        if (_archive)
+        {
+            libmpq__archive_close(_archive);
+        }
+    }
 
-	bool GetFiles(std::vector<std::string>& output)
-	{
-		u32 listFileNumber;
-		if (!GetListFile(listFileNumber))
-		{
-			return false;
-		}
+    bool GetFiles(std::vector<std::string>& output)
+    {
+        u32 listFileNumber;
+        if (!GetListFile(listFileNumber))
+        {
+            return false;
+        }
 
-		i64 listSize = 0, transferred = 0;
-		libmpq__file_size_unpacked(_archive, listFileNumber, &listSize);
+        i64 listSize = 0, transferred = 0;
+        libmpq__file_size_unpacked(_archive, listFileNumber, &listSize);
 
-		u8* buffer = new u8[listSize];
-		libmpq__file_read(_archive, listFileNumber, buffer, listSize, &transferred);
+        u8* buffer = new u8[listSize];
+        libmpq__file_read(_archive, listFileNumber, buffer, listSize, &transferred);
 
-		char seperators[] = "\r\n";
-		char* nextToken = nullptr;
-		char* token = strtok_s((char*)buffer, seperators, &nextToken);
+        char seperators[] = "\r\n";
+        char* nextToken = nullptr;
+        char* token = strtok_s((char*)buffer, seperators, &nextToken);
 
-		u32 counter = 0;
-		while (token && (counter < listSize))
-		{
-			output.push_back(token);
-			counter += static_cast<u32>(strlen(token)) + 2;
-			token = strtok_s(nullptr, seperators, &nextToken);
-		}
+        u32 counter = 0;
+        while (token && (counter < listSize))
+        {
+            output.push_back(token);
+            counter += static_cast<u32>(strlen(token)) + 2;
+            token = strtok_s(nullptr, seperators, &nextToken);
+        }
 
-		return true;
-	}
-	bool GetListFile(u32& output)
-	{
-		return GetFileNumber("(listfile)", output);
-	}
-	bool GetFileNumber(std::string name, u32& output)
-	{
-		if (libmpq__file_number(_archive, name.c_str(), &output))
-			return false;
+        return true;
+    }
+    bool GetListFile(u32& output)
+    {
+        return GetFileNumber("(listfile)", output);
+    }
+    bool GetFileNumber(std::string name, u32& output)
+    {
+        if (libmpq__file_number(_archive, name.c_str(), &output))
+            return false;
 
-		return true;
-	}
-	bool GetFileSize_Unpacked(u32 fileNumber, i64& output)
-	{
-		if (libmpq__file_size_unpacked(_archive, fileNumber, &output))
-			return false;
+        return true;
+    }
+    bool GetFileSize_Unpacked(u32 fileNumber, i64& output)
+    {
+        if (libmpq__file_size_unpacked(_archive, fileNumber, &output))
+            return false;
 
-		return true;
-	}
-	bool ReadFile(u32 fileNumber, u8* buffer, i64 size)
-	{
-		i64 transferred = 0;
-		if (libmpq__file_read(_archive, fileNumber, buffer, size, &transferred))
-			return false;
+        return true;
+    }
+    bool ReadFile(u32 fileNumber, u8* buffer, i64 size)
+    {
+        i64 transferred = 0;
+        if (libmpq__file_read(_archive, fileNumber, buffer, size, &transferred))
+            return false;
 
-		return true;
-	}
+        return true;
+    }
+
 private:
-	mpq_archive_s* _archive = nullptr;
-	std::string _path = "";
+    mpq_archive_s* _archive = nullptr;
+    std::string _path = "";
 };

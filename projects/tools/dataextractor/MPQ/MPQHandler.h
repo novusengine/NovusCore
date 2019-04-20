@@ -30,86 +30,89 @@
 #include "MPQArchive.h"
 #include "MPQFile.h"
 
-const char* _wantedMPQs[] = { "patch.MPQ", "patch-2.MPQ", "patch-3.MPQ", "patch-enUS-3.MPQ" };
+const char* _wantedMPQs[] = {"patch.MPQ", "patch-2.MPQ", "patch-3.MPQ", "patch-enUS-3.MPQ"};
 const i32 _wantedMPQsSize = sizeof(_wantedMPQs) / sizeof(char*);
 
 class MPQHandler
 {
 public:
-	MPQHandler() : Archives() { }
+    MPQHandler() : Archives() {}
 
-	bool IsWantedMPQ(std::string fileName)
-	{
-		for (u32 i = 0; i < _wantedMPQsSize; i++)
-		{
-			if (fileName == _wantedMPQs[i])
-				return true;
-		}
+    bool IsWantedMPQ(std::string fileName)
+    {
+        for (u32 i = 0; i < _wantedMPQsSize; i++)
+        {
+            if (fileName == _wantedMPQs[i])
+                return true;
+        }
 
-		return false;
-	}
+        return false;
+    }
 
-	bool Load()
-	{
-		u32 counter = 0;
-		std::filesystem::path basePath = std::filesystem::current_path();
-		for (const auto& entry : std::filesystem::recursive_directory_iterator(basePath))
-		{
-			if (entry.is_regular_file())
-			{
-				auto file = std::filesystem::path(entry.path());
-				if (IsWantedMPQ(file.filename().string()))
-				{
-					try
-					{
-						std::string mpqPath = file.lexically_relative(basePath).string();
+    bool Load()
+    {
+        u32 counter = 0;
+        std::filesystem::path basePath = std::filesystem::current_path();
+        for (const auto& entry : std::filesystem::recursive_directory_iterator(basePath))
+        {
+            if (entry.is_regular_file())
+            {
+                auto file = std::filesystem::path(entry.path());
+                if (IsWantedMPQ(file.filename().string()))
+                {
+                    try
+                    {
+                        std::string mpqPath = file.lexically_relative(basePath).string();
 
-						MPQArchive archive(mpqPath);
-						if (archive.Open())
-						{
-							counter++;
-							Archives.push_back(archive);
-						}
-					}
-					catch (std::exception e)
-					{
-						NC_LOG_ERROR(e.what());
-					}
-				}
-			}
-		}
+                        MPQArchive archive(mpqPath);
+                        if (archive.Open())
+                        {
+                            counter++;
+                            Archives.push_back(archive);
+                        }
+                    }
+                    catch (std::exception e)
+                    {
+                        NC_LOG_ERROR(e.what());
+                    }
+                }
+            }
+        }
 
-		return counter != 0;
-	}
-	bool GetFile(std::string name, MPQFile& output)
-	{
-		for (MPQArchive archive : Archives)
-		{
-			u32 fileNumber = 0;
-			if (!archive.GetFileNumber(name, fileNumber)) continue;
+        return counter != 0;
+    }
+    bool GetFile(std::string name, MPQFile& output)
+    {
+        for (MPQArchive archive : Archives)
+        {
+            u32 fileNumber = 0;
+            if (!archive.GetFileNumber(name, fileNumber))
+                continue;
 
-			i64 fileSize = 0;
-			if (!archive.GetFileSize_Unpacked(fileNumber, fileSize) || fileSize <= 1) continue;
+            i64 fileSize = 0;
+            if (!archive.GetFileSize_Unpacked(fileNumber, fileSize) || fileSize <= 1)
+                continue;
 
-			MPQFile file(name);
-			file.Buffer.Resize(fileSize);
+            MPQFile file(name);
+            file.Buffer.Resize(fileSize);
 
-			if (!archive.ReadFile(fileNumber, file.Buffer.data(), fileSize)) continue;
+            if (!archive.ReadFile(fileNumber, file.Buffer.data(), fileSize))
+                continue;
 
-			output = file;
-			return true;
-		}
+            output = file;
+            return true;
+        }
 
-		return false;
-	}
+        return false;
+    }
 
-	void CloseAll()
-	{
-		for (MPQArchive archive : Archives)
-		{
-			archive.Close();
-		}
-	}
+    void CloseAll()
+    {
+        for (MPQArchive archive : Archives)
+        {
+            archive.Close();
+        }
+    }
 
-	std::vector<MPQArchive> Archives;
+    std::vector<MPQArchive> Archives;
 };

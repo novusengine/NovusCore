@@ -30,53 +30,53 @@
 
 namespace MapLoader
 {
-	void LoadMaps(MPQHandler& handler, std::vector<std::string> adtLocationOutput)
-	{
-		NC_LOG_MESSAGE("Extracting ADTs...");
-        std::filesystem::path basePath(std::filesystem::current_path().string() + "/NovusExtractor");
-		std::filesystem::path mapPath(basePath.string() + "/maps");
-		if (!std::filesystem::exists(mapPath))
-		{
-			std::filesystem::create_directory(mapPath);
-		}
+void LoadMaps(MPQHandler& handler, std::vector<std::string> adtLocationOutput)
+{
+    NC_LOG_MESSAGE("Extracting ADTs...");
+    std::filesystem::path basePath(std::filesystem::current_path().string() + "/NovusExtractor");
+    std::filesystem::path mapPath(basePath.string() + "/maps");
+    if (!std::filesystem::exists(mapPath))
+    {
+        std::filesystem::create_directory(mapPath);
+    }
 
-		MPQFile file;
-		for (std::string adtName : adtLocationOutput)
-		{
-			bool createAdtDirectory = true;
-			std::filesystem::path adtPath(basePath.string() + "/maps/" + adtName);
-			if (std::filesystem::exists(adtPath))
-			{
-				createAdtDirectory = false;
-			}
+    MPQFile file;
+    for (std::string adtName : adtLocationOutput)
+    {
+        bool createAdtDirectory = true;
+        std::filesystem::path adtPath(basePath.string() + "/maps/" + adtName);
+        if (std::filesystem::exists(adtPath))
+        {
+            createAdtDirectory = false;
+        }
 
-			for (u32 x = 0; x < 64; x++)
-			{
-				for (u32 y = 0; y < 64; y++)
-				{
-					// We could read the WDL file here to get the ADT list
+        for (u32 x = 0; x < 64; x++)
+        {
+            for (u32 y = 0; y < 64; y++)
+            {
+                // We could read the WDL file here to get the ADT list
 
-					std::stringstream fileNameStream;
-					std::stringstream filePathStream;
-					fileNameStream << adtName << "_" << x << "_" << y;
-					std::string fileName = fileNameStream.str();
+                std::stringstream fileNameStream;
+                std::stringstream filePathStream;
+                fileNameStream << adtName << "_" << x << "_" << y;
+                std::string fileName = fileNameStream.str();
 
-					filePathStream << "world\\maps\\" << adtName << "\\" << fileName << ".adt";
-					if (handler.GetFile(filePathStream.str(), file))
-					{
-						if (createAdtDirectory)
-						{
-							std::filesystem::create_directory(adtPath);
-							createAdtDirectory = false;
-						}
+                filePathStream << "world\\maps\\" << adtName << "\\" << fileName << ".adt";
+                if (handler.GetFile(filePathStream.str(), file))
+                {
+                    if (createAdtDirectory)
+                    {
+                        std::filesystem::create_directory(adtPath);
+                        createAdtDirectory = false;
+                    }
 
-						ADT mapAdt(file, fileName + ".nmap", adtPath.string());
-						mapAdt.Convert();
-					}
-				}
-			}
-		}
+                    ADT mapAdt(file, fileName + ".nmap", adtPath.string());
+                    mapAdt.Convert();
+                }
+            }
+        }
+    }
 
-		return;
-	}
+    return;
 }
+} // namespace MapLoader

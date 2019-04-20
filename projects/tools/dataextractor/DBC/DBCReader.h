@@ -32,68 +32,75 @@
 class DBCReader
 {
 public:
-	DBCReader() { };
-	~DBCReader() { if (_data) { delete[] _data; } }
+    DBCReader(){};
+    ~DBCReader()
+    {
+        if (_data)
+        {
+            delete[] _data;
+        }
+    }
 
-	int Load(Common::ByteBuffer& buffer);
+    int Load(Common::ByteBuffer& buffer);
 
-	class DBCRow
-	{
-	public:
-		template <typename T>
-		T* Get() const
-		{
-			return reinterpret_cast<T*>(offset);
-		}
+    class DBCRow
+    {
+    public:
+        template <typename T>
+        T* Get() const
+        {
+            return reinterpret_cast<T*>(offset);
+        }
 
-		float GetFloat(u32 field) const
-		{
-			return *reinterpret_cast<float*>(offset + field * 4);
-		}
+        float GetFloat(u32 field) const
+        {
+            return *reinterpret_cast<float*>(offset + field * 4);
+        }
 
-		u32 GetUInt32(u32 field) const
-		{
-			return *reinterpret_cast<u32*>(offset + field * 4);
-		}
+        u32 GetUInt32(u32 field) const
+        {
+            return *reinterpret_cast<u32*>(offset + field * 4);
+        }
 
-		int32_t GetInt32(u32 field) const
-		{
-			return *reinterpret_cast<int32_t*>(offset + field * 4);
-		}
+        int32_t GetInt32(u32 field) const
+        {
+            return *reinterpret_cast<int32_t*>(offset + field * 4);
+        }
 
-		std::string GetString(u32 stringOffset) const
-		{
-			return reinterpret_cast<char*>(file._stringTable + stringOffset);
-		}
+        std::string GetString(u32 stringOffset) const
+        {
+            return reinterpret_cast<char*>(file._stringTable + stringOffset);
+        }
 
-	private:
-		DBCRow(DBCReader & file, u8* offset) : offset(offset), file(file) { }
-		DBCReader& file;
-		u8* offset;
+    private:
+        DBCRow(DBCReader& file, u8* offset) : offset(offset), file(file) {}
+        DBCReader& file;
+        u8* offset;
 
-		friend class DBCReader;
-	};
+        friend class DBCReader;
+    };
 
-	DBCRow GetRow(u32 id);
-	u32 GetNumRows() { return _rowCount; }
-	u32 GetNumFields() { return _fieldCount; }
-	u8* GetStringTable() { return _stringTable; }
+    DBCRow GetRow(u32 id);
+    u32 GetNumRows() { return _rowCount; }
+    u32 GetNumFields() { return _fieldCount; }
+    u8* GetStringTable() { return _stringTable; }
 
-	static DBCReader* GetReader()
-	{
-		if (_reader == nullptr)
-		{
-			_reader = new DBCReader();
-		}
+    static DBCReader* GetReader()
+    {
+        if (_reader == nullptr)
+        {
+            _reader = new DBCReader();
+        }
 
-		return _reader;
-	}
+        return _reader;
+    }
+
 private:
-	u32 _rowSize = 0;
-	u32 _rowCount = 0;
-	u32 _fieldCount = 0;
-	u32 _stringSize = 0;
-	u8* _data = nullptr;
-	u8* _stringTable = nullptr;
-	static DBCReader* _reader;
+    u32 _rowSize = 0;
+    u32 _rowCount = 0;
+    u32 _fieldCount = 0;
+    u32 _stringSize = 0;
+    u8* _data = nullptr;
+    u8* _stringTable = nullptr;
+    static DBCReader* _reader;
 };

@@ -29,14 +29,14 @@
 class MPQFile
 {
 public:
-	MPQFile() : Buffer() { }
-	MPQFile(std::string name) : Name(name), Buffer() { }
-	MPQFile(const MPQFile& file)
-	{
-		Name = file.Name;
-		Buffer = file.Buffer;
-	}
+    MPQFile() : Buffer() {}
+    MPQFile(std::string name) : Name(name), Buffer() {}
+    MPQFile(const MPQFile& file)
+    {
+        Name = file.Name;
+        Buffer = file.Buffer;
+    }
 
-	std::string Name = "";
-	Common::ByteBuffer Buffer;
+    std::string Name = "";
+    Common::ByteBuffer Buffer;
 };
