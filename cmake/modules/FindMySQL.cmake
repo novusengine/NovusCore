@@ -76,17 +76,6 @@ if (NOT MySQL_FOUND)
   unset(_MySQL_versions)
   unset(_MySQL_mariadb_versions)
 
-  IF (WIN32)
-    IF (CMAKE_BUILD_TYPE STREQUAL Debug)
-      SET(libsuffixDist debug)
-      SET(libsuffixBuild Debug)
-    ELSE (CMAKE_BUILD_TYPE STREQUAL Debug)
-      SET(libsuffixDist opt)
-      SET(libsuffixBuild Release)
-      ADD_DEFINITIONS(-DDBUG_OFF)
-    ENDIF (CMAKE_BUILD_TYPE STREQUAL Debug)
-  ENDIF (WIN32)
-
   find_path(MySQL_INCLUDE_DIR
     NAMES mysql.h
     PATHS
@@ -107,13 +96,13 @@ if (NOT MySQL_FOUND)
   find_library(MySQL_LIBRARY
     NAMES libmariadb mysql libmysql mysqlclient
     PATHS
-      "$ENV{MYSQL_DIR}/lib/${libsuffixDist}"
+      "$ENV{MYSQL_DIR}/lib"
       "$ENV{MYSQL_DIR}/libmysql"
-      "$ENV{MYSQL_DIR}/libmysql/${libsuffixBuild}"
-      "$ENV{MYSQL_DIR}/client/${libsuffixBuild}"
-      "$ENV{MYSQL_DIR}/libmysql/${libsuffixBuild}"
-      "$ENV{ProgramFiles}/MySQL/*/lib/${libsuffixDist}"
-      "$ENV{SystemDrive}/MySQL/*/lib/${libsuffixDist}"
+      "$ENV{MYSQL_DIR}/libmysql"
+      "$ENV{MYSQL_DIR}/client"
+      "$ENV{MYSQL_DIR}/libmysql"
+      "$ENV{ProgramFiles}/MySQL/*/lib"
+      "$ENV{SystemDrive}/MySQL/*/lib"
       "/usr/lib/mysql"
       "/usr/local/lib/mysql"
       "/usr/local/mysql/lib"
