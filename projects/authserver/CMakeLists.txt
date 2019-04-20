@@ -37,6 +37,7 @@ find_assign_files(${AUTHSERVER_FILES})
 set_target_properties(authserver PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(authserver PROPERTIES FOLDER "server")
 
+add_compile_definitions(NOMINMAX _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
 target_link_libraries(authserver common)
 target_include_directories(authserver PRIVATE ${AUTHSERVER_DEPENDENCIES})
 include_directories(authserver "${common_SOURCE_DIR}")

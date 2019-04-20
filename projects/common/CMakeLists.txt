@@ -40,6 +40,7 @@ source_group(TracyProfiler ${TRACY})
 target_include_directories(common PRIVATE ${COMMON_DEPENDENCIES})
 target_link_libraries(common asio openssl mysql zlib)
 
+add_compile_definitions(NOMINMAX _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
 if (ENABLE_TRACY_PROFILER)
 add_compile_definitions(TRACY_ENABLE TRACY_ON_DEMAND)
 endif()

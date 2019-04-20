@@ -25,7 +25,6 @@ project(dataextractor VERSION 1.0.0 DESCRIPTION "Data Extractor for NovusCore")
 file(GLOB_RECURSE DATAEXTRACTOR_FILES "*.cpp" "*.h")
 
 add_executable(dataextractor ${DATAEXTRACTOR_FILES})
-set_property(TARGET dataextractor PROPERTY CXX_STANDARD 17)
 find_assign_files(${DATAEXTRACTOR_FILES})
 
 # Set VERSION & FOLDER Property

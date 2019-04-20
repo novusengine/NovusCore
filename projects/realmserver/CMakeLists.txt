@@ -38,6 +38,7 @@ find_assign_files(${REALMSERVER_FILES})
 set_target_properties(realmserver PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(realmserver PROPERTIES FOLDER "server")
 
+add_compile_definitions(NOMINMAX _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
 target_link_libraries(realmserver common)
 target_include_directories(realmserver PRIVATE ${REALMSERVER_DEPENDENCIES})
 include_directories(realmserver "${common_SOURCE_DIR}")

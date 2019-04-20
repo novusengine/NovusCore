@@ -35,7 +35,6 @@ set(WORLDNODE_DEPENDENCIES
 )
 
 add_executable(worldnode ${WORLDNODE_FILES})
-set_property(TARGET worldnode PROPERTY CXX_STANDARD 17)
 find_assign_files(${WORLDNODE_FILES})
 
 # Set VERSION & FOLDER Property

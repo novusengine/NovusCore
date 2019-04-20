@@ -31,6 +31,14 @@ else()
     message(SEND_ERROR "MySql Connector C 6.1 header (mysql.h) could not be found at ${MYSQL_INCLUDE_DIR}.")
 endif()
 
+if(WIN32)
+    set (MYSQL_LIB_TARGET "${MYSQL_LIB_DIR}/libmysql.lib" CACHE PATH "default install path" FORCE )
+endif(WIN32)
+
+if (UNIX)
+    set (MYSQL_LIB_TARGET "${MYSQL_LIB_DIR}/libmysqlclient.18.dylib" CACHE PATH "default install path" FORCE )
+endif (UNIX)
+
 target_include_directories(mysql SYSTEM INTERFACE "${MYSQL_INCLUDE_DIR}")
-target_link_libraries(mysql INTERFACE "${MYSQL_LIB_DIR}/libmysql.lib")
+target_link_libraries(mysql INTERFACE "${MYSQL_LIB_TARGET}")
 target_compile_definitions(mysql INTERFACE _ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH)

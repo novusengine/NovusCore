@@ -22,8 +22,11 @@
 
 set(OPENSSL_EXPECTED_VERSION 1.0.0)
 
-find_package(OpenSSL REQUIRED)
+if (UNIX)
+  set (OPENSSL_ROOT_DIR "/usr/local/opt/openssl" CACHE PATH "default install path" FORCE )
+endif(UNIX)
 
+find_package(OpenSSL REQUIRED)
 add_library(openssl INTERFACE)
 
 target_link_libraries(openssl
