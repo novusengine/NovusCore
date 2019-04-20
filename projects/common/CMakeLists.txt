@@ -23,27 +23,23 @@
 project(common VERSION 1.0.0 DESCRIPTION "Common is a static library for NovusCore")
 
 file(GLOB_RECURSE COMMON_FILES "*.cpp" "*.h")
-set(COMMON_DEPENDENCIES
-    "${CMAKE_CURRENT_LIST_DIR}/Dependencies/amy"
-    "${CMAKE_CURRENT_LIST_DIR}/Dependencies/json"
-    "${CMAKE_CURRENT_LIST_DIR}/Dependencies/robin-hood-hashing"
-    "${CMAKE_SOURCE_DIR}/dep/asio"
-)
-set(TRACY
-    "${CMAKE_SOURCE_DIR}/dep/TracyProfiler/tracy/TracyClient.cpp"
-)
 
-add_library(common ${COMMON_FILES} ${TRACY})
+add_subdirectory(Dependencies)
+
+add_library(common ${COMMON_FILES})
+add_library(common::common ALIAS common)
+
 find_assign_files(${COMMON_FILES})
-source_group(TracyProfiler ${TRACY})
 
 target_include_directories(common PRIVATE ${COMMON_DEPENDENCIES})
-target_link_libraries(common asio openssl mysql zlib)
+target_link_libraries(common PUBLIC
+    tracy::tracy
+    common::dependencies
+    openssl::openssl
+    zlib::zlib
+)
 
 add_compile_definitions(NOMINMAX _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
-if (ENABLE_TRACY_PROFILER)
-add_compile_definitions(TRACY_ENABLE TRACY_ON_DEMAND)
-endif()
 
 # Set VERSION & FOLDER Property
 set_target_properties(common PROPERTIES VERSION ${PROJECT_VERSION})

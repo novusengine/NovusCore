@@ -1,6 +1,6 @@
 # MIT License
 
-# Copyright (c) 2018 NovusCore
+# Copyright (c) 2018-2019 NovusCore
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,16 +20,50 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-project(asio VERSION 1.0.0)
+project(common_deps VERSION 1.0.0)
+
+## Amy
+
+find_package(MySQL REQUIRED)
+
+add_library(amy INTERFACE)
+add_library(amy::amy ALIAS amy)
+
+target_include_directories(amy INTERFACE
+    "${CMAKE_CURRENT_LIST_DIR}/amy"
+)
+
+target_link_libraries(amy INTERFACE
+    MySQL::MySQL
+    asio::asio
+)
+
+## Json
+
+add_library(json INTERFACE)
+add_library(json::json ALIAS json)
+
+target_include_directories(json INTERFACE
+    "${CMAKE_CURRENT_LIST_DIR}/json"
+)
+
+## Robin hood hashing
+
+add_library(robin-hood-hashing INTERFACE)
+add_library(robin-hood-hashing::robin-hood-hashing ALIAS robin-hood-hashing)
+
+target_include_directories(robin-hood-hashing INTERFACE
+    "${CMAKE_CURRENT_LIST_DIR}/robin-hood-hashing"
+)
+
+## common_deps
 
 add_library(${PROJECT_NAME} INTERFACE)
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+add_library(common::dependencies ALIAS ${PROJECT_NAME})
 
-find_package(Threads)
-
-target_include_directories(${PROJECT_NAME} INTERFACE "${CMAKE_CURRENT_LIST_DIR}")
-target_link_libraries(${PROJECT_NAME} INTERFACE "${CMAKE_THREAD_LIBS_INIT}")
-target_compile_definitions(${PROJECT_NAME} INTERFACE
-    ASIO_STANDALONE
-    ASIO_HAS_STD_CHRONO
+target_link_libraries(${PROJECT_NAME} INTERFACE
+    amy::amy
+    json::json
+    robin-hood-hashing::robin-hood-hashing
 )
