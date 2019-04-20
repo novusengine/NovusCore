@@ -33,69 +33,75 @@
 
 namespace Common
 {
-    class BaseSocket : public std::enable_shared_from_this<BaseSocket>
+class BaseSocket : public std::enable_shared_from_this<BaseSocket>
+{
+public:
+    virtual bool Start() = 0;
+    virtual void Close(asio::error_code error)
     {
-    public:
-        virtual bool Start() = 0;
-        virtual void Close(asio::error_code error) { _socket->close(); _isClosed = true; std::cout << "Closed: " << error.message().c_str() << std::endl; }
-        virtual void HandleRead() = 0;
+        _socket->close();
+        _isClosed = true;
+        std::cout << "Closed: " << error.message().c_str() << std::endl;
+    }
+    virtual void HandleRead() = 0;
 
-        asio::ip::tcp::socket* socket()
+    asio::ip::tcp::socket* socket()
+    {
+        return _socket;
+    }
+
+    void Send(ByteBuffer& buffer)
+    {
+        if (!buffer.empty())
         {
-            return _socket;
+            _socket->async_write_some(asio::buffer(buffer.GetReadPointer(), buffer.GetActualSize()),
+                                      std::bind(&BaseSocket::HandleInternalWrite, this, std::placeholders::_1, std::placeholders::_2));
+        }
+    }
+    bool IsClosed() { return _isClosed; }
+
+protected:
+    BaseSocket(asio::ip::tcp::socket* socket) : _socket(socket), _byteBuffer(), _isClosed(false)
+    {
+        _byteBuffer.Resize(4096);
+    }
+
+    void AsyncRead()
+    {
+        // Ensure valid connection bound to the socket
+        if (!_socket->is_open())
+            return;
+
+        _byteBuffer.CleanBuffer();
+        _byteBuffer.RecalculateSize();
+
+        _socket->async_read_some(asio::buffer(_byteBuffer.GetWritePointer(), _byteBuffer.GetSpaceLeft()),
+                                 std::bind(&BaseSocket::HandleInternalRead, this, std::placeholders::_1, std::placeholders::_2));
+    }
+    void HandleInternalRead(asio::error_code error, size_t bytes)
+    {
+        if (error)
+        {
+            //printf("HandleInternalRead: Error %s\n", error.message().c_str());
+            Close(error);
+            return;
         }
 
-        void Send(ByteBuffer& buffer)
+        _byteBuffer.WriteBytes(bytes);
+        HandleRead();
+    }
+    void HandleInternalWrite(asio::error_code error, std::size_t transferedBytes)
+    {
+        if (error)
         {
-            if (!buffer.empty())
-            {
-                _socket->async_write_some(asio::buffer(buffer.GetReadPointer(), buffer.GetActualSize()),
-                   std::bind(&BaseSocket::HandleInternalWrite, this, std::placeholders::_1, std::placeholders::_2));
-            }
+            Close(error);
         }
-        bool IsClosed() { return _isClosed; }
-    protected:
-        BaseSocket(asio::ip::tcp::socket* socket) : _socket(socket), _byteBuffer(), _isClosed(false)
-        { 
-            _byteBuffer.Resize(4096);
-        }
+    }
 
-        void AsyncRead()
-        {
-            // Ensure valid connection bound to the socket
-            if (!_socket->is_open())
-                return;
+    ByteBuffer& GetByteBuffer() { return _byteBuffer; }
+    ByteBuffer _byteBuffer;
 
-            _byteBuffer.CleanBuffer();
-            _byteBuffer.RecalculateSize();
-
-            _socket->async_read_some(asio::buffer(_byteBuffer.GetWritePointer(), _byteBuffer.GetSpaceLeft()),
-                std::bind(&BaseSocket::HandleInternalRead, this, std::placeholders::_1, std::placeholders::_2));
-        }
-        void HandleInternalRead(asio::error_code error, size_t bytes)
-        {
-            if (error)
-            {
-                //printf("HandleInternalRead: Error %s\n", error.message().c_str());
-                Close(error);
-                return;
-            }
-
-            _byteBuffer.WriteBytes(bytes);
-            HandleRead();
-        }        
-        void HandleInternalWrite(asio::error_code error, std::size_t transferedBytes)
-        {
-            if (error)
-            {
-                Close(error);
-            }
-        }
-
-        ByteBuffer& GetByteBuffer() { return _byteBuffer; }
-        ByteBuffer _byteBuffer;
-
-        bool _isClosed;
-        asio::ip::tcp::socket* _socket;
-    };
-}
+    bool _isClosed;
+    asio::ip::tcp::socket* _socket;
+};
+} // namespace Common

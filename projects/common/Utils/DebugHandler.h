@@ -30,29 +30,53 @@
 
 enum PROGRAM_TYPE
 {
-	Auth,
-	Relay,
+    Auth,
+    Relay,
     Char,
-	World
+    World
 };
 
-#define NC_LOG_MESSAGE(message, ...) if (!DebugHandler::isInitialized) { DebugHandler::Initialize(); } \
-DebugHandler::Print(message, __VA_ARGS__);
+#define NC_LOG_MESSAGE(message, ...)  \
+    if (!DebugHandler::isInitialized) \
+    {                                 \
+        DebugHandler::Initialize();   \
+    }                                 \
+    DebugHandler::Print(message, __VA_ARGS__);
 
-#define NC_LOG_WARNING(message, ...) if (!DebugHandler::isInitialized) { DebugHandler::Initialize(); } \
-DebugHandler::PrintWarning(message, __VA_ARGS__);
+#define NC_LOG_WARNING(message, ...)  \
+    if (!DebugHandler::isInitialized) \
+    {                                 \
+        DebugHandler::Initialize();   \
+    }                                 \
+    DebugHandler::PrintWarning(message, __VA_ARGS__);
 
-#define NC_LOG_DEPRECATED(message, ...) if (!DebugHandler::isInitialized) { DebugHandler::Initialize(); } \
-DebugHandler::PrintDeprecated(message, __VA_ARGS__);
+#define NC_LOG_DEPRECATED(message, ...) \
+    if (!DebugHandler::isInitialized)   \
+    {                                   \
+        DebugHandler::Initialize();     \
+    }                                   \
+    DebugHandler::PrintDeprecated(message, __VA_ARGS__);
 
-#define NC_LOG_ERROR(message, ...) if (!DebugHandler::isInitialized) { DebugHandler::Initialize(); } \
-DebugHandler::PrintError(message, __VA_ARGS__);
+#define NC_LOG_ERROR(message, ...)    \
+    if (!DebugHandler::isInitialized) \
+    {                                 \
+        DebugHandler::Initialize();   \
+    }                                 \
+    DebugHandler::PrintError(message, __VA_ARGS__);
 
-#define NC_LOG_FATAL(message, ...) if (!DebugHandler::isInitialized) { DebugHandler::Initialize(); } \
-DebugHandler::PrintFatal(message, __VA_ARGS__);
+#define NC_LOG_FATAL(message, ...)    \
+    if (!DebugHandler::isInitialized) \
+    {                                 \
+        DebugHandler::Initialize();   \
+    }                                 \
+    DebugHandler::PrintFatal(message, __VA_ARGS__);
 
-#define NC_LOG_SUCCESS(message, ...) if (!DebugHandler::isInitialized) { DebugHandler::Initialize(); } \
-DebugHandler::PrintSuccess(message, __VA_ARGS__);
+#define NC_LOG_SUCCESS(message, ...)  \
+    if (!DebugHandler::isInitialized) \
+    {                                 \
+        DebugHandler::Initialize();   \
+    }                                 \
+    DebugHandler::PrintSuccess(message, __VA_ARGS__);
 
 class DebugHandler
 {
@@ -64,33 +88,33 @@ public:
     inline static void Print(std::string message, Args... args)
     {
         //PrintColor("[Message]: ", 15);
-		//PrintColor(message + "\n", 7, args...);
-		printf((message + "\n").c_str(), args...);
-	}
+        //PrintColor(message + "\n", 7, args...);
+        printf((message + "\n").c_str(), args...);
+    }
 
     template <typename... Args>
-	inline static void PrintWarning(std::string message, Args... args)
+    inline static void PrintWarning(std::string message, Args... args)
     {
         PrintColor("[Warning]: ", 14);
         PrintColor(message + "\n", 7, args...);
     }
 
     template <typename... Args>
-	inline static void PrintDeprecated(std::string message, Args... args)
+    inline static void PrintDeprecated(std::string message, Args... args)
     {
         PrintColor("[Deprecated]: ", 14);
         PrintColor(message + "\n", 7, args...);
     }
 
     template <typename... Args>
-	inline static void PrintError(std::string message, Args... args)
+    inline static void PrintError(std::string message, Args... args)
     {
         PrintColor("[Error]: ", 12);
         PrintColor(message + "\n", 7, args...);
     }
 
     template <typename... Args>
-	inline static void PrintFatal(std::string message, Args... args)
+    inline static void PrintFatal(std::string message, Args... args)
     {
         PrintColor("[Fatal]: ", 12);
         PrintColor(message + "\n", 7, args...);
@@ -98,7 +122,7 @@ public:
     }
 
     template <typename... Args>
-	inline static void PrintSuccess(std::string message, Args... args)
+    inline static void PrintSuccess(std::string message, Args... args)
     {
         PrintColor("[Success]: ", 10);
         PrintColor(message + "\n", 7, args...);
@@ -106,7 +130,7 @@ public:
 
 private:
     template <typename... Args>
-	inline static void PrintColor(std::string message, u8 color, Args... args)
+    inline static void PrintColor(std::string message, u8 color, Args... args)
     {
         SetConsoleTextAttribute(_handle, color);
         printf(message.c_str(), args...);

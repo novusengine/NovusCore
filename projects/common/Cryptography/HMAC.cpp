@@ -74,7 +74,7 @@ void HMACH::Finish()
 u8* HMACH::CalculateHash(BigNumber* bigNumber)
 {
     HMAC_Update(_HMAC_CONTEXT, bigNumber->BN2BinArray().get(), bigNumber->GetBytes());
-    
+
     Finish();
     return _data;
 }

@@ -21,11 +21,14 @@ private:
                     (*pool_ptr.get())->add(std::unique_ptr<T>{ptr});
                     return;
                 }
-                catch (...) {}
+                catch (...)
+                {
+                }
             }
             // Else delete the object
             std::default_delete<T>{}(ptr);
         }
+
     private:
         std::weak_ptr<SharedPool<T>*> _pool;
     };

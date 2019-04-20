@@ -25,19 +25,19 @@
 #include "ArcFour.h"
 
 class BigNumber;
-class StreamCrypto 
+class StreamCrypto
 {
-    public:
-        StreamCrypto();
-        void SetupClient(BigNumber* key);
-        void SetupServer(BigNumber* key);
-        void Decrypt(u8* data, size_t size);
-        void Encrypt(u8* data, size_t size);
+public:
+    StreamCrypto();
+    void SetupClient(BigNumber* key);
+    void SetupServer(BigNumber* key);
+    void Decrypt(u8* data, size_t size);
+    void Encrypt(u8* data, size_t size);
 
-        bool IsValid() const { return _valid; }
+    bool IsValid() const { return _valid; }
 
-    private:
-        ArcFour _cDecrypt;
-        ArcFour _sEncrypt;
-        bool _valid;
+private:
+    ArcFour _cDecrypt;
+    ArcFour _sEncrypt;
+    bool _valid;
 };

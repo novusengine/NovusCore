@@ -34,19 +34,20 @@ class ConfigHandler
 public:
     static bool Load(std::string configFileName);
 
-    template<class T>
+    template <class T>
     static T GetOption(std::string optionName, T defaultValue);
 
-	~ConfigHandler() {}
+    ~ConfigHandler() {}
+
 private:
-	ConfigHandler() {} // Constructor is private because we don't want to allow newing these
+    ConfigHandler() {} // Constructor is private because we don't want to allow newing these
     static json::value_type FindOptionInArray(std::string optionName, json::value_type value);
 
-	static std::string _configFileName;
+    static std::string _configFileName;
     static json _configFile;
 };
 
-template<class T>
+template <class T>
 inline T ConfigHandler::GetOption(std::string optionName, T defaultValue)
 {
     json::value_type value;

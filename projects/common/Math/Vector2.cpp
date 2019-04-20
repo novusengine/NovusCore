@@ -11,6 +11,6 @@ Vector2 Vector2::East(0, -1);
 
 inline Vector2::Vector2(Vector3& v3)
 {
-	x = v3.x;
-	y = v3.y;
+    x = v3.x;
+    y = v3.y;
 }

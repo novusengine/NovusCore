@@ -87,8 +87,8 @@ public:
         return t %= bigNum;
     }
 
-    struct bignum_st *BigNum() { return _bigNum; }
+    struct bignum_st* BigNum() { return _bigNum; }
+
 private:
     struct bignum_st* _bigNum;
-
 };

@@ -49,10 +49,10 @@
 
 // #define ROBIN_HOOD_LOG_ENABLED
 #ifdef ROBIN_HOOD_LOG_ENABLED
-#    include <iostream>
-#    define ROBIN_HOOD_LOG(x) std::cout << __FUNCTION__ << "@" << __LINE__ << ": " << x << std::endl
+#include <iostream>
+#define ROBIN_HOOD_LOG(x) std::cout << __FUNCTION__ << "@" << __LINE__ << ": " << x << std::endl
 #else
-#    define ROBIN_HOOD_LOG(x)
+#define ROBIN_HOOD_LOG(x)
 #endif
 
 // mark unused members with this macro
@@ -60,88 +60,92 @@
 
 // bitness
 #if SIZE_MAX == UINT32_MAX
-#    define ROBIN_HOOD_BITNESS 32
+#define ROBIN_HOOD_BITNESS 32
 #elif SIZE_MAX == UINT64_MAX
-#    define ROBIN_HOOD_BITNESS 64
+#define ROBIN_HOOD_BITNESS 64
 #else
-#    error Unsupported bitness
+#error Unsupported bitness
 #endif
 
 // endianess
 #ifdef _WIN32
-#    define ROBIN_HOOD_LITTLE_ENDIAN 1
-#    define ROBIN_HOOD_BIG_ENDIAN 0
+#define ROBIN_HOOD_LITTLE_ENDIAN 1
+#define ROBIN_HOOD_BIG_ENDIAN 0
 #else
-#    if __GNUC__ >= 4
-#        define ROBIN_HOOD_LITTLE_ENDIAN (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
-#        define ROBIN_HOOD_BIG_ENDIAN (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
-#    else
-#        error cannot determine endianness
-#    endif
+#if __GNUC__ >= 4
+#define ROBIN_HOOD_LITTLE_ENDIAN (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+#define ROBIN_HOOD_BIG_ENDIAN (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
+#else
+#error cannot determine endianness
+#endif
 #endif
 
 // inline
 #ifdef _WIN32
-#    define ROBIN_HOOD_NOINLINE __declspec(noinline)
+#define ROBIN_HOOD_NOINLINE __declspec(noinline)
 #else
-#    if __GNUC__ >= 4
-#        define ROBIN_HOOD_NOINLINE __attribute__((noinline))
-#    else
-#        define ROBIN_HOOD_NOINLINE
-#    endif
+#if __GNUC__ >= 4
+#define ROBIN_HOOD_NOINLINE __attribute__((noinline))
+#else
+#define ROBIN_HOOD_NOINLINE
+#endif
 #endif
 
 // count leading/trailing bits
 #ifdef _WIN32
-#    if ROBIN_HOOD_BITNESS == 32
-#        define ROBIN_HOOD_BITSCANFORWARD _BitScanForward
-#    else
-#        define ROBIN_HOOD_BITSCANFORWARD _BitScanForward64
-#    endif
-#    include <intrin.h>
-#    pragma intrinsic(ROBIN_HOOD_BITSCANFORWARD)
-#    define ROBIN_HOOD_COUNT_TRAILING_ZEROES(x)                                          \
-        [](size_t mask) -> int {                                                         \
-            unsigned long index;                                                         \
-            return ROBIN_HOOD_BITSCANFORWARD(&index, mask) ? index : ROBIN_HOOD_BITNESS; \
-        }(x)
+#if ROBIN_HOOD_BITNESS == 32
+#define ROBIN_HOOD_BITSCANFORWARD _BitScanForward
 #else
-#    if __GNUC__ >= 4
-#        if ROBIN_HOOD_BITNESS == 32
-#            define ROBIN_HOOD_CTZ(x) __builtin_ctzl(x)
-#            define ROBIN_HOOD_CLZ(x) __builtin_clzl(x)
-#        else
-#            define ROBIN_HOOD_CTZ(x) __builtin_ctzll(x)
-#            define ROBIN_HOOD_CLZ(x) __builtin_clzll(x)
-#        endif
-#        define ROBIN_HOOD_COUNT_LEADING_ZEROES(x) (x ? ROBIN_HOOD_CLZ(x) : ROBIN_HOOD_BITNESS)
-#        define ROBIN_HOOD_COUNT_TRAILING_ZEROES(x) (x ? ROBIN_HOOD_CTZ(x) : ROBIN_HOOD_BITNESS)
-#    else
-#        error clz not supported
-#    endif
+#define ROBIN_HOOD_BITSCANFORWARD _BitScanForward64
+#endif
+#include <intrin.h>
+#pragma intrinsic(ROBIN_HOOD_BITSCANFORWARD)
+#define ROBIN_HOOD_COUNT_TRAILING_ZEROES(x)                                          \
+    [](size_t mask) -> int {                                                         \
+        unsigned long index;                                                         \
+        return ROBIN_HOOD_BITSCANFORWARD(&index, mask) ? index : ROBIN_HOOD_BITNESS; \
+    }(x)
+#else
+#if __GNUC__ >= 4
+#if ROBIN_HOOD_BITNESS == 32
+#define ROBIN_HOOD_CTZ(x) __builtin_ctzl(x)
+#define ROBIN_HOOD_CLZ(x) __builtin_clzl(x)
+#else
+#define ROBIN_HOOD_CTZ(x) __builtin_ctzll(x)
+#define ROBIN_HOOD_CLZ(x) __builtin_clzll(x)
+#endif
+#define ROBIN_HOOD_COUNT_LEADING_ZEROES(x) (x ? ROBIN_HOOD_CLZ(x) : ROBIN_HOOD_BITNESS)
+#define ROBIN_HOOD_COUNT_TRAILING_ZEROES(x) (x ? ROBIN_HOOD_CTZ(x) : ROBIN_HOOD_BITNESS)
+#else
+#error clz not supported
+#endif
 #endif
 
 // umul
-namespace robin_hood {
-namespace detail {
+namespace robin_hood
+{
+namespace detail
+{
 #if defined(__SIZEOF_INT128__)
-#    define ROBIN_HOOD_UMULH(a, b) \
-        static_cast<uint64_t>(     \
-            (static_cast<unsigned __int128>(a) * static_cast<unsigned __int128>(b)) >> 64u)
+#define ROBIN_HOOD_UMULH(a, b) \
+    static_cast<uint64_t>(     \
+        (static_cast<unsigned __int128>(a) * static_cast<unsigned __int128>(b)) >> 64u)
 
-#    define ROBIN_HOOD_HAS_UMUL128 1
-inline uint64_t umul128(uint64_t a, uint64_t b, uint64_t* high) {
+#define ROBIN_HOOD_HAS_UMUL128 1
+inline uint64_t umul128(uint64_t a, uint64_t b, uint64_t* high)
+{
     auto result = static_cast<unsigned __int128>(a) * static_cast<unsigned __int128>(b);
     *high = static_cast<uint64_t>(result >> 64);
     return static_cast<uint64_t>(result);
 }
 #elif (defined(_WIN32) && ROBIN_HOOD_BITNESS == 64)
-#    define ROBIN_HOOD_HAS_UMUL128 1
-#    include <intrin.h> // for __umulh
-#    pragma intrinsic(__umulh)
-#    pragma intrinsic(_umul128)
-#    define ROBIN_HOOD_UMULH(a, b) __umulh(a, b)
-inline uint64_t umul128(uint64_t a, uint64_t b, uint64_t* high) {
+#define ROBIN_HOOD_HAS_UMUL128 1
+#include <intrin.h> // for __umulh
+#pragma intrinsic(__umulh)
+#pragma intrinsic(_umul128)
+#define ROBIN_HOOD_UMULH(a, b) __umulh(a, b)
+inline uint64_t umul128(uint64_t a, uint64_t b, uint64_t* high)
+{
     return _umul128(a, b, high);
 }
 #endif
@@ -150,33 +154,39 @@ inline uint64_t umul128(uint64_t a, uint64_t b, uint64_t* high) {
 
 // likely/unlikely
 #if __GNUC__ >= 4
-#    define ROBIN_HOOD_LIKELY(condition) __builtin_expect(static_cast<bool>(condition), 1)
-#    define ROBIN_HOOD_UNLIKELY(condition) __builtin_expect(static_cast<bool>(condition), 0)
+#define ROBIN_HOOD_LIKELY(condition) __builtin_expect(static_cast<bool>(condition), 1)
+#define ROBIN_HOOD_UNLIKELY(condition) __builtin_expect(static_cast<bool>(condition), 0)
 #else
-#    define ROBIN_HOOD_LIKELY(condition) condition
-#    define ROBIN_HOOD_UNLIKELY(condition) condition
+#define ROBIN_HOOD_LIKELY(condition) condition
+#define ROBIN_HOOD_UNLIKELY(condition) condition
 #endif
-namespace robin_hood {
+namespace robin_hood
+{
 
-namespace detail {
+namespace detail
+{
 
 // make sure this is not inlined as it is slow and dramatically enlarges code, thus making other
 // inlinings more difficult. Throws are also generally the slow path.
 template <typename E, typename... Args>
-static ROBIN_HOOD_NOINLINE void doThrow(Args&&... args) {
+static ROBIN_HOOD_NOINLINE void doThrow(Args&&... args)
+{
     throw E(std::forward<Args>(args)...);
 }
 
 template <typename E, typename T, typename... Args>
-static T* assertNotNull(T* t, Args&&... args) {
-    if (ROBIN_HOOD_UNLIKELY(nullptr == t)) {
+static T* assertNotNull(T* t, Args&&... args)
+{
+    if (ROBIN_HOOD_UNLIKELY(nullptr == t))
+    {
         doThrow<E>(std::forward<Args>(args)...);
     }
     return t;
 }
 
 template <typename T>
-inline T unaligned_load(void const* ptr) {
+inline T unaligned_load(void const* ptr)
+{
     // using memcpy so we don't get into unaligned load problems.
     // compiler should optimize this very well anyways.
     T t;
@@ -188,25 +198,25 @@ inline T unaligned_load(void const* ptr) {
 // and keeps a linked list of the allocated memory around. Overhead per allocation is the size of a
 // pointer.
 template <typename T, size_t MinNumAllocs = 4, size_t MaxNumAllocs = 256>
-class BulkPoolAllocator {
+class BulkPoolAllocator
+{
 public:
     BulkPoolAllocator()
-        : mHead(nullptr)
-        , mListForFree(nullptr) {}
+        : mHead(nullptr), mListForFree(nullptr) {}
 
     // does not copy anything, just creates a new allocator.
     BulkPoolAllocator(const BulkPoolAllocator& ROBIN_HOOD_UNUSED(o) /*unused*/)
-        : mHead(nullptr)
-        , mListForFree(nullptr) {}
+        : mHead(nullptr), mListForFree(nullptr) {}
 
     BulkPoolAllocator(BulkPoolAllocator&& o)
-        : mHead(o.mHead)
-        , mListForFree(o.mListForFree) {
+        : mHead(o.mHead), mListForFree(o.mListForFree)
+    {
         o.mListForFree = nullptr;
         o.mHead = nullptr;
     }
 
-    BulkPoolAllocator& operator=(BulkPoolAllocator&& o) {
+    BulkPoolAllocator& operator=(BulkPoolAllocator&& o)
+    {
         reset();
         mHead = o.mHead;
         mListForFree = o.mListForFree;
@@ -215,18 +225,22 @@ public:
         return *this;
     }
 
-    BulkPoolAllocator& operator=(const BulkPoolAllocator& ROBIN_HOOD_UNUSED(o) /*unused*/) {
+    BulkPoolAllocator& operator=(const BulkPoolAllocator& ROBIN_HOOD_UNUSED(o) /*unused*/)
+    {
         // does not do anything
         return *this;
     }
 
-    ~BulkPoolAllocator() {
+    ~BulkPoolAllocator()
+    {
         reset();
     }
 
     // Deallocates all allocated memory.
-    void reset() {
-        while (mListForFree) {
+    void reset()
+    {
+        while (mListForFree)
+        {
             T* tmp = *mListForFree;
             free(mListForFree);
             mListForFree = reinterpret_cast<T**>(tmp);
@@ -237,9 +251,11 @@ public:
     // allocates, but does NOT initialize. Use in-place new constructor, e.g.
     //   T* obj = pool.allocate();
     //   ::new (static_cast<void*>(obj)) T();
-    T* allocate() {
+    T* allocate()
+    {
         T* tmp = mHead;
-        if (!tmp) {
+        if (!tmp)
+        {
             tmp = performAllocation();
         }
 
@@ -251,7 +267,8 @@ public:
     // make sure you have already called the destructor! e.g. with
     //  obj->~T();
     //  pool.deallocate(obj);
-    void deallocate(T* obj) {
+    void deallocate(T* obj)
+    {
         *reinterpret_cast<T**>(obj) = mHead;
         mHead = obj;
     }
@@ -259,17 +276,22 @@ public:
     // Adds an already allocated block of memory to the allocator. This allocator is from now on
     // responsible for freeing the data (with free()). If the provided data is not large enough to
     // make use of, it is immediately freed. Otherwise it is reused and freed in the destructor.
-    void addOrFree(void* ptr, const size_t numBytes) {
+    void addOrFree(void* ptr, const size_t numBytes)
+    {
         // calculate number of available elements in ptr
-        if (numBytes < ALIGNMENT + ALIGNED_SIZE) {
+        if (numBytes < ALIGNMENT + ALIGNED_SIZE)
+        {
             // not enough data for at least one element. Free and return.
             free(ptr);
-        } else {
+        }
+        else
+        {
             add(ptr, numBytes);
         }
     }
 
-    void swap(BulkPoolAllocator<T, MinNumAllocs, MaxNumAllocs>& other) {
+    void swap(BulkPoolAllocator<T, MinNumAllocs, MaxNumAllocs>& other)
+    {
         using std::swap;
         swap(mHead, other.mHead);
         swap(mListForFree, other.mListForFree);
@@ -280,11 +302,13 @@ private:
     // Recalculating this each time saves us a size_t member.
     // This ignores the fact that memory blocks might have been added manually with addOrFree. In
     // practice, this should not matter much.
-    size_t calcNumElementsToAlloc() const {
+    size_t calcNumElementsToAlloc() const
+    {
         auto tmp = mListForFree;
         size_t numAllocs = MinNumAllocs;
 
-        while (numAllocs * 2 <= MaxNumAllocs && tmp) {
+        while (numAllocs * 2 <= MaxNumAllocs && tmp)
+        {
             auto x = reinterpret_cast<T***>(tmp);
             tmp = *x;
             numAllocs *= 2;
@@ -294,7 +318,8 @@ private:
     }
 
     // WARNING: Underflow if numBytes < ALIGNMENT! This is guarded in addOrFree().
-    void add(void* ptr, const size_t numBytes) {
+    void add(void* ptr, const size_t numBytes)
+    {
         const size_t numElements = (numBytes - ALIGNMENT) / ALIGNED_SIZE;
 
         auto data = reinterpret_cast<T**>(ptr);
@@ -310,7 +335,8 @@ private:
         auto const head = reinterpret_cast<char*>(headT);
 
         // Visual Studio compiler automatically unrolls this loop, which is pretty cool
-        for (size_t i = 0; i < numElements; ++i) {
+        for (size_t i = 0; i < numElements; ++i)
+        {
             *reinterpret_cast<char**>(head + i * ALIGNED_SIZE) = head + (i + 1) * ALIGNED_SIZE;
         }
 
@@ -321,7 +347,8 @@ private:
 
     // Called when no memory is available (mHead == 0).
     // Don't inline this slow path.
-    ROBIN_HOOD_NOINLINE T* performAllocation() {
+    ROBIN_HOOD_NOINLINE T* performAllocation()
+    {
         size_t const numElementsToAlloc = calcNumElementsToAlloc();
 
         // alloc new memory: [prev |T, T, ... T]
@@ -351,61 +378,64 @@ struct NodeAllocator;
 
 // dummy allocator that does nothing
 template <typename T, size_t MinSize, size_t MaxSize>
-struct NodeAllocator<T, MinSize, MaxSize, true> {
+struct NodeAllocator<T, MinSize, MaxSize, true>
+{
 
     // we are not using the data, so just free it.
-    void addOrFree(void* ptr, size_t ROBIN_HOOD_UNUSED(numBytes) /*unused*/) {
+    void addOrFree(void* ptr, size_t ROBIN_HOOD_UNUSED(numBytes) /*unused*/)
+    {
         free(ptr);
     }
 };
 
 template <typename T, size_t MinSize, size_t MaxSize>
-struct NodeAllocator<T, MinSize, MaxSize, false> : public BulkPoolAllocator<T, MinSize, MaxSize> {};
+struct NodeAllocator<T, MinSize, MaxSize, false> : public BulkPoolAllocator<T, MinSize, MaxSize>
+{
+};
 
 // All empty maps initial mInfo point to this infobyte. That way lookup in an empty map
 // always returns false, and this is a very hot byte.
 //
 // we have to use data >1byte (at least 2 bytes), because initially we set mShift to 63 (has to be
 // <63), so initial index will be 0 or 1.
-namespace DummyInfoByte {
+namespace DummyInfoByte
+{
 
 static uint64_t b = 0;
 
 } // namespace DummyInfoByte
 } // namespace detail
 
-struct is_transparent_tag {};
+struct is_transparent_tag
+{
+};
 
 // A custom pair implementation is used in the map because std::pair is not is_trivially_copyable,
 // which means it would  not be allowed to be used in std::memcpy. This struct is copyable, which is
 // also tested.
 template <typename First, typename Second>
-struct pair {
+struct pair
+{
     using first_type = First;
     using second_type = Second;
 
     // pair constructors are explicit so we don't accidentally call this ctor when we don't have to.
     explicit pair(std::pair<First, Second> const& o)
-        : first{o.first}
-        , second{o.second} {}
+        : first{o.first}, second{o.second} {}
 
     // pair constructors are explicit so we don't accidentally call this ctor when we don't have to.
     explicit pair(std::pair<First, Second>&& o)
-        : first{std::move(o.first)}
-        , second{std::move(o.second)} {}
+        : first{std::move(o.first)}, second{std::move(o.second)} {}
 
     constexpr pair(const First& firstArg, const Second& secondArg)
-        : first{firstArg}
-        , second{secondArg} {}
+        : first{firstArg}, second{secondArg} {}
 
     constexpr pair(First&& firstArg, Second&& secondArg)
-        : first{std::move(firstArg)}
-        , second{std::move(secondArg)} {}
+        : first{std::move(firstArg)}, second{std::move(secondArg)} {}
 
     template <typename FirstArg, typename SecondArg>
     constexpr pair(FirstArg&& firstArg, SecondArg&& secondArg)
-        : first{std::forward<FirstArg>(firstArg)}
-        , second{std::forward<SecondArg>(secondArg)} {}
+        : first{std::forward<FirstArg>(firstArg)}, second{std::forward<SecondArg>(secondArg)} {}
 
     template <typename... Args1, typename... Args2>
     pair(std::piecewise_construct_t /*unused*/, std::tuple<Args1...> firstArgs,
@@ -418,28 +448,33 @@ struct pair {
     inline pair(std::tuple<Args1...>& tuple1, std::tuple<Args2...>& tuple2,
                 std::index_sequence<Indexes1...> /*unused*/,
                 std::index_sequence<Indexes2...> /*unused*/)
-        : first{std::forward<Args1>(std::get<Indexes1>(tuple1))...}
-        , second{std::forward<Args2>(std::get<Indexes2>(tuple2))...} {
+        : first{std::forward<Args1>(std::get<Indexes1>(tuple1))...}, second{std::forward<Args2>(std::get<Indexes2>(tuple2))...}
+    {
         // make visual studio compiler happy about warning about unused tuple1 & tuple2.
         // Visual studio's pair implementation disables warning 4100.
         (void)tuple1;
         (void)tuple2;
     }
 
-    first_type& getFirst() {
+    first_type& getFirst()
+    {
         return first;
     }
-    first_type const& getFirst() const {
+    first_type const& getFirst() const
+    {
         return first;
     }
-    second_type& getSecond() {
+    second_type& getSecond()
+    {
         return second;
     }
-    second_type const& getSecond() const {
+    second_type const& getSecond() const
+    {
         return second;
     }
 
-    void swap(pair<First, Second>& o) {
+    void swap(pair<First, Second>& o)
+    {
         using std::swap;
         swap(first, o.first);
         swap(second, o.second);
@@ -452,8 +487,10 @@ struct pair {
 // A thin wrapper around std::hash, performing a single multiplication to (hopefully) get nicely
 // randomized upper bits, which are used by the unordered_map.
 template <typename T>
-struct hash : public std::hash<T> {
-    size_t operator()(T const& obj) const {
+struct hash : public std::hash<T>
+{
+    size_t operator()(T const& obj) const
+    {
         return std::hash<T>::operator()(obj);
     }
 };
@@ -461,8 +498,10 @@ struct hash : public std::hash<T> {
 // Murmur2 hash without caring about big endianness. Generally much faster than the standard
 // std::hash for std::string, and the code is quite simple.
 template <>
-struct hash<std::string> {
-    size_t operator()(std::string const& str) const {
+struct hash<std::string>
+{
+    size_t operator()(std::string const& str) const
+    {
         static constexpr uint64_t m = UINT64_C(0xc6a4a7935bd1e995);
         static constexpr uint64_t seed = UINT64_C(0xe17a1465);
         static constexpr unsigned int r = 47;
@@ -472,7 +511,8 @@ struct hash<std::string> {
         uint64_t h = seed ^ (len * m);
 
         size_t const n_blocks = len / 8;
-        for (size_t i = 0; i < n_blocks; ++i) {
+        for (size_t i = 0; i < n_blocks; ++i)
+        {
             uint64_t k = detail::unaligned_load<uint64_t>(data64 + i);
 
             k *= m;
@@ -484,7 +524,8 @@ struct hash<std::string> {
         }
 
         auto const data8 = reinterpret_cast<uint8_t const*>(data64 + n_blocks);
-        switch (len & 7u) {
+        switch (len & 7u)
+        {
         case 7:
             h ^= static_cast<uint64_t>(data8[6]) << 48u;
             // fallthrough
@@ -518,8 +559,10 @@ struct hash<std::string> {
 
 // specialization used for uint64_t and int64_t. Uses 128bit multiplication
 template <>
-struct hash<uint64_t> {
-    size_t operator()(uint64_t const& obj) const {
+struct hash<uint64_t>
+{
+    size_t operator()(uint64_t const& obj) const
+    {
 #if defined(ROBIN_HOOD_HAS_UMUL128)
         // 167079903232 masksum, 120428523 ops best: 0xde5fb9d2630458e9
         static constexpr uint64_t k = UINT64_C(0xde5fb9d2630458e9);
@@ -546,15 +589,19 @@ struct hash<uint64_t> {
 };
 
 template <>
-struct hash<int64_t> {
-    size_t operator()(int64_t const& obj) const {
+struct hash<int64_t>
+{
+    size_t operator()(int64_t const& obj) const
+    {
         return hash<uint64_t>{}(static_cast<uint64_t>(obj));
     }
 };
 
 template <>
-struct hash<uint32_t> {
-    size_t operator()(uint32_t const& h) const {
+struct hash<uint32_t>
+{
+    size_t operator()(uint32_t const& h) const
+    {
 #if ROBIN_HOOD_BITNESS == 32
         return static_cast<size_t>((UINT64_C(0xca4bcaa75ec3f625) * (uint64_t)h) >> 32);
 #else
@@ -564,13 +611,16 @@ struct hash<uint32_t> {
 };
 
 template <>
-struct hash<int32_t> {
-    size_t operator()(int32_t const& obj) const {
+struct hash<int32_t>
+{
+    size_t operator()(int32_t const& obj) const
+    {
         return hash<uint32_t>{}(static_cast<uint32_t>(obj));
     }
 };
 
-namespace detail {
+namespace detail
+{
 
 // A highly optimized hashmap implementation, using the Robin Hood algorithm.
 //
@@ -606,7 +656,8 @@ class unordered_map
       public KeyEqual,
       detail::NodeAllocator<
           robin_hood::pair<typename std::conditional<IsFlatMap, Key, Key const>::type, T>, 4, 16384,
-          IsFlatMap> {
+          IsFlatMap>
+{
 public:
     using key_type = Key;
     using mapped_type = T;
@@ -641,11 +692,14 @@ private:
     // objects. For large objects it is assumed that swap() is fairly slow, so we allocate these on
     // the heap so swap merely swaps a pointer.
     template <typename M, bool>
-    class DataNode {};
+    class DataNode
+    {
+    };
 
     // Small: just allocate on the stack.
     template <typename M>
-    class DataNode<M, true> {
+    class DataNode<M, true>
+    {
     public:
         template <typename... Args>
         explicit DataNode(M& ROBIN_HOOD_UNUSED(map) /*unused*/, Args&&... args)
@@ -658,38 +712,47 @@ private:
         void destroy(M& ROBIN_HOOD_UNUSED(map) /*unused*/) {}
         void destroyDoNotDeallocate() {}
 
-        value_type const* operator->() const {
+        value_type const* operator->() const
+        {
             return &mData;
         }
-        value_type* operator->() {
+        value_type* operator->()
+        {
             return &mData;
         }
 
-        const value_type& operator*() const {
+        const value_type& operator*() const
+        {
             return mData;
         }
 
-        value_type& operator*() {
+        value_type& operator*()
+        {
             return mData;
         }
 
-        typename value_type::first_type& getFirst() {
+        typename value_type::first_type& getFirst()
+        {
             return mData.first;
         }
 
-        typename value_type::first_type const& getFirst() const {
+        typename value_type::first_type const& getFirst() const
+        {
             return mData.first;
         }
 
-        typename value_type::second_type& getSecond() {
+        typename value_type::second_type& getSecond()
+        {
             return mData.second;
         }
 
-        typename value_type::second_type const& getSecond() const {
+        typename value_type::second_type const& getSecond() const
+        {
             return mData.second;
         }
 
-        void swap(DataNode<M, true>& o) {
+        void swap(DataNode<M, true>& o)
+        {
             mData.swap(o.mData);
         }
 
@@ -699,60 +762,73 @@ private:
 
     // big object: allocate on heap.
     template <typename M>
-    class DataNode<M, false> {
+    class DataNode<M, false>
+    {
     public:
         template <typename... Args>
         explicit DataNode(M& map, Args&&... args)
-            : mData(map.allocate()) {
+            : mData(map.allocate())
+        {
             ::new (static_cast<void*>(mData)) value_type(std::forward<Args>(args)...);
         }
 
         DataNode(M& ROBIN_HOOD_UNUSED(map) /*unused*/, DataNode<M, false>&& n)
             : mData(std::move(n.mData)) {}
 
-        void destroy(M& map) {
+        void destroy(M& map)
+        {
             // don't deallocate, just put it into list of datapool.
             mData->~value_type();
             map.deallocate(mData);
         }
 
-        void destroyDoNotDeallocate() {
+        void destroyDoNotDeallocate()
+        {
             mData->~value_type();
         }
 
-        value_type const* operator->() const {
+        value_type const* operator->() const
+        {
             return mData;
         }
 
-        value_type* operator->() {
+        value_type* operator->()
+        {
             return mData;
         }
 
-        const value_type& operator*() const {
+        const value_type& operator*() const
+        {
             return *mData;
         }
 
-        value_type& operator*() {
+        value_type& operator*()
+        {
             return *mData;
         }
 
-        typename value_type::first_type& getFirst() {
+        typename value_type::first_type& getFirst()
+        {
             return mData->first;
         }
 
-        typename value_type::first_type const& getFirst() const {
+        typename value_type::first_type const& getFirst() const
+        {
             return mData->first;
         }
 
-        typename value_type::second_type& getSecond() {
+        typename value_type::second_type& getSecond()
+        {
             return mData->second;
         }
 
-        typename value_type::second_type const& getSecond() const {
+        typename value_type::second_type const& getSecond() const
+        {
             return mData->second;
         }
 
-        void swap(DataNode<M, false>& o) {
+        void swap(DataNode<M, false>& o)
+        {
             using std::swap;
             swap(mData, o.mData);
         }
@@ -770,8 +846,10 @@ private:
 
     // fast path: Just copy data, without allocating anything.
     template <typename M>
-    struct Cloner<M, true> {
-        void operator()(M const& source, M& target) const {
+    struct Cloner<M, true>
+    {
+        void operator()(M const& source, M& target) const
+        {
             // std::memcpy(target.mKeyVals, source.mKeyVals,
             //             target.calcNumBytesTotal(target.mMask + 1));
             auto src = reinterpret_cast<char const*>(source.mKeyVals);
@@ -781,15 +859,19 @@ private:
     };
 
     template <typename M>
-    struct Cloner<M, false> {
-        void operator()(M const& source, M& target) const {
+    struct Cloner<M, false>
+    {
+        void operator()(M const& source, M& target) const
+        {
             // make sure to copy initialize sentinel as well
             // std::memcpy(target.mInfo, source.mInfo, target.calcNumBytesInfo(target.mMask + 1));
             std::copy(source.mInfo, source.mInfo + target.calcNumBytesInfo(target.mMask + 1),
                       target.mInfo);
 
-            for (size_t i = 0; i < target.mMask + 1; ++i) {
-                if (target.mInfo[i]) {
+            for (size_t i = 0; i < target.mMask + 1; ++i)
+            {
+                if (target.mInfo[i])
+                {
                     ::new (static_cast<void*>(target.mKeyVals + i))
                         Node(target, *source.mKeyVals[i]);
                 }
@@ -800,26 +882,35 @@ private:
     // Destroyer ///////////////////////////////////////////////////////
 
     template <typename M, bool IsFlatMapAndTrivial>
-    struct Destroyer {};
+    struct Destroyer
+    {
+    };
 
     template <typename M>
-    struct Destroyer<M, true> {
-        void nodes(M& m) const {
+    struct Destroyer<M, true>
+    {
+        void nodes(M& m) const
+        {
             m.mNumElements = 0;
         }
 
-        void nodesDoNotDeallocate(M& m) const {
+        void nodesDoNotDeallocate(M& m) const
+        {
             m.mNumElements = 0;
         }
     };
 
     template <typename M>
-    struct Destroyer<M, false> {
-        void nodes(M& m) const {
+    struct Destroyer<M, false>
+    {
+        void nodes(M& m) const
+        {
             m.mNumElements = 0;
             // clear also resets mInfo to 0, that's sometimes not necessary.
-            for (size_t idx = 0; idx <= m.mMask; ++idx) {
-                if (0 != m.mInfo[idx]) {
+            for (size_t idx = 0; idx <= m.mMask; ++idx)
+            {
+                if (0 != m.mInfo[idx])
+                {
                     Node& n = m.mKeyVals[idx];
                     n.destroy(m);
                     n.~Node();
@@ -827,11 +918,14 @@ private:
             }
         }
 
-        void nodesDoNotDeallocate(M& m) const {
+        void nodesDoNotDeallocate(M& m) const
+        {
             m.mNumElements = 0;
             // clear also resets mInfo to 0, that's sometimes not necessary.
-            for (size_t idx = 0; idx <= m.mMask; ++idx) {
-                if (0 != m.mInfo[idx]) {
+            for (size_t idx = 0; idx <= m.mMask; ++idx)
+            {
+                if (0 != m.mInfo[idx])
+                {
                     Node& n = m.mKeyVals[idx];
                     n.destroyDoNotDeallocate();
                     n.~Node();
@@ -844,7 +938,8 @@ private:
 
     // generic iterator for both const_iterator and iterator.
     template <bool IsConst>
-    class Iter {
+    class Iter
+    {
     private:
         using NodePtr = typename std::conditional<IsConst, Node const*, Node*>::type;
 
@@ -858,24 +953,23 @@ private:
         // default constructed iterator can be compared to itself, but WON'T return true when
         // compared to end().
         Iter()
-            : mKeyVals(nullptr)
-            , mInfo(nullptr) {}
+            : mKeyVals(nullptr), mInfo(nullptr) {}
 
         // both const_iterator and iterator can be constructed from a non-const iterator
         Iter(Iter<false> const& other)
-            : mKeyVals(other.mKeyVals)
-            , mInfo(other.mInfo) {}
+            : mKeyVals(other.mKeyVals), mInfo(other.mInfo) {}
 
         Iter(NodePtr valPtr, uint8_t const* infoPtr)
-            : mKeyVals(valPtr)
-            , mInfo(infoPtr) {}
+            : mKeyVals(valPtr), mInfo(infoPtr) {}
 
         // prefix increment. Undefined behavior if we are at end()!
-        Iter& operator++() {
+        Iter& operator++()
+        {
             mInfo++;
             mKeyVals++;
             int inc;
-            do {
+            do
+            {
                 auto const n = detail::unaligned_load<size_t>(mInfo);
 #if ROBIN_HOOD_LITTLE_ENDIAN
                 inc = ROBIN_HOOD_COUNT_TRAILING_ZEROES(n) / 8;
@@ -888,21 +982,25 @@ private:
             return *this;
         }
 
-        reference operator*() const {
+        reference operator*() const
+        {
             return **mKeyVals;
         }
 
-        pointer operator->() const {
+        pointer operator->() const
+        {
             return &**mKeyVals;
         }
 
         template <bool O>
-        bool operator==(Iter<O> const& o) const {
+        bool operator==(Iter<O> const& o) const
+        {
             return mKeyVals == o.mKeyVals;
         }
 
         template <bool O>
-        bool operator!=(Iter<O> const& o) const {
+        bool operator!=(Iter<O> const& o) const
+        {
             return mKeyVals != o.mKeyVals;
         }
 
@@ -915,26 +1013,32 @@ private:
 
     ////////////////////////////////////////////////////////////////////
 
-    size_t calcNumBytesInfo(size_t numElements) const {
+    size_t calcNumBytesInfo(size_t numElements) const
+    {
         const size_t s = sizeof(uint8_t) * (numElements + 1);
-        if (ROBIN_HOOD_UNLIKELY(s / sizeof(uint8_t) != numElements + 1)) {
+        if (ROBIN_HOOD_UNLIKELY(s / sizeof(uint8_t) != numElements + 1))
+        {
             throwOverflowError();
         }
         // make sure it's a bit larger, so we can load 64bit numbers
         return s + sizeof(uint64_t);
     }
-    size_t calcNumBytesNode(size_t numElements) const {
+    size_t calcNumBytesNode(size_t numElements) const
+    {
         const size_t s = sizeof(Node) * numElements;
-        if (ROBIN_HOOD_UNLIKELY(s / sizeof(Node) != numElements)) {
+        if (ROBIN_HOOD_UNLIKELY(s / sizeof(Node) != numElements))
+        {
             throwOverflowError();
         }
         return s;
     }
-    size_t calcNumBytesTotal(size_t numElements) const {
+    size_t calcNumBytesTotal(size_t numElements) const
+    {
         const size_t si = calcNumBytesInfo(numElements);
         const size_t sn = calcNumBytesNode(numElements);
         const size_t s = si + sn;
-        if (ROBIN_HOOD_UNLIKELY(s <= si || s <= sn)) {
+        if (ROBIN_HOOD_UNLIKELY(s <= si || s <= sn))
+        {
             throwOverflowError();
         }
         return s;
@@ -944,7 +1048,8 @@ private:
     // Lower bits are used for indexing into the array (2^n size)
     // The upper 1-5 bits need to be a reasonable good hash, to save comparisons.
     template <typename HashKey>
-    void keyToIdx(HashKey&& key, size_t& idx, InfoType& info) const {
+    void keyToIdx(HashKey&& key, size_t& idx, InfoType& info) const
+    {
         static constexpr size_t bad_hash_prevention =
             std::is_same<::robin_hood::hash<key_type>, hasher>::value
                 ? 1
@@ -955,14 +1060,17 @@ private:
     }
 
     // forwards the index by one, wrapping around at the end
-    void next(InfoType* info, size_t* idx) const {
+    void next(InfoType* info, size_t* idx) const
+    {
         *idx = (*idx + 1) & mMask;
         *info = static_cast<InfoType>(*info + mInfoInc);
     }
 
-    void nextWhileLess(InfoType* info, size_t* idx) const {
+    void nextWhileLess(InfoType* info, size_t* idx) const
+    {
         // unrolling this by hand did not bring any speedups.
-        while (*info < mInfo[*idx]) {
+        while (*info < mInfo[*idx])
+        {
             next(info, idx);
         }
     }
@@ -970,30 +1078,38 @@ private:
     // Shift everything up by one element. Tries to move stuff around.
     // True if some shifting has occured (entry under idx is a constructed object)
     // Fals if no shift has occured (entry under idx is unconstructed memory)
-    void shiftUp(size_t idx, size_t const insertion_idx) {
-        while (idx != insertion_idx) {
+    void shiftUp(size_t idx, size_t const insertion_idx)
+    {
+        while (idx != insertion_idx)
+        {
             size_t prev_idx = (idx - 1) & mMask;
-            if (mInfo[idx]) {
+            if (mInfo[idx])
+            {
                 mKeyVals[idx] = std::move(mKeyVals[prev_idx]);
-            } else {
+            }
+            else
+            {
                 ::new (static_cast<void*>(mKeyVals + idx)) Node(std::move(mKeyVals[prev_idx]));
             }
             mInfo[idx] = static_cast<uint8_t>(mInfo[prev_idx] + mInfoInc);
-            if (ROBIN_HOOD_UNLIKELY(0xFF <= mInfo[idx] + mInfoInc)) {
+            if (ROBIN_HOOD_UNLIKELY(0xFF <= mInfo[idx] + mInfoInc))
+            {
                 mMaxNumElementsAllowed = 0;
             }
             idx = prev_idx;
         }
     }
 
-    void shiftDown(size_t idx) {
+    void shiftDown(size_t idx)
+    {
         // until we find one that is either empty or has zero offset.
         // TODO we don't need to move everything, just the last one for the same bucket.
         mKeyVals[idx].destroy(*this);
 
         // until we find one that is either empty or has zero offset.
         size_t nextIdx = (idx + 1) & mMask;
-        while (mInfo[nextIdx] >= 2 * mInfoInc) {
+        while (mInfo[nextIdx] >= 2 * mInfoInc)
+        {
             mInfo[idx] = static_cast<uint8_t>(mInfo[nextIdx] - mInfoInc);
             mKeyVals[idx] = std::move(mKeyVals[nextIdx]);
             idx = nextIdx;
@@ -1008,18 +1124,22 @@ private:
 
     // copy of find(), except that it returns iterator instead of const_iterator.
     template <typename Other>
-    size_t findIdx(Other const& key) const {
+    size_t findIdx(Other const& key) const
+    {
         size_t idx;
         InfoType info;
         keyToIdx(key, idx, info);
 
-        do {
+        do
+        {
             // unrolling this twice gives a bit of a speedup. More unrolling did not help.
-            if (info == mInfo[idx] && KeyEqual::operator()(key, mKeyVals[idx].getFirst())) {
+            if (info == mInfo[idx] && KeyEqual::operator()(key, mKeyVals[idx].getFirst()))
+            {
                 return idx;
             }
             next(&info, &idx);
-            if (info == mInfo[idx] && KeyEqual::operator()(key, mKeyVals[idx].getFirst())) {
+            if (info == mInfo[idx] && KeyEqual::operator()(key, mKeyVals[idx].getFirst()))
+            {
                 return idx;
             }
             next(&info, &idx);
@@ -1029,16 +1149,19 @@ private:
         return mMask + 1;
     }
 
-    void cloneData(const unordered_map& o) {
+    void cloneData(const unordered_map& o)
+    {
         Cloner<unordered_map, IsFlatMap && std::is_trivially_copyable<Node>::value>()(o, *this);
     }
 
     // inserts a keyval that is guaranteed to be new, e.g. when the hashmap is resized.
     // @return index where the element was created
-    size_t insert_move(Node&& keyval) {
+    size_t insert_move(Node&& keyval)
+    {
         // we don't retry, fail if overflowing
         // don't need to check max num elements
-        if (0 == mMaxNumElementsAllowed && !try_increase_info()) {
+        if (0 == mMaxNumElementsAllowed && !try_increase_info())
+        {
             throwOverflowError();
         }
 
@@ -1047,7 +1170,8 @@ private:
         keyToIdx(keyval.getFirst(), idx, info);
 
         // skip forward. Use <= because we are certain that the element is not there.
-        while (info <= mInfo[idx]) {
+        while (info <= mInfo[idx])
+        {
             idx = (idx + 1) & mMask;
             info = static_cast<InfoType>(info + mInfoInc);
         }
@@ -1055,19 +1179,24 @@ private:
         // key not found, so we are now exactly where we want to insert it.
         auto const insertion_idx = idx;
         auto const insertion_info = static_cast<uint8_t>(info);
-        if (ROBIN_HOOD_UNLIKELY(0xFF <= insertion_info + mInfoInc)) {
+        if (ROBIN_HOOD_UNLIKELY(0xFF <= insertion_info + mInfoInc))
+        {
             mMaxNumElementsAllowed = 0;
         }
 
         // find an empty spot
-        while (0 != mInfo[idx]) {
+        while (0 != mInfo[idx])
+        {
             next(&info, &idx);
         }
 
         auto& l = mKeyVals[insertion_idx];
-        if (idx == insertion_idx) {
+        if (idx == insertion_idx)
+        {
             ::new (static_cast<void*>(&l)) Node(std::move(keyval));
-        } else {
+        }
+        else
+        {
             shiftUp(idx, insertion_idx);
             l = std::move(keyval);
         }
@@ -1090,42 +1219,35 @@ public:
     // ignore it.
     explicit unordered_map(size_t ROBIN_HOOD_UNUSED(bucket_count) /*unused*/ = 0,
                            const Hash& h = Hash{}, const KeyEqual& equal = KeyEqual{})
-        : Hash{h}
-        , KeyEqual{equal} {}
+        : Hash{h}, KeyEqual{equal} {}
 
     template <typename Iter>
     unordered_map(Iter first, Iter last, size_t ROBIN_HOOD_UNUSED(bucket_count) /*unused*/ = 0,
                   const Hash& h = Hash{}, const KeyEqual& equal = KeyEqual{})
-        : Hash{h}
-        , KeyEqual{equal} {
+        : Hash{h}, KeyEqual{equal}
+    {
         insert(first, last);
     }
 
     unordered_map(std::initializer_list<value_type> init,
                   size_t ROBIN_HOOD_UNUSED(bucket_count) /*unused*/ = 0, const Hash& h = Hash{},
                   const KeyEqual& equal = KeyEqual{})
-        : Hash{h}
-        , KeyEqual{equal} {
+        : Hash{h}, KeyEqual{equal}
+    {
         insert(init.begin(), init.end());
     }
 
     unordered_map(unordered_map&& o)
-        : Hash{std::move(static_cast<Hash&>(o))}
-        , KeyEqual{std::move(static_cast<KeyEqual&>(o))}
-        , DataPool{std::move(static_cast<DataPool&>(o))}
-        , mKeyVals{std::move(o.mKeyVals)}
-        , mInfo{std::move(o.mInfo)}
-        , mNumElements{std::move(o.mNumElements)}
-        , mMask{std::move(o.mMask)}
-        , mMaxNumElementsAllowed{std::move(o.mMaxNumElementsAllowed)}
-        , mInfoInc{std::move(o.mInfoInc)}
-        , mInfoHashShift{std::move(o.mInfoHashShift)} {
+        : Hash{std::move(static_cast<Hash&>(o))}, KeyEqual{std::move(static_cast<KeyEqual&>(o))}, DataPool{std::move(static_cast<DataPool&>(o))}, mKeyVals{std::move(o.mKeyVals)}, mInfo{std::move(o.mInfo)}, mNumElements{std::move(o.mNumElements)}, mMask{std::move(o.mMask)}, mMaxNumElementsAllowed{std::move(o.mMaxNumElementsAllowed)}, mInfoInc{std::move(o.mInfoInc)}, mInfoHashShift{std::move(o.mInfoHashShift)}
+    {
         // set other's mask to 0 so its destructor won't do anything
         o.mMask = 0;
     }
 
-    unordered_map& operator=(unordered_map&& o) {
-        if (&o != this) {
+    unordered_map& operator=(unordered_map&& o)
+    {
+        if (&o != this)
+        {
             // different, move it
             destroy();
             mKeyVals = std::move(o.mKeyVals);
@@ -1145,11 +1267,11 @@ public:
     }
 
     unordered_map(const unordered_map& o)
-        : Hash{static_cast<const Hash&>(o)}
-        , KeyEqual{static_cast<const KeyEqual&>(o)}
-        , DataPool{static_cast<const DataPool&>(o)} {
+        : Hash{static_cast<const Hash&>(o)}, KeyEqual{static_cast<const KeyEqual&>(o)}, DataPool{static_cast<const DataPool&>(o)}
+    {
 
-        if (!o.empty()) {
+        if (!o.empty())
+        {
             // not empty: create an exact copy. it is also possible to just iterate through all
             // elements and insert them, but copying is probably faster.
 
@@ -1167,16 +1289,20 @@ public:
     }
 
     // Creates a copy of the given map. Copy constructor of each entry is used.
-    unordered_map& operator=(unordered_map const& o) {
-        if (&o == this) {
+    unordered_map& operator=(unordered_map const& o)
+    {
+        if (&o == this)
+        {
             // prevent assigning of itself
             return *this;
         }
 
         // we keep using the old allocator and not assign the new one, because we want to keep the
         // memory available. when it is the same size.
-        if (o.empty()) {
-            if (0 == mMask) {
+        if (o.empty())
+        {
+            if (0 == mMask)
+            {
                 // nothing to do, we are empty too
                 return *this;
             }
@@ -1203,9 +1329,11 @@ public:
         // clean up old stuff
         Destroyer<Self, IsFlatMap && std::is_trivially_destructible<Node>::value>{}.nodes(*this);
 
-        if (mMask != o.mMask) {
+        if (mMask != o.mMask)
+        {
             // no luck: we don't have the same array size allocated, so we need to realloc.
-            if (0 != mMask) {
+            if (0 != mMask)
+            {
                 // only deallocate if we actually have data!
                 free(mKeyVals);
             }
@@ -1230,7 +1358,8 @@ public:
     }
 
     // Swaps everything between the two maps.
-    void swap(unordered_map& o) {
+    void swap(unordered_map& o)
+    {
         using std::swap;
         swap(mKeyVals, o.mKeyVals);
         swap(mInfo, o.mInfo);
@@ -1246,8 +1375,10 @@ public:
     }
 
     // Clears all data, without resizing.
-    void clear() {
-        if (empty()) {
+    void clear()
+    {
+        if (empty())
+        {
             // don't do anything! also important because we don't want to write to DummyInfoByte::b,
             // even though we would just write 0 to it.
             return;
@@ -1265,18 +1396,23 @@ public:
     }
 
     // Destroys the map and all it's contents.
-    ~unordered_map() {
+    ~unordered_map()
+    {
         destroy();
     }
 
     // Checks if both maps contain the same entries. Order is irrelevant.
-    bool operator==(const unordered_map& other) const {
-        if (other.size() != size()) {
+    bool operator==(const unordered_map& other) const
+    {
+        if (other.size() != size())
+        {
             return false;
         }
-        for (auto const& otherEntry : other) {
+        for (auto const& otherEntry : other)
+        {
             auto const myIt = find(otherEntry.first);
-            if (myIt == end() || !(myIt->second == otherEntry.second)) {
+            if (myIt == end() || !(myIt->second == otherEntry.second))
+            {
                 return false;
             }
         }
@@ -1284,55 +1420,67 @@ public:
         return true;
     }
 
-    bool operator!=(const unordered_map& other) const {
+    bool operator!=(const unordered_map& other) const
+    {
         return !operator==(other);
     }
 
-    mapped_type& operator[](const key_type& key) {
+    mapped_type& operator[](const key_type& key)
+    {
         return doCreateByKey(key);
     }
 
-    mapped_type& operator[](key_type&& key) {
+    mapped_type& operator[](key_type&& key)
+    {
         return doCreateByKey(std::move(key));
     }
 
     template <typename Iter>
-    void insert(Iter first, Iter last) {
-        for (; first != last; ++first) {
+    void insert(Iter first, Iter last)
+    {
+        for (; first != last; ++first)
+        {
             // value_type ctor needed because this might be called with std::pair's
             insert(value_type(*first));
         }
     }
 
     template <typename... Args>
-    std::pair<iterator, bool> emplace(Args&&... args) {
+    std::pair<iterator, bool> emplace(Args&&... args)
+    {
         Node n{*this, std::forward<Args>(args)...};
         auto r = doInsert(std::move(n));
-        if (!r.second) {
+        if (!r.second)
+        {
             // insertion not possible: destroy node
             n.destroy(*this);
         }
         return r;
     }
 
-    std::pair<iterator, bool> insert(const value_type& keyval) {
+    std::pair<iterator, bool> insert(const value_type& keyval)
+    {
         return doInsert(keyval);
     }
 
-    std::pair<iterator, bool> insert(value_type&& keyval) {
+    std::pair<iterator, bool> insert(value_type&& keyval)
+    {
         return doInsert(std::move(keyval));
     }
 
     // Returns 1 if key is found, 0 otherwise.
-    size_t count(const key_type& key) const {
+    size_t count(const key_type& key) const
+    {
         return findIdx(key) == (mMask + 1) ? 0 : 1;
     }
 
     // Returns a reference to the value found for key.
     // Throws std::out_of_range if element cannot be found
-    mapped_type& at(key_type const& key) {
+    mapped_type& at(key_type const& key)
+    {
         auto idx = findIdx(key);
-        if (idx == mMask + 1) {
+        if (idx == mMask + 1)
+        {
             doThrow<std::out_of_range>("key not found");
         }
         return mKeyVals[idx].getSecond();
@@ -1340,78 +1488,95 @@ public:
 
     // Returns a reference to the value found for key.
     // Throws std::out_of_range if element cannot be found
-    mapped_type const& at(key_type const& key) const {
+    mapped_type const& at(key_type const& key) const
+    {
         auto idx = findIdx(key);
-        if (idx == mMask + 1) {
+        if (idx == mMask + 1)
+        {
             doThrow<std::out_of_range>("key not found");
         }
         return mKeyVals[idx].getSecond();
     }
 
-    const_iterator find(const key_type& key) const {
+    const_iterator find(const key_type& key) const
+    {
         const size_t idx = findIdx(key);
         return const_iterator{mKeyVals + idx, mInfo + idx};
     }
 
     template <typename OtherKey>
-    const_iterator find(const OtherKey& key, is_transparent_tag /*unused*/) const {
+    const_iterator find(const OtherKey& key, is_transparent_tag /*unused*/) const
+    {
         const size_t idx = findIdx(key);
         return const_iterator{mKeyVals + idx, mInfo + idx};
     }
 
-    iterator find(const key_type& key) {
+    iterator find(const key_type& key)
+    {
         const size_t idx = findIdx(key);
         return iterator{mKeyVals + idx, mInfo + idx};
     }
 
     template <typename OtherKey>
-    iterator find(const OtherKey& key, is_transparent_tag /*unused*/) {
+    iterator find(const OtherKey& key, is_transparent_tag /*unused*/)
+    {
         const size_t idx = findIdx(key);
         return iterator{mKeyVals + idx, mInfo + idx};
     }
 
-    iterator begin() {
-        if (empty()) {
+    iterator begin()
+    {
+        if (empty())
+        {
             return end();
         }
         return ++iterator(mKeyVals - 1, mInfo - 1);
     }
-    const_iterator begin() const {
+    const_iterator begin() const
+    {
         return cbegin();
     }
-    const_iterator cbegin() const {
-        if (empty()) {
+    const_iterator cbegin() const
+    {
+        if (empty())
+        {
             return cend();
         }
         return ++const_iterator(mKeyVals - 1, mInfo - 1);
     }
 
-    iterator end() {
+    iterator end()
+    {
         // no need to supply valid info pointer: end() must not be dereferenced, and only node
         // pointer is compared.
         return iterator{reinterpret_cast<Node*>(mInfo), nullptr};
     }
-    const_iterator end() const {
+    const_iterator end() const
+    {
         return cend();
     }
-    const_iterator cend() const {
+    const_iterator cend() const
+    {
         return const_iterator{reinterpret_cast<Node*>(mInfo), nullptr};
     }
 
-    iterator erase(const_iterator pos) {
+    iterator erase(const_iterator pos)
+    {
         // its safe to perform const cast here
         return erase(iterator{const_cast<Node*>(pos.mKeyVals), const_cast<uint8_t*>(pos.mInfo)});
     }
 
     // Erases element at pos, returns iterator to the next element.
-    iterator erase(iterator pos) {
+    iterator erase(iterator pos)
+    {
         // we assume that pos always points to a valid entry, and not end().
         auto const idx = static_cast<size_t>(pos.mKeyVals - mKeyVals);
 
         shiftDown(idx);
         --mNumElements;
 
-        if (*pos.mInfo) {
+        if (*pos.mInfo)
+        {
             // we've backward shifted, return this again
             return pos;
         }
@@ -1420,14 +1585,17 @@ public:
         return ++pos;
     }
 
-    size_t erase(const key_type& key) {
+    size_t erase(const key_type& key)
+    {
         size_t idx;
         InfoType info;
         keyToIdx(key, idx, info);
 
         // check while info matches with the source idx
-        do {
-            if (info == mInfo[idx] && KeyEqual::operator()(key, mKeyVals[idx].getFirst())) {
+        do
+        {
+            if (info == mInfo[idx] && KeyEqual::operator()(key, mKeyVals[idx].getFirst()))
+            {
                 shiftDown(idx);
                 --mNumElements;
                 return 1;
@@ -1439,20 +1607,25 @@ public:
         return 0;
     }
 
-    void reserve(size_t count) {
+    void reserve(size_t count)
+    {
         auto newSize = InitialNumElements > mMask + 1 ? InitialNumElements : mMask + 1;
-        while (calcMaxNumElementsAllowed(newSize) < count && newSize != 0) {
+        while (calcMaxNumElementsAllowed(newSize) < count && newSize != 0)
+        {
             newSize *= 2;
         }
-        if (ROBIN_HOOD_UNLIKELY(newSize == 0)) {
+        if (ROBIN_HOOD_UNLIKELY(newSize == 0))
+        {
             throwOverflowError();
         }
 
         rehash(newSize);
     }
 
-    void rehash(size_t numBuckets) {
-        if (ROBIN_HOOD_UNLIKELY((numBuckets & (numBuckets - 1)) != 0)) {
+    void rehash(size_t numBuckets)
+    {
+        if (ROBIN_HOOD_UNLIKELY((numBuckets & (numBuckets - 1)) != 0))
+        {
             doThrow<std::runtime_error>("rehash only allowed for power of two");
         }
 
@@ -1463,9 +1636,12 @@ public:
 
         // resize operation: move stuff
         init_data(numBuckets);
-        if (oldMaxElements > 1) {
-            for (size_t i = 0; i < oldMaxElements; ++i) {
-                if (oldInfo[i] != 0) {
+        if (oldMaxElements > 1)
+        {
+            for (size_t i = 0; i < oldMaxElements; ++i)
+            {
+                if (oldInfo[i] != 0)
+                {
                     insert_move(std::move(oldKeyVals[i]));
                     // destroy the node but DON'T destroy the data.
                     oldKeyVals[i].~Node();
@@ -1477,37 +1653,45 @@ public:
         }
     }
 
-    size_type size() const {
+    size_type size() const
+    {
         return mNumElements;
     }
 
-    size_type max_size() const {
+    size_type max_size() const
+    {
         return static_cast<size_type>(-1);
     }
 
-    bool empty() const {
+    bool empty() const
+    {
         return 0 == mNumElements;
     }
 
-    float max_load_factor() const {
+    float max_load_factor() const
+    {
         return MaxLoadFactor100 / 100.0f;
     }
 
     // Average number of elements per bucket. Since we allow only 1 per bucket
-    float load_factor() const {
+    float load_factor() const
+    {
         return static_cast<float>(size()) / (mMask + 1);
     }
 
-    size_t mask() const {
+    size_t mask() const
+    {
         return mMask;
     }
 
 private:
-    ROBIN_HOOD_NOINLINE void throwOverflowError() const {
+    ROBIN_HOOD_NOINLINE void throwOverflowError() const
+    {
         throw std::overflow_error("robin_hood::map overflow");
     }
 
-    void init_data(size_t max_elements) {
+    void init_data(size_t max_elements)
+    {
         mNumElements = 0;
         mMask = max_elements - 1;
         mMaxNumElementsAllowed = calcMaxNumElementsAllowed(max_elements);
@@ -1525,8 +1709,10 @@ private:
     }
 
     template <typename Arg>
-    mapped_type& doCreateByKey(Arg&& key) {
-        while (true) {
+    mapped_type& doCreateByKey(Arg&& key)
+    {
+        while (true)
+        {
             size_t idx;
             InfoType info;
             keyToIdx(key, idx, info);
@@ -1534,8 +1720,10 @@ private:
 
             // while we potentially have a match. Can't do a do-while here because when mInfo is 0
             // we don't want to skip forward
-            while (info == mInfo[idx]) {
-                if (KeyEqual::operator()(key, mKeyVals[idx].getFirst())) {
+            while (info == mInfo[idx])
+            {
+                if (KeyEqual::operator()(key, mKeyVals[idx].getFirst()))
+                {
                     // key already exists, do not insert.
                     return mKeyVals[idx].getSecond();
                 }
@@ -1543,7 +1731,8 @@ private:
             }
 
             // unlikely that this evaluates to true
-            if (ROBIN_HOOD_UNLIKELY(mNumElements >= mMaxNumElementsAllowed)) {
+            if (ROBIN_HOOD_UNLIKELY(mNumElements >= mMaxNumElementsAllowed))
+            {
                 increase_size();
                 continue;
             }
@@ -1551,23 +1740,28 @@ private:
             // key not found, so we are now exactly where we want to insert it.
             auto const insertion_idx = idx;
             auto const insertion_info = info;
-            if (ROBIN_HOOD_UNLIKELY(0xFF <= insertion_info + mInfoInc)) {
+            if (ROBIN_HOOD_UNLIKELY(0xFF <= insertion_info + mInfoInc))
+            {
                 mMaxNumElementsAllowed = 0;
             }
 
             // find an empty spot
-            while (0 != mInfo[idx]) {
+            while (0 != mInfo[idx])
+            {
                 next(&info, &idx);
             }
 
             auto& l = mKeyVals[insertion_idx];
-            if (idx == insertion_idx) {
+            if (idx == insertion_idx)
+            {
                 // put at empty spot. This forwards all arguments into the node where the object is
                 // constructed exactly where it is needed.
                 ::new (static_cast<void*>(&l))
                     Node(*this, std::piecewise_construct,
                          std::forward_as_tuple(std::forward<Arg>(key)), std::forward_as_tuple());
-            } else {
+            }
+            else
+            {
                 shiftUp(idx, insertion_idx);
                 l = Node(*this, std::piecewise_construct,
                          std::forward_as_tuple(std::forward<Arg>(key)), std::forward_as_tuple());
@@ -1583,16 +1777,20 @@ private:
 
     // This is exactly the same code as operator[], except for the return values
     template <typename Arg>
-    std::pair<iterator, bool> doInsert(Arg&& keyval) {
-        while (true) {
+    std::pair<iterator, bool> doInsert(Arg&& keyval)
+    {
+        while (true)
+        {
             size_t idx;
             InfoType info;
             keyToIdx(keyval.getFirst(), idx, info);
             nextWhileLess(&info, &idx);
 
             // while we potentially have a match
-            while (info == mInfo[idx]) {
-                if (KeyEqual::operator()(keyval.getFirst(), mKeyVals[idx].getFirst())) {
+            while (info == mInfo[idx])
+            {
+                if (KeyEqual::operator()(keyval.getFirst(), mKeyVals[idx].getFirst()))
+                {
                     // key already exists, do NOT insert.
                     // see http://en.cppreference.com/w/cpp/container/unordered_map/insert
                     return std::make_pair<iterator, bool>(iterator(mKeyVals + idx, mInfo + idx),
@@ -1602,7 +1800,8 @@ private:
             }
 
             // unlikely that this evaluates to true
-            if (ROBIN_HOOD_UNLIKELY(mNumElements >= mMaxNumElementsAllowed)) {
+            if (ROBIN_HOOD_UNLIKELY(mNumElements >= mMaxNumElementsAllowed))
+            {
                 increase_size();
                 continue;
             }
@@ -1610,19 +1809,24 @@ private:
             // key not found, so we are now exactly where we want to insert it.
             auto const insertion_idx = idx;
             auto const insertion_info = info;
-            if (ROBIN_HOOD_UNLIKELY(0xFF <= insertion_info + mInfoInc)) {
+            if (ROBIN_HOOD_UNLIKELY(0xFF <= insertion_info + mInfoInc))
+            {
                 mMaxNumElementsAllowed = 0;
             }
 
             // find an empty spot
-            while (0 != mInfo[idx]) {
+            while (0 != mInfo[idx])
+            {
                 next(&info, &idx);
             }
 
             auto& l = mKeyVals[insertion_idx];
-            if (idx == insertion_idx) {
+            if (idx == insertion_idx)
+            {
                 ::new (static_cast<void*>(&l)) Node(*this, std::forward<Arg>(keyval));
-            } else {
+            }
+            else
+            {
                 shiftUp(idx, insertion_idx);
                 l = Node(*this, std::forward<Arg>(keyval));
             }
@@ -1635,25 +1839,31 @@ private:
         }
     }
 
-    size_t calcMaxNumElementsAllowed(size_t maxElements) {
+    size_t calcMaxNumElementsAllowed(size_t maxElements)
+    {
         static constexpr size_t overflowLimit = (std::numeric_limits<size_t>::max)() / 100;
         static constexpr double factor = MaxLoadFactor100 / 100.0;
 
         // make sure we can't get an overflow; use floatingpoint arithmetic if necessary.
-        if (maxElements > overflowLimit) {
+        if (maxElements > overflowLimit)
+        {
             return static_cast<size_t>(static_cast<double>(maxElements) * factor);
-        } else {
+        }
+        else
+        {
             return (maxElements * MaxLoadFactor100) / 100;
         }
     }
 
-    bool try_increase_info() {
+    bool try_increase_info()
+    {
         ROBIN_HOOD_LOG("mInfoInc=" << mInfoInc << ", numElements=" << mNumElements
                                    << ", maxNumElementsAllowed="
                                    << calcMaxNumElementsAllowed(mMask + 1));
         // we got space left, try to make info smaller
         mInfoInc = static_cast<uint8_t>(mInfoInc >> 1);
-        if (1 == mInfoInc) {
+        if (1 == mInfoInc)
+        {
             // need to be > 1 so that shift works (otherwise undefined behavior!)
             return false;
         }
@@ -1664,22 +1874,26 @@ private:
         auto const data = reinterpret_cast<uint64_t*>(mInfo);
         auto const numEntries = (mMask + 1) / 8;
 
-        for (size_t i = 0; i < numEntries; ++i) {
+        for (size_t i = 0; i < numEntries; ++i)
+        {
             data[i] = (data[i] >> 1) & UINT64_C(0x7f7f7f7f7f7f7f7f);
         }
         mMaxNumElementsAllowed = calcMaxNumElementsAllowed(mMask + 1);
         return true;
     }
 
-    void increase_size() {
+    void increase_size()
+    {
         // nothing allocated yet? just allocate InitialNumElements
-        if (0 == mMask) {
+        if (0 == mMask)
+        {
             init_data(InitialNumElements);
             return;
         }
 
         auto const maxNumElementsAllowed = calcMaxNumElementsAllowed(mMask + 1);
-        if (mNumElements < maxNumElementsAllowed && try_increase_info()) {
+        if (mNumElements < maxNumElementsAllowed && try_increase_info())
+        {
             return;
         }
 
@@ -1688,15 +1902,18 @@ private:
                                        << (static_cast<double>(mNumElements) * 100.0 /
                                            (static_cast<double>(mMask) + 1)));
         // it seems we have a really bad hash function! don't try to resize again
-        if (mNumElements * 2 < calcMaxNumElementsAllowed(mMask + 1)) {
+        if (mNumElements * 2 < calcMaxNumElementsAllowed(mMask + 1))
+        {
             throwOverflowError();
         }
 
         rehash((mMask + 1) * 2);
     }
 
-    void destroy() {
-        if (0 == mMask) {
+    void destroy()
+    {
+        if (0 == mMask)
+        {
             // don't deallocate! we are pointing to DummyInfoByte::b.
             return;
         }
@@ -1715,7 +1932,7 @@ private:
     size_t mMaxNumElementsAllowed = 0;                                      // 8 byte 40
     InfoType mInfoInc = InitialInfoInc;                                     // 4 byte 44
     InfoType mInfoHashShift = InitialInfoHashShift;                         // 4 byte 48
-                                                    // 16 byte 56 if NodeAllocator
+                                                                            // 16 byte 56 if NodeAllocator
 };
 
 } // namespace detail
