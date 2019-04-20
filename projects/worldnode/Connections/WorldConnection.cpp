@@ -146,6 +146,8 @@ bool WorldConnection::Start()
     challenge.Append(challenge.seed2, seed2.BN2BinArray(32).get(), 16);
     challenge.AddTo(authPacket);
 
+    Common::ByteBuffer resumeComms;
+    SendPacket(resumeComms, Common::Opcode::SMSG_RESUME_COMMS);
     SendPacket(authPacket, Common::Opcode::SMSG_AUTH_CHALLENGE);
 
     AsyncRead();
@@ -268,7 +270,6 @@ bool WorldConnection::HandlePacketRead()
             if (account == 0)
             {
                 HandleContinueAuthSession();
-
             }
             break;
         }
