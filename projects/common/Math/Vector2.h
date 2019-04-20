@@ -34,22 +34,24 @@ class Vector2
 public:
 	// Constructors
 	Vector2() {};
-	Vector2(f32 inX, f32 inY) { x = inX; y = inY; }
-	Vector2(f32 in) { x = in; y = in; }
-	Vector2(u8 inX, u8 inY) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); }
-	Vector2(u8 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); }
-	Vector2(u16 inX, u16 inY) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); }
-	Vector2(u16 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); }
-	Vector2(u32 inX, u32 inY) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); }
-	Vector2(u32 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); }
-	Vector2(i8 inX, i8 inY) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); }
-	Vector2(i8 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); }
-	Vector2(i16 inX, i16 inY) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); }
-	Vector2(i16 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); }
-	Vector2(i32 inX, i32 inY) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); }
-	Vector2(i32 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); }
+	Vector2(float x, float y) : x(x), y(y) {}
 
-	Vector2(Vector2& in) { x = in.x; y = in.y; }
+	// Vector2(f32 inX, f32 inY) { x = inX; y = inY; }
+	// Vector2(f32 in) { x = in; y = in; }
+	// Vector2(u8 inX, u8 inY) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); }
+	// Vector2(u8 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); }
+	// Vector2(u16 inX, u16 inY) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); }
+	// Vector2(u16 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); }
+	// Vector2(u32 inX, u32 inY) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); }
+	// Vector2(u32 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); }
+	// Vector2(i8 inX, i8 inY) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); }
+	// Vector2(i8 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); }
+	// Vector2(i16 inX, i16 inY) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); }
+	// Vector2(i16 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); }
+	// Vector2(i32 inX, i32 inY) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); }
+	// Vector2(i32 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); }
+
+	// Vector2(Vector2& in) { x = in.x; y = in.y; }
 	Vector2(Vector3& in);
 
 	// Returns the length of the vector

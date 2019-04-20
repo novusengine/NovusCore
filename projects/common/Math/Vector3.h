@@ -34,22 +34,23 @@ class Vector3
 public:
 	// Constructors
 	Vector3() {};
-	Vector3(f32 inX, f32 inY, f32 inZ) { x = inX; y = inY; z = inZ; }
-	Vector3(f32 in) { x = in; y = in; z = in; }
-	Vector3(u8 inX, u8 inY, u8 inZ) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); z = static_cast<f32>(inZ); }
-	Vector3(u8 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); z = static_cast<f32>(in); }
-	Vector3(u16 inX, u16 inY, f32 inZ) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); z = static_cast<f32>(inZ); }
-	Vector3(u16 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); z = static_cast<f32>(in); }
-	Vector3(u32 inX, u32 inY, f32 inZ) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); z = static_cast<f32>(inZ); }
-	Vector3(u32 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); z = static_cast<f32>(in); }
-	Vector3(i8 inX, i8 inY, f32 inZ) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); z = static_cast<f32>(inZ); }
-	Vector3(i8 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); z = static_cast<f32>(in); }
-	Vector3(i16 inX, i16 inY, f32 inZ) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); z = static_cast<f32>(inZ); }
-	Vector3(i16 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); z = static_cast<f32>(in); }
-	Vector3(i32 inX, i32 inY, f32 inZ) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); z = static_cast<f32>(inZ); }
-	Vector3(i32 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); z = static_cast<f32>(in); }
+	Vector3(float x, float y, float z) : x(x), y(y), z(z) {}
+	// Vector3(f32 inX, f32 inY, f32 inZ) { x = inX; y = inY; z = inZ; }
+	// Vector3(f32 in) { x = in; y = in; z = in; }
+	// Vector3(u8 inX, u8 inY, u8 inZ) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); z = static_cast<f32>(inZ); }
+	// Vector3(u8 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); z = static_cast<f32>(in); }
+	// Vector3(u16 inX, u16 inY, f32 inZ) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); z = static_cast<f32>(inZ); }
+	// Vector3(u16 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); z = static_cast<f32>(in); }
+	// Vector3(u32 inX, u32 inY, f32 inZ) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); z = static_cast<f32>(inZ); }
+	// Vector3(u32 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); z = static_cast<f32>(in); }
+	// Vector3(i8 inX, i8 inY, f32 inZ) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); z = static_cast<f32>(inZ); }
+	// Vector3(i8 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); z = static_cast<f32>(in); }
+	// Vector3(i16 inX, i16 inY, f32 inZ) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); z = static_cast<f32>(inZ); }
+	// Vector3(i16 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); z = static_cast<f32>(in); }
+	// Vector3(i32 inX, i32 inY, f32 inZ) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); z = static_cast<f32>(inZ); }
+	// Vector3(i32 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); z = static_cast<f32>(in); }
 
-	Vector3(Vector3& in) { x = in.x; y = in.y; z = in.z; }
+	// Vector3(Vector3& in) { x = in.x; y = in.y; z = in.z; }
 	Vector3(Vector2& in);
 
 	// Returns the length of the vector
@@ -92,7 +93,7 @@ public:
 	{
 		return Vector3(x + other, y + other, z + other);
 	}
-	
+
 	inline Vector3 operator+ (u8 other)
 	{
 		return Vector3(x + other, y + other, z + other);

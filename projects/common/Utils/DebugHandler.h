@@ -23,7 +23,10 @@
 */
 #pragma once
 
+#ifdef _WIN32
 #include <Windows.h>
+#endif
+
 #include <string>
 #include <cassert>
 #include "../NovusTypes.h"
@@ -37,22 +40,22 @@ enum PROGRAM_TYPE
 };
 
 #define NC_LOG_MESSAGE(message, ...) if (!DebugHandler::isInitialized) { DebugHandler::Initialize(); } \
-DebugHandler::Print(message, __VA_ARGS__);
+DebugHandler::Print(message);
 
 #define NC_LOG_WARNING(message, ...) if (!DebugHandler::isInitialized) { DebugHandler::Initialize(); } \
-DebugHandler::PrintWarning(message, __VA_ARGS__);
+DebugHandler::PrintWarning(message);
 
 #define NC_LOG_DEPRECATED(message, ...) if (!DebugHandler::isInitialized) { DebugHandler::Initialize(); } \
-DebugHandler::PrintDeprecated(message, __VA_ARGS__);
+DebugHandler::PrintDeprecated(message);
 
 #define NC_LOG_ERROR(message, ...) if (!DebugHandler::isInitialized) { DebugHandler::Initialize(); } \
-DebugHandler::PrintError(message, __VA_ARGS__);
+DebugHandler::PrintError(message);
 
 #define NC_LOG_FATAL(message, ...) if (!DebugHandler::isInitialized) { DebugHandler::Initialize(); } \
-DebugHandler::PrintFatal(message, __VA_ARGS__);
+DebugHandler::PrintFatal(message);
 
 #define NC_LOG_SUCCESS(message, ...) if (!DebugHandler::isInitialized) { DebugHandler::Initialize(); } \
-DebugHandler::PrintSuccess(message, __VA_ARGS__);
+DebugHandler::PrintSuccess(message);
 
 class DebugHandler
 {
@@ -60,59 +63,58 @@ public:
     static bool isInitialized;
     static void Initialize();
 
-    template <typename... Args>
-    inline static void Print(std::string message, Args... args)
+    inline static void Print(std::string message)
     {
         //PrintColor("[Message]: ", 15);
-		//PrintColor(message + "\n", 7, args...);
-		printf((message + "\n").c_str(), args...);
+		//PrintColor(message + "\n", 7);
+		printf((message + "\n").c_str());
 	}
 
-    template <typename... Args>
-	inline static void PrintWarning(std::string message, Args... args)
+	inline static void PrintWarning(std::string message)
     {
         PrintColor("[Warning]: ", 14);
-        PrintColor(message + "\n", 7, args...);
+        PrintColor(message + "\n", 7);
     }
 
-    template <typename... Args>
-	inline static void PrintDeprecated(std::string message, Args... args)
+	inline static void PrintDeprecated(std::string message)
     {
         PrintColor("[Deprecated]: ", 14);
-        PrintColor(message + "\n", 7, args...);
+        PrintColor(message + "\n", 7);
     }
 
-    template <typename... Args>
-	inline static void PrintError(std::string message, Args... args)
+	inline static void PrintError(std::string message)
     {
         PrintColor("[Error]: ", 12);
-        PrintColor(message + "\n", 7, args...);
+        PrintColor(message + "\n", 7);
     }
 
-    template <typename... Args>
-	inline static void PrintFatal(std::string message, Args... args)
+	inline static void PrintFatal(std::string message)
     {
         PrintColor("[Fatal]: ", 12);
-        PrintColor(message + "\n", 7, args...);
+        PrintColor(message + "\n", 7);
         assert(false);
     }
 
-    template <typename... Args>
-	inline static void PrintSuccess(std::string message, Args... args)
+	inline static void PrintSuccess(std::string message)
     {
         PrintColor("[Success]: ", 10);
-        PrintColor(message + "\n", 7, args...);
+        PrintColor(message + "\n", 7);
     }
 
 private:
-    template <typename... Args>
-	inline static void PrintColor(std::string message, u8 color, Args... args)
+	inline static void PrintColor(std::string message, u8 color)
     {
+        #ifdef _WIN32
         SetConsoleTextAttribute(_handle, color);
-        printf(message.c_str(), args...);
+        #endif
+        printf(message.c_str());
+        #ifdef _WIN32
         SetConsoleTextAttribute(_handle, _defaultColor);
+        #endif
     }
 
     static u32 _defaultColor;
+    #ifdef _WIN32
     static HANDLE _handle;
+    #endif
 };

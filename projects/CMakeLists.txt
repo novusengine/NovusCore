@@ -22,7 +22,7 @@
 
 # Include Project Directories
 add_subdirectory(common)
-add_subdirectory(tools)
+# add_subdirectory(tools)
 add_subdirectory(authserver)
-add_subdirectory(realmserver)
-add_subdirectory(worldnode)
+# add_subdirectory(realmserver)
+# add_subdirectory(worldnode)
