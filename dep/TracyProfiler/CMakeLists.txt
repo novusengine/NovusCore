@@ -20,4 +20,26 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+project(tracy VERSION 1.0.0)
+
 set(ENABLE_TRACY_PROFILER false CACHE BOOL "Enables Tracy profiling")
+
+add_library(${PROJECT_NAME} INTERFACE)
+add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+
+set(TRACY_SOURCE
+    "${CMAKE_CURRENT_LIST_DIR}/tracy/TracyClient.cpp"
+)
+
+source_group(TracyProfiler ${TRACY_SOURCE})
+
+target_sources(${PROJECT_NAME} INTERFACE
+    ${TRACY_SOURCE}
+)
+
+if (ENABLE_TRACY_PROFILER)
+    target_compile_definitions(${PROJECT_NAME} INTERFACE
+        TRACY_ENABLE
+        TRACY_ON_DEMAND
+    )
+endif()

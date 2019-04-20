@@ -60,3 +60,5 @@ else()
         FOLDER
           "dep")
 endif()
+
+add_library(zlib::zlib ALIAS zlib)
