@@ -29,7 +29,8 @@
 class AuthConnectionHandler : public Common::TcpServer
 {
 public:
-    AuthConnectionHandler(asio::io_service& io_service, i32 port) : Common::TcpServer(io_service, port) { }
+    AuthConnectionHandler(asio::io_service& io_service, i32 port) : Common::TcpServer(io_service, port) {}
+
 private:
     void StartListening() override
     {

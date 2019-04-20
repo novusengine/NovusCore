@@ -28,28 +28,28 @@
 #pragma pack(push, 1)
 struct cAuthLogonChallenge
 {
-    u8   command;
-    u8   error;
-    u16  size;
-    u8   gamename[4];
-    u8   version1;
-    u8   version2;
-    u8   version3;
-    u16  build;
-    u8   platform[4];
-    u8   os[4];
-    u8   country[4];
-    u32  timezone_bias;
-    u32  ip;
-    u8   username_length;
-    u8   username_pointer[1];
+    u8 command;
+    u8 error;
+    u16 size;
+    u8 gamename[4];
+    u8 version1;
+    u8 version2;
+    u8 version3;
+    u16 build;
+    u8 platform[4];
+    u8 os[4];
+    u8 country[4];
+    u32 timezone_bias;
+    u32 ip;
+    u8 username_length;
+    u8 username_pointer[1];
 };
 
 struct sAuthLogonChallengeHeader
 {
-    u8  command;
-    u8  error;
-    u8  result;
+    u8 command;
+    u8 error;
+    u8 result;
 
     void AddTo(Common::ByteBuffer& buffer)
     {
@@ -81,44 +81,44 @@ struct sAuthLogonChallengeData
 
 struct cAuthLogonProof
 {
-    u8   command;
-    u8   A[32];
-    u8   M1[20];
-    u8   crc_hash[20];
-    u8   number_of_keys;
-    u8   securityFlags;
+    u8 command;
+    u8 A[32];
+    u8 M1[20];
+    u8 crc_hash[20];
+    u8 number_of_keys;
+    u8 securityFlags;
 };
 
 struct sAuthLogonProof
 {
-    u8   cmd;
-    u8   error;
-    u8   M2[20];
-    u32  AccountFlags;
-    u32  SurveyId;
-    u16  LoginFlags;
+    u8 cmd;
+    u8 error;
+    u8 M2[20];
+    u32 AccountFlags;
+    u32 SurveyId;
+    u16 LoginFlags;
 };
 
 struct cAuthReconnectProof
 {
-    u8   cmd;
-    u8   R1[16];
-    u8   R2[20];
-    u8   R3[20];
-    u8   number_of_keys;
+    u8 cmd;
+    u8 R1[16];
+    u8 R2[20];
+    u8 R3[20];
+    u8 number_of_keys;
 };
 
 struct sAuthLogonGameListData
 {
-    u8     Type;
-    u8     Locked;
-    u8     Flags;
+    u8 Type;
+    u8 Locked;
+    u8 Flags;
     std::string Name;
     std::string Address;
-    f32       Population;
-    u8     Characters;
-    u8     Timezone;
-    u8     Id;
+    f32 Population;
+    u8 Characters;
+    u8 Timezone;
+    u8 Id;
 
     void AddTo(Common::ByteBuffer& buffer)
     {
@@ -135,18 +135,18 @@ struct sAuthLogonGameListData
 };
 #pragma pack(pop)
 
-std::array<u8, 16> VersionChallenge = { { 0xBA, 0xA3, 0x1E, 0x99, 0xA0, 0x0B, 0x21, 0x57, 0xFC, 0x37, 0x3F, 0xB3, 0x69, 0xCD, 0xD2, 0xF1 } };
+std::array<u8, 16> VersionChallenge = {{0xBA, 0xA3, 0x1E, 0x99, 0xA0, 0x0B, 0x21, 0x57, 0xFC, 0x37, 0x3F, 0xB3, 0x69, 0xCD, 0xD2, 0xF1}};
 #define MAX_REALM_COUNT 256
 
 robin_hood::unordered_map<u8, AuthMessageHandler> AuthConnection::InitMessageHandlers()
 {
     robin_hood::unordered_map<u8, AuthMessageHandler> messageHandlers;
 
-    messageHandlers[AUTH_CHALLENGE]             = { STATUS_CHALLENGE,         4,                              1,   &AuthConnection::HandleCommandChallenge          };
-    messageHandlers[AUTH_PROOF]                 = { STATUS_PROOF,             sizeof(cAuthLogonProof),        1,   &AuthConnection::HandleCommandProof              };
-    messageHandlers[AUTH_RECONNECT_CHALLENGE]   = { STATUS_CHALLENGE,         4,                              1,   &AuthConnection::HandleCommandReconnectChallenge };
-    messageHandlers[AUTH_RECONNECT_PROOF]       = { STATUS_RECONNECT_PROOF,   sizeof(cAuthReconnectProof),    1,   &AuthConnection::HandleCommandReconnectProof     };
-    messageHandlers[AUTH_GAMESERVER_LIST]       = { STATUS_AUTHED,            5,                              3,   &AuthConnection::HandleCommandGameServerList     };
+    messageHandlers[AUTH_CHALLENGE] = {STATUS_CHALLENGE, 4, 1, &AuthConnection::HandleCommandChallenge};
+    messageHandlers[AUTH_PROOF] = {STATUS_PROOF, sizeof(cAuthLogonProof), 1, &AuthConnection::HandleCommandProof};
+    messageHandlers[AUTH_RECONNECT_CHALLENGE] = {STATUS_CHALLENGE, 4, 1, &AuthConnection::HandleCommandReconnectChallenge};
+    messageHandlers[AUTH_RECONNECT_PROOF] = {STATUS_RECONNECT_PROOF, sizeof(cAuthReconnectProof), 1, &AuthConnection::HandleCommandReconnectProof};
+    messageHandlers[AUTH_GAMESERVER_LIST] = {STATUS_AUTHED, 5, 3, &AuthConnection::HandleCommandGameServerList};
 
     return messageHandlers;
 }
@@ -268,7 +268,6 @@ void AuthConnection::HandleCommandChallengeCallback(amy::result_set& results)
 
     /* Check Wow Client Build Version Here */
     {
-
     }
 
     _status = STATUS_PROOF;
@@ -384,15 +383,14 @@ bool AuthConnection::HandleCommandProof()
         PreparedStatement stmt("UPDATE accounts SET sessionkey={s} WHERE username={s};");
         stmt.Bind(K.BN2Hex());
         stmt.Bind(username);
-        DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, stmt, [this, proofM2](amy::result_set& results, DatabaseConnector& connector)
-        {
+        DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, stmt, [this, proofM2](amy::result_set& results, DatabaseConnector& connector) {
             Common::ByteBuffer packet;
             sAuthLogonProof proof;
 
             memcpy(proof.M2, proofM2, 20);
             proof.cmd = AUTH_PROOF;
             proof.error = 0;
-            proof.AccountFlags = 0x00;    // 0x01 = GM, 0x08 = Trial, 0x00800000 = Pro pass (arena tournament)
+            proof.AccountFlags = 0x00; // 0x01 = GM, 0x08 = Trial, 0x00800000 = Pro pass (arena tournament)
             proof.SurveyId = 0;
             proof.LoginFlags = 0x00;
 
@@ -409,7 +407,7 @@ bool AuthConnection::HandleCommandProof()
         Common::ByteBuffer byteBuffer;
         byteBuffer.Write<u8>(AUTH_PROOF);
         byteBuffer.Write<u8>(AUTH_FAIL_UNKNOWN_ACCOUNT); // error
-        byteBuffer.Write<u16>(0); // AccountFlag
+        byteBuffer.Write<u16>(0);                        // AccountFlag
         Send(byteBuffer);
     }
 
@@ -465,7 +463,7 @@ bool AuthConnection::HandleCommandReconnectProof()
         pkt.Write<u8>(AUTH_RECONNECT_PROOF);
         pkt.Write<u8>(0x00);
         u16 unk1 = 0x00;
-        pkt.Append(reinterpret_cast<u8*>(&unk1), sizeof(unk1));  // 2 bytes zeros
+        pkt.Append(reinterpret_cast<u8*>(&unk1), sizeof(unk1)); // 2 bytes zeros
         Send(pkt);
         _status = STATUS_AUTHED;
         return true;
@@ -478,8 +476,7 @@ bool AuthConnection::HandleCommandGameServerList()
 {
     _status = STATUS_WAITING_FOR_GAMESERVER;
 
-    DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, "SELECT id, name, address, type, flags, timezone, population FROM realms;", [this](amy::result_set& results, DatabaseConnector& connector)
-    {
+    DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, "SELECT id, name, address, type, flags, timezone, population FROM realms;", [this](amy::result_set& results, DatabaseConnector& connector) {
         std::vector<u8> realmCharacterData(MAX_REALM_COUNT);
         std::fill(realmCharacterData.begin(), realmCharacterData.end(), 0);
 
