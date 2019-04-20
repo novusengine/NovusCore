@@ -68,6 +68,17 @@ else ()
   unset(_MySQL_versions)
   unset(_MySQL_mariadb_versions)
 
+  IF (WIN32)
+    IF (CMAKE_BUILD_TYPE STREQUAL Debug)
+      SET(libsuffixDist debug)
+      SET(libsuffixBuild Debug)
+    ELSE (CMAKE_BUILD_TYPE STREQUAL Debug)
+      SET(libsuffixDist opt)
+      SET(libsuffixBuild Release)
+      ADD_DEFINITIONS(-DDBUG_OFF)
+    ENDIF (CMAKE_BUILD_TYPE STREQUAL Debug)
+  ENDIF (WIN32)
+
   find_path(MySQL_INCLUDE_DIR
     NAMES mysql.h
     PATHS
@@ -95,6 +106,14 @@ else ()
       "$ENV{MYSQL_DIR}/libmysql/${libsuffixBuild}"
       "$ENV{ProgramFiles}/MySQL/*/lib/${libsuffixDist}"
       "$ENV{SystemDrive}/MySQL/*/lib/${libsuffixDist}"
+      "/usr/lib/mysql"
+      "/usr/local/lib/mysql"
+      "/usr/local/mysql/lib"
+      "/usr/local/mysql/lib/mysql"
+      "/opt/local/mysql5/lib"
+      "/opt/local/lib/mysql5/mysql"
+      "/opt/mysql/mysql/lib/mysql"
+      "/opt/mysql/lib/mysql"
       ${_MySQL_paths}
     PATH_SUFFIXES lib lib/opt
     DOC "Location of the mysql library")
