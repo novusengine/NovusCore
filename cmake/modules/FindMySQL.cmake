@@ -7,6 +7,8 @@ Provides the following variables:
 #]==]
 
 # No .pc files are shipped with MySQL on Windows.
+include(FindPackageHandleStandardArgs)
+
 set(_MySQL_use_pkgconfig 0)
 if (NOT WIN32)
   find_package(PkgConfig)
@@ -15,6 +17,9 @@ if (NOT WIN32)
   endif ()
 endif ()
 
+set(MySQL_FOUND 0)
+
+# Try finding package via pkgconfig
 if (_MySQL_use_pkgconfig)
   pkg_check_modules(_mariadb "mariadb" QUIET IMPORTED_TARGET)
   unset(_mysql_target)
@@ -39,17 +44,20 @@ if (_MySQL_use_pkgconfig)
     endif ()
   endif ()
 
-  set(MySQL_FOUND 0)
   if (_mysql_target)
-    set(MySQL_FOUND 1)
     add_library(MySQL::MySQL INTERFACE IMPORTED)
     target_link_libraries(MySQL::MySQL
       INTERFACE "PkgConfig::${_mysql_target}")
     set(MySQL_INCLUDE_DIRS ${${_mysql_target}_INCLUDE_DIRS})
     set(MySQL_LIBRARIES ${${_mysql_target}_LINK_LIBRARIES})
+
+    find_package_handle_standard_args(MySQL
+      REQUIRED_VARS MySQL_INCLUDE_DIRS MySQL_LIBRARIES)
   endif ()
   unset(_mysql_target)
-else ()
+endif()
+
+if (NOT MySQL_FOUND)
   set(_MySQL_mariadb_versions 10.2 10.3)
   set(_MySQL_versions 5.0)
   set(_MySQL_paths)
@@ -98,7 +106,7 @@ else ()
   mark_as_advanced(MySQL_INCLUDE_DIR)
   find_library(MySQL_LIBRARY
     NAMES libmariadb mysql libmysql mysqlclient
-    PATHS 
+    PATHS
       "$ENV{MYSQL_DIR}/lib/${libsuffixDist}"
       "$ENV{MYSQL_DIR}/libmysql"
       "$ENV{MYSQL_DIR}/libmysql/${libsuffixBuild}"
@@ -119,7 +127,6 @@ else ()
     DOC "Location of the mysql library")
   mark_as_advanced(MySQL_LIBRARY)
 
-  include(FindPackageHandleStandardArgs)
   find_package_handle_standard_args(MySQL
     REQUIRED_VARS MySQL_INCLUDE_DIR MySQL_LIBRARY)
 
