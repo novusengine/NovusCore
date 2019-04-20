@@ -31,8 +31,8 @@ struct ItemDataComponent
 {
     u32 entityGuid;
     ObjectGuid itemGuid;
-	u8 bagSlot;
-	u32 bagPosition;
+    u8 bagSlot;
+    u32 bagPosition;
     u32 accountGuid;
     u64 characterGuid;
 };

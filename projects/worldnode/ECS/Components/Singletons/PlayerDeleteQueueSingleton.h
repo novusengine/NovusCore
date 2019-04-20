@@ -35,5 +35,5 @@ struct ExpiredPlayerData
 
 struct PlayerDeleteQueueSingleton
 {
-	moodycamel::ConcurrentQueue<ExpiredPlayerData>* expiredEntityQueue;
+    moodycamel::ConcurrentQueue<ExpiredPlayerData>* expiredEntityQueue;
 };

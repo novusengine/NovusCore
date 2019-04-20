@@ -38,36 +38,37 @@
 class ConsoleCommandHandler
 {
 public:
-	ConsoleCommandHandler()
-	{
-		RegisterCommand("quit"_h, &QuitCommand);
-		RegisterCommand("ping"_h, &PingCommand);
-	}
+    ConsoleCommandHandler()
+    {
+        RegisterCommand("quit"_h, &QuitCommand);
+        RegisterCommand("ping"_h, &PingCommand);
+    }
 
-	void HandleCommand(WorldNodeHandler& worldNodeHandler, std::string& command)
-	{
-		if (command.size() == 0)
-			return;
+    void HandleCommand(WorldNodeHandler& worldNodeHandler, std::string& command)
+    {
+        if (command.size() == 0)
+            return;
 
-		std::vector<std::string> splitCommand = StringUtils::SplitString(command);
-		u32 hashedCommand = StringUtils::fnv1a_32(splitCommand[0].c_str(), splitCommand[0].size());
+        std::vector<std::string> splitCommand = StringUtils::SplitString(command);
+        u32 hashedCommand = StringUtils::fnv1a_32(splitCommand[0].c_str(), splitCommand[0].size());
 
-		auto commandHandler = commandHandlers.find(hashedCommand);
-		if (commandHandler != commandHandlers.end())
-		{
-			splitCommand.erase(splitCommand.begin());
-			commandHandler->second(worldNodeHandler, splitCommand);
-		}
-		else
-		{
-			NC_LOG_WARNING("Unhandled command: " + command);
-		}
-	}
+        auto commandHandler = commandHandlers.find(hashedCommand);
+        if (commandHandler != commandHandlers.end())
+        {
+            splitCommand.erase(splitCommand.begin());
+            commandHandler->second(worldNodeHandler, splitCommand);
+        }
+        else
+        {
+            NC_LOG_WARNING("Unhandled command: " + command);
+        }
+    }
+
 private:
-	void RegisterCommand(u32 id, const std::function<void(WorldNodeHandler&, std::vector<std::string>)>& handler)
-	{
-		commandHandlers.insert_or_assign(id, handler);
-	}
+    void RegisterCommand(u32 id, const std::function<void(WorldNodeHandler&, std::vector<std::string>)>& handler)
+    {
+        commandHandlers.insert_or_assign(id, handler);
+    }
 
-	std::map<u16, std::function<void(WorldNodeHandler&, std::vector<std::string>)>> commandHandlers = {};
+    std::map<u16, std::function<void(WorldNodeHandler&, std::vector<std::string>)>> commandHandlers = {};
 };

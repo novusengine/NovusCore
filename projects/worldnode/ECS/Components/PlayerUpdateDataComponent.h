@@ -52,7 +52,7 @@ struct ChatUpdateData
 
 struct PlayerUpdateDataComponent
 {
-    PlayerUpdateDataComponent() { }
+    PlayerUpdateDataComponent() {}
 
     std::vector<u64> visibleGuids;
     std::vector<PositionUpdateData> positionUpdateData;

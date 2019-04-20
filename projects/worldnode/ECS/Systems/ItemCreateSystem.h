@@ -38,22 +38,22 @@
 
 namespace ItemCreateSystem
 {
-    void Update(entt::registry &registry)
+void Update(entt::registry& registry)
+{
+    SingletonComponent& singleton = registry.ctx<SingletonComponent>();
+    ItemCreateQueueSingleton& createItemQueue = registry.ctx<ItemCreateQueueSingleton>();
+    CharacterDatabaseCacheSingleton& characterDatabase = registry.ctx<CharacterDatabaseCacheSingleton>();
+
+    ItemCreationInformation itemCreationInformation;
+    while (createItemQueue.newItemQueue->try_dequeue(itemCreationInformation))
     {
-		SingletonComponent& singleton = registry.ctx<SingletonComponent>();
-        ItemCreateQueueSingleton& createItemQueue = registry.ctx<ItemCreateQueueSingleton>();
-        CharacterDatabaseCacheSingleton& characterDatabase = registry.ctx<CharacterDatabaseCacheSingleton>();
+        u32 entity = registry.create();
 
-        ItemCreationInformation itemCreationInformation;
-        while (createItemQueue.newItemQueue->try_dequeue(itemCreationInformation))
-        {
-            u32 entity = registry.create();
+        ObjectGuid itemGuid(HighGuid::Item, itemCreationInformation.itemEntry, itemCreationInformation.lowGuid);
+        registry.assign<ItemDataComponent>(entity, entity, itemGuid, itemCreationInformation.bagSlot, itemCreationInformation.bagPosition, itemCreationInformation.accountGuid, itemCreationInformation.characterGuid);
+        registry.assign<ItemInitializeComponent>(entity, itemCreationInformation.clientEntityGuid, itemGuid, itemCreationInformation.bagSlot, itemCreationInformation.bagPosition, itemCreationInformation.accountGuid, itemCreationInformation.characterGuid);
 
-			ObjectGuid itemGuid(HighGuid::Item, itemCreationInformation.itemEntry, itemCreationInformation.lowGuid);
-            registry.assign<ItemDataComponent>(entity, entity, itemGuid, itemCreationInformation.bagSlot, itemCreationInformation.bagPosition, itemCreationInformation.accountGuid, itemCreationInformation.characterGuid);
-            registry.assign<ItemInitializeComponent>(entity, itemCreationInformation.clientEntityGuid, itemGuid, itemCreationInformation.bagSlot, itemCreationInformation.bagPosition, itemCreationInformation.accountGuid, itemCreationInformation.characterGuid);
-
-            registry.assign<ItemFieldDataComponent>(entity);
-        }
+        registry.assign<ItemFieldDataComponent>(entity);
     }
 }
+} // namespace ItemCreateSystem

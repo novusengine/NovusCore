@@ -35,43 +35,42 @@
 
 namespace PlayerDeleteSystem
 {
-    void Update(entt::registry &registry)
+void Update(entt::registry& registry)
+{
+    SingletonComponent& singleton = registry.ctx<SingletonComponent>();
+    PlayerDeleteQueueSingleton& deletePlayerQueue = registry.ctx<PlayerDeleteQueueSingleton>();
+
+    Common::ByteBuffer buildPacket;
+    std::vector<u64> deletedEntities;
+    UpdateData updateData;
+
+    ExpiredPlayerData expiredPlayerData;
+    while (deletePlayerQueue.expiredEntityQueue->try_dequeue(expiredPlayerData))
     {
-		SingletonComponent& singleton = registry.ctx<SingletonComponent>();
-        PlayerDeleteQueueSingleton& deletePlayerQueue = registry.ctx<PlayerDeleteQueueSingleton>();
-        
-        Common::ByteBuffer buildPacket;
-        std::vector<u64> deletedEntities;
-        UpdateData updateData;
+        updateData.AddGuid(expiredPlayerData.characterGuid);
+        deletedEntities.push_back(expiredPlayerData.characterGuid);
+        registry.destroy(expiredPlayerData.entityGuid);
+        singleton.accountToEntityMap.erase(expiredPlayerData.accountGuid);
+    }
 
-        ExpiredPlayerData expiredPlayerData;
-        while (deletePlayerQueue.expiredEntityQueue->try_dequeue(expiredPlayerData))
-        {
-            updateData.AddGuid(expiredPlayerData.characterGuid);
-            deletedEntities.push_back(expiredPlayerData.characterGuid);
-            registry.destroy(expiredPlayerData.entityGuid);
-            singleton.accountToEntityMap.erase(expiredPlayerData.accountGuid);
-        }
+    if (!updateData.IsEmpty())
+    {
+        u16 buildOpcode = 0;
+        updateData.Build(buildPacket, buildOpcode);
 
-        if (!updateData.IsEmpty())
-        {
-            u16 buildOpcode = 0;
-            updateData.Build(buildPacket, buildOpcode);
+        auto view = registry.view<PlayerConnectionComponent, PlayerUpdateDataComponent>();
+        view.each([&buildPacket, &deletedEntities, buildOpcode](const auto, PlayerConnectionComponent& playerConnection, PlayerUpdateDataComponent& playerUpdateData) {
+            playerConnection.socket->SendPacket(buildPacket, buildOpcode);
 
-            auto view = registry.view<PlayerConnectionComponent, PlayerUpdateDataComponent>();
-            view.each([&buildPacket, &deletedEntities, buildOpcode](const auto, PlayerConnectionComponent& playerConnection, PlayerUpdateDataComponent& playerUpdateData)
+            for (u64 guid : deletedEntities)
             {
-                playerConnection.socket->SendPacket(buildPacket, buildOpcode);
-
-                for (u64 guid : deletedEntities)
+                auto position = std::find(playerUpdateData.visibleGuids.begin(), playerUpdateData.visibleGuids.end(), guid);
+                if (position != playerUpdateData.visibleGuids.end())
                 {
-                    auto position = std::find(playerUpdateData.visibleGuids.begin(), playerUpdateData.visibleGuids.end(), guid);
-                    if (position != playerUpdateData.visibleGuids.end())
-                    {
-                        playerUpdateData.visibleGuids.erase(position);
-                    }
+                    playerUpdateData.visibleGuids.erase(position);
                 }
-            });
-        }
+            }
+        });
     }
 }
+} // namespace PlayerDeleteSystem

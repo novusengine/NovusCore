@@ -28,9 +28,9 @@
 
 struct ItemCreationInformation
 {
-	u32 lowGuid = 0;
-	u8 bagSlot = 0;
-	u32 bagPosition = 0;
+    u32 lowGuid = 0;
+    u8 bagSlot = 0;
+    u32 bagPosition = 0;
     u32 itemEntry = 0;
     u32 clientEntityGuid = 0;
     u32 accountGuid = 0;

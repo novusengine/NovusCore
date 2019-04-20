@@ -30,7 +30,7 @@
 
 struct ItemFieldDataComponent
 {
-    ItemFieldDataComponent() : changesMask(ITEM_END), itemFields(ITEM_END * 4) { }
+    ItemFieldDataComponent() : changesMask(ITEM_END), itemFields(ITEM_END * 4) {}
 
     void SetGuidValue(u16 index, u64 value)
     {

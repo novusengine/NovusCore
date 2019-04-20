@@ -36,42 +36,42 @@
 
 enum AuthResponse
 {
-    AUTH_OK                                                = 12,
-    AUTH_FAILED                                            = 13,
-    AUTH_REJECT                                            = 14,
-    AUTH_BAD_SERVER_PROOF                                  = 15,
-    AUTH_UNAVAILABLE                                       = 16,
-    AUTH_SYSTEM_ERROR                                      = 17,
-    AUTH_BILLING_ERROR                                     = 18,
-    AUTH_BILLING_EXPIRED                                   = 19,
-    AUTH_VERSION_MISMATCH                                  = 20,
-    AUTH_UNKNOWN_ACCOUNT                                   = 21,
-    AUTH_INCORRECT_PASSWORD                                = 22,
-    AUTH_SESSION_EXPIRED                                   = 23,
-    AUTH_SERVER_SHUTTING_DOWN                              = 24,
-    AUTH_ALREADY_LOGGING_IN                                = 25,
-    AUTH_LOGIN_SERVER_NOT_FOUND                            = 26,
-    AUTH_WAIT_QUEUE                                        = 27,
-    AUTH_BANNED                                            = 28,
-    AUTH_ALREADY_ONLINE                                    = 29,
-    AUTH_NO_TIME                                           = 30,
-    AUTH_DB_BUSY                                           = 31,
-    AUTH_SUSPENDED                                         = 32,
-    AUTH_PARENTAL_CONTROL                                  = 33,
-    AUTH_LOCKED_ENFORCED                                   = 34
+    AUTH_OK = 12,
+    AUTH_FAILED = 13,
+    AUTH_REJECT = 14,
+    AUTH_BAD_SERVER_PROOF = 15,
+    AUTH_UNAVAILABLE = 16,
+    AUTH_SYSTEM_ERROR = 17,
+    AUTH_BILLING_ERROR = 18,
+    AUTH_BILLING_EXPIRED = 19,
+    AUTH_VERSION_MISMATCH = 20,
+    AUTH_UNKNOWN_ACCOUNT = 21,
+    AUTH_INCORRECT_PASSWORD = 22,
+    AUTH_SESSION_EXPIRED = 23,
+    AUTH_SERVER_SHUTTING_DOWN = 24,
+    AUTH_ALREADY_LOGGING_IN = 25,
+    AUTH_LOGIN_SERVER_NOT_FOUND = 26,
+    AUTH_WAIT_QUEUE = 27,
+    AUTH_BANNED = 28,
+    AUTH_ALREADY_ONLINE = 29,
+    AUTH_NO_TIME = 30,
+    AUTH_DB_BUSY = 31,
+    AUTH_SUSPENDED = 32,
+    AUTH_PARENTAL_CONTROL = 33,
+    AUTH_LOCKED_ENFORCED = 34
 };
 
 enum EnterWorldResults
 {
-    ENTER_FAILED                                = 0x00,
-    ENTER_FAILED_WORLDSERVER_DOWN               = 0x01,
-    ENTER_FAILED_CHARACTER_WITH_NAME_EXISTS     = 0x02,
-    ENTER_FAILED_NO_INSTANCE_SERVER_AVAILABLE   = 0x03,
-    ENTER_FAILED_RACE_CLASS_UNAVAILABLE         = 0x04,
-    ENTER_FAILED_CHARACTER_NOT_FOUND            = 0x05,
-    ENTER_FAILED_CHARACTER_UPDATE_IN_PROGRESS   = 0x06,
-    ENTER_FAILED_LOCKED_NO_GAMETIME             = 0x07,
-    ENTER_FAILED_CANT_LOGIN_REMOTELY            = 0x08,
+    ENTER_FAILED = 0x00,
+    ENTER_FAILED_WORLDSERVER_DOWN = 0x01,
+    ENTER_FAILED_CHARACTER_WITH_NAME_EXISTS = 0x02,
+    ENTER_FAILED_NO_INSTANCE_SERVER_AVAILABLE = 0x03,
+    ENTER_FAILED_RACE_CLASS_UNAVAILABLE = 0x04,
+    ENTER_FAILED_CHARACTER_NOT_FOUND = 0x05,
+    ENTER_FAILED_CHARACTER_UPDATE_IN_PROGRESS = 0x06,
+    ENTER_FAILED_LOCKED_NO_GAMETIME = 0x07,
+    ENTER_FAILED_CANT_LOGIN_REMOTELY = 0x08,
 };
 
 enum CharacterResponses
@@ -240,93 +240,93 @@ bool WorldConnection::HandlePacketRead()
     printf("Received Opcode: %u\n", opcode);
     switch (opcode)
     {
-        case Common::Opcode::CMSG_SUSPEND_COMMS_ACK:
-        {
-            u32 response = 0;
-            _packetBuffer.Read<u32>(response);
+    case Common::Opcode::CMSG_SUSPEND_COMMS_ACK:
+    {
+        u32 response = 0;
+        _packetBuffer.Read<u32>(response);
 
-            bool test = false;
+        bool test = false;
+        break;
+    }
+    case Common::Opcode::CMSG_PING:
+    {
+        Common::ByteBuffer pong(4);
+        pong.Write<u32>(0);
+        SendPacket(pong, Common::Opcode::SMSG_PONG);
+        break;
+    }
+    case Common::Opcode::CMSG_KEEP_ALIVE:
+        break;
+    case Common::Opcode::CMSG_AUTH_SESSION:
+    {
+        if (account == 0)
+        {
+            HandleAuthSession();
+        }
+        break;
+    }
+    case Common::Opcode::CMSG_REDIRECT_CLIENT_PROOF:
+    {
+        if (account == 0)
+        {
+            HandleContinueAuthSession();
+        }
+        break;
+    }
+    case Common::Opcode::CMSG_READY_FOR_ACCOUNT_DATA_TIMES:
+    {
+        /* Packet Structure */
+        // UInt32:  Server Time (time(nullptr))
+        // UInt8:   Unknown Byte Value
+        // UInt32:  Mask for the account data fields
+
+        Common::ByteBuffer accountDataTimes;
+
+        u32 mask = 0x15;
+        accountDataTimes.Write<u32>(static_cast<u32>(time(nullptr)));
+        accountDataTimes.Write<u8>(1);     // bitmask blocks count
+        accountDataTimes.Write<u32>(mask); // PER_CHARACTER_CACHE_MASK
+
+        for (u32 i = 0; i < 8; ++i)
+        {
+            if (mask & (1 << i))
+                accountDataTimes.Write<u32>(0);
+        }
+
+        SendPacket(accountDataTimes, Common::Opcode::SMSG_ACCOUNT_DATA_TIMES);
+        break;
+    }
+    case Common::Opcode::CMSG_UPDATE_ACCOUNT_DATA:
+    {
+        u32 type, timestamp, decompressedSize;
+        _packetBuffer.Read(&type, 4);
+        _packetBuffer.Read(&timestamp, 4);
+        _packetBuffer.Read(&decompressedSize, 4);
+
+        if (type > 8)
+        {
+            std::cout << "Bad Type." << std::endl;
             break;
         }
-        case Common::Opcode::CMSG_PING:
-        {
-            Common::ByteBuffer pong(4);
-            pong.Write<u32>(0);
-            SendPacket(pong, Common::Opcode::SMSG_PONG);
-            break;
-        }
-        case Common::Opcode::CMSG_KEEP_ALIVE:
-            break;
-        case Common::Opcode::CMSG_AUTH_SESSION:
-        {
-            if (account == 0)
-            {
-                HandleAuthSession();
-            }
-            break;
-        }
-        case Common::Opcode::CMSG_REDIRECT_CLIENT_PROOF:
-        {
-            if (account == 0)
-            {
-                HandleContinueAuthSession();
-            }
-            break;
-        }
-        case Common::Opcode::CMSG_READY_FOR_ACCOUNT_DATA_TIMES:
-        {
-            /* Packet Structure */
-            // UInt32:  Server Time (time(nullptr))
-            // UInt8:   Unknown Byte Value
-            // UInt32:  Mask for the account data fields
 
-            Common::ByteBuffer accountDataTimes;
+        Common::ByteBuffer updateAccountDataComplete(9 + 4 + 4);
+        updateAccountDataComplete.Write<u32>(type);
+        updateAccountDataComplete.Write<u32>(0);
 
-            u32 mask = 0x15;
-            accountDataTimes.Write<u32>(static_cast<u32>(time(nullptr)));
-            accountDataTimes.Write<u8>(1); // bitmask blocks count
-            accountDataTimes.Write<u32>(mask); // PER_CHARACTER_CACHE_MASK
-
-            for (u32 i = 0; i < 8; ++i)
-            {
-                if (mask & (1 << i))
-                    accountDataTimes.Write<u32>(0);
-            }
-
-            SendPacket(accountDataTimes, Common::Opcode::SMSG_ACCOUNT_DATA_TIMES);
-            break;
-        }
-        case Common::Opcode::CMSG_UPDATE_ACCOUNT_DATA:
-        {
-            u32 type, timestamp, decompressedSize;
-            _packetBuffer.Read(&type, 4);
-            _packetBuffer.Read(&timestamp, 4);
-            _packetBuffer.Read(&decompressedSize, 4);
-
-            if (type > 8)
-            {
-                std::cout << "Bad Type." << std::endl;
-                break;
-            }
-
-            Common::ByteBuffer updateAccountDataComplete(9 + 4 + 4);
-            updateAccountDataComplete.Write<u32>(type);
-            updateAccountDataComplete.Write<u32>(0);
-
-            SendPacket(updateAccountDataComplete, Common::Opcode::SMSG_UPDATE_ACCOUNT_DATA_COMPLETE);
-            break;
-        }
-        default:
-        {
-            Message packetMessage;
-            packetMessage.code = MSG_IN_FOWARD_PACKET;
-            packetMessage.opcode = opcode;
-            packetMessage.account = account;
-            packetMessage.packet = _packetBuffer;
-            packetMessage.connection = this;
-            _worldNodeHandler->PassMessage(packetMessage);
-            break;
-        }
+        SendPacket(updateAccountDataComplete, Common::Opcode::SMSG_UPDATE_ACCOUNT_DATA_COMPLETE);
+        break;
+    }
+    default:
+    {
+        Message packetMessage;
+        packetMessage.code = MSG_IN_FOWARD_PACKET;
+        packetMessage.opcode = opcode;
+        packetMessage.account = account;
+        packetMessage.packet = _packetBuffer;
+        packetMessage.connection = this;
+        _worldNodeHandler->PassMessage(packetMessage);
+        break;
+    }
     }
 
     return true;
@@ -358,8 +358,7 @@ void WorldConnection::HandleContinueAuthSession()
 
     PreparedStatement stmt("SELECT guid, sessionKey FROM accounts WHERE username={s};");
     stmt.Bind(username);
-    DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, stmt, [this, username, digest](amy::result_set & results, DatabaseConnector & connector)
-    {
+    DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, stmt, [this, username, digest](amy::result_set& results, DatabaseConnector& connector) {
         // Make sure the account exist.
         if (results.affected_rows() != 1)
         {
@@ -445,71 +444,70 @@ void WorldConnection::HandleAuthSession()
 
     PreparedStatement stmt("SELECT guid, sessionKey FROM accounts WHERE username={s};");
     stmt.Bind(sessionData.accountName);
-    DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, stmt, [this](amy::result_set & results, DatabaseConnector & connector)
+    DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, stmt, [this](amy::result_set& results, DatabaseConnector& connector) {
+        // Make sure the account exist.
+        if (results.affected_rows() != 1)
         {
-            // Make sure the account exist.
-            if (results.affected_rows() != 1)
-            {
-                Close(asio::error::interrupted);
-                return;
-            }
+            Close(asio::error::interrupted);
+            return;
+        }
 
-            // We need to try to use the session key that we have, if we don't the client won't be able to read the auth response error.
-            sessionKey->Hex2BN(results[0][1].as<amy::sql_varchar>().c_str());
+        // We need to try to use the session key that we have, if we don't the client won't be able to read the auth response error.
+        sessionKey->Hex2BN(results[0][1].as<amy::sql_varchar>().c_str());
 
-            SHA1Hasher sha;
-            u32 t = 0;
-            sha.UpdateHash(sessionData.accountName);
-            sha.UpdateHash((u8*)& t, 4);
-            sha.UpdateHash((u8*)& sessionData.localChallenge, 4);
-            sha.UpdateHash((u8*)& _seed, 4);
-            sha.UpdateHashForBn(1, sessionKey);
-            sha.Finish();
+        SHA1Hasher sha;
+        u32 t = 0;
+        sha.UpdateHash(sessionData.accountName);
+        sha.UpdateHash((u8*)&t, 4);
+        sha.UpdateHash((u8*)&sessionData.localChallenge, 4);
+        sha.UpdateHash((u8*)&_seed, 4);
+        sha.UpdateHashForBn(1, sessionKey);
+        sha.Finish();
 
-            if (memcmp(sha.GetData(), sessionData.digest, SHA_DIGEST_LENGTH) != 0)
-            {
-                Close(asio::error::interrupted);
-                return;
-            }
+        if (memcmp(sha.GetData(), sessionData.digest, SHA_DIGEST_LENGTH) != 0)
+        {
+            Close(asio::error::interrupted);
+            return;
+        }
 
-            _streamCrypto.SetupServer(sessionKey);
-            account = results[0][0].GetU32();
+        _streamCrypto.SetupServer(sessionKey);
+        account = results[0][0].GetU32();
 
-            /* SMSG_AUTH_RESPONSE */
-            Common::ByteBuffer packet(1 + 4 + 1 + 4 + 1);
-            packet.Write<u8>(AUTH_OK);
-            packet.Write<u32>(0);
-            packet.Write<u8>(0);
-            packet.Write<u32>(0);
-            packet.Write<u8>(2); // Expansion
-            SendPacket(packet, Common::Opcode::SMSG_AUTH_RESPONSE);
+        /* SMSG_AUTH_RESPONSE */
+        Common::ByteBuffer packet(1 + 4 + 1 + 4 + 1);
+        packet.Write<u8>(AUTH_OK);
+        packet.Write<u32>(0);
+        packet.Write<u8>(0);
+        packet.Write<u32>(0);
+        packet.Write<u8>(2); // Expansion
+        SendPacket(packet, Common::Opcode::SMSG_AUTH_RESPONSE);
 
-            std::map<std::string, u32> addonMap;
-            addonMap.insert(std::make_pair("Blizzard_AchievementUI", 1276933997));
-            addonMap.insert(std::make_pair("Blizzard_ArenaUI", 1276933997));
-            addonMap.insert(std::make_pair("Blizzard_AuctionUI", 1276933997));
-            addonMap.insert(std::make_pair("Blizzard_BarbershopUI", 1276933997));
-            addonMap.insert(std::make_pair("Blizzard_BattlefieldMinimap", 1276933997));
-            addonMap.insert(std::make_pair("Blizzard_BindingUI", 1276933997));
-            addonMap.insert(std::make_pair("Blizzard_Calendar", 1276933997));
-            addonMap.insert(std::make_pair("Blizzard_CombatLog", 1276933997));
-            addonMap.insert(std::make_pair("Blizzard_CombatText", 1276933997));
-            addonMap.insert(std::make_pair("Blizzard_DebugTools", 1276933997));
-            addonMap.insert(std::make_pair("Blizzard_GlyphUI", 1276933997));
-            addonMap.insert(std::make_pair("Blizzard_GMChatUI", 1276933997));
-            addonMap.insert(std::make_pair("Blizzard_GMSurveyUI", 1276933997));
-            addonMap.insert(std::make_pair("Blizzard_GuildBankUI", 1276933997));
-            addonMap.insert(std::make_pair("Blizzard_InspectUI", 1276933997));
-            addonMap.insert(std::make_pair("Blizzard_ItemSocketingUI", 1276933997));
-            addonMap.insert(std::make_pair("Blizzard_MacroUI", 1276933997));
-            addonMap.insert(std::make_pair("Blizzard_RaidUI", 1276933997));
-            addonMap.insert(std::make_pair("Blizzard_TalentUI", 1276933997));
-            addonMap.insert(std::make_pair("Blizzard_TimeManager", 1276933997));
-            addonMap.insert(std::make_pair("Blizzard_TokenUI", 1276933997));
-            addonMap.insert(std::make_pair("Blizzard_TradeSkillUI", 1276933997));
-            addonMap.insert(std::make_pair("Blizzard_TrainerUI", 1276933997));
+        std::map<std::string, u32> addonMap;
+        addonMap.insert(std::make_pair("Blizzard_AchievementUI", 1276933997));
+        addonMap.insert(std::make_pair("Blizzard_ArenaUI", 1276933997));
+        addonMap.insert(std::make_pair("Blizzard_AuctionUI", 1276933997));
+        addonMap.insert(std::make_pair("Blizzard_BarbershopUI", 1276933997));
+        addonMap.insert(std::make_pair("Blizzard_BattlefieldMinimap", 1276933997));
+        addonMap.insert(std::make_pair("Blizzard_BindingUI", 1276933997));
+        addonMap.insert(std::make_pair("Blizzard_Calendar", 1276933997));
+        addonMap.insert(std::make_pair("Blizzard_CombatLog", 1276933997));
+        addonMap.insert(std::make_pair("Blizzard_CombatText", 1276933997));
+        addonMap.insert(std::make_pair("Blizzard_DebugTools", 1276933997));
+        addonMap.insert(std::make_pair("Blizzard_GlyphUI", 1276933997));
+        addonMap.insert(std::make_pair("Blizzard_GMChatUI", 1276933997));
+        addonMap.insert(std::make_pair("Blizzard_GMSurveyUI", 1276933997));
+        addonMap.insert(std::make_pair("Blizzard_GuildBankUI", 1276933997));
+        addonMap.insert(std::make_pair("Blizzard_InspectUI", 1276933997));
+        addonMap.insert(std::make_pair("Blizzard_ItemSocketingUI", 1276933997));
+        addonMap.insert(std::make_pair("Blizzard_MacroUI", 1276933997));
+        addonMap.insert(std::make_pair("Blizzard_RaidUI", 1276933997));
+        addonMap.insert(std::make_pair("Blizzard_TalentUI", 1276933997));
+        addonMap.insert(std::make_pair("Blizzard_TimeManager", 1276933997));
+        addonMap.insert(std::make_pair("Blizzard_TokenUI", 1276933997));
+        addonMap.insert(std::make_pair("Blizzard_TradeSkillUI", 1276933997));
+        addonMap.insert(std::make_pair("Blizzard_TrainerUI", 1276933997));
 
-            u8 addonPublicKey[256] =
+        u8 addonPublicKey[256] =
             {
                 0xC3, 0x5B, 0x50, 0x84, 0xB9, 0x3E, 0x32, 0x42, 0x8C, 0xD0, 0xC7, 0x48, 0xFA, 0x0E, 0x5D, 0x54,
                 0x5A, 0xA3, 0x0E, 0x14, 0xBA, 0x9E, 0x0D, 0xB9, 0x5D, 0x8B, 0xEE, 0xB6, 0x84, 0x93, 0x45, 0x75,
@@ -526,69 +524,66 @@ void WorldConnection::HandleAuthSession()
                 0xB5, 0x40, 0x68, 0x3C, 0x77, 0x86, 0x6F, 0x4B, 0xD7, 0x88, 0xCA, 0x8A, 0xD7, 0xCE, 0x36, 0xF0,
                 0x45, 0x6E, 0xD5, 0x64, 0x79, 0x0F, 0x17, 0xFC, 0x64, 0xDD, 0x10, 0x6F, 0xF3, 0xF5, 0xE0, 0xA6,
                 0xC3, 0xFB, 0x1B, 0x8C, 0x29, 0xEF, 0x8E, 0xE5, 0x34, 0xCB, 0xD1, 0x2A, 0xCE, 0x79, 0xC3, 0x9A,
-                0x0D, 0x36, 0xEA, 0x01, 0xE0, 0xAA, 0x91, 0x20, 0x54, 0xF0, 0x72, 0xD8, 0x1E, 0xC7, 0x89, 0xD2
-            };
+                0x0D, 0x36, 0xEA, 0x01, 0xE0, 0xAA, 0x91, 0x20, 0x54, 0xF0, 0x72, 0xD8, 0x1E, 0xC7, 0x89, 0xD2};
 
-            Common::ByteBuffer addonInfo(4);
-            for (auto addon : addonMap)
+        Common::ByteBuffer addonInfo(4);
+        for (auto addon : addonMap)
+        {
+            addonInfo.Write<u8>(2); // State
+            addonInfo.Write<u8>(1); // UsePublicKeyOrCRC
+
+            // if (UsePublicKeyOrCRC)
             {
-                addonInfo.Write<u8>(2); // State
-                addonInfo.Write<u8>(1); // UsePublicKeyOrCRC
+                u8 usepk = (addon.second != 1276933997);
+                addonInfo.Write<u8>(usepk);
 
-                // if (UsePublicKeyOrCRC)
+                if (usepk)
                 {
-                    u8 usepk = (addon.second != 1276933997);
-                    addonInfo.Write<u8>(usepk);
-
-                    if (usepk)
-                    {
-                        std::cout << "Addon Mismatch (" << addon.first << "," << addon.second << ")" << std::endl;
-                    }
-
-                    addonInfo.Write<u32>(0); // What does this mean?
+                    std::cout << "Addon Mismatch (" << addon.first << "," << addon.second << ")" << std::endl;
                 }
 
-                addonInfo.Write<u8>(0); // Uses URL
+                addonInfo.Write<u32>(0); // What does this mean?
             }
 
-            addonInfo.Write<u32>(0); // Size of banned addon list
-            SendPacket(addonInfo, Common::Opcode::SMSG_ADDON_INFO);
+            addonInfo.Write<u8>(0); // Uses URL
+        }
 
-            Common::ByteBuffer clientCache(4);
-            clientCache.Write<u32>(0);
-            SendPacket(clientCache, Common::Opcode::SMSG_CLIENTCACHE_VERSION);
+        addonInfo.Write<u32>(0); // Size of banned addon list
+        SendPacket(addonInfo, Common::Opcode::SMSG_ADDON_INFO);
 
-            // Tutorial Flags : REQUIRED
-            Common::ByteBuffer tutorialFlags(4 * 8);
-            for (i32 i = 0; i < 8; i++)
-                tutorialFlags.Write<u32>(0xFF);
+        Common::ByteBuffer clientCache(4);
+        clientCache.Write<u32>(0);
+        SendPacket(clientCache, Common::Opcode::SMSG_CLIENTCACHE_VERSION);
 
-            SendPacket(tutorialFlags, Common::Opcode::SMSG_TUTORIAL_FLAGS);
+        // Tutorial Flags : REQUIRED
+        Common::ByteBuffer tutorialFlags(4 * 8);
+        for (i32 i = 0; i < 8; i++)
+            tutorialFlags.Write<u32>(0xFF);
 
+        SendPacket(tutorialFlags, Common::Opcode::SMSG_TUTORIAL_FLAGS);
 
-            DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, [this](std::shared_ptr<DatabaseConnector>& connector)
-                {
-                    PreparedStatement stmt("SELECT guid FROM characters WHERE account={u} AND online=1;");
-                    stmt.Bind(account);
+        DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, [this](std::shared_ptr<DatabaseConnector>& connector) {
+            PreparedStatement stmt("SELECT guid FROM characters WHERE account={u} AND online=1;");
+            stmt.Bind(account);
 
-                    amy::result_set result;
-                    connector->Query(stmt, result);
+            amy::result_set result;
+            connector->Query(stmt, result);
 
-                    if (result.affected_rows() > 0)
-                    {
-                        u64 characterGuid = result[0][0].GetU64();
+            if (result.affected_rows() > 0)
+            {
+                u64 characterGuid = result[0][0].GetU64();
 
-                        Common::ByteBuffer packet;
-                        packet.Write<u64>(characterGuid);
+                Common::ByteBuffer packet;
+                packet.Write<u64>(characterGuid);
 
-                        Message packetMessage;
-                        packetMessage.code = MSG_IN_FOWARD_PACKET;
-                        packetMessage.opcode = Common::Opcode::CMSG_PLAYER_LOGIN;
-                        packetMessage.account = account;
-                        packetMessage.packet = packet;
-                        packetMessage.connection = this;
-                        _worldNodeHandler->PassMessage(packetMessage);
-                    }
-                });
+                Message packetMessage;
+                packetMessage.code = MSG_IN_FOWARD_PACKET;
+                packetMessage.opcode = Common::Opcode::CMSG_PLAYER_LOGIN;
+                packetMessage.account = account;
+                packetMessage.packet = packet;
+                packetMessage.connection = this;
+                _worldNodeHandler->PassMessage(packetMessage);
+            }
         });
+    });
 }

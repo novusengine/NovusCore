@@ -7,16 +7,16 @@
 class WorldDatabaseCache;
 struct ItemStatInfo
 {
-    ItemStatInfo() { }
-    ItemStatInfo(u32 type, i32 value) : statType(type), statValue(value) { }
+    ItemStatInfo() {}
+    ItemStatInfo(u32 type, i32 value) : statType(type), statValue(value) {}
 
     u32 statType = 0;
     i32 statValue = 0;
 };
 struct ItemDamageInfo
 {
-    ItemDamageInfo() { }
-    ItemDamageInfo(f32 min, f32 max, u32 type) : damageMin(min), damageMax(max), damageType(type) { }
+    ItemDamageInfo() {}
+    ItemDamageInfo(f32 min, f32 max, u32 type) : damageMin(min), damageMax(max), damageType(type) {}
 
     f32 damageMin = 0;
     f32 damageMax = 0;
@@ -24,8 +24,8 @@ struct ItemDamageInfo
 };
 struct ItemSpellInfo
 {
-    ItemSpellInfo() { }
-    ItemSpellInfo(u32 id, u32 trigger, i32 charges, i32 cooldown, u32 category, i32 categoryCooldown) : spellId(id), spellTrigger(trigger), spellCharges(charges), spellCooldown(cooldown), spellCategory(category), spellCategoryCooldown(categoryCooldown) { }
+    ItemSpellInfo() {}
+    ItemSpellInfo(u32 id, u32 trigger, i32 charges, i32 cooldown, u32 category, i32 categoryCooldown) : spellId(id), spellTrigger(trigger), spellCharges(charges), spellCooldown(cooldown), spellCategory(category), spellCategoryCooldown(categoryCooldown) {}
 
     u32 spellId = 0;
     u32 spellTrigger = 0;
@@ -36,15 +36,15 @@ struct ItemSpellInfo
 };
 struct ItemSocketInfo
 {
-    ItemSocketInfo() { }
-    ItemSocketInfo(u32 type, u32 amount) : socketType(type), socketAmount(amount) { }
+    ItemSocketInfo() {}
+    ItemSocketInfo(u32 type, u32 amount) : socketType(type), socketAmount(amount) {}
 
     u32 socketType = 0;
     u32 socketAmount = 0;
 };
 struct ItemTemplate
 {
-    ItemTemplate() { }
+    ItemTemplate() {}
     ItemTemplate(WorldDatabaseCache* cache) { _cache = cache; }
     ItemTemplate(const ItemTemplate& data)
     {
@@ -193,6 +193,7 @@ struct ItemTemplate
     u32 limitedDuration;
     u32 itemLimitCategory;
     u32 holidayId;
+
 private:
     friend WorldDatabaseCache;
     Common::ByteBuffer _packet;

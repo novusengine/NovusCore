@@ -25,7 +25,7 @@
 #include <NovusTypes.h>
 #include <vector>
 
-struct PlayerSpellStorageComponent 
+struct PlayerSpellStorageComponent
 {
     std::vector<u32> spells;
 };

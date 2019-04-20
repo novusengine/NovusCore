@@ -22,17 +22,17 @@
     SOFTWARE.
 */
 #pragma once
-#include <NovusTypes.h> 
+#include <NovusTypes.h>
 #include <robin_hood.h>
 
 class NovusConnection;
 class WorldNodeHandler;
-struct SingletonComponent 
+struct SingletonComponent
 {
-    SingletonComponent() : deltaTime(0), lifeTimeInS(0), lifeTimeInMS(0), worldNodeHandler(nullptr), accountToEntityMap() { }
-	f32 deltaTime;
-	f32 lifeTimeInS;
-	f32 lifeTimeInMS;
-	WorldNodeHandler* worldNodeHandler;
+    SingletonComponent() : deltaTime(0), lifeTimeInS(0), lifeTimeInMS(0), worldNodeHandler(nullptr), accountToEntityMap() {}
+    f32 deltaTime;
+    f32 lifeTimeInS;
+    f32 lifeTimeInMS;
+    WorldNodeHandler* worldNodeHandler;
     robin_hood::unordered_map<u32, u32> accountToEntityMap;
 };

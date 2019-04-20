@@ -31,43 +31,43 @@
 
 namespace Commands
 {
-	// We need to find a way to access the registry in all the command namespaces without exposing it to the rest of the code
-	static entt::registry* _registry = nullptr;
+// We need to find a way to access the registry in all the command namespaces without exposing it to the rest of the code
+static entt::registry* _registry = nullptr;
 
-	bool _GPS(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
-	{
-		PlayerPositionComponent& playerPos = _registry->get<PlayerPositionComponent>(clientConnection.entityGuid);
-		MapSingleton& mapSingleton = _registry->ctx<MapSingleton>();
-		PlayerPacketQueueSingleton& playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
+bool _GPS(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
+{
+    PlayerPositionComponent& playerPos = _registry->get<PlayerPositionComponent>(clientConnection.entityGuid);
+    MapSingleton& mapSingleton = _registry->ctx<MapSingleton>();
+    PlayerPacketQueueSingleton& playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
 
-		u16 mapId = playerPos.mapId;
-		f32 x = playerPos.x;
-		f32 y = playerPos.y;
-		f32 z = playerPos.z;
+    u16 mapId = playerPos.mapId;
+    f32 x = playerPos.x;
+    f32 y = playerPos.y;
+    f32 z = playerPos.z;
 
-		f32 height = mapSingleton.maps[mapId].GetHeight(Vector2(x, y));
-		clientConnection.SendNotification("MapID: %u (%f, %f, %f) Height: %f", mapId, x, y, z, height);
+    f32 height = mapSingleton.maps[mapId].GetHeight(Vector2(x, y));
+    clientConnection.SendNotification("MapID: %u (%f, %f, %f) Height: %f", mapId, x, y, z, height);
 
-		return true;
-	}
-	bool _Redirect(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
-	{
-		PlayerPacketQueueSingleton& playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
-
-		Common::ByteBuffer redirect;
-		playerPacketQueue.packetQueue->enqueue(PacketQueueData(clientConnection.socket, redirect, Common::Opcode::SMSG_REDIRECT_CLIENT));
-
-		return true;
-	}
-
-    void LoadCommands(entt::registry& registry)
-    {
-        CommandDataSingleton& commandDataSingleton = registry.set<CommandDataSingleton>();
-		commandDataSingleton.commandMap["gps"_h] = CommandEntry(_GPS, 0);
-		commandDataSingleton.commandMap["redirect"_h] = CommandEntry(_Redirect, 0);
-
-        Commands_Character::LoadCharacterCommands(registry, commandDataSingleton);
-
-		_registry = &registry;
-    }
+    return true;
 }
+bool _Redirect(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
+{
+    PlayerPacketQueueSingleton& playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
+
+    Common::ByteBuffer redirect;
+    playerPacketQueue.packetQueue->enqueue(PacketQueueData(clientConnection.socket, redirect, Common::Opcode::SMSG_REDIRECT_CLIENT));
+
+    return true;
+}
+
+void LoadCommands(entt::registry& registry)
+{
+    CommandDataSingleton& commandDataSingleton = registry.set<CommandDataSingleton>();
+    commandDataSingleton.commandMap["gps"_h] = CommandEntry(_GPS, 0);
+    commandDataSingleton.commandMap["redirect"_h] = CommandEntry(_Redirect, 0);
+
+    Commands_Character::LoadCharacterCommands(registry, commandDataSingleton);
+
+    _registry = &registry;
+}
+} // namespace Commands

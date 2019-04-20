@@ -28,7 +28,7 @@
 
 struct MapSingleton
 {
-	MapSingleton() {}
+    MapSingleton() {}
 
-	robin_hood::unordered_map<u16, NovusMap> maps;
+    robin_hood::unordered_map<u16, NovusMap> maps;
 };

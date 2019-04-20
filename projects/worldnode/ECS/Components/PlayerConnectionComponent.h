@@ -37,15 +37,15 @@ struct OpcodePacket
 class WorldConnection;
 struct PlayerConnectionComponent
 {
-	template <typename... Args>
-	void SendNotification(std::string message, Args... args)
-	{
+    template <typename... Args>
+    void SendNotification(std::string message, Args... args)
+    {
         socket->SendPacket(CharacterUtils::BuildNotificationPacket(accountGuid, message, std::forward<Args>(args)...), Common::Opcode::SMSG_MESSAGECHAT);
-	}
+    }
 
     u32 entityGuid;
-	u32 accountGuid;
-	u64 characterGuid;
+    u32 accountGuid;
+    u64 characterGuid;
     WorldConnection* socket;
     std::vector<OpcodePacket> packets;
 };

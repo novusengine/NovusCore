@@ -30,7 +30,7 @@ void DBCDatabaseCache::Load()
             mapData.name = row[4].GetString();
             mapData.expansion = row[5].GetU32();
             mapData.maxPlayers = row[6].GetU32();
-            
+
             _mapDataCache[mapData.id] = mapData;
         }
     }
@@ -48,31 +48,31 @@ void DBCDatabaseCache::SaveAsync()
 
 bool DBCDatabaseCache::GetMapData(u16 mapId, MapData& output)
 {
-	auto cache = _mapDataCache.find(mapId);
-	if (cache != _mapDataCache.end())
-	{
-		_accessMutex.lock_shared();
-		MapData mapData = cache->second;
-		_accessMutex.unlock_shared();
+    auto cache = _mapDataCache.find(mapId);
+    if (cache != _mapDataCache.end())
+    {
+        _accessMutex.lock_shared();
+        MapData mapData = cache->second;
+        _accessMutex.unlock_shared();
 
-		output = mapData;
-		return true;
-	}
+        output = mapData;
+        return true;
+    }
 
-	return false;
+    return false;
 }
 bool DBCDatabaseCache::GetMapDataFromInternalName(std::string internalName, MapData& output)
 {
-	_accessMutex.lock_shared();
-	for (auto mapData : _mapDataCache)
-	{
-		if (mapData.second.internalName == internalName)
-		{
-			output = mapData.second;
-			return true;
-		}
-	}
-	_accessMutex.unlock_shared();
+    _accessMutex.lock_shared();
+    for (auto mapData : _mapDataCache)
+    {
+        if (mapData.second.internalName == internalName)
+        {
+            output = mapData.second;
+            return true;
+        }
+    }
+    _accessMutex.unlock_shared();
 
-	return false;
+    return false;
 }

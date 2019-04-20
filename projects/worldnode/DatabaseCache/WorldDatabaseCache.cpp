@@ -30,7 +30,7 @@ void WorldDatabaseCache::Load()
             itemTemplate.itemClass = row[1].GetU32();
             itemTemplate.itemSubClass = row[2].GetU32();
             itemTemplate.soundOverrideSubclass = row[3].GetI32();
-            itemTemplate. name = row[4].GetString();
+            itemTemplate.name = row[4].GetString();
             itemTemplate.displayId = row[5].GetU32();
             itemTemplate.quality = row[6].GetU32();
             itemTemplate.flags = row[7].GetU32();
@@ -83,7 +83,7 @@ void WorldDatabaseCache::Load()
             itemTemplate.spellInfo[3] = ItemSpellInfo(row[83].GetU32(), row[84].GetU32(), row[85].GetI32(), row[86].GetI32(), row[87].GetU32(), row[88].GetI32());
             itemTemplate.spellInfo[4] = ItemSpellInfo(row[89].GetU32(), row[90].GetU32(), row[91].GetI32(), row[92].GetI32(), row[93].GetU32(), row[94].GetI32());
             itemTemplate.bindType = row[95].GetU32();
-            itemTemplate. description = row[96].GetString();
+            itemTemplate.description = row[96].GetString();
             itemTemplate.pageTextId = row[97].GetU32();
             itemTemplate.pageLanguageId = row[98].GetU32();
             itemTemplate.pageTextureId = row[99].GetU32();
@@ -232,7 +232,6 @@ void WorldDatabaseCache::SaveAsync()
 {
 }
 
-
 bool WorldDatabaseCache::GetItemTemplate(u32 itemEntry, ItemTemplate& output)
 {
     auto cache = _itemTemplateCache.find(itemEntry);
@@ -245,6 +244,6 @@ bool WorldDatabaseCache::GetItemTemplate(u32 itemEntry, ItemTemplate& output)
         output = itemTemplate;
         return true;
     }
-    
+
     return false;
 }

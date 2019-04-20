@@ -42,35 +42,35 @@
 
 namespace PlayerCreateSystem
 {
-    void Update(entt::registry &registry)
+void Update(entt::registry& registry)
+{
+    SingletonComponent& singleton = registry.ctx<SingletonComponent>();
+    PlayerCreateQueueSingleton& createPlayerQueue = registry.ctx<PlayerCreateQueueSingleton>();
+    CharacterDatabaseCacheSingleton& characterDatabase = registry.ctx<CharacterDatabaseCacheSingleton>();
+
+    Message message;
+    while (createPlayerQueue.newPlayerQueue->try_dequeue(message))
     {
-		SingletonComponent& singleton = registry.ctx<SingletonComponent>();
-        PlayerCreateQueueSingleton& createPlayerQueue = registry.ctx<PlayerCreateQueueSingleton>();
-        CharacterDatabaseCacheSingleton& characterDatabase = registry.ctx<CharacterDatabaseCacheSingleton>();
+        u64 characterGuid = 0;
+        message.packet.Read<u64>(characterGuid);
 
-        Message message;
-        while (createPlayerQueue.newPlayerQueue->try_dequeue(message))
+        CharacterData characterData;
+        if (characterDatabase.cache->GetCharacterData(characterGuid, characterData))
         {
-            u64 characterGuid = 0;
-            message.packet.Read<u64>(characterGuid);
-            
-            CharacterData characterData;
-            if (characterDatabase.cache->GetCharacterData(characterGuid, characterData))
-            {
-                u32 entity = registry.create();
-                registry.assign<PlayerConnectionComponent>(entity, entity, static_cast<u32>(message.account), characterGuid, message.connection);
-                registry.assign<PlayerInitializeComponent>(entity, entity, static_cast<u32>(message.account), characterGuid, message.connection);
+            u32 entity = registry.create();
+            registry.assign<PlayerConnectionComponent>(entity, entity, static_cast<u32>(message.account), characterGuid, message.connection);
+            registry.assign<PlayerInitializeComponent>(entity, entity, static_cast<u32>(message.account), characterGuid, message.connection);
 
-                registry.assign<PlayerFieldDataComponent>(entity);
-                registry.assign<PlayerUpdateDataComponent>(entity);
+            registry.assign<PlayerFieldDataComponent>(entity);
+            registry.assign<PlayerUpdateDataComponent>(entity);
 
-                // Human Starting Location: -8949.950195f, -132.492996f, 83.531197f, 0.f
-                registry.assign<PlayerPositionComponent>(entity, characterData.mapId, characterData.coordinateX, characterData.coordinateY, characterData.coordinateZ, characterData.orientation);
-                registry.assign<PlayerSpellStorageComponent>(entity);
-                registry.assign<PlayerSkillStorageComponent>(entity);
+            // Human Starting Location: -8949.950195f, -132.492996f, 83.531197f, 0.f
+            registry.assign<PlayerPositionComponent>(entity, characterData.mapId, characterData.coordinateX, characterData.coordinateY, characterData.coordinateZ, characterData.orientation);
+            registry.assign<PlayerSpellStorageComponent>(entity);
+            registry.assign<PlayerSkillStorageComponent>(entity);
 
-                singleton.accountToEntityMap[static_cast<u32>(message.account)] = entity;
-            }
+            singleton.accountToEntityMap[static_cast<u32>(message.account)] = entity;
         }
     }
 }
+} // namespace PlayerCreateSystem

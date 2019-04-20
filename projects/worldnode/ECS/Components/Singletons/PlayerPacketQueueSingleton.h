@@ -29,8 +29,13 @@
 class WorldConnection;
 struct PacketQueueData
 {
-    PacketQueueData() { }
-    PacketQueueData(WorldConnection* conn, Common::ByteBuffer buffer, u16 inOpcode) { connection = conn; data = buffer; opcode = inOpcode; }
+    PacketQueueData() {}
+    PacketQueueData(WorldConnection* conn, Common::ByteBuffer buffer, u16 inOpcode)
+    {
+        connection = conn;
+        data = buffer;
+        opcode = inOpcode;
+    }
 
     WorldConnection* connection;
     u16 opcode;
@@ -38,5 +43,5 @@ struct PacketQueueData
 };
 struct PlayerPacketQueueSingleton
 {
-	moodycamel::ConcurrentQueue<PacketQueueData>* packetQueue;
+    moodycamel::ConcurrentQueue<PacketQueueData>* packetQueue;
 };

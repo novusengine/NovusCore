@@ -35,155 +35,163 @@
 
 namespace Commands_Character
 {
-    static robin_hood::unordered_map<u32, CommandEntry> characterCommandMap;
-    static entt::registry* _registry = nullptr;
+static robin_hood::unordered_map<u32, CommandEntry> characterCommandMap;
+static entt::registry* _registry = nullptr;
 
-	bool _Level(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
-	{
-		try
-		{
-			u32 level = std::stoi(commandStrings[0]);
-			if (level <= 0)
-				level = 1;
-			else if (level > 255)
-				level = 255;
-
-			PlayerPacketQueueSingleton & playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
-			PlayerFieldDataComponent & clientFieldData = _registry->get<PlayerFieldDataComponent>(clientConnection.entityGuid);
-			u32 playerLevel = clientFieldData.GetFieldValue<u32>(UNIT_FIELD_LEVEL);
-			if (playerLevel != level)
-			{
-				clientFieldData.SetFieldValue<u32>(UNIT_FIELD_LEVEL, level);
-
-				//I put this in here so that we can unlock the achievement frame when reaching level 10
-				if (level >= 10 && playerLevel < 10)
-				{
-					Common::ByteBuffer achievementData;
-
-					achievementData.AppendGuid(clientConnection.characterGuid);
-					achievementData.Write<u32>(6); // Level 10
-
-					tm lt;
-					time_t const tmpServerTime = time(nullptr);
-					localtime_s(&lt, &tmpServerTime);
-					achievementData.Write<u32>(((lt.tm_year - 100) << 24 | lt.tm_mon << 20 | (lt.tm_mday - 1) << 14 | lt.tm_wday << 11 | lt.tm_hour << 6 | lt.tm_min));
-					achievementData.Write<u32>(0);
-
-					playerPacketQueue.packetQueue->enqueue(PacketQueueData(clientConnection.socket, achievementData, Common::Opcode::SMSG_ACHIEVEMENT_EARNED));
-				}
-			}
-
-			return true;
-		}
-		catch (std::exception) {}
-
-		return false;
-	}
-	bool _Speed(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
-	{
-		try
-		{
-			f32 speed = std::stof(commandStrings[0]);
-			if (speed <= 0)
-				speed = 1;
-			else if (speed > 50)
-				speed = 50;
-
-			PlayerPacketQueueSingleton & playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
-			PlayerFieldDataComponent & clientFieldData = _registry->get<PlayerFieldDataComponent>(clientConnection.entityGuid);
-
-			Common::ByteBuffer speedChange;
-			CharacterUtils::BuildSpeedChangePacket(clientConnection.accountGuid, clientConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_WALK_SPEED_CHANGE, speedChange);
-			playerPacketQueue.packetQueue->enqueue(PacketQueueData(clientConnection.socket, speedChange, Common::Opcode::SMSG_FORCE_WALK_SPEED_CHANGE));
-
-			CharacterUtils::BuildSpeedChangePacket(clientConnection.accountGuid, clientConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_RUN_SPEED_CHANGE, speedChange);
-			playerPacketQueue.packetQueue->enqueue(PacketQueueData(clientConnection.socket, speedChange, Common::Opcode::SMSG_FORCE_RUN_SPEED_CHANGE));
-
-			CharacterUtils::BuildSpeedChangePacket(clientConnection.accountGuid, clientConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_RUN_BACK_SPEED_CHANGE, speedChange);
-			playerPacketQueue.packetQueue->enqueue(PacketQueueData(clientConnection.socket, speedChange, Common::Opcode::SMSG_FORCE_RUN_BACK_SPEED_CHANGE));
-
-			CharacterUtils::BuildSpeedChangePacket(clientConnection.accountGuid, clientConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_SWIM_SPEED_CHANGE, speedChange);
-			playerPacketQueue.packetQueue->enqueue(PacketQueueData(clientConnection.socket, speedChange, Common::Opcode::SMSG_FORCE_SWIM_SPEED_CHANGE));
-
-			CharacterUtils::BuildSpeedChangePacket(clientConnection.accountGuid, clientConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_SWIM_BACK_SPEED_CHANGE, speedChange);
-			playerPacketQueue.packetQueue->enqueue(PacketQueueData(clientConnection.socket, speedChange, Common::Opcode::SMSG_FORCE_SWIM_BACK_SPEED_CHANGE));
-
-			CharacterUtils::BuildSpeedChangePacket(clientConnection.accountGuid, clientConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_FLIGHT_SPEED_CHANGE, speedChange);
-			playerPacketQueue.packetQueue->enqueue(PacketQueueData(clientConnection.socket, speedChange, Common::Opcode::SMSG_FORCE_FLIGHT_SPEED_CHANGE));
-
-			CharacterUtils::BuildSpeedChangePacket(clientConnection.accountGuid, clientConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_FLIGHT_BACK_SPEED_CHANGE, speedChange);
-			playerPacketQueue.packetQueue->enqueue(PacketQueueData(clientConnection.socket, speedChange, Common::Opcode::SMSG_FORCE_FLIGHT_BACK_SPEED_CHANGE));
-
-			clientConnection.SendNotification("Speed Updated: %f", speed);
-			return true;
-		}
-		catch (std::exception) {}
-
-		return false;
-	}
-	bool _Fly(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
-	{
-		try
-		{
-			std::string flightState = commandStrings[0];
-			if (flightState == "on" || flightState == "off")
-			{
-				PlayerPacketQueueSingleton& playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
-				PlayerFieldDataComponent& clientFieldData = _registry->get<PlayerFieldDataComponent>(clientConnection.entityGuid);
-
-				Common::ByteBuffer setFly;
-				CharacterUtils::BuildFlyModePacket(clientConnection.accountGuid, clientConnection.characterGuid, flightState == "on", setFly);
-				playerPacketQueue.packetQueue->enqueue(PacketQueueData(clientConnection.socket, setFly, flightState == "on" ? Common::Opcode::SMSG_MOVE_SET_CAN_FLY : Common::Opcode::SMSG_MOVE_UNSET_CAN_FLY));
-
-				clientConnection.SendNotification("Flight Mode: %s", flightState.c_str());
-				return true;
-			}
-		}
-		catch (std::exception) {}
-
-		return false;
-	}
-	bool _Tele(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
-	{
-
-		try
-		{
-			f32 x = std::stof(commandStrings[0]);
-			f32 y = std::stof(commandStrings[1]);
-			f32 z = std::stof(commandStrings[2]);
-
-			SingletonComponent& singletonData = _registry->ctx<SingletonComponent>();
-			PlayerPacketQueueSingleton& playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
-			PlayerFieldDataComponent& clientFieldData = _registry->get<PlayerFieldDataComponent>(clientConnection.entityGuid);
-			PlayerPositionComponent& clientPositionData = _registry->get<PlayerPositionComponent>(clientConnection.entityGuid);
-
-			Common::ByteBuffer buffer;
-			buffer.AppendGuid(clientConnection.characterGuid);
-			buffer.Write<u32>(0); // Teleport Count
-
-			/* Movement */
-			buffer.Write<u32>(0);
-			buffer.Write<u16>(0);
-			buffer.Write<u32>(static_cast<u32>(singletonData.lifeTimeInMS));
-
-			buffer.Write<f32>(x);
-			buffer.Write<f32>(y);
-			buffer.Write<f32>(z);
-			buffer.Write<f32>(clientPositionData.orientation);
-
-			buffer.Write<u32>(0);
-
-			playerPacketQueue.packetQueue->enqueue(PacketQueueData(clientConnection.socket, buffer, Common::Opcode::MSG_MOVE_TELEPORT_ACK));
-
-			return true;
-		}
-		catch (std::exception) {}
-
-		return false;
-	}
-    bool _TeleToMap(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
+bool _Level(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
+{
+    try
     {
-        /*
+        u32 level = std::stoi(commandStrings[0]);
+        if (level <= 0)
+            level = 1;
+        else if (level > 255)
+            level = 255;
+
+        PlayerPacketQueueSingleton& playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
+        PlayerFieldDataComponent& clientFieldData = _registry->get<PlayerFieldDataComponent>(clientConnection.entityGuid);
+        u32 playerLevel = clientFieldData.GetFieldValue<u32>(UNIT_FIELD_LEVEL);
+        if (playerLevel != level)
+        {
+            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_LEVEL, level);
+
+            //I put this in here so that we can unlock the achievement frame when reaching level 10
+            if (level >= 10 && playerLevel < 10)
+            {
+                Common::ByteBuffer achievementData;
+
+                achievementData.AppendGuid(clientConnection.characterGuid);
+                achievementData.Write<u32>(6); // Level 10
+
+                tm lt;
+                time_t const tmpServerTime = time(nullptr);
+                localtime_s(&lt, &tmpServerTime);
+                achievementData.Write<u32>(((lt.tm_year - 100) << 24 | lt.tm_mon << 20 | (lt.tm_mday - 1) << 14 | lt.tm_wday << 11 | lt.tm_hour << 6 | lt.tm_min));
+                achievementData.Write<u32>(0);
+
+                playerPacketQueue.packetQueue->enqueue(PacketQueueData(clientConnection.socket, achievementData, Common::Opcode::SMSG_ACHIEVEMENT_EARNED));
+            }
+        }
+
+        return true;
+    }
+    catch (std::exception)
+    {
+    }
+
+    return false;
+}
+bool _Speed(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
+{
+    try
+    {
+        f32 speed = std::stof(commandStrings[0]);
+        if (speed <= 0)
+            speed = 1;
+        else if (speed > 50)
+            speed = 50;
+
+        PlayerPacketQueueSingleton& playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
+        PlayerFieldDataComponent& clientFieldData = _registry->get<PlayerFieldDataComponent>(clientConnection.entityGuid);
+
+        Common::ByteBuffer speedChange;
+        CharacterUtils::BuildSpeedChangePacket(clientConnection.accountGuid, clientConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_WALK_SPEED_CHANGE, speedChange);
+        playerPacketQueue.packetQueue->enqueue(PacketQueueData(clientConnection.socket, speedChange, Common::Opcode::SMSG_FORCE_WALK_SPEED_CHANGE));
+
+        CharacterUtils::BuildSpeedChangePacket(clientConnection.accountGuid, clientConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_RUN_SPEED_CHANGE, speedChange);
+        playerPacketQueue.packetQueue->enqueue(PacketQueueData(clientConnection.socket, speedChange, Common::Opcode::SMSG_FORCE_RUN_SPEED_CHANGE));
+
+        CharacterUtils::BuildSpeedChangePacket(clientConnection.accountGuid, clientConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_RUN_BACK_SPEED_CHANGE, speedChange);
+        playerPacketQueue.packetQueue->enqueue(PacketQueueData(clientConnection.socket, speedChange, Common::Opcode::SMSG_FORCE_RUN_BACK_SPEED_CHANGE));
+
+        CharacterUtils::BuildSpeedChangePacket(clientConnection.accountGuid, clientConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_SWIM_SPEED_CHANGE, speedChange);
+        playerPacketQueue.packetQueue->enqueue(PacketQueueData(clientConnection.socket, speedChange, Common::Opcode::SMSG_FORCE_SWIM_SPEED_CHANGE));
+
+        CharacterUtils::BuildSpeedChangePacket(clientConnection.accountGuid, clientConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_SWIM_BACK_SPEED_CHANGE, speedChange);
+        playerPacketQueue.packetQueue->enqueue(PacketQueueData(clientConnection.socket, speedChange, Common::Opcode::SMSG_FORCE_SWIM_BACK_SPEED_CHANGE));
+
+        CharacterUtils::BuildSpeedChangePacket(clientConnection.accountGuid, clientConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_FLIGHT_SPEED_CHANGE, speedChange);
+        playerPacketQueue.packetQueue->enqueue(PacketQueueData(clientConnection.socket, speedChange, Common::Opcode::SMSG_FORCE_FLIGHT_SPEED_CHANGE));
+
+        CharacterUtils::BuildSpeedChangePacket(clientConnection.accountGuid, clientConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_FLIGHT_BACK_SPEED_CHANGE, speedChange);
+        playerPacketQueue.packetQueue->enqueue(PacketQueueData(clientConnection.socket, speedChange, Common::Opcode::SMSG_FORCE_FLIGHT_BACK_SPEED_CHANGE));
+
+        clientConnection.SendNotification("Speed Updated: %f", speed);
+        return true;
+    }
+    catch (std::exception)
+    {
+    }
+
+    return false;
+}
+bool _Fly(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
+{
+    try
+    {
+        std::string flightState = commandStrings[0];
+        if (flightState == "on" || flightState == "off")
+        {
+            PlayerPacketQueueSingleton& playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
+            PlayerFieldDataComponent& clientFieldData = _registry->get<PlayerFieldDataComponent>(clientConnection.entityGuid);
+
+            Common::ByteBuffer setFly;
+            CharacterUtils::BuildFlyModePacket(clientConnection.accountGuid, clientConnection.characterGuid, flightState == "on", setFly);
+            playerPacketQueue.packetQueue->enqueue(PacketQueueData(clientConnection.socket, setFly, flightState == "on" ? Common::Opcode::SMSG_MOVE_SET_CAN_FLY : Common::Opcode::SMSG_MOVE_UNSET_CAN_FLY));
+
+            clientConnection.SendNotification("Flight Mode: %s", flightState.c_str());
+            return true;
+        }
+    }
+    catch (std::exception)
+    {
+    }
+
+    return false;
+}
+bool _Tele(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
+{
+
+    try
+    {
+        f32 x = std::stof(commandStrings[0]);
+        f32 y = std::stof(commandStrings[1]);
+        f32 z = std::stof(commandStrings[2]);
+
+        SingletonComponent& singletonData = _registry->ctx<SingletonComponent>();
+        PlayerPacketQueueSingleton& playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
+        PlayerFieldDataComponent& clientFieldData = _registry->get<PlayerFieldDataComponent>(clientConnection.entityGuid);
+        PlayerPositionComponent& clientPositionData = _registry->get<PlayerPositionComponent>(clientConnection.entityGuid);
+
+        Common::ByteBuffer buffer;
+        buffer.AppendGuid(clientConnection.characterGuid);
+        buffer.Write<u32>(0); // Teleport Count
+
+        /* Movement */
+        buffer.Write<u32>(0);
+        buffer.Write<u16>(0);
+        buffer.Write<u32>(static_cast<u32>(singletonData.lifeTimeInMS));
+
+        buffer.Write<f32>(x);
+        buffer.Write<f32>(y);
+        buffer.Write<f32>(z);
+        buffer.Write<f32>(clientPositionData.orientation);
+
+        buffer.Write<u32>(0);
+
+        playerPacketQueue.packetQueue->enqueue(PacketQueueData(clientConnection.socket, buffer, Common::Opcode::MSG_MOVE_TELEPORT_ACK));
+
+        return true;
+    }
+    catch (std::exception)
+    {
+    }
+
+    return false;
+}
+bool _TeleToMap(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
+{
+    /*
             try
             {
                 u32 mapId = std::stoi(commandStrings[0]);
@@ -212,91 +220,91 @@ namespace Commands_Character
             }
             catch (std::exception) {}
         */
-        return false;
-    }
-	bool _AddItem(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
-	{
-		try
-		{
-			u32 itemEntry = std::stoi(commandStrings[0]);
-			WorldDatabaseCacheSingleton& worldDatabaseCache = _registry->ctx<WorldDatabaseCacheSingleton>();
-
-			ItemTemplate itemTemplate;
-			if (!worldDatabaseCache.cache->GetItemTemplate(itemEntry, itemTemplate))
-			{
-				return false;
-			}
-
-			PlayerPacketQueueSingleton& playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
-			PlayerFieldDataComponent& playerFieldData = _registry->get<PlayerFieldDataComponent>(clientConnection.entityGuid);
-
-			ItemCreationInformation itemCreationInformation;
-			itemCreationInformation.lowGuid = 2;
-			itemCreationInformation.bagSlot = 255;
-			itemCreationInformation.bagPosition = 23;
-			itemCreationInformation.itemEntry = itemTemplate.entry;
-			itemCreationInformation.clientEntityGuid = clientConnection.entityGuid;
-			itemCreationInformation.accountGuid = clientConnection.accountGuid;
-			itemCreationInformation.characterGuid = clientConnection.characterGuid;
-
-			u64 itemGuid = (static_cast<u64>(2) | (static_cast<u64>(itemTemplate.entry) << 24) | (static_cast<u64>(0x4000) << 48));
-			playerFieldData.SetGuidValue(PLAYER_FIELD_PACK_SLOT_1, itemGuid);
-			_registry->ctx<ItemCreateQueueSingleton>().newItemQueue->enqueue(itemCreationInformation);
-
-			clientConnection.SendNotification("[AddItem]: %u", itemTemplate.entry);
-			return true;
-		}
-		catch (std::exception) {}
-
-		return false;
-	}
-
-    bool CharacterCommand(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
+    return false;
+}
+bool _AddItem(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
+{
+    try
     {
-        std::string subCommand = commandStrings[1];
+        u32 itemEntry = std::stoi(commandStrings[0]);
+        WorldDatabaseCacheSingleton& worldDatabaseCache = _registry->ctx<WorldDatabaseCacheSingleton>();
 
-        auto itr = characterCommandMap.find(StringUtils::fnv1a_32(subCommand.c_str(), subCommand.length()));
-        if (itr != characterCommandMap.end())
+        ItemTemplate itemTemplate;
+        if (!worldDatabaseCache.cache->GetItemTemplate(itemEntry, itemTemplate))
         {
-			i32 parameters = itr->second.parameters;
-			if (parameters == -1)
-			{
-				return itr->second.handler(commandStrings, clientConnection);
-			}
-			else
-			{
-				std::vector<std::string> paramStrings;
-				if (parameters > 0)
-				{
-					if (commandStrings.size() - 2 < parameters)
-						return false;
-
-					for (i32 i = 2; i < parameters + 2; i++)
-					{
-						paramStrings.push_back(commandStrings[i]);
-					}
-				}
-
-				return itr->second.handler(paramStrings, clientConnection);
-			}
+            return false;
         }
 
+        PlayerPacketQueueSingleton& playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
+        PlayerFieldDataComponent& playerFieldData = _registry->get<PlayerFieldDataComponent>(clientConnection.entityGuid);
 
+        ItemCreationInformation itemCreationInformation;
+        itemCreationInformation.lowGuid = 2;
+        itemCreationInformation.bagSlot = 255;
+        itemCreationInformation.bagPosition = 23;
+        itemCreationInformation.itemEntry = itemTemplate.entry;
+        itemCreationInformation.clientEntityGuid = clientConnection.entityGuid;
+        itemCreationInformation.accountGuid = clientConnection.accountGuid;
+        itemCreationInformation.characterGuid = clientConnection.characterGuid;
 
-        return false;
+        u64 itemGuid = (static_cast<u64>(2) | (static_cast<u64>(itemTemplate.entry) << 24) | (static_cast<u64>(0x4000) << 48));
+        playerFieldData.SetGuidValue(PLAYER_FIELD_PACK_SLOT_1, itemGuid);
+        _registry->ctx<ItemCreateQueueSingleton>().newItemQueue->enqueue(itemCreationInformation);
+
+        clientConnection.SendNotification("[AddItem]: %u", itemTemplate.entry);
+        return true;
     }
-    void LoadCharacterCommands(entt::registry& registry, CommandDataSingleton& commandData)
+    catch (std::exception)
     {
-        _registry = &registry;
-
-        commandData.commandMap["char"_h] = CommandEntry(CharacterCommand, -1);
-        commandData.commandMap["character"_h] = CommandEntry(CharacterCommand, -1);
-
-        characterCommandMap["level"_h] = CommandEntry(_Level, 1);
-        characterCommandMap["speed"_h] = CommandEntry(_Speed, 1);
-        characterCommandMap["fly"_h] = CommandEntry(_Fly, 1);
-        characterCommandMap["tele"_h] = CommandEntry(_Tele, 3);
-        characterCommandMap["teletomap"_h] = CommandEntry(_TeleToMap, 4);
-        characterCommandMap["additem"_h] = CommandEntry(_AddItem, 1);
     }
+
+    return false;
 }
+
+bool CharacterCommand(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
+{
+    std::string subCommand = commandStrings[1];
+
+    auto itr = characterCommandMap.find(StringUtils::fnv1a_32(subCommand.c_str(), subCommand.length()));
+    if (itr != characterCommandMap.end())
+    {
+        i32 parameters = itr->second.parameters;
+        if (parameters == -1)
+        {
+            return itr->second.handler(commandStrings, clientConnection);
+        }
+        else
+        {
+            std::vector<std::string> paramStrings;
+            if (parameters > 0)
+            {
+                if (commandStrings.size() - 2 < parameters)
+                    return false;
+
+                for (i32 i = 2; i < parameters + 2; i++)
+                {
+                    paramStrings.push_back(commandStrings[i]);
+                }
+            }
+
+            return itr->second.handler(paramStrings, clientConnection);
+        }
+    }
+
+    return false;
+}
+void LoadCharacterCommands(entt::registry& registry, CommandDataSingleton& commandData)
+{
+    _registry = &registry;
+
+    commandData.commandMap["char"_h] = CommandEntry(CharacterCommand, -1);
+    commandData.commandMap["character"_h] = CommandEntry(CharacterCommand, -1);
+
+    characterCommandMap["level"_h] = CommandEntry(_Level, 1);
+    characterCommandMap["speed"_h] = CommandEntry(_Speed, 1);
+    characterCommandMap["fly"_h] = CommandEntry(_Fly, 1);
+    characterCommandMap["tele"_h] = CommandEntry(_Tele, 3);
+    characterCommandMap["teletomap"_h] = CommandEntry(_TeleToMap, 4);
+    characterCommandMap["additem"_h] = CommandEntry(_AddItem, 1);
+}
+} // namespace Commands_Character

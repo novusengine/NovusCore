@@ -7,7 +7,7 @@
 class UpdateData
 {
 public:
-    UpdateData() : _blockCount(0) { }
+    UpdateData() : _blockCount(0) {}
 
     bool IsEmpty() { return _data.empty() && _nonVisibleGuids.empty(); }
 
@@ -70,7 +70,7 @@ private:
     std::vector<u64> _nonVisibleGuids;
     Common::ByteBuffer _data;
 
-    void Compress(void* dst, u32 *dst_size, void* src, i32 src_size)
+    void Compress(void* dst, u32* dst_size, void* src, i32 src_size)
     {
         z_stream c_stream;
 

@@ -30,7 +30,7 @@
 
 struct PlayerFieldDataComponent
 {
-    PlayerFieldDataComponent() : changesMask(PLAYER_END), playerFields(PLAYER_END * 4) { }
+    PlayerFieldDataComponent() : changesMask(PLAYER_END), playerFields(PLAYER_END * 4) {}
 
     void SetGuidValue(u16 index, u64 value)
     {

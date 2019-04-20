@@ -27,7 +27,7 @@
 
 void QuitCommand(WorldNodeHandler& worldNodeHandler, std::vector<std::string> subCommands)
 {
-	Message exitMessage;
-	exitMessage.code = MSG_IN_EXIT;
-	worldNodeHandler.PassMessage(exitMessage);
+    Message exitMessage;
+    exitMessage.code = MSG_IN_EXIT;
+    worldNodeHandler.PassMessage(exitMessage);
 }

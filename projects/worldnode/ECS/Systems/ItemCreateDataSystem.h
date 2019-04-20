@@ -38,85 +38,84 @@
 
 namespace ItemCreateDataSystem
 {
-    Common::ByteBuffer BuildItemCreateData(u64 itemGuid, u8 updateType, u16 updateFlags, u32 visibleFlags, ItemFieldDataComponent& itemFieldData, u16& opcode)
+Common::ByteBuffer BuildItemCreateData(u64 itemGuid, u8 updateType, u16 updateFlags, u32 visibleFlags, ItemFieldDataComponent& itemFieldData, u16& opcode)
+{
+    Common::ByteBuffer buffer(500);
+    buffer.Write<u8>(updateType);
+    buffer.AppendGuid(itemGuid);
+    buffer.Write<u8>(1); // TYPEID_ITEM
+
+    // BuildMovementUpdate(ByteBuffer* data, uint16 flags)
+    buffer.Write<u16>(updateFlags);
+
+    if (updateFlags & UPDATEFLAG_LOWGUID)
     {
-        Common::ByteBuffer buffer(500);
-        buffer.Write<u8>(updateType);
-        buffer.AppendGuid(itemGuid);
-        buffer.Write<u8>(1); // TYPEID_ITEM
-
-        // BuildMovementUpdate(ByteBuffer* data, uint16 flags)
-        buffer.Write<u16>(updateFlags);
-
-        if (updateFlags & UPDATEFLAG_LOWGUID)
-        {
-            buffer.Write<u32>(1);
-        }
-
-        Common::ByteBuffer fieldBuffer;
-        fieldBuffer.Resize(256);
-        UpdateMask<64> updateMask(ITEM_END);
-
-        u32* flags = ItemUpdateFieldFlags;
-        u16 fieldNotifyFlags = UF_FLAG_DYNAMIC;
-
-        for (u16 index = 0; index < ITEM_END; index++)
-        {
-            if (fieldNotifyFlags & flags[index] ||
-                ((updateType == UPDATETYPE_VALUES ? itemFieldData.changesMask.IsSet(index) : itemFieldData.itemFields.ReadAt<i32>(index * 4)) &&
-                (flags[index] & visibleFlags)))
-            {
-                updateMask.SetBit(index);
-                fieldBuffer.Write(itemFieldData.itemFields.GetDataPointer() + index * 4, 4);
-            }
-        }
-
-        buffer.Write<u8>(updateMask.GetBlocks());
-        updateMask.AddTo(buffer);
-        buffer.Append(fieldBuffer);
-
-        UpdateData updateData;
-        updateData.AddBlock(buffer);
-
-        Common::ByteBuffer tempBuffer;
-        updateData.Build(tempBuffer, opcode);
-
-        return tempBuffer;
+        buffer.Write<u32>(1);
     }
 
-    void Update(entt::registry &registry)
+    Common::ByteBuffer fieldBuffer;
+    fieldBuffer.Resize(256);
+    UpdateMask<64> updateMask(ITEM_END);
+
+    u32* flags = ItemUpdateFieldFlags;
+    u16 fieldNotifyFlags = UF_FLAG_DYNAMIC;
+
+    for (u16 index = 0; index < ITEM_END; index++)
     {
-        SingletonComponent& singleton = registry.ctx<SingletonComponent>();
-
-        auto itemView = registry.view<ItemInitializeComponent, ItemFieldDataComponent>();
-        if (!itemView.empty())
+        if (fieldNotifyFlags & flags[index] ||
+            ((updateType == UPDATETYPE_VALUES ? itemFieldData.changesMask.IsSet(index) : itemFieldData.itemFields.ReadAt<i32>(index * 4)) &&
+             (flags[index] & visibleFlags)))
         {
-            itemView.each([&](const auto, ItemInitializeComponent& itemInitializeData, ItemFieldDataComponent& itemFieldData)
-            {
-                /* Build Self Packet, must be sent immediately */
-                u8 updateType = UPDATETYPE_CREATE_OBJECT;
-                u16 selfUpdateFlag = UPDATEFLAG_LOWGUID;
-                u32 selfVisibleFlags = (UF_FLAG_PUBLIC | UF_FLAG_OWNER);
-                u16 buildOpcode = 0;
-
-                Common::ByteBuffer selfItemUpdate = BuildItemCreateData(itemInitializeData.itemGuid, updateType, selfUpdateFlag, selfVisibleFlags, itemFieldData, buildOpcode);
-                //novusConnection.SendPacket(itemInitializeData.accountGuid, selfItemUpdate, buildOpcode);
-
-                Common::ByteBuffer itemPushResult;
-                itemPushResult.Write<u64>(itemInitializeData.characterGuid);
-                itemPushResult.Write<u32>(0); // Received:     0 = Looted,   1 = By NPC
-                itemPushResult.Write<u32>(0); // Created:      0 = Received, 1 = Created
-                itemPushResult.Write<u32>(1); // Show in chat: 0 = No Print, 1 = Print
-                itemPushResult.Write<u8>(itemInitializeData.bagSlot); // BagSlot
-                itemPushResult.Write<u32>(itemInitializeData.bagPosition); // BagPosition
-                itemPushResult.Write<u32>(itemInitializeData.itemGuid.GetEntry());
-                itemPushResult.Write<u32>(0);
-                itemPushResult.Write<u32>(0);
-                itemPushResult.Write<u32>(1);
-                //novusConnection.SendPacket(itemInitializeData.accountGuid, itemPushResult, Common::Opcode::SMSG_ITEM_PUSH_RESULT);
-            });
-            // Remove ItemInitializeComponent from all entities (They've just been handled above)
-            registry.reset<ItemInitializeComponent>();
+            updateMask.SetBit(index);
+            fieldBuffer.Write(itemFieldData.itemFields.GetDataPointer() + index * 4, 4);
         }
+    }
+
+    buffer.Write<u8>(updateMask.GetBlocks());
+    updateMask.AddTo(buffer);
+    buffer.Append(fieldBuffer);
+
+    UpdateData updateData;
+    updateData.AddBlock(buffer);
+
+    Common::ByteBuffer tempBuffer;
+    updateData.Build(tempBuffer, opcode);
+
+    return tempBuffer;
+}
+
+void Update(entt::registry& registry)
+{
+    SingletonComponent& singleton = registry.ctx<SingletonComponent>();
+
+    auto itemView = registry.view<ItemInitializeComponent, ItemFieldDataComponent>();
+    if (!itemView.empty())
+    {
+        itemView.each([&](const auto, ItemInitializeComponent& itemInitializeData, ItemFieldDataComponent& itemFieldData) {
+            /* Build Self Packet, must be sent immediately */
+            u8 updateType = UPDATETYPE_CREATE_OBJECT;
+            u16 selfUpdateFlag = UPDATEFLAG_LOWGUID;
+            u32 selfVisibleFlags = (UF_FLAG_PUBLIC | UF_FLAG_OWNER);
+            u16 buildOpcode = 0;
+
+            Common::ByteBuffer selfItemUpdate = BuildItemCreateData(itemInitializeData.itemGuid, updateType, selfUpdateFlag, selfVisibleFlags, itemFieldData, buildOpcode);
+            //novusConnection.SendPacket(itemInitializeData.accountGuid, selfItemUpdate, buildOpcode);
+
+            Common::ByteBuffer itemPushResult;
+            itemPushResult.Write<u64>(itemInitializeData.characterGuid);
+            itemPushResult.Write<u32>(0);                              // Received:     0 = Looted,   1 = By NPC
+            itemPushResult.Write<u32>(0);                              // Created:      0 = Received, 1 = Created
+            itemPushResult.Write<u32>(1);                              // Show in chat: 0 = No Print, 1 = Print
+            itemPushResult.Write<u8>(itemInitializeData.bagSlot);      // BagSlot
+            itemPushResult.Write<u32>(itemInitializeData.bagPosition); // BagPosition
+            itemPushResult.Write<u32>(itemInitializeData.itemGuid.GetEntry());
+            itemPushResult.Write<u32>(0);
+            itemPushResult.Write<u32>(0);
+            itemPushResult.Write<u32>(1);
+            //novusConnection.SendPacket(itemInitializeData.accountGuid, itemPushResult, Common::Opcode::SMSG_ITEM_PUSH_RESULT);
+        });
+        // Remove ItemInitializeComponent from all entities (They've just been handled above)
+        registry.reset<ItemInitializeComponent>();
     }
 }
+} // namespace ItemCreateDataSystem

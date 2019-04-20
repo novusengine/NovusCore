@@ -22,23 +22,23 @@
     SOFTWARE.
 */
 #pragma once
-#include <NovusTypes.h> 
+#include <NovusTypes.h>
 #include <robin_hood.h>
 #include <vector>
 
 #include "../playerFieldDataComponent.h"
 
 // Nix: I decided to make a struct for the handler because in the future we will want permissions and potentially other variables for each command.
-typedef bool(*CommandHandler)(std::vector<std::string>, PlayerConnectionComponent&);
+typedef bool (*CommandHandler)(std::vector<std::string>, PlayerConnectionComponent&);
 struct CommandEntry
 {
     CommandEntry() {}
-    CommandEntry(CommandHandler commandHandler, i32 inParameters) : handler(commandHandler), parameters(inParameters){ }
+    CommandEntry(CommandHandler commandHandler, i32 inParameters) : handler(commandHandler), parameters(inParameters) {}
     CommandHandler handler;
-	i32 parameters;
+    i32 parameters;
 };
 struct CommandDataSingleton
 {
-    CommandDataSingleton() : commandMap() { }
+    CommandDataSingleton() : commandMap() {}
     robin_hood::unordered_map<u32, CommandEntry> commandMap;
 };

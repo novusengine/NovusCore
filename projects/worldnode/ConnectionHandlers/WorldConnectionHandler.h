@@ -30,12 +30,17 @@ class WorldNodeHandler;
 class WorldConnectionHandler : public Common::TcpServer
 {
 public:
-    WorldConnectionHandler(asio::io_service& io_service, i32 port, WorldNodeHandler* worldNodeHandler) : Common::TcpServer(io_service, port) { _instance = this; _worldNodeHandler = worldNodeHandler; }
+    WorldConnectionHandler(asio::io_service& io_service, i32 port, WorldNodeHandler* worldNodeHandler) : Common::TcpServer(io_service, port)
+    {
+        _instance = this;
+        _worldNodeHandler = worldNodeHandler;
+    }
 
     void Start()
     {
         StartListening();
     }
+
 private:
     static WorldConnectionHandler* _instance;
     WorldNodeHandler* _worldNodeHandler;
