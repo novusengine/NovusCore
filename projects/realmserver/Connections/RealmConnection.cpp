@@ -33,45 +33,44 @@
 
 #include "../Utils/CharacterUtils.h"
 
-
 enum AuthResponse
 {
-    AUTH_OK                                                = 12,
-    AUTH_FAILED                                            = 13,
-    AUTH_REJECT                                            = 14,
-    AUTH_BAD_SERVER_PROOF                                  = 15,
-    AUTH_UNAVAILABLE                                       = 16,
-    AUTH_SYSTEM_ERROR                                      = 17,
-    AUTH_BILLING_ERROR                                     = 18,
-    AUTH_BILLING_EXPIRED                                   = 19,
-    AUTH_VERSION_MISMATCH                                  = 20,
-    AUTH_UNKNOWN_ACCOUNT                                   = 21,
-    AUTH_INCORRECT_PASSWORD                                = 22,
-    AUTH_SESSION_EXPIRED                                   = 23,
-    AUTH_SERVER_SHUTTING_DOWN                              = 24,
-    AUTH_ALREADY_LOGGING_IN                                = 25,
-    AUTH_LOGIN_SERVER_NOT_FOUND                            = 26,
-    AUTH_WAIT_QUEUE                                        = 27,
-    AUTH_BANNED                                            = 28,
-    AUTH_ALREADY_ONLINE                                    = 29,
-    AUTH_NO_TIME                                           = 30,
-    AUTH_DB_BUSY                                           = 31,
-    AUTH_SUSPENDED                                         = 32,
-    AUTH_PARENTAL_CONTROL                                  = 33,
-    AUTH_LOCKED_ENFORCED                                   = 34
+    AUTH_OK = 12,
+    AUTH_FAILED = 13,
+    AUTH_REJECT = 14,
+    AUTH_BAD_SERVER_PROOF = 15,
+    AUTH_UNAVAILABLE = 16,
+    AUTH_SYSTEM_ERROR = 17,
+    AUTH_BILLING_ERROR = 18,
+    AUTH_BILLING_EXPIRED = 19,
+    AUTH_VERSION_MISMATCH = 20,
+    AUTH_UNKNOWN_ACCOUNT = 21,
+    AUTH_INCORRECT_PASSWORD = 22,
+    AUTH_SESSION_EXPIRED = 23,
+    AUTH_SERVER_SHUTTING_DOWN = 24,
+    AUTH_ALREADY_LOGGING_IN = 25,
+    AUTH_LOGIN_SERVER_NOT_FOUND = 26,
+    AUTH_WAIT_QUEUE = 27,
+    AUTH_BANNED = 28,
+    AUTH_ALREADY_ONLINE = 29,
+    AUTH_NO_TIME = 30,
+    AUTH_DB_BUSY = 31,
+    AUTH_SUSPENDED = 32,
+    AUTH_PARENTAL_CONTROL = 33,
+    AUTH_LOCKED_ENFORCED = 34
 };
 
 enum EnterWorldResults
 {
-    ENTER_FAILED                                = 0x00,
-    ENTER_FAILED_WORLDSERVER_DOWN               = 0x01,
-    ENTER_FAILED_CHARACTER_WITH_NAME_EXISTS     = 0x02,
-    ENTER_FAILED_NO_INSTANCE_SERVER_AVAILABLE   = 0x03,
-    ENTER_FAILED_RACE_CLASS_UNAVAILABLE         = 0x04,
-    ENTER_FAILED_CHARACTER_NOT_FOUND            = 0x05,
-    ENTER_FAILED_CHARACTER_UPDATE_IN_PROGRESS   = 0x06,
-    ENTER_FAILED_LOCKED_NO_GAMETIME             = 0x07,
-    ENTER_FAILED_CANT_LOGIN_REMOTELY            = 0x08,
+    ENTER_FAILED = 0x00,
+    ENTER_FAILED_WORLDSERVER_DOWN = 0x01,
+    ENTER_FAILED_CHARACTER_WITH_NAME_EXISTS = 0x02,
+    ENTER_FAILED_NO_INSTANCE_SERVER_AVAILABLE = 0x03,
+    ENTER_FAILED_RACE_CLASS_UNAVAILABLE = 0x04,
+    ENTER_FAILED_CHARACTER_NOT_FOUND = 0x05,
+    ENTER_FAILED_CHARACTER_UPDATE_IN_PROGRESS = 0x06,
+    ENTER_FAILED_LOCKED_NO_GAMETIME = 0x07,
+    ENTER_FAILED_CANT_LOGIN_REMOTELY = 0x08,
 };
 
 enum CharacterResponses
@@ -238,350 +237,342 @@ bool RealmConnection::HandlePacketRead()
     printf("Received Opcode: %u\n", opcode);
     switch (opcode)
     {
-        case Common::Opcode::CMSG_PLAYER_LOGIN:
-        {
-            Common::ByteBuffer redirectClient;
-            i32 ip = 16777343;
-            i16 port = 9000;
+    case Common::Opcode::CMSG_PLAYER_LOGIN:
+    {
+        Common::ByteBuffer redirectClient;
+        i32 ip = 16777343;
+        i16 port = 9000;
 
-            // 127.0.0.1/1.0.0.127
-            // 2130706433/16777343(https://www.browserling.com/tools/ip-to-dec)
-            redirectClient.Write<i32>(ip);
-            redirectClient.Write<i16>(port);
-            redirectClient.Write<i32>(0); // unk
+        // 127.0.0.1/1.0.0.127
+        // 2130706433/16777343(https://www.browserling.com/tools/ip-to-dec)
+        redirectClient.Write<i32>(ip);
+        redirectClient.Write<i16>(port);
+        redirectClient.Write<i32>(0); // unk
 #pragma warning(push)
-#pragma warning(disable: 4312)
-            HMACH hmac(40, sessionKey->BN2BinArray(20).get());
-            hmac.UpdateHash((u8*)&ip, 4);
-            hmac.UpdateHash((u8*)&port, 2);
-            hmac.Finish();
-            redirectClient.Append(hmac.GetData(), 20);
+#pragma warning(disable : 4312)
+        HMACH hmac(40, sessionKey->BN2BinArray(20).get());
+        hmac.UpdateHash((u8*)&ip, 4);
+        hmac.UpdateHash((u8*)&port, 2);
+        hmac.Finish();
+        redirectClient.Append(hmac.GetData(), 20);
 #pragma warning(pop)
-            SendPacket(redirectClient, Common::Opcode::SMSG_REDIRECT_CLIENT);
+        SendPacket(redirectClient, Common::Opcode::SMSG_REDIRECT_CLIENT);
 
-            u64 characterGuid = 0;
-            _packetBuffer.Read<u64>(characterGuid);
+        u64 characterGuid = 0;
+        _packetBuffer.Read<u64>(characterGuid);
 
-            DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, [&, characterGuid](std::shared_ptr<DatabaseConnector> & connector)
+        DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, [&, characterGuid](std::shared_ptr<DatabaseConnector>& connector) {
+            PreparedStatement stmt("UPDATE characters SET online=1 WHERE guid={u};");
+            stmt.Bind(characterGuid);
+            connector->Execute(stmt);
+
+            /*I'm am not 100% sure where this fits into the picture yet, but I'm sure it has a purpose*/
+            Common::ByteBuffer suspendComms;
+            suspendComms.Write<u32>(1);
+            SendPacket(suspendComms, Common::Opcode::SMSG_SUSPEND_COMMS);
+        });
+        break;
+    }
+    case Common::Opcode::CMSG_CONNECT_TO_FAILED:
+    {
+        Common::ByteBuffer loginFailed(1);
+        loginFailed.Write<u8>(ENTER_FAILED_WORLDSERVER_DOWN);
+        SendPacket(loginFailed, Common::Opcode::SMSG_CHARACTER_LOGIN_FAILED);
+        break;
+    }
+    case Common::Opcode::CMSG_SUSPEND_COMMS_ACK:
+    {
+        u32 response = 0;
+        _packetBuffer.Read<u32>(response);
+        break;
+    }
+    case Common::Opcode::CMSG_PING:
+    {
+        Common::ByteBuffer pong(4);
+        pong.Write<u32>(0);
+        SendPacket(pong, Common::Opcode::SMSG_PONG);
+        break;
+    }
+    case Common::Opcode::CMSG_KEEP_ALIVE:
+        break;
+    case Common::Opcode::CMSG_AUTH_SESSION:
+    {
+        if (account == 0)
+        {
+            HandleAuthSession();
+        }
+        break;
+    }
+    case Common::Opcode::CMSG_REDIRECT_CLIENT_PROOF:
+    {
+        if (account == 0)
+        {
+            HandleContinueAuthSession();
+        }
+        break;
+    }
+    case Common::Opcode::CMSG_READY_FOR_ACCOUNT_DATA_TIMES:
+    {
+        /* Packet Structure */
+        // UInt32:  Server Time (time(nullptr))
+        // UInt8:   Unknown Byte Value
+        // UInt32:  Mask for the account data fields
+
+        Common::ByteBuffer accountDataTimes;
+
+        u32 mask = 0x15;
+        accountDataTimes.Write<u32>(static_cast<u32>(time(nullptr)));
+        accountDataTimes.Write<u8>(1);     // bitmask blocks count
+        accountDataTimes.Write<u32>(mask); // PER_CHARACTER_CACHE_MASK
+
+        for (u32 i = 0; i < 8; ++i)
+        {
+            if (mask & (1 << i))
+                accountDataTimes.Write<u32>(0);
+        }
+
+        SendPacket(accountDataTimes, Common::Opcode::SMSG_ACCOUNT_DATA_TIMES);
+        break;
+    }
+    case Common::Opcode::CMSG_UPDATE_ACCOUNT_DATA:
+    {
+        u32 type, timestamp, decompressedSize;
+        _packetBuffer.Read(&type, 4);
+        _packetBuffer.Read(&timestamp, 4);
+        _packetBuffer.Read(&decompressedSize, 4);
+
+        if (type > 8)
+        {
+            std::cout << "Bad Type." << std::endl;
+            break;
+        }
+
+        Common::ByteBuffer updateAccountDataComplete(9 + 4 + 4);
+        updateAccountDataComplete.Write<u32>(type);
+        updateAccountDataComplete.Write<u32>(0);
+
+        SendPacket(updateAccountDataComplete, Common::Opcode::SMSG_UPDATE_ACCOUNT_DATA_COMPLETE);
+        break;
+    }
+    case Common::Opcode::CMSG_REALM_SPLIT:
+    {
+        std::string split_date = "01/01/01";
+        u32 unk = 0;
+        _packetBuffer.Read<u32>(unk);
+
+        Common::ByteBuffer realmSplit;
+        realmSplit.Write<u32>(unk);
+        realmSplit.Write<u32>(0x0); // split states: 0x0 realm normal, 0x1 realm split, 0x2 realm split pending
+        realmSplit.WriteString(split_date);
+
+        SendPacket(realmSplit, Common::Opcode::SMSG_REALM_SPLIT);
+        break;
+    }
+    case Common::Opcode::CMSG_CHAR_ENUM:
+    {
+        PreparedStatement stmt("SELECT characters.guid, characters.name, characters.race, characters.class, characters.gender, character_visual_data.skin, character_visual_data.face, character_visual_data.hair_style, character_visual_data.hair_color, character_visual_data.facial_style, characters.level, characters.zoneId, characters.mapId, characters.coordinate_x, characters.coordinate_y, characters.coordinate_z FROM characters INNER JOIN character_visual_data ON characters.guid=character_visual_data.guid WHERE characters.account={u};");
+        stmt.Bind(account);
+        DatabaseConnector::QueryAsync(DATABASE_TYPE::CHARSERVER, stmt, [this](amy::result_set& results, DatabaseConnector& connector) {
+            Common::ByteBuffer charEnum;
+
+            // Number of characters
+            charEnum.Write<u8>(static_cast<u8>(results.affected_rows()));
+
+            /* Template for loading a character */
+            for (auto& row : results)
             {
-                PreparedStatement stmt("UPDATE characters SET online=1 WHERE guid={u};");
-                stmt.Bind(characterGuid);
-                connector->Execute(stmt);
+                charEnum.Write<u64>(row[0].GetU64());     // Guid
+                charEnum.WriteString(row[1].GetString()); // Name
+                charEnum.Write<u8>(row[2].GetU8());       // Race
+                charEnum.Write<u8>(row[3].GetU8());       // Class
+                charEnum.Write<u8>(row[4].GetU8());       // Gender
 
-                
-                /*I'm am not 100% sure where this fits into the picture yet, but I'm sure it has a purpose*/
-                Common::ByteBuffer suspendComms;
-                suspendComms.Write<u32>(1);
-                SendPacket(suspendComms, Common::Opcode::SMSG_SUSPEND_COMMS);
-                
+                charEnum.Write<u8>(row[5].GetU8()); // Skin
+                charEnum.Write<u8>(row[6].GetU8()); // Face
+                charEnum.Write<u8>(row[7].GetU8()); // Hairstyle
+                charEnum.Write<u8>(row[8].GetU8()); // Haircolor
+                charEnum.Write<u8>(row[9].GetU8()); // Facialstyle
+
+                charEnum.Write<u8>(row[10].GetU8());   // Level
+                charEnum.Write<u32>(row[11].GetU16()); // Zone Id
+                charEnum.Write<u32>(row[12].GetU16()); // Map Id
+
+                charEnum.Write<f32>(row[13].GetF32()); // X
+                charEnum.Write<f32>(row[14].GetF32()); // Y
+                charEnum.Write<f32>(row[15].GetF32()); // Z
+
+                charEnum.Write<u32>(0); // Guild Id
+
+                charEnum.Write<u32>(0); // Character Flags
+                charEnum.Write<u32>(0); // characterCustomize Flag
+
+                charEnum.Write<u8>(1); // First Login (Here we should probably do a playerTime check to determin if its the player's first login)
+
+                charEnum.Write<u32>(0); // Pet Display Id (Lich King: 22234)
+                charEnum.Write<u32>(0); // Pet Level
+                charEnum.Write<u32>(0); // Pet Family
+
+                u32 equipmentDataNull = 0;
+                for (i32 i = 0; i < 23; ++i)
+                {
+                    charEnum.Write<u32>(equipmentDataNull);
+                    charEnum.Write<u8>(0);
+                    charEnum.Write<u32>(equipmentDataNull);
+                }
+            }
+
+            SendPacket(charEnum, Common::Opcode::SMSG_CHAR_ENUM);
+        });
+        break;
+    }
+    case Common::Opcode::CMSG_CHAR_CREATE:
+    {
+        cCharacterCreateData* createData = new cCharacterCreateData();
+        createData->Read(_packetBuffer);
+
+        PreparedStatement stmt("SELECT name FROM characters WHERE name={s};");
+        stmt.Bind(createData->charName);
+        DatabaseConnector::QueryAsync(DATABASE_TYPE::CHARSERVER, stmt, [this, createData](amy::result_set& results, DatabaseConnector& connector) {
+            Common::ByteBuffer characterCreateResult;
+
+            if (results.affected_rows() > 0)
+            {
+                characterCreateResult.Write<u8>(CHAR_CREATE_NAME_IN_USE);
+                SendPacket(characterCreateResult, Common::Opcode::SMSG_CHAR_CREATE);
+                delete createData;
+                return;
+            }
+
+            /* Convert name to proper format */
+            std::transform(createData->charName.begin(), createData->charName.end(), createData->charName.begin(), ::tolower);
+            createData->charName[0] = std::toupper(createData->charName[0]);
+
+            CharacterUtils::SpawnPosition spawnPosition;
+            if (!CharacterUtils::BuildGetDefaultSpawn(_cache.GetDefaultSpawnStorageData(), createData->charRace, createData->charClass, spawnPosition))
+            {
+                characterCreateResult.Write<u8>(CHAR_CREATE_DISABLED);
+                SendPacket(characterCreateResult, Common::Opcode::SMSG_CHAR_CREATE);
+                delete createData;
+                return;
+            }
+
+            PreparedStatement characterBaseData("INSERT INTO characters(account, name, race, gender, class, mapId, zoneId, coordinate_x, coordinate_y, coordinate_z, orientation) VALUES({u}, {s}, {u}, {u}, {u}, {u}, {u}, {f}, {f}, {f}, {f});");
+            characterBaseData.Bind(account);
+            characterBaseData.Bind(createData->charName);
+            characterBaseData.Bind(createData->charRace);
+            characterBaseData.Bind(createData->charGender);
+            characterBaseData.Bind(createData->charClass);
+            characterBaseData.Bind(spawnPosition.mapId);
+            characterBaseData.Bind(spawnPosition.zoneId);
+            characterBaseData.Bind(spawnPosition.coordinate_x);
+            characterBaseData.Bind(spawnPosition.coordinate_y);
+            characterBaseData.Bind(spawnPosition.coordinate_z);
+            characterBaseData.Bind(spawnPosition.orientation);
+            connector.Execute(characterBaseData);
+
+            // This needs to be non-async as we rely on LAST_INSERT_ID() to retrieve the character's guid
+            amy::result_set guidResult;
+            connector.Query("SELECT LAST_INSERT_ID();", guidResult);
+            u64 characterGuid = guidResult[0][0].as<amy::sql_bigint_unsigned>();
+
+            PreparedStatement characterVisualData("INSERT INTO character_visual_data(guid, skin, face, facial_style, hair_style, hair_color) VALUES({u}, {u}, {u}, {u}, {u}, {u});");
+            characterVisualData.Bind(characterGuid);
+            characterVisualData.Bind(createData->charSkin);
+            characterVisualData.Bind(createData->charFace);
+            characterVisualData.Bind(createData->charFacialStyle);
+            characterVisualData.Bind(createData->charHairStyle);
+            characterVisualData.Bind(createData->charHairColor);
+            connector.ExecuteAsync(characterVisualData);
+
+            // Baseline Skills
+            std::string skillSql;
+            if (CharacterUtils::BuildDefaultSkillSQL(_cache.GetDefaultSkillStorageData(), characterGuid, createData->charRace, createData->charClass, skillSql))
+            {
+                connector.ExecuteAsync(skillSql);
+            }
+
+            // Baseline Spells
+            std::string spellSql;
+            if (CharacterUtils::BuildDefaultSpellSQL(_cache.GetDefaultSpellStorageData(), characterGuid, createData->charRace, createData->charClass, spellSql))
+            {
+                connector.ExecuteAsync(spellSql);
+            }
+
+            DatabaseConnector::Borrow(DATABASE_TYPE::AUTHSERVER, [this](std::shared_ptr<DatabaseConnector>& connector) {
+                u32 realmId = 1;
+                PreparedStatement realmCharacterCount("INSERT INTO realm_characters(account, realmid, characters) VALUES({u}, {u}, 1) ON DUPLICATE KEY UPDATE characters = characters + 1;");
+                realmCharacterCount.Bind(account);
+                realmCharacterCount.Bind(realmId); // Realm Id
+                connector->Execute(realmCharacterCount);
             });
-            break;
-        }
-        case Common::Opcode::CMSG_CONNECT_TO_FAILED:
-        {
-            Common::ByteBuffer loginFailed(1);
-            loginFailed.Write<u8>(ENTER_FAILED_WORLDSERVER_DOWN);
-            SendPacket(loginFailed, Common::Opcode::SMSG_CHARACTER_LOGIN_FAILED);
-            break;
-        }
-        case Common::Opcode::CMSG_SUSPEND_COMMS_ACK:
-        {
-            u32 response = 0;
-            _packetBuffer.Read<u32>(response);
-            break;
-        }
-        case Common::Opcode::CMSG_PING:
-        {
-            Common::ByteBuffer pong(4);
-            pong.Write<u32>(0);
-            SendPacket(pong, Common::Opcode::SMSG_PONG);
-            break;
-        }
-        case Common::Opcode::CMSG_KEEP_ALIVE:
-            break;
-        case Common::Opcode::CMSG_AUTH_SESSION:
-        {
-            if (account == 0)
-            {
-                HandleAuthSession();
-            }
-            break;
-        }
-        case Common::Opcode::CMSG_REDIRECT_CLIENT_PROOF:
-        {
-            if (account == 0)
-            {
-                HandleContinueAuthSession();
-            }
-            break;
-        }
-        case Common::Opcode::CMSG_READY_FOR_ACCOUNT_DATA_TIMES:
-        {
-            /* Packet Structure */
-            // UInt32:  Server Time (time(nullptr))
-            // UInt8:   Unknown Byte Value
-            // UInt32:  Mask for the account data fields
 
-            Common::ByteBuffer accountDataTimes;
+            characterCreateResult.Write<u8>(CHAR_CREATE_SUCCESS);
+            SendPacket(characterCreateResult, Common::Opcode::SMSG_CHAR_CREATE);
 
-            u32 mask = 0x15;
-            accountDataTimes.Write<u32>(static_cast<u32>(time(nullptr)));
-            accountDataTimes.Write<u8>(1); // bitmask blocks count
-            accountDataTimes.Write<u32>(mask); // PER_CHARACTER_CACHE_MASK
+            delete createData;
+        });
 
-            for (u32 i = 0; i < 8; ++i)
+        break;
+    }
+    case Common::Opcode::CMSG_CHAR_DELETE:
+    {
+        u64 guid = 0;
+        _packetBuffer.Read<u64>(guid);
+
+        PreparedStatement stmt("SELECT account FROM characters WHERE guid={u};");
+        stmt.Bind(guid);
+        DatabaseConnector::QueryAsync(DATABASE_TYPE::CHARSERVER, stmt, [this, header, guid](amy::result_set& results, DatabaseConnector& connector) {
+            Common::ByteBuffer characterDeleteResult;
+
+            // Char doesn't exist
+            if (results.affected_rows() == 0)
             {
-                if (mask & (1 << i))
-                    accountDataTimes.Write<u32>(0);
+                characterDeleteResult.Write<u8>(CHAR_DELETE_FAILED);
+                SendPacket(characterDeleteResult, Common::Opcode::SMSG_CHAR_DELETE);
+                return;
             }
 
-            SendPacket(accountDataTimes, Common::Opcode::SMSG_ACCOUNT_DATA_TIMES);
-            break;
-        }
-        case Common::Opcode::CMSG_UPDATE_ACCOUNT_DATA:
-        {
-            u32 type, timestamp, decompressedSize;
-            _packetBuffer.Read(&type, 4);
-            _packetBuffer.Read(&timestamp, 4);
-            _packetBuffer.Read(&decompressedSize, 4);
-
-            if (type > 8)
+            // Prevent deleting other player's characters
+            u64 characterAccountGuid = results[0][0].as<amy::sql_bigint_unsigned>();
+            if (account != characterAccountGuid)
             {
-                std::cout << "Bad Type." << std::endl;
-                break;
+                characterDeleteResult.Write<u8>(CHAR_DELETE_FAILED);
+                SendPacket(characterDeleteResult, Common::Opcode::SMSG_CHAR_DELETE);
+                return;
             }
 
-            Common::ByteBuffer updateAccountDataComplete(9 + 4 + 4);
-            updateAccountDataComplete.Write<u32>(type);
-            updateAccountDataComplete.Write<u32>(0);
+            PreparedStatement characterBaseData("DELETE FROM characters WHERE guid={u};");
+            characterBaseData.Bind(guid);
 
-            SendPacket(updateAccountDataComplete, Common::Opcode::SMSG_UPDATE_ACCOUNT_DATA_COMPLETE);
-            break;
-        }
-        case Common::Opcode::CMSG_REALM_SPLIT:
-        {
-            std::string split_date = "01/01/01";
-            u32 unk = 0;
-            _packetBuffer.Read<u32>(unk);
+            PreparedStatement characterVisualData("DELETE FROM character_visual_data WHERE guid={u};");
+            characterVisualData.Bind(guid);
 
-            Common::ByteBuffer realmSplit;
-            realmSplit.Write<u32>(unk);
-            realmSplit.Write<u32>(0x0); // split states: 0x0 realm normal, 0x1 realm split, 0x2 realm split pending
-            realmSplit.WriteString(split_date);
+            PreparedStatement charcaterSkillStorage("DELETE FROM character_skill_storage WHERE guid={u};");
+            charcaterSkillStorage.Bind(guid);
 
-            SendPacket(realmSplit, Common::Opcode::SMSG_REALM_SPLIT);
-            break;
-        }
-        case Common::Opcode::CMSG_CHAR_ENUM:
-        {
-            PreparedStatement stmt("SELECT characters.guid, characters.name, characters.race, characters.class, characters.gender, character_visual_data.skin, character_visual_data.face, character_visual_data.hair_style, character_visual_data.hair_color, character_visual_data.facial_style, characters.level, characters.zoneId, characters.mapId, characters.coordinate_x, characters.coordinate_y, characters.coordinate_z FROM characters INNER JOIN character_visual_data ON characters.guid=character_visual_data.guid WHERE characters.account={u};");
-            stmt.Bind(account);
-            DatabaseConnector::QueryAsync(DATABASE_TYPE::CHARSERVER, stmt, [this](amy::result_set & results, DatabaseConnector & connector)
-                {
-                    Common::ByteBuffer charEnum;
+            PreparedStatement charcaterSpellStorage("DELETE FROM character_spell_storage WHERE guid={u};");
+            charcaterSpellStorage.Bind(guid);
 
-                    // Number of characters
-                    charEnum.Write<u8>(static_cast<u8>(results.affected_rows()));
+            connector.Execute(characterBaseData);
+            connector.Execute(characterVisualData);
+            connector.Execute(charcaterSkillStorage);
+            connector.Execute(charcaterSpellStorage);
 
-                    /* Template for loading a character */
-                    for (auto& row : results)
-                    {
-                        charEnum.Write<u64>(row[0].GetU64()); // Guid
-                        charEnum.WriteString(row[1].GetString()); // Name
-                        charEnum.Write<u8>(row[2].GetU8()); // Race
-                        charEnum.Write<u8>(row[3].GetU8()); // Class
-                        charEnum.Write<u8>(row[4].GetU8()); // Gender
+            DatabaseConnector::Borrow(DATABASE_TYPE::AUTHSERVER, [this, header](std::shared_ptr<DatabaseConnector>& connector) {
+                u32 realmId = 1;
+                PreparedStatement realmCharacterCount("UPDATE realm_characters SET characters=characters-1 WHERE account={u} and realmid={u};");
+                realmCharacterCount.Bind(account);
+                realmCharacterCount.Bind(realmId);
+                connector->Execute(realmCharacterCount);
+            });
 
-                        charEnum.Write<u8>(row[5].GetU8()); // Skin
-                        charEnum.Write<u8>(row[6].GetU8()); // Face
-                        charEnum.Write<u8>(row[7].GetU8()); // Hairstyle
-                        charEnum.Write<u8>(row[8].GetU8()); // Haircolor
-                        charEnum.Write<u8>(row[9].GetU8()); // Facialstyle
-
-                        charEnum.Write<u8>(row[10].GetU8()); // Level
-                        charEnum.Write<u32>(row[11].GetU16()); // Zone Id
-                        charEnum.Write<u32>(row[12].GetU16()); // Map Id
-
-                        charEnum.Write<f32>(row[13].GetF32()); // X
-                        charEnum.Write<f32>(row[14].GetF32()); // Y
-                        charEnum.Write<f32>(row[15].GetF32()); // Z
-
-                        charEnum.Write<u32>(0); // Guild Id
-
-                        charEnum.Write<u32>(0); // Character Flags
-                        charEnum.Write<u32>(0); // characterCustomize Flag
-
-                        charEnum.Write<u8>(1); // First Login (Here we should probably do a playerTime check to determin if its the player's first login)
-
-                        charEnum.Write<u32>(0); // Pet Display Id (Lich King: 22234)
-                        charEnum.Write<u32>(0);  // Pet Level
-                        charEnum.Write<u32>(0);  // Pet Family
-
-                        u32 equipmentDataNull = 0;
-                        for (i32 i = 0; i < 23; ++i)
-                        {
-                            charEnum.Write<u32>(equipmentDataNull);
-                            charEnum.Write<u8>(0);
-                            charEnum.Write<u32>(equipmentDataNull);
-                        }
-                    }
-
-                    SendPacket(charEnum, Common::Opcode::SMSG_CHAR_ENUM);
-                });
-            break;
-        }
-        case Common::Opcode::CMSG_CHAR_CREATE:
-        {
-            cCharacterCreateData* createData = new cCharacterCreateData();
-            createData->Read(_packetBuffer);
-
-            PreparedStatement stmt("SELECT name FROM characters WHERE name={s};");
-            stmt.Bind(createData->charName);
-            DatabaseConnector::QueryAsync(DATABASE_TYPE::CHARSERVER, stmt, [this, createData](amy::result_set& results, DatabaseConnector& connector)
-                {
-                    Common::ByteBuffer characterCreateResult;
-
-                    if (results.affected_rows() > 0)
-                    {
-                        characterCreateResult.Write<u8>(CHAR_CREATE_NAME_IN_USE);
-                        SendPacket(characterCreateResult, Common::Opcode::SMSG_CHAR_CREATE);
-                        delete createData;
-                        return;
-                    }
-
-                    /* Convert name to proper format */
-                    std::transform(createData->charName.begin(), createData->charName.end(), createData->charName.begin(), ::tolower);
-                    createData->charName[0] = std::toupper(createData->charName[0]);
-
-                    CharacterUtils::SpawnPosition spawnPosition;
-                    if (!CharacterUtils::BuildGetDefaultSpawn(_cache.GetDefaultSpawnStorageData(), createData->charRace, createData->charClass, spawnPosition))
-                    {
-                        characterCreateResult.Write<u8>(CHAR_CREATE_DISABLED);
-                        SendPacket(characterCreateResult, Common::Opcode::SMSG_CHAR_CREATE);
-                        delete createData;
-                        return;
-                    }
-
-                    PreparedStatement characterBaseData("INSERT INTO characters(account, name, race, gender, class, mapId, zoneId, coordinate_x, coordinate_y, coordinate_z, orientation) VALUES({u}, {s}, {u}, {u}, {u}, {u}, {u}, {f}, {f}, {f}, {f});");
-                    characterBaseData.Bind(account);
-                    characterBaseData.Bind(createData->charName);
-                    characterBaseData.Bind(createData->charRace);
-                    characterBaseData.Bind(createData->charGender);
-                    characterBaseData.Bind(createData->charClass);
-                    characterBaseData.Bind(spawnPosition.mapId);
-                    characterBaseData.Bind(spawnPosition.zoneId);
-                    characterBaseData.Bind(spawnPosition.coordinate_x);
-                    characterBaseData.Bind(spawnPosition.coordinate_y);
-                    characterBaseData.Bind(spawnPosition.coordinate_z);
-                    characterBaseData.Bind(spawnPosition.orientation);
-                    connector.Execute(characterBaseData);
-
-                    // This needs to be non-async as we rely on LAST_INSERT_ID() to retrieve the character's guid
-                    amy::result_set guidResult;
-                    connector.Query("SELECT LAST_INSERT_ID();", guidResult);
-                    u64 characterGuid = guidResult[0][0].as<amy::sql_bigint_unsigned>();
-
-                    PreparedStatement characterVisualData("INSERT INTO character_visual_data(guid, skin, face, facial_style, hair_style, hair_color) VALUES({u}, {u}, {u}, {u}, {u}, {u});");
-                    characterVisualData.Bind(characterGuid);
-                    characterVisualData.Bind(createData->charSkin);
-                    characterVisualData.Bind(createData->charFace);
-                    characterVisualData.Bind(createData->charFacialStyle);
-                    characterVisualData.Bind(createData->charHairStyle);
-                    characterVisualData.Bind(createData->charHairColor);
-                    connector.ExecuteAsync(characterVisualData);
-
-                    // Baseline Skills
-                    std::string skillSql;
-                    if (CharacterUtils::BuildDefaultSkillSQL(_cache.GetDefaultSkillStorageData(), characterGuid, createData->charRace, createData->charClass, skillSql))
-                    {
-                        connector.ExecuteAsync(skillSql);
-                    }
-
-                    // Baseline Spells
-                    std::string spellSql;
-                    if (CharacterUtils::BuildDefaultSpellSQL(_cache.GetDefaultSpellStorageData(), characterGuid, createData->charRace, createData->charClass, spellSql))
-                    {
-                        connector.ExecuteAsync(spellSql);
-                    }
-
-                    DatabaseConnector::Borrow(DATABASE_TYPE::AUTHSERVER, [this](std::shared_ptr<DatabaseConnector> & connector)
-                    {
-                            u32 realmId = 1;
-                        PreparedStatement realmCharacterCount("INSERT INTO realm_characters(account, realmid, characters) VALUES({u}, {u}, 1) ON DUPLICATE KEY UPDATE characters = characters + 1;");
-                        realmCharacterCount.Bind(account);
-                        realmCharacterCount.Bind(realmId); // Realm Id
-                        connector->Execute(realmCharacterCount);
-                    });
-
-                    characterCreateResult.Write<u8>(CHAR_CREATE_SUCCESS);
-                    SendPacket(characterCreateResult, Common::Opcode::SMSG_CHAR_CREATE);
-
-                    delete createData;
-                });
-
-            break;
-        }
-        case Common::Opcode::CMSG_CHAR_DELETE:
-        {
-            u64 guid = 0;
-            _packetBuffer.Read<u64>(guid);
-
-            PreparedStatement stmt("SELECT account FROM characters WHERE guid={u};");
-            stmt.Bind(guid);
-            DatabaseConnector::QueryAsync(DATABASE_TYPE::CHARSERVER, stmt, [this, header, guid](amy::result_set& results, DatabaseConnector& connector)
-                {
-                    Common::ByteBuffer characterDeleteResult;
-
-                    // Char doesn't exist
-                    if (results.affected_rows() == 0)
-                    {
-                        characterDeleteResult.Write<u8>(CHAR_DELETE_FAILED);
-                        SendPacket(characterDeleteResult, Common::Opcode::SMSG_CHAR_DELETE);
-                        return;
-                    }
-
-                    // Prevent deleting other player's characters
-                    u64 characterAccountGuid = results[0][0].as<amy::sql_bigint_unsigned>();
-                    if (account != characterAccountGuid)
-                    {
-                        characterDeleteResult.Write<u8>(CHAR_DELETE_FAILED);
-                        SendPacket(characterDeleteResult, Common::Opcode::SMSG_CHAR_DELETE);
-                        return;
-                    }
-
-                    PreparedStatement characterBaseData("DELETE FROM characters WHERE guid={u};");
-                    characterBaseData.Bind(guid);
-
-                    PreparedStatement characterVisualData("DELETE FROM character_visual_data WHERE guid={u};");
-                    characterVisualData.Bind(guid);
-
-                    PreparedStatement charcaterSkillStorage("DELETE FROM character_skill_storage WHERE guid={u};");
-                    charcaterSkillStorage.Bind(guid);
-
-                    PreparedStatement charcaterSpellStorage("DELETE FROM character_spell_storage WHERE guid={u};");
-                    charcaterSpellStorage.Bind(guid);
-
-                    connector.Execute(characterBaseData);
-                    connector.Execute(characterVisualData);
-                    connector.Execute(charcaterSkillStorage);
-                    connector.Execute(charcaterSpellStorage);
-
-                    DatabaseConnector::Borrow(DATABASE_TYPE::AUTHSERVER, [this, header](std::shared_ptr<DatabaseConnector> & connector)
-                        {
-                            u32 realmId = 1;
-                            PreparedStatement realmCharacterCount("UPDATE realm_characters SET characters=characters-1 WHERE account={u} and realmid={u};");
-                            realmCharacterCount.Bind(account);
-                            realmCharacterCount.Bind(realmId);
-                            connector->Execute(realmCharacterCount);
-                        });
-
-                    characterDeleteResult.Write<u8>(CHAR_DELETE_SUCCESS);
-                    SendPacket(characterDeleteResult, Common::Opcode::SMSG_CHAR_DELETE);
-                });
-            break;
-        }
-        default:
-            break;
+            characterDeleteResult.Write<u8>(CHAR_DELETE_SUCCESS);
+            SendPacket(characterDeleteResult, Common::Opcode::SMSG_CHAR_DELETE);
+        });
+        break;
+    }
+    default:
+        break;
     }
 
     return true;
@@ -601,7 +592,6 @@ void RealmConnection::SendPacket(Common::ByteBuffer& packet, Common::Opcode opco
     Send(buffer);
 }
 
-
 void RealmConnection::HandleContinueAuthSession()
 {
     std::string username = "";
@@ -614,8 +604,7 @@ void RealmConnection::HandleContinueAuthSession()
 
     PreparedStatement stmt("SELECT guid, sessionKey FROM accounts WHERE username={s};");
     stmt.Bind(username);
-    DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, stmt, [this, username, digest](amy::result_set & results, DatabaseConnector & connector)
-    {
+    DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, stmt, [this, username, digest](amy::result_set& results, DatabaseConnector& connector) {
         // Make sure the account exist.
         if (results.affected_rows() != 1)
         {
@@ -639,18 +628,16 @@ void RealmConnection::HandleContinueAuthSession()
             return;
         }
 
-
         _streamCrypto.SetupServer(sessionKey);
         account = results[0][0].as<amy::sql_int_unsigned>();
 
         Common::ByteBuffer empty;
         SendPacket(empty, Common::Opcode::SMSG_RESUME_COMMS);
 
-
         Common::ByteBuffer accountDataTimes;
         u32 mask = 0x15;
         accountDataTimes.Write<u32>(static_cast<u32>(time(nullptr)));
-        accountDataTimes.Write<u8>(1); // bitmask blocks count
+        accountDataTimes.Write<u8>(1);     // bitmask blocks count
         accountDataTimes.Write<u32>(mask); // PER_CHARACTER_CACHE_MASK
 
         for (u32 i = 0; i < 8; ++i)
@@ -673,58 +660,57 @@ void RealmConnection::HandleContinueAuthSession()
 
         PreparedStatement stmt("SELECT characters.guid, characters.name, characters.race, characters.class, characters.gender, character_visual_data.skin, character_visual_data.face, character_visual_data.hair_style, character_visual_data.hair_color, character_visual_data.facial_style, characters.level, characters.zoneId, characters.mapId, characters.coordinate_x, characters.coordinate_y, characters.coordinate_z FROM characters INNER JOIN character_visual_data ON characters.guid=character_visual_data.guid WHERE characters.account={u};");
         stmt.Bind(account);
-        DatabaseConnector::QueryAsync(DATABASE_TYPE::CHARSERVER, stmt, [this](amy::result_set & results, DatabaseConnector & connector)
+        DatabaseConnector::QueryAsync(DATABASE_TYPE::CHARSERVER, stmt, [this](amy::result_set& results, DatabaseConnector& connector) {
+            Common::ByteBuffer charEnum;
+
+            // Number of characters
+            charEnum.Write<u8>(static_cast<u8>(results.affected_rows()));
+
+            /* Template for loading a character */
+            for (auto& row : results)
             {
-                Common::ByteBuffer charEnum;
+                charEnum.Write<u64>(row[0].GetU64());     // Guid
+                charEnum.WriteString(row[1].GetString()); // Name
+                charEnum.Write<u8>(row[2].GetU8());       // Race
+                charEnum.Write<u8>(row[3].GetU8());       // Class
+                charEnum.Write<u8>(row[4].GetU8());       // Gender
 
-                // Number of characters
-                charEnum.Write<u8>(static_cast<u8>(results.affected_rows()));
+                charEnum.Write<u8>(row[5].GetU8()); // Skin
+                charEnum.Write<u8>(row[6].GetU8()); // Face
+                charEnum.Write<u8>(row[7].GetU8()); // Hairstyle
+                charEnum.Write<u8>(row[8].GetU8()); // Haircolor
+                charEnum.Write<u8>(row[9].GetU8()); // Facialstyle
 
-                /* Template for loading a character */
-                for (auto& row : results)
+                charEnum.Write<u8>(row[10].GetU8());   // Level
+                charEnum.Write<u32>(row[11].GetU16()); // Zone Id
+                charEnum.Write<u32>(row[12].GetU16()); // Map Id
+
+                charEnum.Write<f32>(row[13].GetF32()); // X
+                charEnum.Write<f32>(row[14].GetF32()); // Y
+                charEnum.Write<f32>(row[15].GetF32()); // Z
+
+                charEnum.Write<u32>(0); // Guild Id
+
+                charEnum.Write<u32>(0); // Character Flags
+                charEnum.Write<u32>(0); // characterCustomize Flag
+
+                charEnum.Write<u8>(1); // First Login (Here we should probably do a playerTime check to determin if its the player's first login)
+
+                charEnum.Write<u32>(0); // Pet Display Id (Lich King: 22234)
+                charEnum.Write<u32>(0); // Pet Level
+                charEnum.Write<u32>(0); // Pet Family
+
+                u32 equipmentDataNull = 0;
+                for (i32 i = 0; i < 23; ++i)
                 {
-                    charEnum.Write<u64>(row[0].GetU64()); // Guid
-                    charEnum.WriteString(row[1].GetString()); // Name
-                    charEnum.Write<u8>(row[2].GetU8()); // Race
-                    charEnum.Write<u8>(row[3].GetU8()); // Class
-                    charEnum.Write<u8>(row[4].GetU8()); // Gender
-
-                    charEnum.Write<u8>(row[5].GetU8()); // Skin
-                    charEnum.Write<u8>(row[6].GetU8()); // Face
-                    charEnum.Write<u8>(row[7].GetU8()); // Hairstyle
-                    charEnum.Write<u8>(row[8].GetU8()); // Haircolor
-                    charEnum.Write<u8>(row[9].GetU8()); // Facialstyle
-
-                    charEnum.Write<u8>(row[10].GetU8()); // Level
-                    charEnum.Write<u32>(row[11].GetU16()); // Zone Id
-                    charEnum.Write<u32>(row[12].GetU16()); // Map Id
-
-                    charEnum.Write<f32>(row[13].GetF32()); // X
-                    charEnum.Write<f32>(row[14].GetF32()); // Y
-                    charEnum.Write<f32>(row[15].GetF32()); // Z
-
-                    charEnum.Write<u32>(0); // Guild Id
-
-                    charEnum.Write<u32>(0); // Character Flags
-                    charEnum.Write<u32>(0); // characterCustomize Flag
-
-                    charEnum.Write<u8>(1); // First Login (Here we should probably do a playerTime check to determin if its the player's first login)
-
-                    charEnum.Write<u32>(0); // Pet Display Id (Lich King: 22234)
-                    charEnum.Write<u32>(0);  // Pet Level
-                    charEnum.Write<u32>(0);  // Pet Family
-
-                    u32 equipmentDataNull = 0;
-                    for (i32 i = 0; i < 23; ++i)
-                    {
-                        charEnum.Write<u32>(equipmentDataNull);
-                        charEnum.Write<u8>(0);
-                        charEnum.Write<u32>(equipmentDataNull);
-                    }
+                    charEnum.Write<u32>(equipmentDataNull);
+                    charEnum.Write<u8>(0);
+                    charEnum.Write<u32>(equipmentDataNull);
                 }
+            }
 
-                SendPacket(charEnum, Common::Opcode::SMSG_CHAR_ENUM);
-            });
+            SendPacket(charEnum, Common::Opcode::SMSG_CHAR_ENUM);
+        });
     });
 }
 
@@ -774,8 +760,7 @@ void RealmConnection::HandleAuthSession()
 
     PreparedStatement stmt("SELECT guid, sessionKey FROM accounts WHERE username={s};");
     stmt.Bind(sessionData.accountName);
-    DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, stmt, [this](amy::result_set& results, DatabaseConnector& connector)
-    {
+    DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, stmt, [this](amy::result_set& results, DatabaseConnector& connector) {
         // Make sure the account exist.
         if (results.affected_rows() != 1)
         {
@@ -839,24 +824,23 @@ void RealmConnection::HandleAuthSession()
         addonMap.insert(std::make_pair("Blizzard_TrainerUI", 1276933997));
 
         u8 addonPublicKey[256] =
-        {
-            0xC3, 0x5B, 0x50, 0x84, 0xB9, 0x3E, 0x32, 0x42, 0x8C, 0xD0, 0xC7, 0x48, 0xFA, 0x0E, 0x5D, 0x54,
-            0x5A, 0xA3, 0x0E, 0x14, 0xBA, 0x9E, 0x0D, 0xB9, 0x5D, 0x8B, 0xEE, 0xB6, 0x84, 0x93, 0x45, 0x75,
-            0xFF, 0x31, 0xFE, 0x2F, 0x64, 0x3F, 0x3D, 0x6D, 0x07, 0xD9, 0x44, 0x9B, 0x40, 0x85, 0x59, 0x34,
-            0x4E, 0x10, 0xE1, 0xE7, 0x43, 0x69, 0xEF, 0x7C, 0x16, 0xFC, 0xB4, 0xED, 0x1B, 0x95, 0x28, 0xA8,
-            0x23, 0x76, 0x51, 0x31, 0x57, 0x30, 0x2B, 0x79, 0x08, 0x50, 0x10, 0x1C, 0x4A, 0x1A, 0x2C, 0xC8,
-            0x8B, 0x8F, 0x05, 0x2D, 0x22, 0x3D, 0xDB, 0x5A, 0x24, 0x7A, 0x0F, 0x13, 0x50, 0x37, 0x8F, 0x5A,
-            0xCC, 0x9E, 0x04, 0x44, 0x0E, 0x87, 0x01, 0xD4, 0xA3, 0x15, 0x94, 0x16, 0x34, 0xC6, 0xC2, 0xC3,
-            0xFB, 0x49, 0xFE, 0xE1, 0xF9, 0xDA, 0x8C, 0x50, 0x3C, 0xBE, 0x2C, 0xBB, 0x57, 0xED, 0x46, 0xB9,
-            0xAD, 0x8B, 0xC6, 0xDF, 0x0E, 0xD6, 0x0F, 0xBE, 0x80, 0xB3, 0x8B, 0x1E, 0x77, 0xCF, 0xAD, 0x22,
-            0xCF, 0xB7, 0x4B, 0xCF, 0xFB, 0xF0, 0x6B, 0x11, 0x45, 0x2D, 0x7A, 0x81, 0x18, 0xF2, 0x92, 0x7E,
-            0x98, 0x56, 0x5D, 0x5E, 0x69, 0x72, 0x0A, 0x0D, 0x03, 0x0A, 0x85, 0xA2, 0x85, 0x9C, 0xCB, 0xFB,
-            0x56, 0x6E, 0x8F, 0x44, 0xBB, 0x8F, 0x02, 0x22, 0x68, 0x63, 0x97, 0xBC, 0x85, 0xBA, 0xA8, 0xF7,
-            0xB5, 0x40, 0x68, 0x3C, 0x77, 0x86, 0x6F, 0x4B, 0xD7, 0x88, 0xCA, 0x8A, 0xD7, 0xCE, 0x36, 0xF0,
-            0x45, 0x6E, 0xD5, 0x64, 0x79, 0x0F, 0x17, 0xFC, 0x64, 0xDD, 0x10, 0x6F, 0xF3, 0xF5, 0xE0, 0xA6,
-            0xC3, 0xFB, 0x1B, 0x8C, 0x29, 0xEF, 0x8E, 0xE5, 0x34, 0xCB, 0xD1, 0x2A, 0xCE, 0x79, 0xC3, 0x9A,
-            0x0D, 0x36, 0xEA, 0x01, 0xE0, 0xAA, 0x91, 0x20, 0x54, 0xF0, 0x72, 0xD8, 0x1E, 0xC7, 0x89, 0xD2
-        };
+            {
+                0xC3, 0x5B, 0x50, 0x84, 0xB9, 0x3E, 0x32, 0x42, 0x8C, 0xD0, 0xC7, 0x48, 0xFA, 0x0E, 0x5D, 0x54,
+                0x5A, 0xA3, 0x0E, 0x14, 0xBA, 0x9E, 0x0D, 0xB9, 0x5D, 0x8B, 0xEE, 0xB6, 0x84, 0x93, 0x45, 0x75,
+                0xFF, 0x31, 0xFE, 0x2F, 0x64, 0x3F, 0x3D, 0x6D, 0x07, 0xD9, 0x44, 0x9B, 0x40, 0x85, 0x59, 0x34,
+                0x4E, 0x10, 0xE1, 0xE7, 0x43, 0x69, 0xEF, 0x7C, 0x16, 0xFC, 0xB4, 0xED, 0x1B, 0x95, 0x28, 0xA8,
+                0x23, 0x76, 0x51, 0x31, 0x57, 0x30, 0x2B, 0x79, 0x08, 0x50, 0x10, 0x1C, 0x4A, 0x1A, 0x2C, 0xC8,
+                0x8B, 0x8F, 0x05, 0x2D, 0x22, 0x3D, 0xDB, 0x5A, 0x24, 0x7A, 0x0F, 0x13, 0x50, 0x37, 0x8F, 0x5A,
+                0xCC, 0x9E, 0x04, 0x44, 0x0E, 0x87, 0x01, 0xD4, 0xA3, 0x15, 0x94, 0x16, 0x34, 0xC6, 0xC2, 0xC3,
+                0xFB, 0x49, 0xFE, 0xE1, 0xF9, 0xDA, 0x8C, 0x50, 0x3C, 0xBE, 0x2C, 0xBB, 0x57, 0xED, 0x46, 0xB9,
+                0xAD, 0x8B, 0xC6, 0xDF, 0x0E, 0xD6, 0x0F, 0xBE, 0x80, 0xB3, 0x8B, 0x1E, 0x77, 0xCF, 0xAD, 0x22,
+                0xCF, 0xB7, 0x4B, 0xCF, 0xFB, 0xF0, 0x6B, 0x11, 0x45, 0x2D, 0x7A, 0x81, 0x18, 0xF2, 0x92, 0x7E,
+                0x98, 0x56, 0x5D, 0x5E, 0x69, 0x72, 0x0A, 0x0D, 0x03, 0x0A, 0x85, 0xA2, 0x85, 0x9C, 0xCB, 0xFB,
+                0x56, 0x6E, 0x8F, 0x44, 0xBB, 0x8F, 0x02, 0x22, 0x68, 0x63, 0x97, 0xBC, 0x85, 0xBA, 0xA8, 0xF7,
+                0xB5, 0x40, 0x68, 0x3C, 0x77, 0x86, 0x6F, 0x4B, 0xD7, 0x88, 0xCA, 0x8A, 0xD7, 0xCE, 0x36, 0xF0,
+                0x45, 0x6E, 0xD5, 0x64, 0x79, 0x0F, 0x17, 0xFC, 0x64, 0xDD, 0x10, 0x6F, 0xF3, 0xF5, 0xE0, 0xA6,
+                0xC3, 0xFB, 0x1B, 0x8C, 0x29, 0xEF, 0x8E, 0xE5, 0x34, 0xCB, 0xD1, 0x2A, 0xCE, 0x79, 0xC3, 0x9A,
+                0x0D, 0x36, 0xEA, 0x01, 0xE0, 0xAA, 0x91, 0x20, 0x54, 0xF0, 0x72, 0xD8, 0x1E, 0xC7, 0x89, 0xD2};
 
         Common::ByteBuffer addonInfo(4);
         for (auto addon : addonMap)
@@ -894,7 +878,7 @@ void RealmConnection::HandleAuthSession()
 
         SendPacket(tutorialFlags, Common::Opcode::SMSG_TUTORIAL_FLAGS);
 
-		/* SMSG_REDIRECT_CLIENT 
+        /* SMSG_REDIRECT_CLIENT 
         Common::ByteBuffer redirectClient;
 		i32 ip = 16777343;
 		i16 port = 8001;

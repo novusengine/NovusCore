@@ -7,7 +7,7 @@
 class CharacterDatabaseCache;
 struct CharacterData
 {
-    CharacterData() { }
+    CharacterData() {}
     CharacterData(CharacterDatabaseCache* cache) { _cache = cache; }
     CharacterData(const CharacterData& data)
     {
@@ -44,13 +44,14 @@ struct CharacterData
     void UpdateCache()
     {
     }
+
 private:
     CharacterDatabaseCache* _cache;
 };
 // character_visual_data table in DB
 struct CharacterVisualData
 {
-    CharacterVisualData() { }
+    CharacterVisualData() {}
     CharacterVisualData(CharacterDatabaseCache* cache) { _cache = cache; }
     CharacterVisualData(const CharacterVisualData& data)
     {
@@ -73,13 +74,14 @@ struct CharacterVisualData
     void UpdateCache()
     {
     }
+
 private:
     CharacterDatabaseCache* _cache;
 };
 // default_spells table in DB
 struct DefaultSpellStorage
 {
-    DefaultSpellStorage() { }
+    DefaultSpellStorage() {}
     DefaultSpellStorage(CharacterDatabaseCache* cache) { _cache = cache; }
     DefaultSpellStorage(const DefaultSpellStorage& data)
     {
@@ -96,13 +98,14 @@ struct DefaultSpellStorage
     void UpdateCache()
     {
     }
+
 private:
     CharacterDatabaseCache* _cache;
 };
 // default_skills table in DB
 struct DefaultSkillStorage
 {
-    DefaultSkillStorage() { }
+    DefaultSkillStorage() {}
     DefaultSkillStorage(CharacterDatabaseCache* cache) { _cache = cache; }
     DefaultSkillStorage(const DefaultSkillStorage& data)
     {
@@ -123,13 +126,14 @@ struct DefaultSkillStorage
     void UpdateCache()
     {
     }
+
 private:
     CharacterDatabaseCache* _cache;
 };
 // default_spawns table in DB
 struct DefaultSpawnStorage
 {
-    DefaultSpawnStorage() { }
+    DefaultSpawnStorage() {}
     DefaultSpawnStorage(CharacterDatabaseCache* cache) { _cache = cache; }
     DefaultSpawnStorage(const DefaultSpawnStorage& data)
     {
@@ -156,6 +160,7 @@ struct DefaultSpawnStorage
     void UpdateCache()
     {
     }
+
 private:
     CharacterDatabaseCache* _cache;
 };

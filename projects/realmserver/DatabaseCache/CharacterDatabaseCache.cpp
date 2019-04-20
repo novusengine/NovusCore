@@ -47,13 +47,13 @@ void CharacterDatabaseCache::Load()
             newCharacterVisualData.hairColor = row[17].as<amy::sql_tinyint_unsigned>();
 
             _accessMutex.lock();
-            _characterDataCache.insert({ newCharacterData.guid, newCharacterData });
-            _characterVisualDataCache.insert({ newCharacterVisualData.guid, newCharacterVisualData });
+            _characterDataCache.insert({newCharacterData.guid, newCharacterData});
+            _characterVisualDataCache.insert({newCharacterVisualData.guid, newCharacterVisualData});
             _accessMutex.unlock();
         }
     }
 
-    connector->Query("SELECT raceMask, classMask, spell FROM default_spells;", resultSet); 
+    connector->Query("SELECT raceMask, classMask, spell FROM default_spells;", resultSet);
     if (resultSet.affected_rows() > 0)
     {
         for (auto row : resultSet)
@@ -167,7 +167,7 @@ bool CharacterDatabaseCache::GetCharacterData(u64 guid, CharacterData& output)
         newCharacterData.orientation = resultSet[0][12].as<amy::sql_float>();
 
         _accessMutex.lock();
-        _characterDataCache.insert({ guid, newCharacterData });
+        _characterDataCache.insert({guid, newCharacterData});
         _accessMutex.unlock();
 
         output = newCharacterData;
@@ -211,7 +211,7 @@ bool CharacterDatabaseCache::GetCharacterVisualData(u64 guid, CharacterVisualDat
         newCharacterVisualData.hairColor = resultSet[0][5].as<amy::sql_tinyint_unsigned>();
 
         _accessMutex.lock();
-        _characterVisualDataCache.insert({ guid, newCharacterVisualData });
+        _characterVisualDataCache.insert({guid, newCharacterVisualData});
         _accessMutex.unlock();
 
         output = newCharacterVisualData;

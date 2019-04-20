@@ -45,7 +45,7 @@ struct cAuthSessionData
     u32 battlegroupId;
     u32 realmId;
     u64 dosResponse;
-    u8  digest[SHA_DIGEST_LENGTH];
+    u8 digest[SHA_DIGEST_LENGTH];
 
     void Read(Common::ByteBuffer& buffer)
     {
@@ -111,19 +111,21 @@ public:
     void HandleAuthSession();
     void HandleContinueAuthSession();
 
-    template<size_t T>
-    inline void convert(char *val)
+    template <size_t T>
+    inline void convert(char* val)
     {
         std::swap(*val, *(val + T - 1));
         convert<T - 2>(val + 1);
     }
 
-    template<> inline void convert<0>(char *) { }
-    template<> inline void convert<1>(char *) { } // ignore central byte
+    template <>
+    inline void convert<0>(char*) {}
+    template <>
+    inline void convert<1>(char*) {} // ignore central byte
 
-    inline void apply(u16 *val)
+    inline void apply(u16* val)
     {
-        convert<sizeof(u16)>(reinterpret_cast<char *>(val));
+        convert<sizeof(u16)>(reinterpret_cast<char*>(val));
     }
     inline void EndianConvertReverse(u16& val) { apply(&val); }
 
