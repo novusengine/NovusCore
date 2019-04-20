@@ -1,0 +1,11 @@
+{
+    "general": {
+        "tickRate": 30
+    },
+    "network": {
+        "port": 9000
+    },
+    "world": {
+        "realmId": 1
+    }
+}

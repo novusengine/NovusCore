@@ -23,11 +23,11 @@
 */
 #pragma once
 
-#include <asio\ip\tcp.hpp>
-#include <Networking\BaseSocket.h>
-#include <Cryptography\BigNumber.h>
-#include <Cryptography\SHA1.h>
-#include <Database\DatabaseConnector.h>
+#include <asio/ip/tcp.hpp>
+#include <Networking/BaseSocket.h>
+#include <Cryptography/BigNumber.h>
+#include <Cryptography/SHA1.h>
+#include <Database/DatabaseConnector.h>
 #include <robin_hood.h>
 #include <NovusTypes.h>
 

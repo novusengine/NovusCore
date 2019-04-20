@@ -26,14 +26,17 @@
 #include <Database/DatabaseConnector.h>
 #include <Utils/DebugHandler.h>
 
-#include "ConnectionHandlers/AuthConnectionHandler.h"
+#include "../DatabaseCache/CharacterDatabaseCache.h"
+#include "ConnectionHandlers/RealmConnectionHandler.h"
 
 #ifdef _WIN32
 #include <Windows.h>
 #endif
 
+RealmConnectionHandler*   RealmConnectionHandler::_instance = nullptr;
+
 //The name of the console window.
-#define WINDOWNAME "Authentication Server"
+#define WINDOWNAME "Realm Server"
 
 i32 main()
 {
@@ -54,21 +57,24 @@ i32 main()
     u16 ports               [DATABASE_TYPE::COUNT]  = { ConfigHandler::GetOption<u16>("auth_database_port", 3306),                      ConfigHandler::GetOption<u16>("character_database_port", 3306),                     ConfigHandler::GetOption<u16>("world_database_port", 3306),                     ConfigHandler::GetOption<u16>("dbc_database_port", 3306) };   
     std::string usernames   [DATABASE_TYPE::COUNT]  = { ConfigHandler::GetOption<std::string>("auth_database_user", "root"),            ConfigHandler::GetOption<std::string>("character_database_user", "root"),           ConfigHandler::GetOption<std::string>("world_database_user", "root"),           ConfigHandler::GetOption<std::string>("dbc_database_user", "root") };
     std::string passwords   [DATABASE_TYPE::COUNT]  = { ConfigHandler::GetOption<std::string>("auth_database_password", ""),            ConfigHandler::GetOption<std::string>("character_database_password", ""),           ConfigHandler::GetOption<std::string>("world_database_password", ""),           ConfigHandler::GetOption<std::string>("dbc_database_password", "") };
-    std::string names       [DATABASE_TYPE::COUNT]  = { ConfigHandler::GetOption<std::string>("auth_database_name", "auth"),            ConfigHandler::GetOption<std::string>("character_database_name", "characters"),     ConfigHandler::GetOption<std::string>("world_database_name", "world"),          ConfigHandler::GetOption<std::string>("dbc_database_name", "dbcdata") };
+    std::string names       [DATABASE_TYPE::COUNT]  = { ConfigHandler::GetOption<std::string>("auth_database_name", "auth"),            ConfigHandler::GetOption<std::string>("character_database_name", "characters"),     ConfigHandler::GetOption<std::string>("world_database_name", "world"),          ConfigHandler::GetOption<std::string>("dbc_database_name", "dbc") };
     
     /* Pass Database Information to Setup */
     DatabaseConnector::Setup(hosts, ports, usernames, passwords, names);
 
     /* Load Config Handler for server */
-    if (!ConfigHandler::Load("authserver.json"))
+    if (!ConfigHandler::Load("realmserver.json"))
     {
         std::getchar();
         return 0;
     }
 
+    CharacterDatabaseCache characterDatabaseCache;
+    characterDatabaseCache.Load();
+
     asio::io_service io_service(2);
-    AuthConnectionHandler authConnectionHandler(io_service, ConfigHandler::GetOption<u16>("port", 3724));
-    authConnectionHandler.Start();
+    RealmConnectionHandler realmConnectionHandler(io_service,    ConfigHandler::GetOption<u16>("port", 8000), characterDatabaseCache);
+    realmConnectionHandler.Start();
 
     srand(static_cast<u32>(time(NULL)));
     std::thread run_thread([&]
@@ -76,8 +82,8 @@ i32 main()
         io_service.run();
     });
 
-    NC_LOG_SUCCESS("Authserver running on port: %u", authConnectionHandler.GetPort());
+    NC_LOG_SUCCESS("Realmserver running on port: %u", realmConnectionHandler.GetPort());
 
     std::getchar();
-    return 0;
+	return 0;
 }

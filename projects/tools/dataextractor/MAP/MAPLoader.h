@@ -33,7 +33,7 @@ namespace MapLoader
 	void LoadMaps(MPQHandler& handler, std::vector<std::string> adtLocationOutput)
 	{
 		NC_LOG_MESSAGE("Extracting ADTs...");
-		std::filesystem::path basePath = std::filesystem::current_path();
+        std::filesystem::path basePath(std::filesystem::current_path().string() + "/NovusExtractor");
 		std::filesystem::path mapPath(basePath.string() + "/maps");
 		if (!std::filesystem::exists(mapPath))
 		{

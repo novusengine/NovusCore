@@ -20,9 +20,25 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# Include Project Directories
-add_subdirectory(common)
-add_subdirectory(tools)
-add_subdirectory(authserver)
-add_subdirectory(realmserver)
-add_subdirectory(worldnode)
+project(realmserver VERSION 1.0.0 DESCRIPTION "Realmserver for NovusCore")
+
+file(GLOB_RECURSE REALMSERVER_FILES "*.cpp" "*.h")
+set(REALMSERVER_DEPENDENCIES
+    "../common/Dependencies/amy"
+    "../common/Dependencies/json"
+    "../common/Dependencies/robin-hood-hashing"
+    "${ZLIB_INCLUDE_DIRS}"
+    "${CMAKE_SOURCE_DIR}/dep/asio"
+)
+
+add_executable(realmserver ${REALMSERVER_FILES})
+find_assign_files(${REALMSERVER_FILES})
+
+# Set VERSION & FOLDER Property
+set_target_properties(realmserver PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties(realmserver PROPERTIES FOLDER "server")
+
+target_link_libraries(realmserver common)
+target_include_directories(realmserver PRIVATE ${REALMSERVER_DEPENDENCIES})
+include_directories(realmserver "${common_SOURCE_DIR}")
+install(TARGETS realmserver DESTINATION bin)

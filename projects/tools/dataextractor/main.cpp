@@ -46,6 +46,13 @@ i32 main()
 	MPQHandler mpqHandler;
 	if (mpqHandler.Load())
 	{
+        std::filesystem::path basePath = std::filesystem::current_path();
+        std::filesystem::path outputPath(basePath.string() + "/NovusExtractor");
+        if (!std::filesystem::exists(outputPath))
+        {
+            std::filesystem::create_directory(outputPath);
+        }
+
 		std::string sqlOutput = "";
 
 		std::vector<std::string> adtLocations;
@@ -55,7 +62,7 @@ i32 main()
 		}
 
 		NC_LOG_MESSAGE("Building sql...");
-		std::ofstream output(std::filesystem::current_path().string() + "/exportedDbcData.sql", std::ofstream::out);
+		std::ofstream output(outputPath.string() + "/DBCImportData.sql", std::ofstream::out);
 		output << sqlOutput;
 		output.close();
 

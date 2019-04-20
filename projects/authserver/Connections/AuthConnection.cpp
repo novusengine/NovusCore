@@ -23,7 +23,7 @@
 */
 
 #include "AuthConnection.h"
-#include <Networking\ByteBuffer.h>
+#include <Networking/ByteBuffer.h>
 
 #pragma pack(push, 1)
 struct cAuthLogonChallenge
