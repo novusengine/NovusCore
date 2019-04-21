@@ -29,7 +29,9 @@ find_assign_files(${DATAEXTRACTOR_FILES})
 
 set_property(TARGET dataextractor PROPERTY CXX_STANDARD 17)
 
-if (UNIX)
+if(APPLE)
+    target_link_libraries(dataextractor c++fs)
+elseif (UNIX)
     target_link_libraries(dataextractor stdc++fs)
 endif()
 
