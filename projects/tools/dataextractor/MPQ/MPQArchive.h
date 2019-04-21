@@ -28,6 +28,7 @@
 #include <libmpq/mpq.h>
 #include <filesystem>
 #include <vector>
+#include <cstring>
 
 class MPQArchive
 {
@@ -40,7 +41,7 @@ public:
 
 	bool Open()
 	{
-		i32 result = libmpq__archive_open(&_archive, _path.c_str(), 0); 
+		i32 result = libmpq__archive_open(&_archive, _path.c_str(), 0);
 		if (result)
 		{
 			switch (result)
@@ -93,16 +94,24 @@ public:
 		u8* buffer = new u8[listSize];
 		libmpq__file_read(_archive, listFileNumber, buffer, listSize, &transferred);
 
-		char seperators[] = "\r\n";
-		char* nextToken = nullptr;
-		char* token = strtok_s((char*)buffer, seperators, &nextToken);
-
-		u32 counter = 0;
-		while (token && (counter < listSize))
 		{
-			output.push_back(token);
-			counter += static_cast<u32>(strlen(token)) + 2;
-			token = strtok_s(nullptr, seperators, &nextToken);
+#ifdef _WIN32
+			auto const& strtok_impl = strtok_s;
+#else
+			auto const& strtok_impl = strtok_r;
+#endif
+
+			char seperators[] = "\r\n";
+			char* nextToken = nullptr;
+			char* token = strtok_impl((char*)buffer, seperators, &nextToken);
+
+			u32 counter = 0;
+			while (token && (counter < listSize))
+			{
+				output.push_back(token);
+				counter += static_cast<u32>(strlen(token)) + 2;
+				token = strtok_impl(nullptr, seperators, &nextToken);
+			}
 		}
 
 		return true;

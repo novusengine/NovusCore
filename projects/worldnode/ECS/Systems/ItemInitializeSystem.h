@@ -1,10 +1,11 @@
 #include "PlayerConnectionSystem.h"
 #include <NovusTypes.h>
 #include <Networking/Opcode/Opcode.h>
-#include "../NovusEnums.h"
-#include "../Utils/CharacterUtils.h"
 
-#include "../DatabaseCache/CharacterDatabaseCache.h"
+#include "../../NovusEnums.h"
+#include "../../Utils/CharacterUtils.h"
+
+#include "../../DatabaseCache/CharacterDatabaseCache.h"
 
 #include "../Components/ItemFieldDataComponent.h"
 #include "../Components/ItemInitializeComponent.h"

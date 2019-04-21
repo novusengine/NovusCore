@@ -26,9 +26,9 @@
 #include <entt.hpp>
 #include <Networking/ByteBuffer.h>
 
-#include "../NovusEnums.h"
-#include "../Utils/UpdateData.h"
-#include "../Utils/UpdateMask.h"
+#include "../../NovusEnums.h"
+#include "../../Utils/UpdateData.h"
+#include "../../Utils/UpdateMask.h"
 
 #include "../Components/PlayerConnectionComponent.h"
 #include "../Components/PlayerPositionComponent.h"

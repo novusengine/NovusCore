@@ -26,7 +26,8 @@
 #include <Utils/StringUtils.h>
 #include <entt.hpp>
 
-#include "../NovusEnums.h"
+#include "../../NovusEnums.h"
+
 #include "../Components/PlayerConnectionComponent.h"
 #include "../Components/PlayerUpdateDataComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
@@ -43,7 +44,7 @@ namespace CommandParserSystem
         return results;
     }
 
-	void Update(entt::registry &registry) 
+	void Update(entt::registry &registry)
     {
         SingletonComponent& singleton = registry.ctx<SingletonComponent>();
         CommandDataSingleton& commandData = registry.ctx<CommandDataSingleton>();
@@ -60,7 +61,7 @@ namespace CommandParserSystem
                     auto itr = commandData.commandMap.find(StringUtils::fnv1a_32(commandStrings[0].c_str(), commandStrings[0].length()));
                     if (itr != commandData.commandMap.end())
                     {
-						/* 
+						/*
 							We might want to look at how we can improve this, I'm not sure if this is the best way
 							This is however a very cold path, so performance shouldn't be much of a worry.
 							In short we extract the parameters based on how many there are and the depth of the command

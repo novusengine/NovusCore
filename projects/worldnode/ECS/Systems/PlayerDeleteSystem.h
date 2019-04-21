@@ -26,7 +26,7 @@
 #include <entt.hpp>
 #include <vector>
 #include <Networking/ByteBuffer.h>
-#include "../Message.h"
+#include "../../Message.h"
 
 #include "../Components/PlayerConnectionComponent.h"
 #include "../Components/PlayerUpdateDataComponent.h"
@@ -39,7 +39,7 @@ namespace PlayerDeleteSystem
     {
 		SingletonComponent& singleton = registry.ctx<SingletonComponent>();
         PlayerDeleteQueueSingleton& deletePlayerQueue = registry.ctx<PlayerDeleteQueueSingleton>();
-        
+
         Common::ByteBuffer buildPacket;
         std::vector<u64> deletedEntities;
         UpdateData updateData;

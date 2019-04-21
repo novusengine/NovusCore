@@ -12,7 +12,7 @@ SharedPool<DatabaseConnector> DatabaseConnector::_connectorPools[];
 moodycamel::ConcurrentQueue<AsyncSQLJob> DatabaseConnector::_asyncJobQueue(1024);
 
 void DatabaseConnector::Setup(std::string hosts[], u16 ports[], std::string usernames[], std::string passwords[], std::string names[])
-{ 
+{
 
     for (i32 i = 0; i < DATABASE_TYPE::COUNT; i++)
     {
@@ -83,7 +83,8 @@ void DatabaseConnector::Borrow(DATABASE_TYPE type, std::function<void(std::share
         _connectorPools[type].add(std::unique_ptr<DatabaseConnector>(newConnector));
     }
 
-    func(std::shared_ptr<DatabaseConnector>(_connectorPools[type].acquire()));
+    std::shared_ptr<DatabaseConnector> ptr(_connectorPools[type].acquire());
+    func(ptr);
     return;
 }
 
@@ -120,7 +121,7 @@ void DatabaseConnector::AsyncSQLThreadMain()
 			//assert(false);
 		}
 	}
-	
+
 	// This thread will just spin and try to execute any AsyncSQLJobs in the queue.
 	// When the queue is empty, it will first retry immediately 10 times, after that it will retry 10 times a second for 9 seconds, and after that it will decrease to 2 checks a second
 	// When the thread finds something in the queue, this behavior is reset.
@@ -130,7 +131,7 @@ void DatabaseConnector::AsyncSQLThreadMain()
 		if (_asyncJobQueue.try_dequeue(job))
 		{
 			tries = 0;
-			
+
 			bool isQuery = job.func != nullptr;
 
 			if (isQuery)

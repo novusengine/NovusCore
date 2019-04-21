@@ -24,7 +24,7 @@
 #pragma once
 #include <string>
 #include <Networking/ByteBuffer.h>
-#include "../Connections/WorldConnection.h"
+#include "Connections/WorldConnection.h"
 
 struct Message
 {

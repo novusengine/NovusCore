@@ -293,8 +293,14 @@ namespace CharacterUtils
 	template <typename... Args>
 	inline Common::ByteBuffer BuildNotificationPacket(u32 accountGuid, std::string message, Args... args)
 	{
+#ifdef _WIN32
+        auto& sprintf_impl = sprintf_s;
+#else
+        auto& sprintf_impl = sprintf;
+#endif
+
 		char str[256];
-		i32 length = sprintf_s(str, message.c_str(), args...);
+		i32 length = sprintf_impl(str, message.c_str(), args...);
 		assert(length > -1);
 
 		Common::ByteBuffer buffer;

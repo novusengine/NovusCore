@@ -49,7 +49,7 @@ namespace DBCLoader
 
 					for (u32 i = 0; i < rows; i++)
 					{
-						auto& row = dbcReader->GetRow(i);
+						auto row = dbcReader->GetRow(i);
 						u32 fieldCount = dbcReader->GetNumFields();
 						DBCMap map;
 						map.Id = row.GetUInt32(0);
@@ -66,7 +66,7 @@ namespace DBCLoader
 
 						if (i != 0)
 							ss << ", ";
-						
+
 						ss << "(" << map.Id << ", '" << map.InternalName << "', " << map.InstanceType << ", " << map.Flags << ", '" << map.Name << "', " << map.Expansion << ", " << map.MaxPlayers << ")";
 					}
 

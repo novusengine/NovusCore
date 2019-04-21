@@ -31,10 +31,10 @@
 #include <Math/Vector2.h>
 #include <Cryptography/HMAC.h>
 
-#include "../NovusEnums.h"
-#include "../Utils/CharacterUtils.h"
-#include "../DatabaseCache/CharacterDatabaseCache.h"
-#include "../WorldNodeHandler.h"
+#include "../../NovusEnums.h"
+#include "../../Utils/CharacterUtils.h"
+#include "../../DatabaseCache/CharacterDatabaseCache.h"
+#include "../../WorldNodeHandler.h"
 
 #include "../Components/PlayerConnectionComponent.h"
 #include "../Components/PlayerFieldDataComponent.h"
@@ -523,7 +523,8 @@ namespace ConnectionSystem
 							{
 								f32 newPositionX = clientPositionData.x + i * Math::Cos(clientPositionData.orientation);
 								f32 newPositionY = clientPositionData.y + i * Math::Sin(clientPositionData.orientation);
-								f32 height = mapSingleton.maps[clientPositionData.mapId].GetHeight(Vector2(newPositionX, newPositionY));
+                                Vector2 newPos(newPositionX, newPositionY);
+								f32 height = mapSingleton.maps[clientPositionData.mapId].GetHeight(newPos);
 								f32 deltaHeight = Math::Abs(tempHeight - height);
 
 								if (deltaHeight <= 2.0f || (i == 0 && deltaHeight <= 20))
@@ -552,7 +553,8 @@ namespace ConnectionSystem
 								Adding 2.0f to the final height will solve 90%+ of issues where we fall through the terrain, remove this to fully test blink's capabilities.
 								This also introduce the bug where after a blink, you might appear a bit over the ground and fall down.
 							*/
-							f32 height = mapSingleton.maps[clientPositionData.mapId].GetHeight(Vector2(newPositionX, newPositionY));
+                            Vector2 newPos(newPositionX, newPositionY);
+							f32 height = mapSingleton.maps[clientPositionData.mapId].GetHeight(newPos);
 
 							Common::ByteBuffer buffer;
 							buffer.AppendGuid(clientConnection.characterGuid);

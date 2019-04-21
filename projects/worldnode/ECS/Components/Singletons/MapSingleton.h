@@ -24,7 +24,7 @@
 #pragma once
 #include <NovusTypes.h>
 #include <robin_hood.h>
-#include "../Game/NovusMap.h"
+#include "../../Game/NovusMap.h"
 
 struct MapSingleton
 {

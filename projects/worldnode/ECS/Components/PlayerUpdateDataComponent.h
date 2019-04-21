@@ -26,7 +26,7 @@
 #include <Networking/ByteBuffer.h>
 #include <vector>
 
-#include "../NovusEnums.h"
+#include "../../NovusEnums.h"
 
 struct PositionUpdateData
 {

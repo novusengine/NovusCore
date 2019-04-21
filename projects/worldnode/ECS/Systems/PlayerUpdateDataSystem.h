@@ -26,7 +26,7 @@
 #include <entt.hpp>
 #include <Networking/ByteBuffer.h>
 
-#include "../NovusEnums.h"
+#include "../../NovusEnums.h"
 
 #include "../Components/PlayerConnectionComponent.h"
 #include "../Components/PlayerFieldDataComponent.h"
@@ -189,7 +189,7 @@ namespace PlayerUpdateDataSystem
 			updateMask.AddTo(buffer);
 			buffer.Append(fieldBuffer);
 		}
-        
+
 		UpdateData updateData;
 		{
 			ZoneScopedNC("BuildplayerFieldData::AddBlock", tracy::Color::Yellow2)
@@ -227,7 +227,7 @@ namespace PlayerUpdateDataSystem
                 Common::ByteBuffer selfPlayerUpdate = BuildplayerFieldData(clientConnection.characterGuid, selfVisibleFlags, clientFieldData, buildOpcode);
                 novusHeader.CreateForwardHeader(clientConnection.accountGuid, buildOpcode, selfPlayerUpdate.GetActualSize());
                 novusConnection.SendPacket(novusHeader.BuildHeaderPacket(selfPlayerUpdate));*/
-				
+
                 /* Build Self Packet for public */
                 u32 publicVisibleFlags = UF_FLAG_PUBLIC;
                 PlayerUpdatePacket playerUpdatePacket;

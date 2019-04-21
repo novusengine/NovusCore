@@ -23,7 +23,7 @@
 */
 #pragma once
 #include <NovusTypes.h>
-#include "../Game/ObjectGuid/ObjectGuid.h"
+#include "../../Game/ObjectGuid/ObjectGuid.h"
 
 struct ItemInitializeComponent
 {

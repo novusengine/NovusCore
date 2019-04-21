@@ -18,6 +18,8 @@
 
 #include "StreamCrypto.h"
 
+#include <cstring>
+
 #include "HMAC.h"
 #include "BigNumber.h"
 

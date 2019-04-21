@@ -24,7 +24,7 @@
 #pragma once
 #include <NovusTypes.h>
 #include <Utils/ConcurrentQueue.h>
-#include "../Message.h"
+#include "../../Message.h"
 
 struct ExpiredPlayerData
 {
