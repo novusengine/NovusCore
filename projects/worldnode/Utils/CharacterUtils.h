@@ -25,6 +25,7 @@
 #include <NovusTypes.h>
 #include <Networking/ByteBuffer.h>
 #include <Networking/Opcode/Opcode.h>
+#include <Utils/StringUtils.h>
 #include "../DatabaseCache/CharacterDatabaseCache.h"
 
 namespace CharacterUtils
