@@ -70,15 +70,8 @@ public:
     template <typename... Args>
     void PrintMessage(std::string message, Args... args)
     {
-#ifdef _WIN32
-        auto& sprintf_impl = sprintf_s;
-#else
-        auto& sprintf_impl = sprintf;
-#endif
-
         char str[256];
-        i32 length = sprintf_impl(str, message.c_str(), args...);
-        assert(length > -1);
+        i32 length = StringUtils::FormatString(str, sizeof(str), message.c_str(), args...);
 
         Message printMessage;
         printMessage.code = MSG_OUT_PRINT;
