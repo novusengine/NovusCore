@@ -3,7 +3,7 @@
 
 namespace Math
 {
-	f32 Math::Sqrt(f32 in)
+	f32 Sqrt(f32 in)
 	{
 		return sqrt(in);
 	}

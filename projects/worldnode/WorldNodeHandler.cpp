@@ -98,7 +98,7 @@ void WorldNodeHandler::Run()
 	WorldDatabaseCacheSingleton& worldDatabaseCacheSingleton = _updateFramework.registry.set<WorldDatabaseCacheSingleton>();
 	CharacterDatabaseCacheSingleton& characterDatabaseCacheSingleton = _updateFramework.registry.set<CharacterDatabaseCacheSingleton>();
 	DBCDatabaseCacheSingleton& dbcDatabaseCacheSingleton = _updateFramework.registry.set<DBCDatabaseCacheSingleton>();
-   
+
     singletonComponent.worldNodeHandler = this;
     singletonComponent.deltaTime = 1.0f;
 
@@ -192,7 +192,7 @@ bool WorldNodeHandler::Update()
 
             if (message.code == MSG_IN_FOWARD_PACKET)
             {
-                // Create Entity if it doesn't exist, otherwise add 
+                // Create Entity if it doesn't exist, otherwise add
                 if (static_cast<Common::Opcode>(static_cast<u16>(message.opcode)) == Common::Opcode::CMSG_PLAYER_LOGIN)
                 {
                     ZoneScopedNC("LoginMessage", tracy::Color::Green3)
@@ -207,7 +207,7 @@ bool WorldNodeHandler::Update()
                     if (itr != singletonComponent.accountToEntityMap.end())
                     {
                         PlayerConnectionComponent& connection = _updateFramework.registry.get<PlayerConnectionComponent>(itr->second);
-                        connection.packets.push_back({ static_cast<u32>(message.opcode), false, message.packet });
+                        connection.packets.push_back({ static_cast<u16>(message.opcode), false, message.packet });
                     }
                 }
             }
@@ -222,7 +222,7 @@ void WorldNodeHandler::SetupUpdateFramework()
 {
     tf::Framework& framework = _updateFramework.framework;
     entt::registry& registry = _updateFramework.registry;
-    
+
     // ConnectionSystem
     tf::Task connectionSystemTask = framework.emplace([&registry]()
     {
@@ -279,7 +279,7 @@ void WorldNodeHandler::SetupUpdateFramework()
     playerUpdateDataSystemTask.gather(itemCreateDataSystemTask);
 
     // ClientUpdateSystem
-    tf::Task clientUpdateSystemTask = framework.emplace([&registry]() 
+    tf::Task clientUpdateSystemTask = framework.emplace([&registry]()
     {
         ZoneScopedNC("clientUpdateSystemTask", tracy::Color::Blue2)
         ClientUpdateSystem::Update(registry);

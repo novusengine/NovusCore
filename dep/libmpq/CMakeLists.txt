@@ -32,7 +32,7 @@ target_include_directories(mpq PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${MPQ_WIN32_INCLUDES}
     ${CMAKE_SOURCE_DIR}/dep/zlib
-    ${CMAKE_SOURCE_DIR}/dep/bzip2)
+    )
 
-target_link_libraries(mpq PUBLIC zlib bzip2)
+target_link_libraries(mpq PUBLIC zlib BZip2::BZip2)
 set_target_properties(mpq PROPERTIES FOLDER "dep")

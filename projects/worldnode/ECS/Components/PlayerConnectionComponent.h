@@ -24,7 +24,7 @@
 #pragma once
 #include <NovusTypes.h>
 #include <Networking/ByteBuffer.h>
-#include "../Utils/CharacterUtils.h"
+#include "../../Utils/CharacterUtils.h"
 #include <vector>
 
 struct OpcodePacket
@@ -37,15 +37,16 @@ struct OpcodePacket
 class WorldConnection;
 struct PlayerConnectionComponent
 {
-	template <typename... Args>
-	void SendNotification(std::string message, Args... args)
-	{
-        socket->SendPacket(CharacterUtils::BuildNotificationPacket(accountGuid, message, std::forward<Args>(args)...), Common::Opcode::SMSG_MESSAGECHAT);
-	}
+    template <typename... Args>
+    void SendNotification(std::string message, Args... args)
+    {
+        Common::ByteBuffer packet = CharacterUtils::BuildNotificationPacket(accountGuid, message, std::forward<Args>(args)...);
+        socket->SendPacket(packet, Common::Opcode::SMSG_MESSAGECHAT);
+    }
 
     u32 entityGuid;
-	u32 accountGuid;
-	u64 characterGuid;
+    u32 accountGuid;
+    u64 characterGuid;
     WorldConnection* socket;
     std::vector<OpcodePacket> packets;
 };

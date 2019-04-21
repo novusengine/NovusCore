@@ -25,8 +25,8 @@
 #include <NovusTypes.h>
 #include <Networking/ByteBuffer.h>
 
-#include "../NovusEnums.h"
-#include "../Utils/UpdateMask.h"
+#include "../../NovusEnums.h"
+#include "../../Utils/UpdateMask.h"
 
 struct PlayerFieldDataComponent
 {

@@ -1,10 +1,11 @@
 #include "PlayerConnectionSystem.h"
 #include <NovusTypes.h>
 #include <Networking/Opcode/Opcode.h>
-#include "../NovusEnums.h"
-#include "../Utils/CharacterUtils.h"
 
-#include "../DatabaseCache/CharacterDatabaseCache.h"
+#include "../../NovusEnums.h"
+#include "../../Utils/CharacterUtils.h"
+
+#include "../../DatabaseCache/CharacterDatabaseCache.h"
 
 #include "../Components/PlayerFieldDataComponent.h"
 #include "../Components/PlayerSpellStorageComponent.h"
@@ -52,11 +53,11 @@ namespace PlayerInitializeSystem
             {
                 playerFPositionData.lastMovementOpcodeTime[i] = 0;
             }
-            
+
             /* Login Code Here */
             playerFieldData.ResetFields();
 
-            /* SMSG_NEW_WORLD */ 
+            /* SMSG_NEW_WORLD */
             /* SMSG_LOGIN_VERIFY_WORLD */
             Common::ByteBuffer verifyWorld;
             verifyWorld.Write<u32>(playerFPositionData.mapId);
@@ -79,7 +80,7 @@ namespace PlayerInitializeSystem
                 if (mask & (1 << i))
                     accountDataTimes.Write<u32>(0);
             }
-            
+
             playerInitializeData.socket->SendPacket(accountDataTimes, Common::Opcode::SMSG_ACCOUNT_DATA_TIMES);
 
 
@@ -141,7 +142,12 @@ namespace PlayerInitializeSystem
             /* SMSG_LOGIN_SETTIMESPEED */
             tm lt;
             time_t const tmpServerTime = time(nullptr);
+
+#ifdef _WIN32
             localtime_s(&lt, &tmpServerTime);
+#else
+            localtime_r(&tmpServerTime, &lt);
+#endif
 
             Common::ByteBuffer loginSetTimeSpeed;
             loginSetTimeSpeed.Write<u32>(((lt.tm_year - 100) << 24 | lt.tm_mon << 20 | (lt.tm_mday - 1) << 14 | lt.tm_wday << 11 | lt.tm_hour << 6 | lt.tm_min));

@@ -22,7 +22,7 @@
     SOFTWARE.
 */
 #pragma once
-#include "../DatabaseCache/CharacterDatabaseCache.h"
+#include "../../DatabaseCache/CharacterDatabaseCache.h"
 
 struct CharacterDatabaseCacheSingleton
 {

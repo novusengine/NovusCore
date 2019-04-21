@@ -28,7 +28,7 @@
 #include <string>
 #include <functional>
 #include <asio.hpp>
-#include <asio\placeholders.hpp>
+#include <asio/placeholders.hpp>
 #include "ByteBuffer.h"
 
 namespace Common
@@ -56,7 +56,7 @@ namespace Common
         bool IsClosed() { return _isClosed; }
     protected:
         BaseSocket(asio::ip::tcp::socket* socket) : _socket(socket), _byteBuffer(), _isClosed(false)
-        { 
+        {
             _byteBuffer.Resize(4096);
         }
 
@@ -83,7 +83,7 @@ namespace Common
 
             _byteBuffer.WriteBytes(bytes);
             HandleRead();
-        }        
+        }
         void HandleInternalWrite(asio::error_code error, std::size_t transferedBytes)
         {
             if (error)

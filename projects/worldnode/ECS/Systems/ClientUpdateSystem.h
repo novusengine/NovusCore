@@ -25,7 +25,8 @@
 #include <NovusTypes.h>
 #include <entt.hpp>
 
-#include "../NovusEnums.h"
+#include "../../NovusEnums.h"
+
 #include "../Components/PlayerPositionComponent.h"
 #include "../Components/UnitStatusComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
@@ -34,7 +35,7 @@
 
 namespace ClientUpdateSystem
 {
-	void Update(entt::registry &registry) 
+    void Update(entt::registry &registry)
     {
         SingletonComponent& singleton = registry.ctx<SingletonComponent>();
         PlayerUpdatesQueueSingleton& playerUpdatesQueue = registry.ctx<PlayerUpdatesQueueSingleton>();
@@ -95,5 +96,5 @@ namespace ClientUpdateSystem
 
         if (playerUpdatesQueue.playerChatPacketQueue.size() != 0)
             playerUpdatesQueue.playerChatPacketQueue.clear();
-	}
+    }
 }

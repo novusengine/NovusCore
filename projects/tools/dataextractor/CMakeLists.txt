@@ -27,6 +27,12 @@ file(GLOB_RECURSE DATAEXTRACTOR_FILES "*.cpp" "*.h")
 add_executable(dataextractor ${DATAEXTRACTOR_FILES})
 find_assign_files(${DATAEXTRACTOR_FILES})
 
+set_property(TARGET dataextractor PROPERTY CXX_STANDARD 17)
+
+if (UNIX)
+    target_link_libraries(dataextractor stdc++fs)
+endif()
+
 # Set VERSION & FOLDER Property
 set_target_properties(dataextractor PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(dataextractor PROPERTIES FOLDER "tools")

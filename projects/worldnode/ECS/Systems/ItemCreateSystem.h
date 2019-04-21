@@ -25,9 +25,9 @@
 #include <NovusTypes.h>
 #include <entt.hpp>
 #include <Networking/ByteBuffer.h>
-#include "../Message.h"
 
-#include "../DatabaseCache/CharacterDatabaseCache.h"
+#include "../../Message.h"
+#include "../../DatabaseCache/CharacterDatabaseCache.h"
 
 #include "../Components/ItemInitializeComponent.h"
 #include "../Components/ItemDataComponent.h"

@@ -26,6 +26,7 @@
 #include "../NovusTypes.h"
 #include <vector>
 #include <cassert>
+#include <cstring>
 #include <string>
 
 namespace Common

@@ -37,6 +37,12 @@ set(WORLDNODE_DEPENDENCIES
 add_executable(worldnode ${WORLDNODE_FILES})
 find_assign_files(${WORLDNODE_FILES})
 
+set_property(TARGET worldnode PROPERTY CXX_STANDARD 17)
+
+if (UNIX)
+    target_link_libraries(worldnode stdc++fs)
+endif()
+
 # Set VERSION & FOLDER Property
 set_target_properties(worldnode PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(worldnode PROPERTIES FOLDER "server")

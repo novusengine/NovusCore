@@ -121,9 +121,6 @@ public:
         convert<T - 2>(val + 1);
     }
 
-    template<> inline void convert<0>(char *) { }
-    template<> inline void convert<1>(char *) { } // ignore central byte
-
     inline void apply(u16 *val)
     {
         convert<sizeof(u16)>(reinterpret_cast<char *>(val));
@@ -142,3 +139,6 @@ public:
     StreamCrypto _streamCrypto;
     WorldNodeHandler* _worldNodeHandler;
 };
+
+template<> inline void WorldConnection::convert<0>(char *) { }
+template<> inline void WorldConnection::convert<1>(char *) { } // ignore central byte

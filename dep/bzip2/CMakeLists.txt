@@ -20,8 +20,19 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-file(GLOB sources *.c)
-add_library(bzip2 STATIC ${sources})
+if (UNIX OR APPLE)
+    find_package(BZip2 REQUIRED)
 
-target_include_directories(bzip2 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-set_target_properties(bzip2 PROPERTIES FOLDER "dep")
+    add_library(BZip2 INTERFACE)
+    add_library(BZip2::BZip2 ALIAS BZip2)
+
+    target_include_directories(BZip2 SYSTEM INTERFACE "${BZIP2_INCLUDE_DIRS}")
+    target_link_libraries(BZip2 INTERFACE "${BZIP2_LIBRARIES}")
+else()
+    file(GLOB sources *.c)
+    add_library(BZip2 STATIC ${sources})
+    add_library(BZip2::BZip2 ALIAS BZip2)
+
+    target_include_directories(BZip2 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+    set_target_properties(BZip2 PROPERTIES FOLDER "dep")
+endif()
