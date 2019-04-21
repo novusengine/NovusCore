@@ -39,7 +39,9 @@ find_assign_files(${WORLDNODE_FILES})
 
 set_property(TARGET worldnode PROPERTY CXX_STANDARD 17)
 
-if (UNIX)
+if (APPLE)
+    target_link_libraries(worldnode c++fs)
+elseif (UNIX)
     target_link_libraries(worldnode stdc++fs)
 endif()
 
