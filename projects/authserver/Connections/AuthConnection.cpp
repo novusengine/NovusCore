@@ -242,7 +242,7 @@ void AuthConnection::HandleCommandChallengeCallback(amy::result_set& results)
     */
     dataStore.PutBytes(B.BN2BinArray(32).get(), 32);
     dataStore.PutU8(1);
-    dataStore.PutU8(g.BN2BinArray(32).get()[0]);
+    dataStore.PutU8(g.BN2BinArray(1).get()[0]);
     dataStore.PutU8(32);
     dataStore.PutBytes(N.BN2BinArray(32).get(), 32);
     dataStore.PutBytes(s.BN2BinArray(32).get(), 32);
@@ -395,35 +395,58 @@ bool AuthConnection::HandleCommandProof()
 
 bool AuthConnection::HandleCommandReconnectChallenge()
 {
-    return false;
-    /*Common::ByteBuffer pkt;
-    pkt.Write<u8>(AUTH_RECONNECT_CHALLENGE);
+    _status = STATUS_CLOSED;
+    cAuthLogonChallenge* logonChallenge = reinterpret_cast<cAuthLogonChallenge*>(GetByteBuffer().GetReadPointer());
+    if (logonChallenge->size - (sizeof(cAuthLogonChallenge) - 4 - 1) != logonChallenge->username_length)
+        return false;
 
-    // Check if account exists
-    if (login != username)
+    std::string login(reinterpret_cast<char const*>(logonChallenge->username_pointer), logonChallenge->username_length);
+    username = login;
+
+    PreparedStatement stmt("SELECT sessionKey FROM accounts WHERE username={s};");
+    stmt.Bind(username);
+    DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, stmt, [this](amy::result_set& results, DatabaseConnector& connector) { HandleCommandReconnectChallengeCallback(results); });
+
+    return true;
+}
+void AuthConnection::HandleCommandReconnectChallengeCallback(amy::result_set& results)
+{
+    /* Logon Proof Data Structure
+
+       - Type: u8,      Name: Packet Command
+       - Type: u8,      Name: Error Code
+       - Type: u8[20],  Name: Reconnect Seed
+       - Type: u8[20],  Name: Version Challenge
+
+       https://en.wikipedia.org/wiki/Secure_Remote_Password_protocol
+    */
+    DataStore dataStore;
+    dataStore.PutU8(AUTH_RECONNECT_CHALLENGE);
+
+    // Make sure the account exist.
+    if (results.affected_rows() != 1)
     {
-        pkt.Write<u8>(static_cast<u8>(0x03); //WOW_FAIL_UNKNOWN_ACCOUNT);
-        Send(pkt);
-        return true;
+        dataStore.PutU8(AUTH_FAIL_UNKNOWN_ACCOUNT);
+        Send(dataStore);
+        return;
     }
 
-    _reconnectProof.Rand(16 * 8);
+    amy::row resultRow = results[0];
+    K.Hex2BN(resultRow[0].GetString().c_str());
+
+    _reconnectSeed.Rand(16 * 8);
+    dataStore.PutU8(0);
+    dataStore.PutBytes(_reconnectSeed.BN2BinArray(16).get(), 16);
+    dataStore.PutBytes(VersionChallenge.data(), VersionChallenge.size());
+
+    Send(dataStore);
     _status = STATUS_RECONNECT_PROOF;
-
-    pkt.Write<u8>(0); // WOW_SUCCESS
-    pkt.Append(_reconnectProof.BN2BinArray(16).get(), 16);  // 16 bytes random
-    u64 zeros = 0x00;
-    pkt.Append(reinterpret_cast<u8*>(&zeros), sizeof(zeros));                 // 8 bytes zeros
-    pkt.Append(reinterpret_cast<u8*>(&zeros), sizeof(zeros));                 // 8 bytes zeros
-
-    Send(pkt);*/
 }
 bool AuthConnection::HandleCommandReconnectProof()
 {
     _status = STATUS_CLOSED;
     cAuthReconnectProof* reconnectLogonProof = reinterpret_cast<cAuthReconnectProof*>(GetByteBuffer().GetReadPointer());
-
-    if (!_reconnectProof.GetBytes() || !K.GetBytes())
+    if (username.length() == 0 || !_reconnectSeed.GetBytes() || !K.GetBytes())
         return false;
 
     BigNumber t1;
@@ -432,18 +455,24 @@ bool AuthConnection::HandleCommandReconnectProof()
     SHA1Hasher sha;
     sha.Init();
     sha.UpdateHash(username);
-    sha.UpdateHashForBn(3, &t1, &_reconnectProof, &K);
+    sha.UpdateHashForBn(3, &t1, &_reconnectSeed, &K);
     sha.Finish();
 
     if (!memcmp(sha.GetData(), reconnectLogonProof->R2, SHA_DIGEST_LENGTH))
     {
-        // Sending response
-        Common::ByteBuffer pkt;
-        pkt.Write<u8>(AUTH_RECONNECT_PROOF);
-        pkt.Write<u8>(0x00);
-        u16 unk1 = 0x00;
-        pkt.Append(reinterpret_cast<u8*>(&unk1), sizeof(unk1));  // 2 bytes zeros
-        Send(pkt);
+        /* Logon Proof Data Structure
+
+           - Type: u8,      Name: Packet Command
+           - Type: u8,      Name: Error Code
+           - Type: u16,     Name: Login Flags
+        */
+        DataStore dataStore;
+        
+        dataStore.PutU8(AUTH_RECONNECT_PROOF);
+        dataStore.PutU8(0);
+        dataStore.PutU16(0);
+
+        Send(dataStore);
         _status = STATUS_AUTHED;
         return true;
     }

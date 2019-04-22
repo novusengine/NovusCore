@@ -138,6 +138,7 @@ public:
     void HandleCommandChallengeCallback(amy::result_set& results);
 
     bool HandleCommandReconnectChallenge();
+    void HandleCommandReconnectChallengeCallback(amy::result_set& results);
     bool HandleCommandProof();
     bool HandleCommandReconnectProof();
     bool HandleCommandGameServerList();
@@ -145,7 +146,7 @@ public:
     BigNumber N, s, g, v;
     BigNumber b, B;
     BigNumber K;
-    BigNumber _reconnectProof;
+    BigNumber _reconnectSeed;
     AuthStatus _status;
 
     std::string username;
