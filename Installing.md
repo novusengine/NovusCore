@@ -103,7 +103,7 @@ Now you should have the executables built, database set up and prerequisites ins
 2. Copy the *Authserver, Realmserver & Worldserver* exe files that you built in *Part 2* into the Server folder you created.
 3. Copy the Configuration Templates from *Resources/Configuration Templates* to the server folder.
 4. Copy the map folder which you created in *Part 4* to the server folder.
-5. Edit *database_configuration.json* and put in the IP, Username & password for your MySQL database in each field.
+5. Edit *database.json* and put in the IP, Username & password for your MySQL database in each field.
 6. Go to where you installed the MySQL connector and into the *lib* folder. From there copy *libmysql.dll* into your server folder.
 7. Go to where you installed OpenSSL and copy *libeay32.dll* to your server folder.
 
