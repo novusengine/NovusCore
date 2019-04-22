@@ -52,7 +52,7 @@ There you will find 4 exe files.
 
 ![alt text](https://i.imgur.com/izxIiWS.png "Exe files")
 
-The first three will be used to launch the server whilst *Dataextractor.exe* will be used to extract the data map and dbc data from the client.
+The first three will be used to launch the server whilst *Dataextractor.exe* will be used to extract the map & DBC data from the client.
 ## Part 3 Setting up the database.
 By now you need to have an MySQL server set up.
 
