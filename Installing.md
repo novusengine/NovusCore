@@ -86,7 +86,7 @@ Now we will extract the Map and DBC data from the client. You will need the WotL
 
 1. Copy the *Dataextrator.exe* file from *Part 2* to where the *Data* directoy is (It is in the same directory as the *WoW.exe* file)
 2. Run *Dataextractor.exe* and wait for it to finish. There should now be a folder called "NovusExtractor" containing *DBCImportData.sql* and a folder called "maps".
-3. Execute *DBCImportData.sql*. You will need to manually select the database you want to import the data to which changes the command you'd want to execute if doing it from the commandline to the following:
+3. Execute *DBCImportData.sql*. You will need to manually select the database you want to import the data to, this will change the command you execute if you are using the commandline to the following:
 
 ```mysql -hSERVERADRESS -u USERNAME -pPASSWORD DATABASENAME < DBCImportData.sql```
 
