@@ -4,7 +4,7 @@
 
 ## Part 1: Install prerequisities.
 
-[CMake 3.12 or newer](https://cmake.org/download/)
+[CMake 3.12+](https://cmake.org/download/)
 (Required for building from source)
 
 [OpenSSL 1.0.x](https://www.openssl.org/source/)
@@ -16,7 +16,7 @@
 
 (This is where all the data about accounts, characters and the world is stored.)
 
-[MySQL Community Server 8.0.15](https://dev.mysql.com/downloads/mysql/)
+[MySQL Community Server](https://dev.mysql.com/downloads/mysql/)
 
 **To build the Server from source you will need a way to compile.**
 I recommend getting [Visual Studio Community Edition](https://visualstudio.microsoft.com/) but any IDE supported by CMake should work so use whichever you are prefer.
@@ -46,24 +46,24 @@ Building the project might take a bit of time depending on your set up. Once it'
 
 There you will find 4 exe files.
 - *Authserver.exe*
-- *Relayserver.exe*
-- *Characterserver.exe*
-- *Worldserver.exe*
+- *Realmserver.exe*
+- *Worldnode.exe*
+- *Dataextractor.exe*
 
-![alt text](https://i.imgur.com/wWaK98L.png "Exe files")
+![alt text](https://i.imgur.com/izxIiWS.png "Exe files")
 
-These will be used to launch the server.
+The first three will be used to launch the server whilst *Dataextractor.exe* will be used to extract the data map and dbc data from the client.
 ## Part 3 Setting up the database.
 By now you need to have an MySQL server set up.
 
 **NovusCore uses 4 databases**
-1. Authserver
+1. Auth
 (For account data such as username)
-2. Characterserver
+2. Characters
 (For Character data such as names, class, level, etc)
-3. Worldserver
+3. World
 (Empty right now)
-4. DBCData
+4. DBC
 (Empty right now)
 
 There are template files for these databases in [*Resources/Database Files/Templates*](https://github.com/novuscore/NovusCore/tree/master/resources/Database%20Files/Templates) which was included in the downloaded source.
@@ -78,12 +78,14 @@ Replacing *SERVERADRESS* with the adress/IP of your MySQL server, *USERNAME/PASS
 
 For example it should look something like his:
 
-```mysql -h127.0.0.1 -u root -proot < authserver.sql```
+```mysql -h127.0.0.1 -u root -proot < auth.sql```
 
 That's all you need to do for the database set up.
 ## Part 4 Map and DBC Data
+Now we will extract the Map and DBC data from the client. You will need the WotLK client downloaded for this step.
 
-***TODO As of writing this there is no way to actually set this up by yourself BUT the server also doesn't require either (at the time of writing) so it should be fine anyway. Ignore the step in Part 5 where you are told to copy the map data***
+1. Copy the *Dataextrator.exe* file from *Part 2* to where the *Data* directoy is (It is in the same directory as the *WoW.exe* file)
+2. Run *Dataextractor.exe*
  
 ## Part 5 Finishing up
 Now you should have the executables built, database set up and prerequisites installed. Now you only need to put it all together.
