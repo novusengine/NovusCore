@@ -28,6 +28,7 @@
 #include <vector>
 
 #include <amy/connector.hpp>
+#include "../Utils/DebugHandler.h"
 #include "../Utils/SharedPool.h"
 #include "../Utils/ConcurrentQueue.h"
 #include "../NovusTypes.h"

@@ -1,8 +1,8 @@
 #include "DebugHandler.h"
 
 bool DebugHandler::isInitialized = false;
-u32 DebugHandler::_defaultColor = NULL;
 #ifdef _WIN32
+u32 DebugHandler::_defaultColor = NULL;
 HANDLE DebugHandler::_handle = NULL;
 #endif
 
