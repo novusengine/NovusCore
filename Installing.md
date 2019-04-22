@@ -4,7 +4,7 @@
 
 ## Part 1: Install prerequisities.
 
-[CMake 3.12 or newer](https://cmake.org/download/)
+[CMake 3.12+](https://cmake.org/download/)
 (Required for building from source)
 
 [OpenSSL 1.0.x](https://www.openssl.org/source/)
@@ -16,7 +16,7 @@
 
 (This is where all the data about accounts, characters and the world is stored.)
 
-[MySQL Community Server 8.0.15](https://dev.mysql.com/downloads/mysql/)
+[MySQL Community Server](https://dev.mysql.com/downloads/mysql/)
 
 **To build the Server from source you will need a way to compile.**
 I recommend getting [Visual Studio Community Edition](https://visualstudio.microsoft.com/) but any IDE supported by CMake should work so use whichever you are prefer.
@@ -46,29 +46,29 @@ Building the project might take a bit of time depending on your set up. Once it'
 
 There you will find 4 exe files.
 - *Authserver.exe*
-- *Relayserver.exe*
-- *Characterserver.exe*
-- *Worldserver.exe*
+- *Realmserver.exe*
+- *Worldnode.exe*
+- *Dataextractor.exe*
 
-![alt text](https://i.imgur.com/wWaK98L.png "Exe files")
+![alt text](https://i.imgur.com/izxIiWS.png "Exe files")
 
-These will be used to launch the server.
+The first three will be used to launch the server whilst *Dataextractor.exe* will be used to extract the map & DBC data from the client.
 ## Part 3 Setting up the database.
 By now you need to have an MySQL server set up.
 
 **NovusCore uses 4 databases**
-1. Authserver
+1. Auth
 (For account data such as username)
-2. Characterserver
+2. Characters
 (For Character data such as names, class, level, etc)
-3. Worldserver
+3. World
 (Empty right now)
-4. DBCData
+4. DBC
 (Empty right now)
 
 There are template files for these databases in [*Resources/Database Files/Templates*](https://github.com/novuscore/NovusCore/tree/master/resources/Database%20Files/Templates) which was included in the downloaded source.
 
-![alt text](https://i.imgur.com/dehUFcs.png "Template Files")
+![alt text](https://i.imgur.com/tzRyjhf.png "Template Files")
 
 To run these files you can use a MySQL client like [HeidiSQL](https://www.heidisql.com/download.php) or [MySQL Workbench](https://www.mysql.com/products/workbench/) **or** run the following command from the commandline:
 
@@ -78,54 +78,49 @@ Replacing *SERVERADRESS* with the adress/IP of your MySQL server, *USERNAME/PASS
 
 For example it should look something like his:
 
-```mysql -h127.0.0.1 -u root -proot < authserver.sql```
+```mysql -h127.0.0.1 -u root -proot < auth.sql```
 
 That's all you need to do for the database set up.
 ## Part 4 Map and DBC Data
+Now we will extract the Map and DBC data from the client. You will need the WotLK client downloaded for this step.
 
-***TODO As of writing this there is no way to actually set this up by yourself BUT the server also doesn't require either (at the time of writing) so it should be fine anyway. Ignore the step in Part 5 where you are told to copy the map data***
- 
+1. Copy the *Dataextrator.exe* file from *Part 2* to where the *Data* directoy is (It is in the same directory as the *WoW.exe* file)
+2. Run *Dataextractor.exe* and wait for it to finish. There should now be a folder called "NovusExtractor" containing *DBCImportData.sql* and a folder called "maps".
+3. Execute *DBCImportData.sql*. You will need to manually select the database you want to import the data to, this will change the command you execute if you are using the commandline to the following:
+
+```mysql -hSERVERADRESS -u USERNAME -pPASSWORD DATABASENAME < DBCImportData.sql```
+
+Or for example:
+
+```mysql -h127.0.0.1 -u root -proot dbc < DBCImportData.sql```
+
+
+Now all we need to do is put all the parts together.
 ## Part 5 Finishing up
 Now you should have the executables built, database set up and prerequisites installed. Now you only need to put it all together.
 
-1. Create a new empty folder for the Server files.
-2. Copy the 4 exe files that you built in part 2 from the *build folder* (Should be inside of where you put the sourcecode)
-3. Copy the Configuration Templates from *Resources/Configuration Templates* to the server folder you created.
-4. Edit *database_configuration.json* and put in the IP, Username & password for your MySQL database in each field.
-5. Go to where you installed the MySQL connector and into the *lib* folder. From there copy *libmysql.dll* into your server folder.
-6. Go to where you installed OpenSSL and copy *libeay32.dll* to your server folder.
-7. Copy the map data created in *Part 4* into a new folder inside of your server folder called *maps*
+1. Create a new folder for the Server files.
+2. Copy the *Authserver, Realmserver & Worldserver* exe files that you built in *Part 2* into the Server folder you created.
+3. Copy the Configuration Templates from *Resources/Configuration Templates* to the server folder.
+4. Copy the map folder which you created in *Part 4* to the server folder.
+5. Edit *database.json* and put in the IP, Username & password for your MySQL database in each field.
+6. Go to where you installed the MySQL connector and into the *lib* folder. From there copy *libmysql.dll* into your server folder.
+7. Go to where you installed OpenSSL and copy *libeay32.dll* to your server folder.
 
-![alt text](https://i.imgur.com/XnwK2tq.png "Final server folder")
+![alt text](https://i.imgur.com/kdhbR5Y.png "Final server folder")
 
 Now everything is ready for the last step...
 
 ## Part 6 Starting the Server
-Some useful information to know before starting the server(s):
-The Server is divided into 4 executables.
+The Server is divided into 3 executables.
 
-**The Relay Server** *(Relayserver.exe)*
-Clients communicate with this server and it directs the traffic to the right character and world server.
+**The Realm Server** *(Relayserver.exe)*
+This server handles everything that happens on the character select screen. Creating, Deleting, Customizing characters and logging into them.
 
 **The Authentication Server** *(Authserver.exe)*
 This server handles authentication. The only thing dependant on this server is logging in. Once you are past the log in screen this isn't needed.
 
-**The Character Server** *(Characterserver.exe)*
-This server handles characters. Creating new, deleting old and logging into characters goes through this server.
-
 **The World Server** *(Worldserver.exe)*
-This server handles the world. Everything from NPCs to walking around happens on this server.
+This server handles the world. Everything in the world from NPCs to combat is handled by this server.
 
-**To actually launch the server just open the exe files, but note:**
-1. The Relay server needs the Authentication server to work correctly.
-2. All servers except the authentication server rely on the Relay server to work correctly.
-
-**The start order which you need to follow is then:**
-1. Auth Server
-2. Relay Server
-3. Character Server & World Server
-*If you don't launch the servers in this order there will be problems.*
-
-Now you should have a working\* NovusCore server running and ready to be played on!
-
-\**Note: By working we are not saying that every feature has been fully or at all implemented.*
+All you need to do now to start up the server is execute the exe files. The order does not matter.
