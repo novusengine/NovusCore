@@ -179,6 +179,7 @@ bool DatabaseConnector::_Connect(DATABASE_TYPE type)
 	catch(amy::system_error error)
 	{
         NC_LOG_FATAL(error.what());
+        return false;
 	}
 }
 
