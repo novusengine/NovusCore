@@ -34,8 +34,7 @@ bool DatabaseConnector::Create(DATABASE_TYPE type, std::unique_ptr<DatabaseConne
 {
 	if (!_initialized)
 	{
-		std::cerr << "ERROR: Failed to connect to MySQL Server, please initialize with DatabaseConnector::Setup!\n";
-		return false;
+        NC_LOG_FATAL("Failed to connect to MySQL Server, please initialize with DatabaseConnector::Setup!");
 	}
 
 	out.reset(new DatabaseConnector());
@@ -48,9 +47,7 @@ bool DatabaseConnector::Borrow(DATABASE_TYPE type, std::shared_ptr<DatabaseConne
 {
     if (!_initialized)
 	{
-		std::cerr << "ERROR: Failed to connect to MySQL Server, please initialize with DatabaseConnector::Setup!\n";
-		//assert(false);
-		return false;
+        NC_LOG_FATAL("Failed to connect to MySQL Server, please initialize with DatabaseConnector::Setup!")
 	}
 
 	// If we are out of connectors, create one!
@@ -70,9 +67,7 @@ void DatabaseConnector::Borrow(DATABASE_TYPE type, std::function<void(std::share
 {
     if (!_initialized)
     {
-        std::cerr << "ERROR: Failed to connect to MySQL Server, please initialize with DatabaseConnector::Setup!\n";
-        //assert(false);
-        return;
+        NC_LOG_FATAL("Failed to connect to MySQL Server, please initialize with DatabaseConnector::Setup!")
     }
 
     // If we are out of connectors, create one!
@@ -117,8 +112,7 @@ void DatabaseConnector::AsyncSQLThreadMain()
 	{
 		if (!DatabaseConnector::Create((DATABASE_TYPE)i, connectors[i]))
 		{
-			std::cout << "Connecting to database failed!\n";
-			//assert(false);
+            NC_LOG_FATAL("Connecting to database failed!");
 		}
 	}
 
@@ -184,9 +178,7 @@ bool DatabaseConnector::_Connect(DATABASE_TYPE type)
 	}
 	catch(amy::system_error error)
 	{
-		std::cout << "ERROR: "<< error.what() << "\n";
-		//assert(false);
-		return false;
+        NC_LOG_FATAL(error.what());
 	}
 }
 
@@ -197,8 +189,7 @@ bool DatabaseConnector::Execute(std::string sql)
 
 	if (error)
 	{
-		std::cout << error.message() << "\n";
-		//assert(false);
+        NC_LOG_ERROR(error.message());
 		return false;
 	}
 
@@ -212,8 +203,7 @@ bool DatabaseConnector::Query(std::string sql, amy::result_set& results)
 
 	if (error)
 	{
-		std::cout << _connector->error_message(error) << "\n";
-		//assert(false);
+        NC_LOG_ERROR(_connector->error_message(error));
 		return false;
 	}
 

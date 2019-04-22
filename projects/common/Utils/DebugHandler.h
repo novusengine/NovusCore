@@ -38,6 +38,14 @@ enum PROGRAM_TYPE
     World
 };
 
+enum ColorCode
+{
+    GREEN = 10,
+    YELLOW = 14,
+    MAGENTA = 5,
+    RED = 12,
+};
+
 #define NC_LOG_MESSAGE(message, ...) if (!DebugHandler::isInitialized) { DebugHandler::Initialize(); } \
 DebugHandler::Print(message, ##__VA_ARGS__);
 
@@ -65,62 +73,84 @@ public:
     template <typename... Args>
     inline static void Print(std::string message, Args... args)
     {
-        //PrintColor("[Message]: ", 15);
-        //PrintColor(message + "\n", 7, args...);
         printf((message + "\n").c_str(), args...);
     }
 
     template <typename... Args>
     inline static void PrintWarning(std::string message, Args... args)
     {
-        PrintColor("[Warning]: ", 14);
-        PrintColor(message + "\n", 7, args...);
+        PrintColor("[Warning]: ", ColorCode::YELLOW);
+        Print(message, args...);
     }
 
     template <typename... Args>
     inline static void PrintDeprecated(std::string message, Args... args)
     {
-        PrintColor("[Deprecated]: ", 14);
-        PrintColor(message + "\n", 7, args...);
+        PrintColor("[Deprecated]: ", ColorCode::YELLOW);
+        Print(message, args...);
     }
 
     template <typename... Args>
     inline static void PrintError(std::string message, Args... args)
     {
-        PrintColor("[Error]: ", 12);
-        PrintColor(message + "\n", 7, args...);
+        PrintColor("[Error]: ", ColorCode::MAGENTA);
+        Print(message, args...);
     }
 
     template <typename... Args>
     inline static void PrintFatal(std::string message, Args... args)
     {
-        PrintColor("[Fatal]: ", 12);
-        PrintColor(message + "\n", 7, args...);
+        PrintColor("[Fatal]: ", ColorCode::RED);
+        Print(message, args...);
         assert(false);
     }
 
     template <typename... Args>
     inline static void PrintSuccess(std::string message, Args... args)
     {
-        PrintColor("[Success]: ", 10);
-        PrintColor(message + "\n", 7, args...);
+        PrintColor("[Success]: ", ColorCode::GREEN);
+        Print(message, args...);
     }
-
 private:
     template <typename... Args>
-    inline static void PrintColor(std::string message, u8 color, Args... args)
+    inline static void PrintColor(std::string message, ColorCode color, Args...args)
     {
 #ifdef _WIN32
         SetConsoleTextAttribute(_handle, color);
-#endif
         printf(message.c_str(), args...);
-#ifdef _WIN32
         SetConsoleTextAttribute(_handle, _defaultColor);
+#else
+        const std::string green("\033[1;32m");
+        const std::string yellow("\033[1;33m");
+        const std::string magenta("\033[0;35m");
+        const std::string red("\033[0;31m");
+        const std::string reset("\033[0m");
+
+        std::string withColors;
+        switch(color)
+        {
+            case ColorCode::RED:
+                withColors = red + message + reset;
+                break;
+            case ColorCode::YELLOW:
+                withColors = yellow + message + reset;
+                break;
+            case ColorCode::MAGENTA:
+                withColors = magenta + message + reset;
+                break;
+            case ColorCode::GREEN:
+                withColors = green + message + reset;
+                break;
+            default:
+                withColors = message;
+        }
+
+        printf(withColors.c_str(), args...);
 #endif
     }
 
-    static u32 _defaultColor;
 #ifdef _WIN32
+    static u32 _defaultColor;
     static HANDLE _handle;
 #endif
 };
