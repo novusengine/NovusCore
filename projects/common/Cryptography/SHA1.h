@@ -32,7 +32,7 @@ class BigNumber;
 class SHA1Hasher
 {
 public:
-    SHA1Hasher();
+    SHA1Hasher(bool broken = false);
     ~SHA1Hasher();
 
     void UpdateHashForBn(size_t size, BigNumber* bigNumber0, ...);

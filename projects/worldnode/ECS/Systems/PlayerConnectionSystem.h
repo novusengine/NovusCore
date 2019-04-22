@@ -115,7 +115,7 @@ namespace ConnectionSystem
                         redirectClient.Write<i32>(0); // unk
 #pragma warning(push)
 #pragma warning(disable: 4312)
-                        HMACH hmac(40, clientConnection.socket->sessionKey->BN2BinArray(20).get());
+                        HMACH hmac(40, clientConnection.socket->sessionKey.BN2BinArray(20).get());
                         hmac.UpdateHash((u8*)& ip, 4);
                         hmac.UpdateHash((u8*)& port, 2);
                         hmac.Finish();

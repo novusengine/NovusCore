@@ -63,6 +63,14 @@ void HMACH::UpdateHash(u8 const* data, size_t size)
     HMAC_Update(_HMAC_CONTEXT, data, size);
 }
 
+u8* HMACH::UpdateHashForBN(BigNumber* bigNumber)
+{
+    HMAC_Update(_HMAC_CONTEXT, bigNumber->BN2BinArray().get(), 40);// bigNumber->GetBytes());
+
+    Finish();
+    return _data;
+}
+
 void HMACH::Finish()
 {
     u32 size = 0;

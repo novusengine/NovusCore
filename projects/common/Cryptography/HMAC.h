@@ -37,6 +37,7 @@ public:
 
     void UpdateHash(std::string const& string);
     void UpdateHash(u8 const* data, size_t size);
+    u8* UpdateHashForBN(BigNumber* bigNumber);
     void Finish();
 
     u8* CalculateHash(BigNumber* bigNumber);

@@ -99,7 +99,6 @@ public:
     {
         _seed = static_cast<u32>(rand());
         _headerBuffer.Resize(sizeof(Common::ClientPacketHeader));
-        sessionKey = new BigNumber();
 
         _worldNodeHandler = worldNodeHandler;
     }
@@ -130,7 +129,9 @@ public:
     u32 account;
     u64 characterGuid;
     cAuthSessionData sessionData;
-    BigNumber* sessionKey;
+    BigNumber sessionKey;
+    BigNumber seed1;
+    BigNumber seed2;
 
     Common::ByteBuffer _headerBuffer;
     Common::ByteBuffer _packetBuffer;

@@ -26,6 +26,7 @@
 #include "Networking/ByteBuffer.h"
 #include <Cryptography/BigNumber.h>
 #include <Cryptography/HMAC.h>
+#include <Cryptography/SHA1.h>
 #include <Database/DatabaseConnector.h>
 #include <zlib.h>
 #include <map>
@@ -132,18 +133,15 @@ struct sAuthChallenge
 
 bool WorldConnection::Start()
 {
-    BigNumber seed1;
     seed1.Rand(16 * 8);
-
-    BigNumber seed2;
     seed2.Rand(16 * 8);
 
     Common::ByteBuffer authPacket;
     sAuthChallenge challenge;
     challenge.unk = 1;
     challenge.authSeed = _seed;
-    challenge.Append(challenge.seed1, seed1.BN2BinArray(32).get(), 16);
-    challenge.Append(challenge.seed2, seed2.BN2BinArray(32).get(), 16);
+    challenge.Append(challenge.seed1, seed1.BN2BinArray(16).get(), 16);
+    challenge.Append(challenge.seed2, seed2.BN2BinArray(16).get(), 16);
     challenge.AddTo(authPacket);
 
     Common::ByteBuffer resumeComms;
@@ -368,12 +366,12 @@ void WorldConnection::HandleContinueAuthSession()
         }
 
         // We need to try to use the session key that we have, if we don't the client won't be able to read the auth response error.
-        sessionKey->Hex2BN(results[0][1].GetString().c_str());
+        sessionKey.Hex2BN(results[0][1].GetString().c_str());
 
         SHA1Hasher sha;
         u32 t = 0;
         sha.UpdateHash(username);
-        sha.UpdateHashForBn(1, sessionKey);
+        sha.UpdateHashForBn(1, &sessionKey);
         sha.UpdateHash((u8*)&_seed, 4);
         sha.Finish();
 
@@ -383,20 +381,49 @@ void WorldConnection::HandleContinueAuthSession()
             return;
         }
 
-        _streamCrypto.SetupServer(sessionKey);
+        /* Generate KeyPair for StreamCrypto
+        auto seed1Array = seed1.BN2BinArray(16).get();
+        auto seed2Array = seed2.BN2BinArray(16).get();
+
+        HMACH seed1Hmac(16, seed1Array);
+        HMACH seed2Hmac(16, seed2Array);
+        u8* sessionKeyHash1 = seed1Hmac.UpdateHashForBN(&sessionKey);
+        u8* sessionKeyHash2 = seed2Hmac.UpdateHashForBN(&sessionKey);
+
+        // char v24; // [esp+ACh] [ebp-D0h]
+        // v3 = (_BYTE *)a2;
+        // mov ebx,dword ptr ss:[ebp+8]
+        // mov ebx,7B6CDCFD
+        u8 unk[64];
+        std::memset(unk, 0, 64);
+
+        SHA1Hasher seed1Hash(true);
+        seed1Hash.UpdateHash(unk, 64);
+        seed1Hash.UpdateHash(sessionKeyHash1, 20);
+        seed1Hash.Finish();
+        u8* seed1ShaHash = seed1Hash.GetData();
+
+
+        SHA1Hasher seed2Hash(true);
+        seed2Hash.UpdateHash(unk, 64);
+        seed2Hash.UpdateHash(sessionKeyHash2, 20);
+        seed2Hash.Finish();
+        u8* seed2ShaHash = seed2Hash.GetData();
+
+        _streamCrypto.SetupServer(&sessionKey, seed2ShaHash, seed1ShaHash);
         account = results[0][0].as<amy::sql_int_unsigned>();
 
-        /* SMSG_AUTH_RESPONSE
+         SMSG_AUTH_RESPONSE
         Common::ByteBuffer packet(1 + 4 + 1 + 4 + 1);
         packet.Write<u8>(AUTH_OK);
         packet.Write<u32>(0);
         packet.Write<u8>(0);
         packet.Write<u32>(0);
         packet.Write<u8>(2); // Expansion
-        SendPacket(packet, Common::Opcode::SMSG_AUTH_RESPONSE);*/
+        SendPacket(packet, Common::Opcode::SMSG_AUTH_RESPONSE);
 
         Common::ByteBuffer empty1;
-        SendPacket(empty1, Common::Opcode::SMSG_RESUME_COMMS);
+        SendPacket(empty1, Common::Opcode::SMSG_RESUME_COMMS);*/
     });
 }
 void WorldConnection::HandleAuthSession()
@@ -455,7 +482,7 @@ void WorldConnection::HandleAuthSession()
             }
 
             // We need to try to use the session key that we have, if we don't the client won't be able to read the auth response error.
-            sessionKey->Hex2BN(results[0][1].as<amy::sql_varchar>().c_str());
+            sessionKey.Hex2BN(results[0][1].as<amy::sql_varchar>().c_str());
 
             SHA1Hasher sha;
             u32 t = 0;
@@ -463,7 +490,7 @@ void WorldConnection::HandleAuthSession()
             sha.UpdateHash((u8*)& t, 4);
             sha.UpdateHash((u8*)& sessionData.localChallenge, 4);
             sha.UpdateHash((u8*)& _seed, 4);
-            sha.UpdateHashForBn(1, sessionKey);
+            sha.UpdateHashForBn(1, &sessionKey);
             sha.Finish();
 
             if (memcmp(sha.GetData(), sessionData.digest, SHA_DIGEST_LENGTH) != 0)
@@ -472,7 +499,7 @@ void WorldConnection::HandleAuthSession()
                 return;
             }
 
-            _streamCrypto.SetupServer(sessionKey);
+            _streamCrypto.SetupServer(&sessionKey);
             account = results[0][0].GetU32();
 
             /* SMSG_AUTH_RESPONSE */

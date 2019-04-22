@@ -25,15 +25,15 @@
 
 StreamCrypto::StreamCrypto() : _cDecrypt(20), _sEncrypt(20), _valid(false) { }
 
-void StreamCrypto::SetupClient(BigNumber* key)
+void StreamCrypto::SetupServer(BigNumber* key)
 {
-    u8 cEncryptionKey[16] = { 0xC2, 0xB3, 0x72, 0x3C, 0xC6, 0xAE, 0xD9, 0xB5, 0x34, 0x3C, 0x53, 0xEE, 0x2F, 0x43, 0x67, 0xCE };
-    HMACH cEncryptionHMAC(16, (u8*)cEncryptionKey);
-    u8* eHash = cEncryptionHMAC.CalculateHash(key);
+    u8 sEncryptionKey[16] = { 0xCC, 0x98, 0xAE, 0x04, 0xE8, 0x97, 0xEA, 0xCA, 0x12, 0xDD, 0xC0, 0x93, 0x42, 0x91, 0x53, 0x57 };
+    HMACH sEncryptionHMAC(16, static_cast<u8*>(sEncryptionKey));
+    u8* eHash = sEncryptionHMAC.CalculateHash(key);
 
-    u8 sDecryptionKey[16] = { 0xCC, 0x98, 0xAE, 0x04, 0xE8, 0x97, 0xEA, 0xCA, 0x12, 0xDD, 0xC0, 0x93, 0x42, 0x91, 0x53, 0x57 };
-    HMACH sDecryptHMAC(16, (u8*)sDecryptionKey);
-    u8* dHash = sDecryptHMAC.CalculateHash(key);
+    u8 cDecryptionKey[16] = { 0xC2, 0xB3, 0x72, 0x3C, 0xC6, 0xAE, 0xD9, 0xB5, 0x34, 0x3C, 0x53, 0xEE, 0x2F, 0x43, 0x67, 0xCE };
+    HMACH cDecryptHMAC(16, static_cast<u8*>(cDecryptionKey));
+    u8* dHash = cDecryptHMAC.CalculateHash(key);
 
     _sEncrypt.Setup(eHash);
     _cDecrypt.Setup(dHash);
@@ -49,18 +49,10 @@ void StreamCrypto::SetupClient(BigNumber* key)
 
     _valid = true;
 }
-void StreamCrypto::SetupServer(BigNumber* key)
+void StreamCrypto::SetupServer(BigNumber* key, u8* encryptionKey, u8* decryptionKey)
 {
-    u8 sEncryptionKey[16] = { 0xCC, 0x98, 0xAE, 0x04, 0xE8, 0x97, 0xEA, 0xCA, 0x12, 0xDD, 0xC0, 0x93, 0x42, 0x91, 0x53, 0x57 };
-    HMACH sEncryptionHMAC(16, static_cast<u8*>(sEncryptionKey));
-    u8* eHash = sEncryptionHMAC.CalculateHash(key);
-
-    u8 cDecryptionKey[16] = { 0xC2, 0xB3, 0x72, 0x3C, 0xC6, 0xAE, 0xD9, 0xB5, 0x34, 0x3C, 0x53, 0xEE, 0x2F, 0x43, 0x67, 0xCE };
-    HMACH cDecryptHMAC(16, static_cast<u8*>(cDecryptionKey));
-    u8* dHash = cDecryptHMAC.CalculateHash(key);
-
-    _sEncrypt.Setup(eHash);
-    _cDecrypt.Setup(dHash);
+    _sEncrypt.Setup(encryptionKey);
+    _cDecrypt.Setup(decryptionKey);
 
     // Drop first 1024 bytes, as WoW uses ARC4-drop1024.
     u8 dropBuffer[1024];

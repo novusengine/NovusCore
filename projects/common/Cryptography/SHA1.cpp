@@ -30,8 +30,19 @@
 #include <iomanip>
 #include "BigNumber.h"
 
-SHA1Hasher::SHA1Hasher()
+SHA1Hasher::SHA1Hasher(bool broken /* = false */)
 {
+    if (broken)
+    {
+        _state.h0 = 0;
+        _state.h1 = 0;    
+        _state.h2 = 1732584193;
+        _state.h3 = -271733879;
+        _state.h4 = -1732584194;
+        _state.Nl = 271733878;
+        _state.Nh = -1009589776;
+    }
+
     SHA1_Init(&_state);
     memset(_data, 0, SHA_DIGEST_LENGTH * sizeof(u8));
 }
