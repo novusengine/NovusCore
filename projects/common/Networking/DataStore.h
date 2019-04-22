@@ -126,7 +126,7 @@ public:
         val = (static_cast<u32>(_data[ReadData]) << 24) | (static_cast<u32>(_data[ReadData + 1]) << 16) | (static_cast<u32>(_data[ReadData + 2]) << 8) | static_cast<u32>(_data[ReadData + 3]);
         ReadData += readSize;
         return true;
-    }    
+    }
     bool GetF32(f32& val)
     {
         assert(_data != nullptr);
@@ -220,7 +220,7 @@ public:
             return false;
 
         _data[WrittenData] = (static_cast<u8>(val >> 8));
-        _data[ReadData + 1] = static_cast<u8>(val);
+        _data[WrittenData + 1] = static_cast<u8>(val);
         WrittenData += writeSize;
         return true;
     }
@@ -233,7 +233,7 @@ public:
             return false;
 
         _data[WrittenData] = (static_cast<u8>(val >> 8));
-        _data[ReadData + 1] = static_cast<u8>(val);
+        _data[WrittenData + 1] = static_cast<u8>(val);
         WrittenData += writeSize;
         return true;
     }
@@ -246,9 +246,9 @@ public:
             return false;
 
         _data[WrittenData] = (static_cast<u8>(val >> 24));
-        _data[ReadData + 1] = (static_cast<u8>(val >> 16));
-        _data[ReadData + 2] = (static_cast<u8>(val >> 8));
-        _data[ReadData + 3] = static_cast<u8>(val);
+        _data[WrittenData + 1] = (static_cast<u8>(val >> 16));
+        _data[WrittenData + 2] = (static_cast<u8>(val >> 8));
+        _data[WrittenData + 3] = static_cast<u8>(val);
         WrittenData += writeSize;
         return true;
     }
@@ -261,9 +261,9 @@ public:
             return false;
 
         _data[WrittenData] = (static_cast<u8>(val >> 24));
-        _data[ReadData + 1] = (static_cast<u8>(val >> 16));
-        _data[ReadData + 2] = (static_cast<u8>(val >> 8));
-        _data[ReadData + 3] = static_cast<u8>(val);
+        _data[WrittenData + 1] = (static_cast<u8>(val >> 16));
+        _data[WrittenData + 2] = (static_cast<u8>(val >> 8));
+        _data[WrittenData + 3] = static_cast<u8>(val);
         WrittenData += writeSize;
         return true;
     }
@@ -276,13 +276,13 @@ public:
             return false;
 
         _data[WrittenData] = static_cast<u8>(val);
-        _data[ReadData + 1] = (static_cast<u8>(val >> 8));
-        _data[ReadData + 2] = (static_cast<u8>(val >> 16));
-        _data[ReadData + 3] = (static_cast<u8>(val >> 24));
-        _data[ReadData + 4] = (static_cast<u8>(val >> 32));
-        _data[ReadData + 5] = (static_cast<u8>(val >> 40));
-        _data[ReadData + 6] = (static_cast<u8>(val >> 48));
-        _data[ReadData + 7] = (static_cast<u8>(val >> 56));
+        _data[WrittenData + 1] = (static_cast<u8>(val >> 8));
+        _data[WrittenData + 2] = (static_cast<u8>(val >> 16));
+        _data[WrittenData + 3] = (static_cast<u8>(val >> 24));
+        _data[WrittenData + 4] = (static_cast<u8>(val >> 32));
+        _data[WrittenData + 5] = (static_cast<u8>(val >> 40));
+        _data[WrittenData + 6] = (static_cast<u8>(val >> 48));
+        _data[WrittenData + 7] = (static_cast<u8>(val >> 56));
         WrittenData += writeSize;
         return true;
     }
@@ -295,13 +295,13 @@ public:
             return false;
 
         _data[WrittenData] = static_cast<u8>(val);
-        _data[ReadData + 1] = (static_cast<u8>(val >> 8));
-        _data[ReadData + 2] = (static_cast<u8>(val >> 16));
-        _data[ReadData + 3] = (static_cast<u8>(val >> 24));
-        _data[ReadData + 4] = (static_cast<u8>(val >> 32));
-        _data[ReadData + 5] = (static_cast<u8>(val >> 40));
-        _data[ReadData + 6] = (static_cast<u8>(val >> 48));
-        _data[ReadData + 7] = (static_cast<u8>(val >> 56));
+        _data[WrittenData + 1] = (static_cast<u8>(val >> 8));
+        _data[WrittenData + 2] = (static_cast<u8>(val >> 16));
+        _data[WrittenData + 3] = (static_cast<u8>(val >> 24));
+        _data[WrittenData + 4] = (static_cast<u8>(val >> 32));
+        _data[WrittenData + 5] = (static_cast<u8>(val >> 40));
+        _data[WrittenData + 6] = (static_cast<u8>(val >> 48));
+        _data[WrittenData + 7] = (static_cast<u8>(val >> 56));
         WrittenData += writeSize;
         return true;
     }
