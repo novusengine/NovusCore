@@ -41,11 +41,11 @@ public:
 			case HighGuid::Pet:
 			case HighGuid::Vehicle:
 				return true;
+            default:
+                return false;
 		}
-
-		return false;
 	}
-	
+
 	bool IsPlayer() const { return GetHighType() == HighGuid::Player; }
 	bool IsItem() const { return GetHighType() == HighGuid::Item; }
 	bool IsUnit() const { return GetHighType() == HighGuid::Unit; }

@@ -23,7 +23,7 @@ public:
 
     bool Build(Common::ByteBuffer& packet, u16& opcode)
     {
-        Common::ByteBuffer buffer((4 + _nonVisibleGuids.empty() ? 0 : 1 + 4 + 9 * _nonVisibleGuids.size()) + _data._writePos);
+        Common::ByteBuffer buffer;
         buffer.Write<u32>(_nonVisibleGuids.empty() ? _blockCount : _blockCount + 1);
 
         if (!_nonVisibleGuids.empty())
