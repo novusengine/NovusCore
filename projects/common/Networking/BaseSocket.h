@@ -30,6 +30,7 @@
 #include <asio.hpp>
 #include <asio/placeholders.hpp>
 #include "ByteBuffer.h"
+#include "DataStore.h"
 
 namespace Common
 {
@@ -45,6 +46,14 @@ namespace Common
             return _socket;
         }
 
+        void Send(DataStore& dataStore)
+        {
+            if (!dataStore.IsEmpty())
+            {
+                _socket->async_write_some(asio::buffer(dataStore.GetInternalData(), dataStore.write),
+                    std::bind(&BaseSocket::HandleInternalWrite, this, std::placeholders::_1, std::placeholders::_2));
+            }
+        }
         void Send(ByteBuffer& buffer)
         {
             if (!buffer.empty())

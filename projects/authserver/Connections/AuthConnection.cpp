@@ -24,6 +24,7 @@
 
 #include "AuthConnection.h"
 #include <Networking/ByteBuffer.h>
+#include <Networking/DataStore.h>
 
 #pragma pack(push, 1)
 struct cAuthLogonChallenge
@@ -243,12 +244,15 @@ void AuthConnection::HandleCommandChallengeCallback(amy::result_set& results)
     header.command = AUTH_CHALLENGE;
     header.error = 0;
 
+    DataStore dataStore;
+    dataStore.PutU8(AUTH_CHALLENGE);
+    dataStore.PutU8(0);
+
     // Make sure the account exist.
     if (results.affected_rows() != 1)
     {
-        header.result = AUTH_FAIL_UNKNOWN_ACCOUNT;
-        header.AddTo(response);
-        Send(response);
+        dataStore.PutU8(AUTH_FAIL_UNKNOWN_ACCOUNT);
+        Send(dataStore);
         return;
     }
 
@@ -272,25 +276,22 @@ void AuthConnection::HandleCommandChallengeCallback(amy::result_set& results)
     }
 
     _status = STATUS_PROOF;
-    header.result = AUTH_SUCCESS;
-    header.AddTo(response);
+    dataStore.PutU8(AUTH_SUCCESS);
 
-    sAuthLogonChallengeData data;
-    data.Append(data.b, B.BN2BinArray(32).get(), 32);
-    data.g_length = 1;
-    data.g = g.BN2BinArray(32).get()[0];
-    data.n_length = 32;
-    data.Append(data.n, N.BN2BinArray(32).get(), 32);
-    data.Append(data.salt, s.BN2BinArray(32).get(), 32); // 32 bytes (SRP_6_S)
-    data.Append(data.version_challenge, VersionChallenge.data(), VersionChallenge.size());
-    data.security_flags = 0;
-    data.AddTo(response);
+    dataStore.PutBytes(B.BN2BinArray(32).get(), 32);
+    dataStore.PutU8(1);
+    dataStore.PutU8(g.BN2BinArray(32).get()[0]);
+    dataStore.PutU8(32);
+    dataStore.PutBytes(N.BN2BinArray(32).get(), 32);
+    dataStore.PutBytes(s.BN2BinArray(32).get(), 32);
+    dataStore.PutBytes(VersionChallenge.data(), VersionChallenge.size());
+    dataStore.PutU8(0);
 
     /*
         We should check here if we need to handle security flags
     */
 
-    Send(response);
+    Send(dataStore);
 }
 
 bool AuthConnection::HandleCommandProof()
