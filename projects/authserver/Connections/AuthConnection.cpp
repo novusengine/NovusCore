@@ -109,11 +109,11 @@ robin_hood::unordered_map<u8, AuthMessageHandler> AuthConnection::InitMessageHan
 {
     robin_hood::unordered_map<u8, AuthMessageHandler> messageHandlers;
 
-    messageHandlers[AUTH_CHALLENGE]             = { STATUS_CHALLENGE,         4,                              1,   &AuthConnection::HandleCommandChallenge          };
-    messageHandlers[AUTH_PROOF]                 = { STATUS_PROOF,             sizeof(cAuthLogonProof),        1,   &AuthConnection::HandleCommandProof              };
-    messageHandlers[AUTH_RECONNECT_CHALLENGE]   = { STATUS_CHALLENGE,         4,                              1,   &AuthConnection::HandleCommandReconnectChallenge };
-    messageHandlers[AUTH_RECONNECT_PROOF]       = { STATUS_RECONNECT_PROOF,   sizeof(cAuthReconnectProof),    1,   &AuthConnection::HandleCommandReconnectProof     };
-    messageHandlers[AUTH_GAMESERVER_LIST]       = { STATUS_AUTHED,            5,                              3,   &AuthConnection::HandleCommandGameServerList     };
+    messageHandlers[AUTH_CHALLENGE] = { STATUS_CHALLENGE,         4,                              1,   &AuthConnection::HandleCommandChallenge };
+    messageHandlers[AUTH_PROOF] = { STATUS_PROOF,             sizeof(cAuthLogonProof),        1,   &AuthConnection::HandleCommandProof };
+    messageHandlers[AUTH_RECONNECT_CHALLENGE] = { STATUS_CHALLENGE,         4,                              1,   &AuthConnection::HandleCommandReconnectChallenge };
+    messageHandlers[AUTH_RECONNECT_PROOF] = { STATUS_RECONNECT_PROOF,   sizeof(cAuthReconnectProof),    1,   &AuthConnection::HandleCommandReconnectProof };
+    messageHandlers[AUTH_GAMESERVER_LIST] = { STATUS_AUTHED,            5,                              3,   &AuthConnection::HandleCommandGameServerList };
 
     return messageHandlers;
 }
@@ -198,7 +198,7 @@ bool AuthConnection::HandleCommandChallenge()
 
     PreparedStatement stmt("SELECT guid, salt, verifier FROM accounts WHERE username={s};");
     stmt.Bind(username);
-    DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, stmt, [this](amy::result_set& results, DatabaseConnector& connector) { HandleCommandChallengeCallback(results); });
+    DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, stmt, [this](amy::result_set & results, DatabaseConnector & connector) { HandleCommandChallengeCallback(results); });
 
     return true;
 }
@@ -238,6 +238,19 @@ void AuthConnection::HandleCommandChallengeCallback(amy::result_set& results)
     _status = STATUS_PROOF;
     dataStore.PutU8(AUTH_SUCCESS);
 
+
+    /* Logon Challenge Data Structure
+
+       - Type: u8[32],  Name: B
+       - Type: u8,      Name: Lenght of G
+       - Type: u8,      Name: G
+       - Type: u8,      Name: Lenght of N
+       - Type: u8[32],  Name: N
+       - Type: u8[32],  Name: Salt
+       - Type: u8[16],  Name: Version Challenge
+       - Type: u8,      Name: Security Flag
+       https://en.wikipedia.org/wiki/Secure_Remote_Password_protocol
+    */
     dataStore.PutBytes(B.BN2BinArray(32).get(), 32);
     dataStore.PutU8(1);
     dataStore.PutU8(g.BN2BinArray(32).get()[0]);
@@ -345,25 +358,25 @@ bool AuthConnection::HandleCommandProof()
         PreparedStatement stmt("UPDATE accounts SET sessionkey={s} WHERE username={s};");
         stmt.Bind(K.BN2Hex());
         stmt.Bind(username);
-        DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, stmt, [this, proofM2](amy::result_set& results, DatabaseConnector& connector)
-        {
-            Common::ByteBuffer packet;
-            sAuthLogonProof proof;
+        DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, stmt, [this, proofM2](amy::result_set & results, DatabaseConnector & connector)
+            {
+                Common::ByteBuffer packet;
+                sAuthLogonProof proof;
 
-            memcpy(proof.M2, proofM2, 20);
-            proof.cmd = AUTH_PROOF;
-            proof.error = 0;
-            proof.AccountFlags = 0x00;    // 0x01 = GM, 0x08 = Trial, 0x00800000 = Pro pass (arena tournament)
-            proof.SurveyId = 0;
-            proof.LoginFlags = 0x00;
+                memcpy(proof.M2, proofM2, 20);
+                proof.cmd = AUTH_PROOF;
+                proof.error = 0;
+                proof.AccountFlags = 0x00;    // 0x01 = GM, 0x08 = Trial, 0x00800000 = Pro pass (arena tournament)
+                proof.SurveyId = 0;
+                proof.LoginFlags = 0x00;
 
-            packet.Resize(sizeof(proof));
-            std::memcpy(packet.data(), &proof, sizeof(proof));
-            packet.WriteBytes(sizeof(proof));
+                packet.Resize(sizeof(proof));
+                std::memcpy(packet.data(), &proof, sizeof(proof));
+                packet.WriteBytes(sizeof(proof));
 
-            Send(packet);
-            _status = STATUS_AUTHED;
-        });
+                Send(packet);
+                _status = STATUS_AUTHED;
+            });
     }
     else
     {
@@ -439,61 +452,61 @@ bool AuthConnection::HandleCommandGameServerList()
 {
     _status = STATUS_WAITING_FOR_GAMESERVER;
 
-    DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, "SELECT id, name, address, type, flags, timezone, population FROM realms;", [this](amy::result_set& results, DatabaseConnector& connector)
-    {
-        std::vector<u8> realmCharacterData(MAX_REALM_COUNT);
-        std::fill(realmCharacterData.begin(), realmCharacterData.end(), 0);
-
-        std::shared_ptr<DatabaseConnector> borrowedConnector;
-        DatabaseConnector::Borrow(DATABASE_TYPE::AUTHSERVER, borrowedConnector);
-        amy::result_set realmCharacterCountResult;
-
-        PreparedStatement realmCharacterCount("SELECT realmid, characters FROM realm_characters WHERE account={u};");
-        realmCharacterCount.Bind(accountGuid);
-        if (borrowedConnector->Query(realmCharacterCount, realmCharacterCountResult))
+    DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, "SELECT id, name, address, type, flags, timezone, population FROM realms;", [this](amy::result_set & results, DatabaseConnector & connector)
         {
-            for (auto row : realmCharacterCountResult)
+            std::vector<u8> realmCharacterData(MAX_REALM_COUNT);
+            std::fill(realmCharacterData.begin(), realmCharacterData.end(), 0);
+
+            std::shared_ptr<DatabaseConnector> borrowedConnector;
+            DatabaseConnector::Borrow(DATABASE_TYPE::AUTHSERVER, borrowedConnector);
+            amy::result_set realmCharacterCountResult;
+
+            PreparedStatement realmCharacterCount("SELECT realmid, characters FROM realm_characters WHERE account={u};");
+            realmCharacterCount.Bind(accountGuid);
+            if (borrowedConnector->Query(realmCharacterCount, realmCharacterCountResult))
             {
-                realmCharacterData[row[0].GetU8()] = row[1].GetU8();
+                for (auto row : realmCharacterCountResult)
+                {
+                    realmCharacterData[row[0].GetU8()] = row[1].GetU8();
+                }
             }
-        }
 
-        Common::ByteBuffer realmBuffer;
-        for (auto row : results)
-        {
-            sAuthLogonGameListData realmData;
-            realmData.Id = row[0].GetU8();
-            realmData.Name = row[1].GetString();
-            realmData.Address = row[2].GetString();
-            realmData.Type = row[3].GetU8();
-            realmData.Flags = row[4].GetU8();
-            realmData.Timezone = row[5].GetU8();
-            realmData.Population = row[6].GetF32();
-            realmData.Characters = realmCharacterData[realmData.Id];
-            realmData.Locked = 0;
+            Common::ByteBuffer realmBuffer;
+            for (auto row : results)
+            {
+                sAuthLogonGameListData realmData;
+                realmData.Id = row[0].GetU8();
+                realmData.Name = row[1].GetString();
+                realmData.Address = row[2].GetString();
+                realmData.Type = row[3].GetU8();
+                realmData.Flags = row[4].GetU8();
+                realmData.Timezone = row[5].GetU8();
+                realmData.Population = row[6].GetF32();
+                realmData.Characters = realmCharacterData[realmData.Id];
+                realmData.Locked = 0;
 
-            realmData.AddTo(realmBuffer);
-        }
+                realmData.AddTo(realmBuffer);
+            }
 
-        // (Only needed for clients TBC+)
-        realmBuffer.Write<u8>(0x10); // Unk1
-        realmBuffer.Write<u8>(0x00); // Unk2
+            // (Only needed for clients TBC+)
+            realmBuffer.Write<u8>(0x10); // Unk1
+            realmBuffer.Write<u8>(0x00); // Unk2
 
-        Common::ByteBuffer RealmListSizeBuffer;
-        RealmListSizeBuffer.Write<u32>(0);
-        RealmListSizeBuffer.Write<u16>(static_cast<u16>(results.affected_rows()));
+            Common::ByteBuffer RealmListSizeBuffer;
+            RealmListSizeBuffer.Write<u32>(0);
+            RealmListSizeBuffer.Write<u16>(static_cast<u16>(results.affected_rows()));
 
-        Common::ByteBuffer hdr;
-        hdr.Write<u8>(AUTH_GAMESERVER_LIST);
+            Common::ByteBuffer hdr;
+            hdr.Write<u8>(AUTH_GAMESERVER_LIST);
 
-        u16 combinedSize = realmBuffer.size() + RealmListSizeBuffer.size();
-        hdr.Write<u16>(combinedSize);
-        hdr.Append(RealmListSizeBuffer);
-        hdr.Append(realmBuffer);
-        Send(hdr);
+            u16 combinedSize = realmBuffer.size() + RealmListSizeBuffer.size();
+            hdr.Write<u16>(combinedSize);
+            hdr.Append(RealmListSizeBuffer);
+            hdr.Append(realmBuffer);
+            Send(hdr);
 
-        _status = STATUS_AUTHED;
-    });
+            _status = STATUS_AUTHED;
+        });
 
     return true;
 }

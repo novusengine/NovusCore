@@ -50,7 +50,7 @@ namespace Common
         {
             if (!dataStore.IsEmpty())
             {
-                _socket->async_write_some(asio::buffer(dataStore.GetInternalData(), dataStore.write),
+                _socket->async_write_some(asio::buffer(dataStore.GetInternalData(), dataStore.WrittenData),
                     std::bind(&BaseSocket::HandleInternalWrite, this, std::placeholders::_1, std::placeholders::_2));
             }
         }

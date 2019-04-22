@@ -42,13 +42,17 @@ public:
             _data = inData;
         }
 
-        size = inSize;
+        Size = inSize;
     }
-    ~DataStore() { if (_isOwner) { delete[] _data; } }
+    ~DataStore() { if (_isOwner) { delete[] _data; _data = nullptr; } }
 
-    bool CanPerformReadOrWrite(size_t inSize)
+    bool CanPerformRead(size_t inSize)
     {
-        return read + inSize <= size;
+        return ReadData + inSize <= Size;
+    }
+    bool CanPerformWrite(size_t inSize)
+    {
+        return WrittenData + inSize <= Size;
     }
 
     bool GetI8(i8& val)
@@ -56,11 +60,11 @@ public:
         assert(_data != nullptr);
 
         const size_t readSize = sizeof(i8);
-        if (!CanPerformReadOrWrite(readSize))
+        if (!CanPerformRead(readSize))
             return false;
 
-        val = _data[read];
-        read += readSize;
+        val = _data[ReadData];
+        ReadData += readSize;
         return true;
     }
     bool GetU8(u8& val)
@@ -68,11 +72,11 @@ public:
         assert(_data != nullptr);
 
         const size_t readSize = sizeof(u8);
-        if (!CanPerformReadOrWrite(readSize))
+        if (!CanPerformRead(readSize))
             return false;
 
-        val = _data[read];
-        read += readSize;
+        val = _data[ReadData];
+        ReadData += readSize;
         return true;
     }
     bool GetI16(i16& val)
@@ -80,11 +84,11 @@ public:
         assert(_data != nullptr);
 
         const size_t readSize = sizeof(i16);
-        if (!CanPerformReadOrWrite(readSize))
+        if (!CanPerformRead(readSize))
             return false;
 
-        val = (static_cast<u16>(_data[read]) << 8) | static_cast<u16>(_data[read + 1]);
-        read += readSize;
+        val = (static_cast<u16>(_data[ReadData]) << 8) | static_cast<u16>(_data[ReadData + 1]);
+        ReadData += readSize;
         return true;
     }
     bool GetU16(u16& val)
@@ -92,11 +96,11 @@ public:
         assert(_data != nullptr);
 
         const size_t readSize = sizeof(u16);
-        if (!CanPerformReadOrWrite(readSize))
+        if (!CanPerformRead(readSize))
             return false;
 
-        val = (static_cast<u16>(_data[read]) << 8) | static_cast<u16>(_data[read + 1]);
-        read += readSize;
+        val = (static_cast<u16>(_data[ReadData]) << 8) | static_cast<u16>(_data[ReadData + 1]);
+        ReadData += readSize;
         return true;
     }
     bool GetI32(i32& val)
@@ -104,11 +108,11 @@ public:
         assert(_data != nullptr);
 
         const size_t readSize = sizeof(i32);
-        if (!CanPerformReadOrWrite(readSize))
+        if (!CanPerformRead(readSize))
             return false;
 
-        val = (static_cast<u32>(_data[read]) << 24) | (static_cast<u32>(_data[read + 1]) << 16) | (static_cast<u32>(_data[read + 2]) << 8) | static_cast<u32>(_data[read + 3]);
-        read += readSize;
+        val = (static_cast<u32>(_data[ReadData]) << 24) | (static_cast<u32>(_data[ReadData + 1]) << 16) | (static_cast<u32>(_data[ReadData + 2]) << 8) | static_cast<u32>(_data[ReadData + 3]);
+        ReadData += readSize;
         return true;
     }
     bool GetU32(u32& val)
@@ -116,11 +120,11 @@ public:
         assert(_data != nullptr);
 
         const size_t readSize = sizeof(u32);
-        if (!CanPerformReadOrWrite(readSize))
+        if (!CanPerformRead(readSize))
             return false;
 
-        val = (static_cast<u32>(_data[read]) << 24) | (static_cast<u32>(_data[read + 1]) << 16) | (static_cast<u32>(_data[read + 2]) << 8) | static_cast<u32>(_data[read + 3]);
-        read += readSize;
+        val = (static_cast<u32>(_data[ReadData]) << 24) | (static_cast<u32>(_data[ReadData + 1]) << 16) | (static_cast<u32>(_data[ReadData + 2]) << 8) | static_cast<u32>(_data[ReadData + 3]);
+        ReadData += readSize;
         return true;
     }    
     bool GetF32(f32& val)
@@ -128,11 +132,11 @@ public:
         assert(_data != nullptr);
 
         const size_t readSize = sizeof(f32);
-        if (!CanPerformReadOrWrite(readSize))
+        if (!CanPerformRead(readSize))
             return false;
 
-        val = *reinterpret_cast<f32*>(_data[read]);
-        read += readSize;
+        val = *reinterpret_cast<f32*>(_data[ReadData]);
+        ReadData += readSize;
         return true;
     }
     bool GetI64(i64& val)
@@ -140,11 +144,11 @@ public:
         assert(_data != nullptr);
 
         const size_t readSize = sizeof(i64);
-        if (!CanPerformReadOrWrite(readSize))
+        if (!CanPerformRead(readSize))
             return false;
 
-        val = (static_cast<u64>(_data[read]) << 56) | (static_cast<u64>(_data[read + 1]) << 48) | (static_cast<u64>(_data[read + 2]) << 40) | (static_cast<u64>(_data[read + 3]) << 32) | (static_cast<u64>(_data[read + 4]) << 24) | (static_cast<u64>(_data[read + 5]) << 16) | (static_cast<u64>(_data[read + 6]) << 8) | static_cast<u64>(_data[read + 7]);
-        read += readSize;
+        val = (static_cast<u64>(_data[ReadData]) << 56) | (static_cast<u64>(_data[ReadData + 1]) << 48) | (static_cast<u64>(_data[ReadData + 2]) << 40) | (static_cast<u64>(_data[ReadData + 3]) << 32) | (static_cast<u64>(_data[ReadData + 4]) << 24) | (static_cast<u64>(_data[ReadData + 5]) << 16) | (static_cast<u64>(_data[ReadData + 6]) << 8) | static_cast<u64>(_data[ReadData + 7]);
+        ReadData += readSize;
         return true;
     }
     bool GetU64(u64& val)
@@ -152,11 +156,11 @@ public:
         assert(_data != nullptr);
 
         const size_t readSize = sizeof(u64);
-        if (!CanPerformReadOrWrite(readSize))
+        if (!CanPerformRead(readSize))
             return false;
 
-        val = (static_cast<u64>(_data[read]) << 56) | (static_cast<u64>(_data[read + 1]) << 48) | (static_cast<u64>(_data[read + 2]) << 40) | (static_cast<u64>(_data[read + 3]) << 32) | (static_cast<u64>(_data[read + 4]) << 24) | (static_cast<u64>(_data[read + 5]) << 16) | (static_cast<u64>(_data[read + 6]) << 8) | static_cast<u64>(_data[read + 7]);
-        read += readSize;
+        val = (static_cast<u64>(_data[ReadData]) << 56) | (static_cast<u64>(_data[ReadData + 1]) << 48) | (static_cast<u64>(_data[ReadData + 2]) << 40) | (static_cast<u64>(_data[ReadData + 3]) << 32) | (static_cast<u64>(_data[ReadData + 4]) << 24) | (static_cast<u64>(_data[ReadData + 5]) << 16) | (static_cast<u64>(_data[ReadData + 6]) << 8) | static_cast<u64>(_data[ReadData + 7]);
+        ReadData += readSize;
         return true;
     }
     bool GetF64(f64& val)
@@ -164,11 +168,11 @@ public:
         assert(_data != nullptr);
 
         const size_t readSize = sizeof(f64);
-        if (!CanPerformReadOrWrite(readSize))
+        if (!CanPerformRead(readSize))
             return false;
 
-        val = *reinterpret_cast<f64*>(_data[read]);
-        read += readSize;
+        val = *reinterpret_cast<f64*>(_data[ReadData]);
+        ReadData += readSize;
         return true;
     }
 
@@ -177,11 +181,11 @@ public:
         assert(_data != nullptr);
 
         const size_t writeSize = sizeof(i8);
-        if (!CanPerformReadOrWrite(writeSize))
+        if (!CanPerformWrite(writeSize))
             return false;
 
-        _data[write] = val;
-        write += writeSize;
+        _data[WrittenData] = val;
+        WrittenData += writeSize;
         return true;
     }
     bool PutU8(u8 val)
@@ -189,22 +193,22 @@ public:
         assert(_data != nullptr);
 
         const size_t writeSize = sizeof(u8);
-        if (!CanPerformReadOrWrite(writeSize))
+        if (!CanPerformWrite(writeSize))
             return false;
 
-        _data[write] = val;
-        write += writeSize;
+        _data[WrittenData] = val;
+        WrittenData += writeSize;
         return true;
     }
-    bool PutBytes(u8* val, size_t size)
+    bool PutBytes(u8* val, size_t Size)
     {
         assert(_data != nullptr);
 
-        if (!CanPerformReadOrWrite(size))
+        if (!CanPerformWrite(Size))
             return false;
 
-        std::memcpy(&_data[write], val, size);
-        write += size;
+        std::memcpy(&_data[WrittenData], val, Size);
+        WrittenData += Size;
         return true;
     }
     bool PutI16(i16 val)
@@ -212,12 +216,12 @@ public:
         assert(_data != nullptr);
 
         const size_t writeSize = sizeof(i16);
-        if (!CanPerformReadOrWrite(writeSize))
+        if (!CanPerformWrite(writeSize))
             return false;
 
-        _data[write] = (static_cast<u8>(val >> 8));
-        _data[read + 1] = static_cast<u8>(val);
-        write += writeSize;
+        _data[WrittenData] = (static_cast<u8>(val >> 8));
+        _data[ReadData + 1] = static_cast<u8>(val);
+        WrittenData += writeSize;
         return true;
     }
     bool PutU16(u16 val)
@@ -225,12 +229,12 @@ public:
         assert(_data != nullptr);
 
         const size_t writeSize = sizeof(u16);
-        if (!CanPerformReadOrWrite(writeSize))
+        if (!CanPerformWrite(writeSize))
             return false;
 
-        _data[write] = (static_cast<u8>(val >> 8));
-        _data[read + 1] = static_cast<u8>(val);
-        write += writeSize;
+        _data[WrittenData] = (static_cast<u8>(val >> 8));
+        _data[ReadData + 1] = static_cast<u8>(val);
+        WrittenData += writeSize;
         return true;
     }
     bool PutI32(i32 val)
@@ -238,14 +242,14 @@ public:
         assert(_data != nullptr);
 
         const size_t writeSize = sizeof(i32);
-        if (!CanPerformReadOrWrite(writeSize))
+        if (!CanPerformWrite(writeSize))
             return false;
 
-        _data[write] = (static_cast<u8>(val >> 24));
-        _data[read + 1] = (static_cast<u8>(val >> 16));
-        _data[read + 2] = (static_cast<u8>(val >> 8));
-        _data[read + 3] = static_cast<u8>(val);
-        write += writeSize;
+        _data[WrittenData] = (static_cast<u8>(val >> 24));
+        _data[ReadData + 1] = (static_cast<u8>(val >> 16));
+        _data[ReadData + 2] = (static_cast<u8>(val >> 8));
+        _data[ReadData + 3] = static_cast<u8>(val);
+        WrittenData += writeSize;
         return true;
     }
     bool PutU32(u32 val)
@@ -253,14 +257,14 @@ public:
         assert(_data != nullptr);
 
         const size_t writeSize = sizeof(u32);
-        if (!CanPerformReadOrWrite(writeSize))
+        if (!CanPerformWrite(writeSize))
             return false;
 
-        _data[write] = (static_cast<u8>(val >> 24));
-        _data[read + 1] = (static_cast<u8>(val >> 16));
-        _data[read + 2] = (static_cast<u8>(val >> 8));
-        _data[read + 3] = static_cast<u8>(val);
-        write += writeSize;
+        _data[WrittenData] = (static_cast<u8>(val >> 24));
+        _data[ReadData + 1] = (static_cast<u8>(val >> 16));
+        _data[ReadData + 2] = (static_cast<u8>(val >> 8));
+        _data[ReadData + 3] = static_cast<u8>(val);
+        WrittenData += writeSize;
         return true;
     }
     bool PutI64(i64 val)
@@ -268,18 +272,18 @@ public:
         assert(_data != nullptr);
 
         const size_t writeSize = sizeof(i64);
-        if (!CanPerformReadOrWrite(writeSize))
+        if (!CanPerformWrite(writeSize))
             return false;
 
-        _data[write] = static_cast<u8>(val);
-        _data[read + 1] = (static_cast<u8>(val >> 8));
-        _data[read + 2] = (static_cast<u8>(val >> 16));
-        _data[read + 3] = (static_cast<u8>(val >> 24));
-        _data[read + 4] = (static_cast<u8>(val >> 32));
-        _data[read + 5] = (static_cast<u8>(val >> 40));
-        _data[read + 6] = (static_cast<u8>(val >> 48));
-        _data[read + 7] = (static_cast<u8>(val >> 56));
-        write += writeSize;
+        _data[WrittenData] = static_cast<u8>(val);
+        _data[ReadData + 1] = (static_cast<u8>(val >> 8));
+        _data[ReadData + 2] = (static_cast<u8>(val >> 16));
+        _data[ReadData + 3] = (static_cast<u8>(val >> 24));
+        _data[ReadData + 4] = (static_cast<u8>(val >> 32));
+        _data[ReadData + 5] = (static_cast<u8>(val >> 40));
+        _data[ReadData + 6] = (static_cast<u8>(val >> 48));
+        _data[ReadData + 7] = (static_cast<u8>(val >> 56));
+        WrittenData += writeSize;
         return true;
     }
     bool PutU64(u64 val)
@@ -287,26 +291,26 @@ public:
         assert(_data != nullptr);
 
         const size_t writeSize = sizeof(u64);
-        if (!CanPerformReadOrWrite(writeSize))
+        if (!CanPerformWrite(writeSize))
             return false;
 
-        _data[write] = static_cast<u8>(val);
-        _data[read + 1] = (static_cast<u8>(val >> 8));
-        _data[read + 2] = (static_cast<u8>(val >> 16));
-        _data[read + 3] = (static_cast<u8>(val >> 24));
-        _data[read + 4] = (static_cast<u8>(val >> 32));
-        _data[read + 5] = (static_cast<u8>(val >> 40));
-        _data[read + 6] = (static_cast<u8>(val >> 48));
-        _data[read + 7] = (static_cast<u8>(val >> 56));
-        write += writeSize;
+        _data[WrittenData] = static_cast<u8>(val);
+        _data[ReadData + 1] = (static_cast<u8>(val >> 8));
+        _data[ReadData + 2] = (static_cast<u8>(val >> 16));
+        _data[ReadData + 3] = (static_cast<u8>(val >> 24));
+        _data[ReadData + 4] = (static_cast<u8>(val >> 32));
+        _data[ReadData + 5] = (static_cast<u8>(val >> 40));
+        _data[ReadData + 6] = (static_cast<u8>(val >> 48));
+        _data[ReadData + 7] = (static_cast<u8>(val >> 56));
+        WrittenData += writeSize;
         return true;
     }
 
-    bool IsEmpty() { return write == 0; }
+    bool IsEmpty() { return WrittenData == 0; }
 
-    size_t write = 0;
-    size_t read = 0;
-    size_t size = 0;
+    size_t WrittenData = 0;
+    size_t ReadData = 0;
+    size_t Size = 0;
 
     u8* GetInternalData() { return _data; }
 private:
