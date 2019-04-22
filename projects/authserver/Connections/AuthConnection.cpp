@@ -46,40 +46,6 @@ struct cAuthLogonChallenge
     u8   username_pointer[1];
 };
 
-struct sAuthLogonChallengeHeader
-{
-    u8  command;
-    u8  error;
-    u8  result;
-
-    void AddTo(Common::ByteBuffer& buffer)
-    {
-        buffer.Append(reinterpret_cast<u8*>(this), sizeof(sAuthLogonChallengeHeader));
-    }
-};
-
-struct sAuthLogonChallengeData
-{
-    u8 b[32];
-    u8 g_length;
-    u8 g;
-    u8 n_length;
-    u8 n[32];
-    u8 salt[32];
-    u8 version_challenge[16];
-    u8 security_flags;
-
-    void AddTo(Common::ByteBuffer& buffer)
-    {
-        buffer.Append(reinterpret_cast<u8*>(this), sizeof(sAuthLogonChallengeData));
-    }
-
-    void Append(u8* dest, const u8* src, size_t size)
-    {
-        std::memcpy(dest, src, size);
-    }
-};
-
 struct cAuthLogonProof
 {
     u8   command;
@@ -238,12 +204,6 @@ bool AuthConnection::HandleCommandChallenge()
 }
 void AuthConnection::HandleCommandChallengeCallback(amy::result_set& results)
 {
-    Common::ByteBuffer response;
-
-    sAuthLogonChallengeHeader header;
-    header.command = AUTH_CHALLENGE;
-    header.error = 0;
-
     DataStore dataStore;
     dataStore.PutU8(AUTH_CHALLENGE);
     dataStore.PutU8(0);
