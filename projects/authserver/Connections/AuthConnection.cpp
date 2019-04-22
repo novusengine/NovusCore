@@ -24,6 +24,7 @@
 
 #include "AuthConnection.h"
 #include <Networking/ByteBuffer.h>
+#include <Networking/DataStore.h>
 
 #pragma pack(push, 1)
 struct cAuthLogonChallenge
@@ -45,40 +46,6 @@ struct cAuthLogonChallenge
     u8   username_pointer[1];
 };
 
-struct sAuthLogonChallengeHeader
-{
-    u8  command;
-    u8  error;
-    u8  result;
-
-    void AddTo(Common::ByteBuffer& buffer)
-    {
-        buffer.Append(reinterpret_cast<u8*>(this), sizeof(sAuthLogonChallengeHeader));
-    }
-};
-
-struct sAuthLogonChallengeData
-{
-    u8 b[32];
-    u8 g_length;
-    u8 g;
-    u8 n_length;
-    u8 n[32];
-    u8 salt[32];
-    u8 version_challenge[16];
-    u8 security_flags;
-
-    void AddTo(Common::ByteBuffer& buffer)
-    {
-        buffer.Append(reinterpret_cast<u8*>(this), sizeof(sAuthLogonChallengeData));
-    }
-
-    void Append(u8* dest, const u8* src, size_t size)
-    {
-        std::memcpy(dest, src, size);
-    }
-};
-
 struct cAuthLogonProof
 {
     u8   command;
@@ -87,16 +54,6 @@ struct cAuthLogonProof
     u8   crc_hash[20];
     u8   number_of_keys;
     u8   securityFlags;
-};
-
-struct sAuthLogonProof
-{
-    u8   cmd;
-    u8   error;
-    u8   M2[20];
-    u32  AccountFlags;
-    u32  SurveyId;
-    u16  LoginFlags;
 };
 
 struct cAuthReconnectProof
@@ -142,11 +99,11 @@ robin_hood::unordered_map<u8, AuthMessageHandler> AuthConnection::InitMessageHan
 {
     robin_hood::unordered_map<u8, AuthMessageHandler> messageHandlers;
 
-    messageHandlers[AUTH_CHALLENGE]             = { STATUS_CHALLENGE,         4,                              1,   &AuthConnection::HandleCommandChallenge          };
-    messageHandlers[AUTH_PROOF]                 = { STATUS_PROOF,             sizeof(cAuthLogonProof),        1,   &AuthConnection::HandleCommandProof              };
-    messageHandlers[AUTH_RECONNECT_CHALLENGE]   = { STATUS_CHALLENGE,         4,                              1,   &AuthConnection::HandleCommandReconnectChallenge };
-    messageHandlers[AUTH_RECONNECT_PROOF]       = { STATUS_RECONNECT_PROOF,   sizeof(cAuthReconnectProof),    1,   &AuthConnection::HandleCommandReconnectProof     };
-    messageHandlers[AUTH_GAMESERVER_LIST]       = { STATUS_AUTHED,            5,                              3,   &AuthConnection::HandleCommandGameServerList     };
+    messageHandlers[AUTH_CHALLENGE] = { STATUS_CHALLENGE, 4, 1, &AuthConnection::HandleCommandChallenge };
+    messageHandlers[AUTH_PROOF] = { STATUS_PROOF, sizeof(cAuthLogonProof), 1, &AuthConnection::HandleCommandProof };
+    messageHandlers[AUTH_RECONNECT_CHALLENGE] = { STATUS_CHALLENGE, 4, 1, &AuthConnection::HandleCommandReconnectChallenge };
+    messageHandlers[AUTH_RECONNECT_PROOF] = { STATUS_RECONNECT_PROOF, sizeof(cAuthReconnectProof), 1, &AuthConnection::HandleCommandReconnectProof };
+    messageHandlers[AUTH_GAMESERVER_LIST] = { STATUS_AUTHED, 5, 3, &AuthConnection::HandleCommandGameServerList };
 
     return messageHandlers;
 }
@@ -237,18 +194,15 @@ bool AuthConnection::HandleCommandChallenge()
 }
 void AuthConnection::HandleCommandChallengeCallback(amy::result_set& results)
 {
-    Common::ByteBuffer response;
-
-    sAuthLogonChallengeHeader header;
-    header.command = AUTH_CHALLENGE;
-    header.error = 0;
+    DataStore dataStore;
+    dataStore.PutU8(AUTH_CHALLENGE);
+    dataStore.PutU8(0);
 
     // Make sure the account exist.
     if (results.affected_rows() != 1)
     {
-        header.result = AUTH_FAIL_UNKNOWN_ACCOUNT;
-        header.AddTo(response);
-        Send(response);
+        dataStore.PutU8(AUTH_FAIL_UNKNOWN_ACCOUNT);
+        Send(dataStore);
         return;
     }
 
@@ -272,25 +226,34 @@ void AuthConnection::HandleCommandChallengeCallback(amy::result_set& results)
     }
 
     _status = STATUS_PROOF;
-    header.result = AUTH_SUCCESS;
-    header.AddTo(response);
+    dataStore.PutU8(AUTH_SUCCESS);
 
-    sAuthLogonChallengeData data;
-    data.Append(data.b, B.BN2BinArray(32).get(), 32);
-    data.g_length = 1;
-    data.g = g.BN2BinArray(32).get()[0];
-    data.n_length = 32;
-    data.Append(data.n, N.BN2BinArray(32).get(), 32);
-    data.Append(data.salt, s.BN2BinArray(32).get(), 32); // 32 bytes (SRP_6_S)
-    data.Append(data.version_challenge, VersionChallenge.data(), VersionChallenge.size());
-    data.security_flags = 0;
-    data.AddTo(response);
+    /* Logon Challenge Data Structure
+
+       - Type: u8[32],  Name: B
+       - Type: u8,      Name: Lenght of G
+       - Type: u8,      Name: G
+       - Type: u8,      Name: Lenght of N
+       - Type: u8[32],  Name: N
+       - Type: u8[32],  Name: Salt
+       - Type: u8[16],  Name: Version Challenge
+       - Type: u8,      Name: Security Flag
+       https://en.wikipedia.org/wiki/Secure_Remote_Password_protocol
+    */
+    dataStore.PutBytes(B.BN2BinArray(32).get(), 32);
+    dataStore.PutU8(1);
+    dataStore.PutU8(g.BN2BinArray(1).get()[0]);
+    dataStore.PutU8(32);
+    dataStore.PutBytes(N.BN2BinArray(32).get(), 32);
+    dataStore.PutBytes(s.BN2BinArray(32).get(), 32);
+    dataStore.PutBytes(VersionChallenge.data(), VersionChallenge.size());
+    dataStore.PutU8(0);
 
     /*
         We should check here if we need to handle security flags
     */
 
-    Send(response);
+    Send(dataStore);
 }
 
 bool AuthConnection::HandleCommandProof()
@@ -386,31 +349,45 @@ bool AuthConnection::HandleCommandProof()
         stmt.Bind(username);
         DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, stmt, [this, proofM2](amy::result_set& results, DatabaseConnector& connector)
         {
-            Common::ByteBuffer packet;
-            sAuthLogonProof proof;
+            /* Logon Proof Data Structure
 
-            memcpy(proof.M2, proofM2, 20);
-            proof.cmd = AUTH_PROOF;
-            proof.error = 0;
-            proof.AccountFlags = 0x00;    // 0x01 = GM, 0x08 = Trial, 0x00800000 = Pro pass (arena tournament)
-            proof.SurveyId = 0;
-            proof.LoginFlags = 0x00;
+               - Type: u8,      Name: Packet Command
+               - Type: u8,      Name: Error Code
+               - Type: u8[20],  Name: SRP6 Hash Proof
+               - Type: u32,     Name: Account Flags
+               - Type: u32,     Name: SurveyId
+               - Type: u16,     Name: Login Flags
 
-            packet.Resize(sizeof(proof));
-            std::memcpy(packet.data(), &proof, sizeof(proof));
-            packet.WriteBytes(sizeof(proof));
+               https://en.wikipedia.org/wiki/Secure_Remote_Password_protocol
+            */
+            DataStore dataStore;
+            dataStore.PutU8(AUTH_PROOF);
+            dataStore.PutU8(0);
+            dataStore.PutBytes(const_cast<u8*>(reinterpret_cast<const u8*>(proofM2)), 20);
+            dataStore.PutU32(0);
+            dataStore.PutU32(0);
+            dataStore.PutU16(0);
 
-            Send(packet);
+            Send(dataStore);
             _status = STATUS_AUTHED;
         });
     }
     else
     {
-        Common::ByteBuffer byteBuffer;
-        byteBuffer.Write<u8>(AUTH_PROOF);
-        byteBuffer.Write<u8>(AUTH_FAIL_UNKNOWN_ACCOUNT); // error
-        byteBuffer.Write<u16>(0); // AccountFlag
-        Send(byteBuffer);
+        /* Logon Proof Data Structure
+
+           - Type: u8,      Name: Packet Command
+           - Type: u8,      Name: Error Code
+           - Type: u16,     Name: Login Flags
+
+           https://en.wikipedia.org/wiki/Secure_Remote_Password_protocol
+        */
+        DataStore dataStore;
+        dataStore.PutU8(AUTH_PROOF);
+        dataStore.PutU8(AUTH_FAIL_UNKNOWN_ACCOUNT);
+        dataStore.PutU16(0);
+
+        Send(dataStore);
     }
 
     return true;
@@ -418,35 +395,58 @@ bool AuthConnection::HandleCommandProof()
 
 bool AuthConnection::HandleCommandReconnectChallenge()
 {
-    return false;
-    /*Common::ByteBuffer pkt;
-    pkt.Write<u8>(AUTH_RECONNECT_CHALLENGE);
+    _status = STATUS_CLOSED;
+    cAuthLogonChallenge* logonChallenge = reinterpret_cast<cAuthLogonChallenge*>(GetByteBuffer().GetReadPointer());
+    if (logonChallenge->size - (sizeof(cAuthLogonChallenge) - 4 - 1) != logonChallenge->username_length)
+        return false;
 
-    // Check if account exists
-    if (login != username)
+    std::string login(reinterpret_cast<char const*>(logonChallenge->username_pointer), logonChallenge->username_length);
+    username = login;
+
+    PreparedStatement stmt("SELECT sessionKey FROM accounts WHERE username={s};");
+    stmt.Bind(username);
+    DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, stmt, [this](amy::result_set& results, DatabaseConnector& connector) { HandleCommandReconnectChallengeCallback(results); });
+
+    return true;
+}
+void AuthConnection::HandleCommandReconnectChallengeCallback(amy::result_set& results)
+{
+    /* Logon Proof Data Structure
+
+       - Type: u8,      Name: Packet Command
+       - Type: u8,      Name: Error Code
+       - Type: u8[20],  Name: Reconnect Seed
+       - Type: u8[20],  Name: Version Challenge
+
+       https://en.wikipedia.org/wiki/Secure_Remote_Password_protocol
+    */
+    DataStore dataStore;
+    dataStore.PutU8(AUTH_RECONNECT_CHALLENGE);
+
+    // Make sure the account exist.
+    if (results.affected_rows() != 1)
     {
-        pkt.Write<u8>(static_cast<u8>(0x03); //WOW_FAIL_UNKNOWN_ACCOUNT);
-        Send(pkt);
-        return true;
+        dataStore.PutU8(AUTH_FAIL_UNKNOWN_ACCOUNT);
+        Send(dataStore);
+        return;
     }
 
-    _reconnectProof.Rand(16 * 8);
+    amy::row resultRow = results[0];
+    K.Hex2BN(resultRow[0].GetString().c_str());
+
+    _reconnectSeed.Rand(16 * 8);
+    dataStore.PutU8(0);
+    dataStore.PutBytes(_reconnectSeed.BN2BinArray(16).get(), 16);
+    dataStore.PutBytes(VersionChallenge.data(), VersionChallenge.size());
+
+    Send(dataStore);
     _status = STATUS_RECONNECT_PROOF;
-
-    pkt.Write<u8>(0); // WOW_SUCCESS
-    pkt.Append(_reconnectProof.BN2BinArray(16).get(), 16);  // 16 bytes random
-    u64 zeros = 0x00;
-    pkt.Append(reinterpret_cast<u8*>(&zeros), sizeof(zeros));                 // 8 bytes zeros
-    pkt.Append(reinterpret_cast<u8*>(&zeros), sizeof(zeros));                 // 8 bytes zeros
-
-    Send(pkt);*/
 }
 bool AuthConnection::HandleCommandReconnectProof()
 {
     _status = STATUS_CLOSED;
     cAuthReconnectProof* reconnectLogonProof = reinterpret_cast<cAuthReconnectProof*>(GetByteBuffer().GetReadPointer());
-
-    if (!_reconnectProof.GetBytes() || !K.GetBytes())
+    if (username.length() == 0 || !_reconnectSeed.GetBytes() || !K.GetBytes())
         return false;
 
     BigNumber t1;
@@ -455,18 +455,24 @@ bool AuthConnection::HandleCommandReconnectProof()
     SHA1Hasher sha;
     sha.Init();
     sha.UpdateHash(username);
-    sha.UpdateHashForBn(3, &t1, &_reconnectProof, &K);
+    sha.UpdateHashForBn(3, &t1, &_reconnectSeed, &K);
     sha.Finish();
 
     if (!memcmp(sha.GetData(), reconnectLogonProof->R2, SHA_DIGEST_LENGTH))
     {
-        // Sending response
-        Common::ByteBuffer pkt;
-        pkt.Write<u8>(AUTH_RECONNECT_PROOF);
-        pkt.Write<u8>(0x00);
-        u16 unk1 = 0x00;
-        pkt.Append(reinterpret_cast<u8*>(&unk1), sizeof(unk1));  // 2 bytes zeros
-        Send(pkt);
+        /* Logon Proof Data Structure
+
+           - Type: u8,      Name: Packet Command
+           - Type: u8,      Name: Error Code
+           - Type: u16,     Name: Login Flags
+        */
+        DataStore dataStore;
+        
+        dataStore.PutU8(AUTH_RECONNECT_PROOF);
+        dataStore.PutU8(0);
+        dataStore.PutU16(0);
+
+        Send(dataStore);
         _status = STATUS_AUTHED;
         return true;
     }
