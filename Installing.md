@@ -12,7 +12,7 @@
 
 [MySQL C Connector 6.0 (libmysqlcclient) or newer](https://dev.mysql.com/downloads/connector/c/)
 
-**Additionally to run the server you will need a MySQL Server. Any version compatible with the "MySQl C Connector 6.0" should work.**
+**Additionally to run the server you will need a MySQL Server. Any version compatible with the "MySQL C Connector 6.0" should work.**
 
 (This is where all the data about accounts, characters and the world is stored.)
 
