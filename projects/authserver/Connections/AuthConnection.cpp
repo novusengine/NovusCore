@@ -77,7 +77,7 @@ robin_hood::unordered_map<u8, AuthMessageHandler> AuthConnection::InitMessageHan
     messageHandlers[AUTH_PROOF] = { STATUS_PROOF, sizeof(cAuthLogonProof), 1, &AuthConnection::HandleCommandProof };
     messageHandlers[AUTH_RECONNECT_CHALLENGE] = { STATUS_CHALLENGE, 4, 1, &AuthConnection::HandleCommandReconnectChallenge };
     messageHandlers[AUTH_RECONNECT_PROOF] = { STATUS_RECONNECT_PROOF, sizeof(cAuthReconnectProof), 1, &AuthConnection::HandleCommandReconnectProof };
-    messageHandlers[AUTH_GAMESERVER_LIST] = { STATUS_AUTHED, 5, 3, &AuthConnection::HandleCommandRealmserverList };
+    messageHandlers[AUTH_REALMSERVER_LIST] = { STATUS_AUTHED, 5, 3, &AuthConnection::HandleCommandRealmserverList };
 
     return messageHandlers;
 }
@@ -99,27 +99,26 @@ void AuthConnection::HandleRead()
         u8 command = byteBuffer.GetDataPointer()[0];
 
         auto itr = MessageHandlers.find(command);
-        if (itr == MessageHandlers.end())
-        {
-            byteBuffer.Clean();
-            break;
-        }
-
-        // Client attempted incorrect auth step
-        if (_status != itr->second.status)
+        // Client sent wrong command
+        if (itr == MessageHandlers.end() || _status != itr->second.status)
         {
             _socket->close();
             return;
         }
+        
+        if (command < AUTH_REALMSERVER_LIST)
+        {
+            packetsReadOfType = packetsReadThisRead[command]++;
+        }
+        else if (command == AUTH_REALMSERVER_LIST)
+        {
+            packetsReadOfType = packetsReadThisRead[4]++;
+        }
 
-        if (packetsReadThisRead[command] == itr->second.maxPacketsPerRead)
+        if (packetsReadOfType == itr->second.maxPacketsPerRead)
         {
             _socket->close();
             return;
-        }
-        else
-        {
-            ++packetsReadThisRead[command];
         }
 
         u16 size = static_cast<u16>(itr->second.packetSize);
@@ -493,7 +492,7 @@ bool AuthConnection::HandleCommandRealmserverList()
 
         */
         DataStore dataStore(nullptr, 32768);
-        dataStore.PutU8(AUTH_GAMESERVER_LIST);
+        dataStore.PutU8(AUTH_REALMSERVER_LIST);
 
         // Calculate expected payload size. Realm Strings are accounted for later.
         size_t dataStoreSize = 6 + (realmserverListResultData.affected_rows() * 10) + 2;

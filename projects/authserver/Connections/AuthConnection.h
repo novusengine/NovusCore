@@ -37,7 +37,7 @@ enum AuthCommand
     AUTH_PROOF = 0x01,
     AUTH_RECONNECT_CHALLENGE = 0x02,
     AUTH_RECONNECT_PROOF = 0x03,
-    AUTH_GAMESERVER_LIST = 0x10,
+    AUTH_REALMSERVER_LIST = 0x10,
     /*
     TRANSFER_INITIATE           = 0x30,
     TRANSFER_DATA               = 0x31,
@@ -123,7 +123,7 @@ class AuthConnection : public Common::BaseSocket
 public:
     static robin_hood::unordered_map<u8, AuthMessageHandler> InitMessageHandlers();
 
-    AuthConnection(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), _status(STATUS_CHALLENGE), username(), packetsReadThisRead(17)
+    AuthConnection(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), _status(STATUS_CHALLENGE), username()
     {
         N.Hex2BN("894B645E89E1535BBDAD5B8B290650530801B18EBFBF5E8FAB3C82872A3E9BB7");
         g.SetUInt32(7);
@@ -154,15 +154,11 @@ public:
 
     void ResetPacketsReadThisRead()
     {
-        for (u8 i = 0; i < 4; ++i)
+        for (u8 i = 0; i < 4; i++)
         {
             packetsReadThisRead[i] = 0;
-
-            if (i == 3)
-            {
-                packetsReadThisRead[AUTH_GAMESERVER_LIST] = 0;
-            }
         }
     }
-    std::vector<u8> packetsReadThisRead;
+    u8 packetsReadOfType = 0;
+    u8 packetsReadThisRead[4];
 };
