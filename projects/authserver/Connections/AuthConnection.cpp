@@ -64,32 +64,6 @@ struct cAuthReconnectProof
     u8   R3[20];
     u8   number_of_keys;
 };
-
-struct sAuthLogonGameListData
-{
-    u8     Type;
-    u8     Locked;
-    u8     Flags;
-    std::string Name;
-    std::string Address;
-    f32       Population;
-    u8     Characters;
-    u8     Timezone;
-    u8     Id;
-
-    void AddTo(Common::ByteBuffer& buffer)
-    {
-        buffer.Write<u8>(Type);
-        buffer.Write<u8>(Locked);
-        buffer.Write<u8>(Flags);
-        buffer.WriteString(Name);
-        buffer.WriteString(Address);
-        buffer.Write<f32>(Population);
-        buffer.Write<u8>(Characters);
-        buffer.Write<u8>(Timezone);
-        buffer.Write<u8>(Id);
-    }
-};
 #pragma pack(pop)
 
 std::array<u8, 16> VersionChallenge = { { 0xBA, 0xA3, 0x1E, 0x99, 0xA0, 0x0B, 0x21, 0x57, 0xFC, 0x37, 0x3F, 0xB3, 0x69, 0xCD, 0xD2, 0xF1 } };
@@ -103,7 +77,7 @@ robin_hood::unordered_map<u8, AuthMessageHandler> AuthConnection::InitMessageHan
     messageHandlers[AUTH_PROOF] = { STATUS_PROOF, sizeof(cAuthLogonProof), 1, &AuthConnection::HandleCommandProof };
     messageHandlers[AUTH_RECONNECT_CHALLENGE] = { STATUS_CHALLENGE, 4, 1, &AuthConnection::HandleCommandReconnectChallenge };
     messageHandlers[AUTH_RECONNECT_PROOF] = { STATUS_RECONNECT_PROOF, sizeof(cAuthReconnectProof), 1, &AuthConnection::HandleCommandReconnectProof };
-    messageHandlers[AUTH_GAMESERVER_LIST] = { STATUS_AUTHED, 5, 3, &AuthConnection::HandleCommandGameServerList };
+    messageHandlers[AUTH_GAMESERVER_LIST] = { STATUS_AUTHED, 5, 3, &AuthConnection::HandleCommandRealmserverList };
 
     return messageHandlers;
 }
@@ -194,6 +168,13 @@ bool AuthConnection::HandleCommandChallenge()
 }
 void AuthConnection::HandleCommandChallengeCallback(amy::result_set& results)
 {
+    /* Logon Challenge Data Structure
+
+       - Type: u8,      Name: Packet Command
+       - Type: u8,      Name: Error Code
+       - Type: u8,      Name: Result Code
+       - Type:  ?,      Name: Logon Challenge Data (See below for structure)
+    */
     DataStore dataStore;
     dataStore.PutU8(AUTH_CHALLENGE);
     dataStore.PutU8(0);
@@ -259,7 +240,6 @@ void AuthConnection::HandleCommandChallengeCallback(amy::result_set& results)
 bool AuthConnection::HandleCommandProof()
 {
     _status = STATUS_CLOSED;
-
     cAuthLogonProof* logonProof = reinterpret_cast<cAuthLogonProof*>(GetByteBuffer().GetReadPointer());
 
     BigNumber A;
@@ -379,8 +359,6 @@ bool AuthConnection::HandleCommandProof()
            - Type: u8,      Name: Packet Command
            - Type: u8,      Name: Error Code
            - Type: u16,     Name: Login Flags
-
-           https://en.wikipedia.org/wiki/Secure_Remote_Password_protocol
         */
         DataStore dataStore;
         dataStore.PutU8(AUTH_PROOF);
@@ -396,6 +374,7 @@ bool AuthConnection::HandleCommandProof()
 bool AuthConnection::HandleCommandReconnectChallenge()
 {
     _status = STATUS_CLOSED;
+
     cAuthLogonChallenge* logonChallenge = reinterpret_cast<cAuthLogonChallenge*>(GetByteBuffer().GetReadPointer());
     if (logonChallenge->size - (sizeof(cAuthLogonChallenge) - 4 - 1) != logonChallenge->username_length)
         return false;
@@ -403,7 +382,7 @@ bool AuthConnection::HandleCommandReconnectChallenge()
     std::string login(reinterpret_cast<char const*>(logonChallenge->username_pointer), logonChallenge->username_length);
     username = login;
 
-    PreparedStatement stmt("SELECT sessionKey FROM accounts WHERE username={s};");
+    PreparedStatement stmt("SELECT guid, sessionKey FROM accounts WHERE username={s};");
     stmt.Bind(username);
     DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, stmt, [this](amy::result_set& results, DatabaseConnector& connector) { HandleCommandReconnectChallengeCallback(results); });
 
@@ -432,7 +411,8 @@ void AuthConnection::HandleCommandReconnectChallengeCallback(amy::result_set& re
     }
 
     amy::row resultRow = results[0];
-    K.Hex2BN(resultRow[0].GetString().c_str());
+    accountGuid = resultRow[0].GetU32();
+    K.Hex2BN(resultRow[1].GetString().c_str());
 
     _reconnectSeed.Rand(16 * 8);
     dataStore.PutU8(0);
@@ -467,7 +447,6 @@ bool AuthConnection::HandleCommandReconnectProof()
            - Type: u16,     Name: Login Flags
         */
         DataStore dataStore;
-        
         dataStore.PutU8(AUTH_RECONNECT_PROOF);
         dataStore.PutU8(0);
         dataStore.PutU16(0);
@@ -480,63 +459,91 @@ bool AuthConnection::HandleCommandReconnectProof()
     return false;
 }
 
-bool AuthConnection::HandleCommandGameServerList()
+bool AuthConnection::HandleCommandRealmserverList()
 {
-    _status = STATUS_WAITING_FOR_GAMESERVER;
+    _status = STATUS_WAITING_FOR_REALMSERVER_LIST;
 
-    DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, "SELECT id, name, address, type, flags, timezone, population FROM realms;", [this](amy::result_set& results, DatabaseConnector& connector)
+    PreparedStatement realmCharacterCount("SELECT realmId, characters FROM realm_characters WHERE account={u};");
+    realmCharacterCount.Bind(accountGuid);
+    DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, realmCharacterCount, [this](amy::result_set& result, DatabaseConnector& connector)
     {
         std::vector<u8> realmCharacterData(MAX_REALM_COUNT);
         std::fill(realmCharacterData.begin(), realmCharacterData.end(), 0);
 
-        std::shared_ptr<DatabaseConnector> borrowedConnector;
-        DatabaseConnector::Borrow(DATABASE_TYPE::AUTHSERVER, borrowedConnector);
-        amy::result_set realmCharacterCountResult;
-
-        PreparedStatement realmCharacterCount("SELECT realmid, characters FROM realm_characters WHERE account={u};");
-        realmCharacterCount.Bind(accountGuid);
-        if (borrowedConnector->Query(realmCharacterCount, realmCharacterCountResult))
+        for (auto row : result)
         {
-            for (auto row : realmCharacterCountResult)
-            {
-                realmCharacterData[row[0].GetU8()] = row[1].GetU8();
-            }
+            realmCharacterData[row[0].GetU8()] = row[1].GetU8();
         }
 
-        Common::ByteBuffer realmBuffer;
-        for (auto row : results)
-        {
-            sAuthLogonGameListData realmData;
-            realmData.Id = row[0].GetU8();
-            realmData.Name = row[1].GetString();
-            realmData.Address = row[2].GetString();
-            realmData.Type = row[3].GetU8();
-            realmData.Flags = row[4].GetU8();
-            realmData.Timezone = row[5].GetU8();
-            realmData.Population = row[6].GetF32();
-            realmData.Characters = realmCharacterData[realmData.Id];
-            realmData.Locked = 0;
+        amy::result_set realmserverListResultData;
+        if (!connector.Query("SELECT id, name, address, type, flags, timezone, population FROM realms;", realmserverListResultData))
+            return;
 
-            realmData.AddTo(realmBuffer);
+        /* Logon Proof Data Structure
+
+           - Type: u8,      Name: Packet Command
+           - Type: u16,     Name: Packet Payload Size (Excluding command + self)
+           - Type: u32,     Name: Unknown (I've been unable to figure out what this does so far)
+           - Type: u16,     Name: Count of available realms
+
+           - Type: ?,       Name: Realm Data (See Below for structure information)
+
+           - Type: u8,      Name: Unknown (This value depends on game version)
+           - Type: u8,      Name: Unknown (This value depends on game version)
+
+        */
+        DataStore dataStore(nullptr, 32768);
+        dataStore.PutU8(AUTH_GAMESERVER_LIST);
+
+        // Calculate expected payload size. Realm Strings are accounted for later.
+        size_t dataStoreSize = 6 + (realmserverListResultData.affected_rows() * 10) + 2;
+
+        // Store WritePos to later write Payload Size. Reserve 2 bytes.
+        size_t dataStoreSizeWrittenPos = dataStore.WrittenData;
+        dataStore.PutU16(0);
+
+        dataStore.PutU32(0);
+        dataStore.PutU16(static_cast<u16>(realmserverListResultData.affected_rows()));
+
+        for (auto row : realmserverListResultData)
+        {
+            /*
+               - Type: u8,      Name: Realm Type
+               - Type: u8,      Name: Is Realm Locked
+               - Type: u8,      Name: Realm Flags
+               - Type: string,  Name: Realm Name
+               - Type: string,  Name: Realm Address
+               - Type: f32,     Name: Realm Population (Valid values are 0, 1, 2)
+               - Type: u8,      Name: Count of characters for the player on the given realm
+               - Type: u8,      Name: Realm Timezone
+               - Type: u8,      Name: Realm Id
+            */
+            u8 realmId = row[0].GetU8();
+            dataStore.PutU8(row[3].GetU8());
+            dataStore.PutU8(0);
+            dataStore.PutU8(row[4].GetU8());
+            size_t realmNameSize = dataStore.PutString("NovusCore Realm");
+            size_t realmAddressSize = dataStore.PutString("127.0.0.1:8000");
+            dataStore.PutF32(row[6].GetF32());
+            dataStore.PutU8(realmCharacterData[realmId]);
+            dataStore.PutU8(row[5].GetU8());
+            dataStore.PutU8(realmId);
+
+            // Add Realm String Sizes to Payload Size
+            dataStoreSize += realmNameSize + realmAddressSize;
         }
 
         // (Only needed for clients TBC+)
-        realmBuffer.Write<u8>(0x10); // Unk1
-        realmBuffer.Write<u8>(0x00); // Unk2
+        dataStore.PutU8(0x10); // Unk1
+        dataStore.PutU8(0x00); // Unk2
 
-        Common::ByteBuffer RealmListSizeBuffer;
-        RealmListSizeBuffer.Write<u32>(0);
-        RealmListSizeBuffer.Write<u16>(static_cast<u16>(results.affected_rows()));
+        // Store WritePos. Write Payload Size. Restore WritePos
+        size_t dataStoreFinalWritePos = dataStore.WrittenData;
+        dataStore.WrittenData = dataStoreSizeWrittenPos;
+        dataStore.PutU16(static_cast<u16>(dataStoreSize));
+        dataStore.WrittenData = dataStoreFinalWritePos;
 
-        Common::ByteBuffer hdr;
-        hdr.Write<u8>(AUTH_GAMESERVER_LIST);
-
-        u16 combinedSize = realmBuffer.size() + RealmListSizeBuffer.size();
-        hdr.Write<u16>(combinedSize);
-        hdr.Append(RealmListSizeBuffer);
-        hdr.Append(realmBuffer);
-        Send(hdr);
-
+        Send(dataStore);
         _status = STATUS_AUTHED;
     });
 
