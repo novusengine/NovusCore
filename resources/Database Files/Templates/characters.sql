@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS `characters` (
   KEY `account` (`account`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
--- Dumping data for table characters.characters: ~1 rows (approximately)
+-- Dumping data for table characters.characters: ~0 rows (approximately)
 /*!40000 ALTER TABLE `characters` DISABLE KEYS */;
 /*!40000 ALTER TABLE `characters` ENABLE KEYS */;
 
@@ -153,7 +153,7 @@ CREATE TABLE IF NOT EXISTS `default_spells` (
   `comment` varchar(50) NOT NULL DEFAULT ''
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
--- Dumping data for table characters.default_spells: ~22 rows (approximately)
+-- Dumping data for table characters.default_spells: ~21 rows (approximately)
 /*!40000 ALTER TABLE `default_spells` DISABLE KEYS */;
 INSERT INTO `default_spells` (`raceMask`, `classMask`, `spell`, `comment`) VALUES
 	(1101, -1, 668, 'Language: Common'),

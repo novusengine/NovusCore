@@ -20,10 +20,10 @@ CREATE TABLE IF NOT EXISTS `accounts` (
   PRIMARY KEY (`guid`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
 
--- Dumping data for table auth.accounts: ~3 rows (approximately)
+-- Dumping data for table auth.accounts: ~1 rows (approximately)
 /*!40000 ALTER TABLE `accounts` DISABLE KEYS */;
 INSERT INTO `accounts` (`guid`, `username`, `salt`, `verifier`, `sessionKey`) VALUES
-	(1, 'ADMIN', 'AD31174982EF8F0B8686FCAC4857D89D093D5C000F68DFB102178FBC8D3ADFA9', '10DB5B75BCF6946B5F4DECCA7C5635D04374FFAE4105620C824A644FE876AE92', 'EC5CCA0CA306CDD9AB7E7AC526773B2261311EAEB9D9EEB15D3C01469133FCCDA6D444581687ED39');
+	(1, 'ADMIN', 'AD31174982EF8F0B8686FCAC4857D89D093D5C000F68DFB102178FBC8D3ADFA9', '10DB5B75BCF6946B5F4DECCA7C5635D04374FFAE4105620C824A644FE876AE92', '');
 /*!40000 ALTER TABLE `accounts` ENABLE KEYS */;
 
 -- Dumping structure for table auth.realms
@@ -37,9 +37,9 @@ CREATE TABLE IF NOT EXISTS `realms` (
   `timezone` tinyint(3) unsigned NOT NULL DEFAULT '1' COMMENT '0 = hide, > 0 = Timezone',
   `population` float NOT NULL DEFAULT '0' COMMENT '0 = Low, 1 = Medium, 2 = High',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
 
--- Dumping data for table auth.realms: ~0 rows (approximately)
+-- Dumping data for table auth.realms: ~1 rows (approximately)
 /*!40000 ALTER TABLE `realms` DISABLE KEYS */;
 INSERT INTO `realms` (`id`, `name`, `address`, `type`, `flags`, `timezone`, `population`) VALUES
 	(1, 'NovusCore Realm', '127.0.0.1:8000', 1, 32, 1, 0);
@@ -49,10 +49,14 @@ INSERT INTO `realms` (`id`, `name`, `address`, `type`, `flags`, `timezone`, `pop
 DROP TABLE IF EXISTS `realm_characters`;
 CREATE TABLE IF NOT EXISTS `realm_characters` (
   `account` int(10) unsigned NOT NULL,
-  `realmid` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `realmId` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `characters` tinyint(3) unsigned NOT NULL DEFAULT '0',
-  PRIMARY KEY (`account`,`realmid`)
+  PRIMARY KEY (`account`,`realmId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- Dumping data for table auth.realm_characters: ~0 rows (approximately)
+/*!40000 ALTER TABLE `realm_characters` DISABLE KEYS */;
+/*!40000 ALTER TABLE `realm_characters` ENABLE KEYS */;
 
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
 /*!40014 SET FOREIGN_KEY_CHECKS=IF(@OLD_FOREIGN_KEY_CHECKS IS NULL, 1, @OLD_FOREIGN_KEY_CHECKS) */;
