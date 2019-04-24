@@ -521,8 +521,8 @@ bool AuthConnection::HandleCommandRealmserverList()
             dataStore.PutU8(row[3].GetU8());
             dataStore.PutU8(0);
             dataStore.PutU8(row[4].GetU8());
-            size_t realmNameSize = dataStore.PutString("NovusCore Realm");
-            size_t realmAddressSize = dataStore.PutString("127.0.0.1:8000");
+            size_t realmNameSize = dataStore.PutString(row[1].GetString());
+            size_t realmAddressSize = dataStore.PutString(row[2].GetString());
             dataStore.PutF32(row[6].GetF32());
             dataStore.PutU8(realmCharacterData[realmId]);
             dataStore.PutU8(row[5].GetU8());
