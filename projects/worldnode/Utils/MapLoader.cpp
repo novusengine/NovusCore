@@ -5,6 +5,7 @@
 #include <filesystem>
 
 #include "../ECS/Components/Singletons/MapSingleton.h"
+#include "../ECS/Components/Singletons/DBCDatabaseCacheSingleton.h"
 
 bool MapLoader::Load(entt::registry& registry)
 {
@@ -13,11 +14,9 @@ bool MapLoader::Load(entt::registry& registry)
     if (!std::filesystem::is_directory(absolutePath)) { NC_LOG_ERROR("Failed to find maps folder"); return false; }
 
 	MapSingleton& mapSingleton = registry.set<MapSingleton>();
+	DBCDatabaseCacheSingleton& dbcCache = registry.ctx<DBCDatabaseCacheSingleton>();
 
-	mapSingleton.maps[0].mapName = "Eastern Kingdoms";
-	mapSingleton.maps[0].id = 0;
-
-	size_t loadedAdts = 0;
+    size_t loadedAdts = 0;
     for (const auto& entry : std::filesystem::recursive_directory_iterator(absolutePath))
     {
         auto file = std::filesystem::path(entry.path());
@@ -32,12 +31,24 @@ bool MapLoader::Load(entt::registry& registry)
 		std::vector<std::string> splitName = StringUtils::SplitString(file.filename().string(), '_');
 		size_t numberOfSplits = splitName.size();
 
+		std::string mapInternalName = splitName[0];
+		MapData mapData;
+		if (!dbcCache.cache->GetMapDataFromInternalName(mapInternalName, mapData))
+			continue;
+		
+		u16 mapId = mapData.id;
+		
+		if (mapSingleton.maps.find(mapId) == mapSingleton.maps.end())
+		{
+			mapSingleton.maps[mapId].id = mapId;
+			mapSingleton.maps[mapId].mapName = mapData.name;
+		}
+
 		u16 x = std::stoi(splitName[numberOfSplits - 2]);
 		u16 y = std::stoi(splitName[numberOfSplits - 1]);
 
-		int id = x + (y * blockStride);
-		// TODO: Find actual mapID instead of putting everything inside of map 0, but this requires DBC data that we haven't extracted yet.
-		mapSingleton.maps[0].adts[id] = adt;
+		int chunkId = x + (y * blockStride);
+		mapSingleton.maps[mapId].adts[chunkId] = adt;
 		loadedAdts++;
     }
 
