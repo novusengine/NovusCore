@@ -142,8 +142,8 @@ bool RealmConnection::Start()
     sAuthChallenge challenge;
     challenge.unk = 1;
     challenge.authSeed = _seed;
-    challenge.Append(challenge.seed1, seed1.BN2BinArray(32).get(), 16);
-    challenge.Append(challenge.seed2, seed2.BN2BinArray(32).get(), 16);
+    challenge.Append(challenge.seed1, seed1.BN2BinArray(16).get(), 16);
+    challenge.Append(challenge.seed2, seed2.BN2BinArray(16).get(), 16);
     challenge.AddTo(authPacket);
 
     SendPacket(authPacket, Common::Opcode::SMSG_AUTH_CHALLENGE);

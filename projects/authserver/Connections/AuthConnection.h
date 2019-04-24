@@ -160,5 +160,5 @@ public:
         }
     }
     u8 packetsReadOfType = 0;
-    u8 packetsReadThisRead[4];
+    u8 packetsReadThisRead[5];
 };

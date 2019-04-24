@@ -394,7 +394,7 @@ void WorldConnection::HandleContinueAuthSession()
         // v3 = (_BYTE *)a2;
         // mov ebx,dword ptr ss:[ebp+8]
         // mov ebx,7B6CDCFD
-        u8 unk[64];
+        u8 unk[64]; Salt or verifier
         std::memset(unk, 0, 64);
 
         SHA1Hasher seed1Hash(true);
