@@ -27,6 +27,7 @@
 #include <functional>
 #include <vector>
 
+#include "json.hpp"
 #include <amy/connector.hpp>
 #include "../Utils/DebugHandler.h"
 #include "../Utils/SharedPool.h"
@@ -43,8 +44,29 @@ enum DATABASE_TYPE
 	COUNT
 };
 
-class DatabaseConnector;
+using json = nlohmann::json;
+struct DatabaseConnection
+{
+    DatabaseConnection() { }
+    DatabaseConnection(json connectionData)
+    {
+        host = connectionData["ip"];
+        port = connectionData["port"];
+        user = connectionData["user"];
+        password = connectionData["password"];
+        name = connectionData["name"];
+        isUsed = true;
+    }
 
+    std::string host;
+    u16 port;
+    std::string user;
+    std::string password;
+    std::string name;
+    bool isUsed = false;
+};
+
+class DatabaseConnector;
 struct AsyncSQLJob
 {
 	AsyncSQLJob()
@@ -63,7 +85,7 @@ class DatabaseConnector
 {
 public:
 	// Initialization
-    static void Setup(std::string hosts[], u16 ports[], std::string usernames[], std::string passwords[], std::string names[]);
+    static void Setup(DatabaseConnection connections[]);
 
 	// Static Connector creation
 	static bool Create(DATABASE_TYPE type, std::unique_ptr<DatabaseConnector>& out);
@@ -99,15 +121,10 @@ private:
 	DATABASE_TYPE _type;
 	amy::connector* _connector;
 
-	static std::vector<std::string>  _hosts;
-    static std::vector<std::string>  _usernames;
-    static std::vector<std::string>  _passwords;
-    static std::vector<std::string>  _names;
-    static std::vector<u16>          _ports;
-    static bool                      _initialized;
+    static DatabaseConnection _connections[DATABASE_TYPE::COUNT];
+    static bool _initialized;
 
 	static SharedPool<DatabaseConnector> _connectorPools[DATABASE_TYPE::COUNT];
 	static std::thread* _asyncThread;
 	static moodycamel::ConcurrentQueue<AsyncSQLJob> _asyncJobQueue;
-	
 };

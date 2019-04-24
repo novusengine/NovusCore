@@ -2,25 +2,17 @@
 #include <iostream>
 #include <amy/placeholders.hpp>
 
-std::vector<std::string> DatabaseConnector::_hosts(DATABASE_TYPE::COUNT);
-std::vector<std::string> DatabaseConnector::_usernames(DATABASE_TYPE::COUNT);
-std::vector<std::string> DatabaseConnector::_passwords(DATABASE_TYPE::COUNT);
-std::vector<std::string> DatabaseConnector::_names(DATABASE_TYPE::COUNT);
-std::vector<u16>         DatabaseConnector::_ports(DATABASE_TYPE::COUNT);
+DatabaseConnection DatabaseConnector::_connections[];
 bool                     DatabaseConnector::_initialized = false;
 SharedPool<DatabaseConnector> DatabaseConnector::_connectorPools[];
 moodycamel::ConcurrentQueue<AsyncSQLJob> DatabaseConnector::_asyncJobQueue(1024);
 
-void DatabaseConnector::Setup(std::string hosts[], u16 ports[], std::string usernames[], std::string passwords[], std::string names[])
+void DatabaseConnector::Setup(DatabaseConnection connections[])
 {
-
     for (i32 i = 0; i < DATABASE_TYPE::COUNT; i++)
     {
-        _hosts[i]       = hosts[i];
-        _usernames[i]   = usernames[i];
-        _passwords[i]   = passwords[i];
-        _names[i]       = names[i];
-        _ports[i]       = ports[i];
+        if (connections[i].isUsed)
+            _connections[i] = connections[i];
     }
     _initialized = true;
 
@@ -168,12 +160,16 @@ DatabaseConnector::~DatabaseConnector()
 bool DatabaseConnector::_Connect(DATABASE_TYPE type)
 {
 	_type = type;
-	AMY_ASIO_NS::ip::tcp::endpoint endpoint(AMY_ASIO_NS::ip::address::from_string(_hosts[_type]), _ports[_type]);
+    DatabaseConnection connection = _connections[type];
+    if (!connection.isUsed)
+        return false;
+
+	AMY_ASIO_NS::ip::tcp::endpoint endpoint(AMY_ASIO_NS::ip::address::from_string(connection.host), connection.port);
 	AMY_ASIO_NS::io_service io_service;
 	_connector = new amy::connector(io_service);
 	try
 	{
-		_connector->connect(endpoint, amy::auth_info(_usernames[_type], _passwords[_type]), _names[_type], amy::default_flags);
+		_connector->connect(endpoint, amy::auth_info(connection.user, connection.password), connection.name, amy::default_flags);
 		return true;
 	}
 	catch(amy::system_error error)

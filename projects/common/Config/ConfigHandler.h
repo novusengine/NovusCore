@@ -28,7 +28,6 @@
 #include <fstream>
 
 using json = nlohmann::json;
-
 class ConfigHandler
 {
 public:
@@ -36,6 +35,7 @@ public:
 
     template<class T>
     static T GetOption(std::string optionName, T defaultValue);
+    static json GetKey(std::string keyName);
 
 	~ConfigHandler() {}
 private:
@@ -82,4 +82,9 @@ inline T ConfigHandler::GetOption(std::string optionName, T defaultValue)
         std::cout << "ERROR: " << e.what() << std::endl;
         return defaultValue;
     }
+}
+
+inline json ConfigHandler::GetKey(std::string keyName)
+{
+    return _configFile[keyName];
 }
