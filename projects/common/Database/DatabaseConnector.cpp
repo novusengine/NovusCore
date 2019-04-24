@@ -2,12 +2,12 @@
 #include <iostream>
 #include <amy/placeholders.hpp>
 
-DatabaseConnection DatabaseConnector::_connections[];
+DatabaseConnectionDetails DatabaseConnector::_connections[];
 bool                     DatabaseConnector::_initialized = false;
 SharedPool<DatabaseConnector> DatabaseConnector::_connectorPools[];
 moodycamel::ConcurrentQueue<AsyncSQLJob> DatabaseConnector::_asyncJobQueue(1024);
 
-void DatabaseConnector::Setup(DatabaseConnection connections[])
+void DatabaseConnector::Setup(DatabaseConnectionDetails connections[])
 {
     for (i32 i = 0; i < DATABASE_TYPE::COUNT; i++)
     {
@@ -28,6 +28,7 @@ bool DatabaseConnector::Create(DATABASE_TYPE type, std::unique_ptr<DatabaseConne
 	{
         NC_LOG_FATAL("Failed to connect to MySQL Server, please initialize with DatabaseConnector::Setup!");
 	}
+    assert(_connections[type].isUsed);
 
 	out.reset(new DatabaseConnector());
 	out->_Connect(type);
@@ -41,6 +42,7 @@ bool DatabaseConnector::Borrow(DATABASE_TYPE type, std::shared_ptr<DatabaseConne
 	{
         NC_LOG_FATAL("Failed to connect to MySQL Server, please initialize with DatabaseConnector::Setup!")
 	}
+    assert(_connections[type].isUsed);
 
 	// If we are out of connectors, create one!
 	if (_connectorPools[type].empty())
@@ -61,6 +63,7 @@ void DatabaseConnector::Borrow(DATABASE_TYPE type, std::function<void(std::share
     {
         NC_LOG_FATAL("Failed to connect to MySQL Server, please initialize with DatabaseConnector::Setup!")
     }
+    assert(_connections[type].isUsed);
 
     // If we are out of connectors, create one!
     if (_connectorPools[type].empty())
@@ -78,6 +81,8 @@ void DatabaseConnector::Borrow(DATABASE_TYPE type, std::function<void(std::share
 // Static Asyncs
 void DatabaseConnector::QueryAsync(DATABASE_TYPE type, std::string sql, std::function<void(amy::result_set& result, DatabaseConnector& connector)> const& func)
 {
+    assert(_connections[type].isUsed);
+
 	AsyncSQLJob job;
 	job.type = type;
 	job.sql = sql;
@@ -86,6 +91,8 @@ void DatabaseConnector::QueryAsync(DATABASE_TYPE type, std::string sql, std::fun
 }
 void DatabaseConnector::ExecuteAsync(DATABASE_TYPE type, std::string sql)
 {
+    assert(_connections[type].isUsed);
+
 	AsyncSQLJob job;
 	job.type = type;
 	job.sql = sql;
@@ -102,10 +109,13 @@ void DatabaseConnector::AsyncSQLThreadMain()
 	std::unique_ptr<DatabaseConnector> connectors[DATABASE_TYPE::COUNT];
 	for (size_t i = 0; i < DATABASE_TYPE::COUNT; i++)
 	{
-		if (!DatabaseConnector::Create((DATABASE_TYPE)i, connectors[i]))
-		{
-            NC_LOG_FATAL("Connecting to database failed!");
-		}
+        if (_connections[i].isUsed)
+        {
+            if (!DatabaseConnector::Create((DATABASE_TYPE)i, connectors[i]))
+            {
+                NC_LOG_FATAL("Connecting to database failed!");
+            }
+        }
 	}
 
 	// This thread will just spin and try to execute any AsyncSQLJobs in the queue.
@@ -159,10 +169,9 @@ DatabaseConnector::~DatabaseConnector()
 
 bool DatabaseConnector::_Connect(DATABASE_TYPE type)
 {
+    assert(_connections[type].isUsed);
 	_type = type;
-    DatabaseConnection connection = _connections[type];
-    if (!connection.isUsed)
-        return false;
+    DatabaseConnectionDetails connection = _connections[type];
 
 	AMY_ASIO_NS::ip::tcp::endpoint endpoint(AMY_ASIO_NS::ip::address::from_string(connection.host), connection.port);
 	AMY_ASIO_NS::io_service io_service;

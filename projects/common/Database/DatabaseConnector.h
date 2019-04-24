@@ -45,10 +45,10 @@ enum DATABASE_TYPE
 };
 
 using json = nlohmann::json;
-struct DatabaseConnection
+struct DatabaseConnectionDetails
 {
-    DatabaseConnection() { }
-    DatabaseConnection(json connectionData)
+    DatabaseConnectionDetails() { }
+    DatabaseConnectionDetails(json connectionData)
     {
         host = connectionData["ip"];
         port = connectionData["port"];
@@ -85,7 +85,7 @@ class DatabaseConnector
 {
 public:
 	// Initialization
-    static void Setup(DatabaseConnection connections[]);
+    static void Setup(DatabaseConnectionDetails connections[]);
 
 	// Static Connector creation
 	static bool Create(DATABASE_TYPE type, std::unique_ptr<DatabaseConnector>& out);
@@ -121,7 +121,7 @@ private:
 	DATABASE_TYPE _type;
 	amy::connector* _connector;
 
-    static DatabaseConnection _connections[DATABASE_TYPE::COUNT];
+    static DatabaseConnectionDetails _connections[DATABASE_TYPE::COUNT];
     static bool _initialized;
 
 	static SharedPool<DatabaseConnector> _connectorPools[DATABASE_TYPE::COUNT];

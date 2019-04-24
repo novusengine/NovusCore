@@ -44,11 +44,11 @@ i32 main()
     }
     
     /* Load Database Information here */
-    DatabaseConnection dbConnections[DATABASE_TYPE::COUNT];
-    dbConnections[DATABASE_TYPE::AUTHSERVER] = ConfigHandler::GetKey("auth_database");
-    dbConnections[DATABASE_TYPE::CHARSERVER] = ConfigHandler::GetKey("character_database");
-    dbConnections[DATABASE_TYPE::WORLDSERVER] = ConfigHandler::GetKey("world_database");
-    dbConnections[DATABASE_TYPE::DBC] = ConfigHandler::GetKey("dbc_database");
+    DatabaseConnectionDetails dbConnections[DATABASE_TYPE::COUNT];
+    dbConnections[DATABASE_TYPE::AUTHSERVER] = DatabaseConnectionDetails(ConfigHandler::GetJsonObjectByKey("auth_database"));
+    dbConnections[DATABASE_TYPE::CHARSERVER] = DatabaseConnectionDetails(ConfigHandler::GetJsonObjectByKey("character_database"));
+    dbConnections[DATABASE_TYPE::WORLDSERVER] = DatabaseConnectionDetails(ConfigHandler::GetJsonObjectByKey("world_database"));
+    dbConnections[DATABASE_TYPE::DBC] = DatabaseConnectionDetails(ConfigHandler::GetJsonObjectByKey("dbc_database"));
 
     /* Pass Database Information to Setup */
     DatabaseConnector::Setup(dbConnections);

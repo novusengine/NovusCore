@@ -50,8 +50,8 @@ i32 main()
     }
 
     /* Load Database Information here */
-    DatabaseConnection dbConnections[DATABASE_TYPE::COUNT];
-    dbConnections[DATABASE_TYPE::AUTHSERVER] = ConfigHandler::GetKey("auth_database");
+    DatabaseConnectionDetails dbConnections[DATABASE_TYPE::COUNT];
+    dbConnections[DATABASE_TYPE::AUTHSERVER] = DatabaseConnectionDetails(ConfigHandler::GetJsonObjectByKey("auth_database"));
 
     /* Pass Database Information to Setup */
     DatabaseConnector::Setup(dbConnections);
