@@ -77,6 +77,14 @@ void WorldNodeHandler::Stop()
 
 void WorldNodeHandler::Run()
 {
+    SetupUpdateFramework();
+
+    _updateFramework.registry.create();
+
+	DBCDatabaseCacheSingleton& dbcDatabaseCacheSingleton = _updateFramework.registry.set<DBCDatabaseCacheSingleton>();
+	dbcDatabaseCacheSingleton.cache = new DBCDatabaseCache();
+	dbcDatabaseCacheSingleton.cache->Load();
+
     if (!_mapLoader.Load(_updateFramework.registry))
     {
         /*Message exitMessage;
@@ -85,9 +93,6 @@ void WorldNodeHandler::Run()
         return;*/
     }
 
-    SetupUpdateFramework();
-
-    _updateFramework.registry.create();
     SingletonComponent& singletonComponent = _updateFramework.registry.set<SingletonComponent>();
     PlayerCreateQueueSingleton& playerCreateQueueComponent = _updateFramework.registry.set<PlayerCreateQueueSingleton>();
     PlayerUpdatesQueueSingleton& playerUpdatesQueueSingleton = _updateFramework.registry.set<PlayerUpdatesQueueSingleton>();
@@ -97,8 +102,7 @@ void WorldNodeHandler::Run()
 
 	WorldDatabaseCacheSingleton& worldDatabaseCacheSingleton = _updateFramework.registry.set<WorldDatabaseCacheSingleton>();
 	CharacterDatabaseCacheSingleton& characterDatabaseCacheSingleton = _updateFramework.registry.set<CharacterDatabaseCacheSingleton>();
-	DBCDatabaseCacheSingleton& dbcDatabaseCacheSingleton = _updateFramework.registry.set<DBCDatabaseCacheSingleton>();
-
+	
     singletonComponent.worldNodeHandler = this;
     singletonComponent.deltaTime = 1.0f;
 
@@ -113,9 +117,6 @@ void WorldNodeHandler::Run()
 
     worldDatabaseCacheSingleton.cache = new WorldDatabaseCache();
     worldDatabaseCacheSingleton.cache->Load();
-
-	dbcDatabaseCacheSingleton.cache = new DBCDatabaseCache();
-	dbcDatabaseCacheSingleton.cache->Load();
 
     Commands::LoadCommands(_updateFramework.registry);
 
