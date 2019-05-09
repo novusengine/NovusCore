@@ -218,7 +218,7 @@ bool RealmConnection::HandleHeaderRead()
     // Reverse size bytes
     EndianConvertReverse(header->size);
 
-    if (header->size < 4 && header->size > 10240 || header->command >= Common::Opcode::NUM_MSG_TYPES)
+    if ((header->size < 4 && header->size > 10240) || header->command >= Common::Opcode::NUM_MSG_TYPES)
     {
         std::cout << "header->size < 4: " << (header->size < 4) << ", header->size > 10240: " << (header->size > 10240) << ", header->command >= Common::Opcode::NUM_MSG_TYPES: " << (header->command >= Common::Opcode::NUM_MSG_TYPES) << std::endl;
         return false;
