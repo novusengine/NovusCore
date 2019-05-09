@@ -119,7 +119,7 @@ namespace Commands_Character
             CharacterUtils::BuildSpeedChangePacket(clientConnection.accountGuid, clientConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_FLIGHT_BACK_SPEED_CHANGE, speedChange);
             playerPacketQueue.packetQueue->enqueue(PacketQueueData(clientConnection.socket, speedChange, Common::Opcode::SMSG_FORCE_FLIGHT_BACK_SPEED_CHANGE));
 
-            clientConnection.SendNotification("Speed Updated: %f", speed);
+            clientConnection.SendChatNotification("Speed Updated: %f", speed);
             return true;
         }
         catch (std::exception) {}
@@ -140,7 +140,7 @@ namespace Commands_Character
                 CharacterUtils::BuildFlyModePacket(clientConnection.accountGuid, clientConnection.characterGuid, flightState == "on", setFly);
                 playerPacketQueue.packetQueue->enqueue(PacketQueueData(clientConnection.socket, setFly, flightState == "on" ? Common::Opcode::SMSG_MOVE_SET_CAN_FLY : Common::Opcode::SMSG_MOVE_UNSET_CAN_FLY));
 
-                clientConnection.SendNotification("Flight Mode: %s", flightState.c_str());
+                clientConnection.SendChatNotification("Flight Mode: %s", flightState.c_str());
                 return true;
             }
         }
@@ -248,7 +248,7 @@ namespace Commands_Character
             playerFieldData.SetGuidValue(PLAYER_FIELD_PACK_SLOT_1, itemGuid);
             _registry->ctx<ItemCreateQueueSingleton>().newItemQueue->enqueue(itemCreationInformation);
 
-            clientConnection.SendNotification("[AddItem]: %u", itemTemplate.entry);
+            clientConnection.SendChatNotification("[AddItem]: %u", itemTemplate.entry);
             return true;
         }
         catch (std::exception) {}

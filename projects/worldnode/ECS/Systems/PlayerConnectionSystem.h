@@ -151,6 +151,28 @@ namespace ConnectionSystem
                         packet.handled = true;
                         break;
                     }
+                    case Common::Opcode::CMSG_QUERY_OBJECT_POSITION:
+                    {
+                        packet.handled = true;
+
+                        Common::ByteBuffer objectPosition;
+                        objectPosition.Write<f32>(clientPositionData.x);
+                        objectPosition.Write<f32>(clientPositionData.y);
+                        objectPosition.Write<f32>(clientPositionData.z);
+
+                        playerPacketQueue.packetQueue->enqueue(PacketQueueData(clientConnection.socket, objectPosition, Common::Opcode::SMSG_QUERY_OBJECT_POSITION));
+                        break;
+                    }
+                    case Common::Opcode::CMSG_LEVEL_CHEAT:
+                    {
+                        packet.handled = true;
+                        u32 level = 0;
+                        packet.data.Read<u32>(level);
+
+                        if (level != clientFieldData.GetFieldValue<u32>(UNIT_FIELD_LEVEL))
+                            clientFieldData.SetFieldValue<u32>(UNIT_FIELD_LEVEL, level);
+                        break;
+                    }
                     case Common::Opcode::CMSG_STANDSTATECHANGE:
                     {
                         ZoneScopedNC("Packet::StandStateChange", tracy::Color::Orange2)
@@ -268,10 +290,7 @@ namespace ConnectionSystem
                     {
                         ZoneScopedNC("Packet::Passthrough", tracy::Color::Orange2)
 
-                            // Read GUID here as packed
-                            u64 guid;
-                        packet.data.ReadPackedGUID(guid);
-
+                        u64 guid;
                         u32 movementFlags;
                         u16 movementFlagsExtra;
                         u32 gameTime;
@@ -281,17 +300,50 @@ namespace ConnectionSystem
                         f32 orientation;
                         u32 fallTime;
 
-                        packet.data.Read(&movementFlags, 4);
-                        packet.data.Read(&movementFlagsExtra, 2);
-                        packet.data.Read(&gameTime, 4);
-                        packet.data.Read(&position_x, 4);
-                        packet.data.Read(&position_y, 4);
-                        packet.data.Read(&position_z, 4);
-                        packet.data.Read(&orientation, 4);
-                        packet.data.Read(&fallTime, 4);
-
                         u8 opcodeIndex = CharacterUtils::GetLastMovementTimeIndexFromOpcode(opcode);
                         u32 opcodeTime = clientPositionData.lastMovementOpcodeTime[opcodeIndex];
+
+                        // Handle GM Client 'facing' command
+                        if (opcode == Common::Opcode::MSG_MOVE_SET_FACING && packet.data.GetActualSize() == 4)
+                        {
+                            guid = clientConnection.characterGuid;
+                            movementFlags = 0;
+                            movementFlagsExtra = 0;
+                            gameTime = opcodeTime + 1;
+                            position_x = clientPositionData.x;
+                            position_y = clientPositionData.y;
+                            position_z = clientPositionData.z;
+                            packet.data.Read(&orientation, 4);
+                            fallTime = 0;
+
+                            Common::ByteBuffer setFacing;
+                            setFacing.AppendGuid(guid);
+                            setFacing.Write<u32>(movementFlags);
+                            setFacing.Write<u16>(movementFlagsExtra);
+                            setFacing.Write<u32>(gameTime);
+                            setFacing.Write<f32>(position_x);
+                            setFacing.Write<f32>(position_y);
+                            setFacing.Write<f32>(position_z);
+                            setFacing.Write<f32>(orientation);
+                            setFacing.Write<u32>(fallTime);
+                            playerPacketQueue.packetQueue->enqueue(PacketQueueData(clientConnection.socket, setFacing, Common::Opcode::MSG_MOVE_SET_FACING));
+                            clientConnection.SendConsoleNotification("Facing set to %f", orientation);
+                        }
+                        else
+                        {
+                            // Read GUID here as packed  
+                            packet.data.ReadPackedGUID(guid);
+
+                            packet.data.Read(&movementFlags, 4);
+                            packet.data.Read(&movementFlagsExtra, 2);
+                            packet.data.Read(&gameTime, 4);
+                            packet.data.Read(&position_x, 4);
+                            packet.data.Read(&position_y, 4);
+                            packet.data.Read(&position_z, 4);
+                            packet.data.Read(&orientation, 4);
+                            packet.data.Read(&fallTime, 4);
+                        }
+
                         if (gameTime > opcodeTime)
                         {
                             clientPositionData.lastMovementOpcodeTime[opcodeIndex] = gameTime;

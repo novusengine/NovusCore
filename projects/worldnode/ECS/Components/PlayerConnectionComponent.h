@@ -38,10 +38,20 @@ class WorldConnection;
 struct PlayerConnectionComponent
 {
     template <typename... Args>
-    void SendNotification(std::string message, Args... args)
+    void SendChatNotification(std::string message, Args... args)
     {
         Common::ByteBuffer packet = CharacterUtils::BuildNotificationPacket(accountGuid, message, std::forward<Args>(args)...);
         socket->SendPacket(packet, Common::Opcode::SMSG_MESSAGECHAT);
+    }
+    template <typename... Args>
+    void SendConsoleNotification(std::string message, Args... args)
+    {
+        char str[256];
+        i32 length = StringUtils::FormatString(str, sizeof(str), message.c_str(), args...);
+
+        Common::ByteBuffer packet;
+        packet.WriteString(str);
+        socket->SendPacket(packet, Common::Opcode::SMSG_NOTIFICATION);
     }
 
     u32 entityGuid;
