@@ -25,7 +25,6 @@
 #include <NovusTypes.h> 
 #include <robin_hood.h>
 
-class NovusConnection;
 class WorldNodeHandler;
 struct SingletonComponent 
 {

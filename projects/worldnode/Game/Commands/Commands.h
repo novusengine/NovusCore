@@ -47,7 +47,7 @@ namespace Commands
 
         Vector2 pos(x, y);
         f32 height = mapSingleton.maps[mapId].GetHeight(pos);
-        clientConnection.SendNotification("MapID: %u (%f, %f, %f) Height: %f", mapId, x, y, z, height);
+        clientConnection.SendChatNotification("MapID: %u (%f, %f, %f) Height: %f", mapId, x, y, z, height);
 
         return true;
     }

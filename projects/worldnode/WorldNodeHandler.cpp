@@ -20,14 +20,15 @@
 #include "ECS/Systems/PlayerDeleteSystem.h"
 
 #include "ECS/Components/Singletons/SingletonComponent.h"
+#include "ECS/Components/Singletons/CommandDataSingleton.h"
+#include "ECS/Components/Singletons/GuidLookupSingleton.h"
 #include "ECS/Components/Singletons/PlayerCreateQueueSingleton.h"
 #include "ECS/Components/Singletons/PlayerUpdatesQueueSingleton.h"
 #include "ECS/Components/Singletons/PlayerDeleteQueueSingleton.h"
-#include "ECS/Components/Singletons/CharacterDatabaseCacheSingleton.h"
-#include "ECS/Components/Singletons/WorldDatabaseCacheSingleton.h"
-#include "ECS/Components/Singletons/CommandDataSingleton.h"
 #include "ECS/Components/Singletons/PlayerPacketQueueSingleton.h"
 #include "ECS/Components/Singletons/ItemCreateQueueSingleton.h"
+#include "ECS/Components/Singletons/CharacterDatabaseCacheSingleton.h"
+#include "ECS/Components/Singletons/WorldDatabaseCacheSingleton.h"
 #include "ECS/Components/Singletons/DBCDatabaseCacheSingleton.h"
 
 // Game
@@ -78,8 +79,15 @@ void WorldNodeHandler::Stop()
 void WorldNodeHandler::Run()
 {
     SetupUpdateFramework();
-
     _updateFramework.registry.create();
+
+    CharacterDatabaseCacheSingleton& characterDatabaseCacheSingleton = _updateFramework.registry.set<CharacterDatabaseCacheSingleton>();
+    characterDatabaseCacheSingleton.cache = new CharacterDatabaseCache();
+    characterDatabaseCacheSingleton.cache->Load();
+
+    WorldDatabaseCacheSingleton& worldDatabaseCacheSingleton = _updateFramework.registry.set<WorldDatabaseCacheSingleton>();
+    worldDatabaseCacheSingleton.cache = new WorldDatabaseCache();
+    worldDatabaseCacheSingleton.cache->Load();
 
 	DBCDatabaseCacheSingleton& dbcDatabaseCacheSingleton = _updateFramework.registry.set<DBCDatabaseCacheSingleton>();
 	dbcDatabaseCacheSingleton.cache = new DBCDatabaseCache();
@@ -94,29 +102,22 @@ void WorldNodeHandler::Run()
     }
 
     SingletonComponent& singletonComponent = _updateFramework.registry.set<SingletonComponent>();
-    PlayerCreateQueueSingleton& playerCreateQueueComponent = _updateFramework.registry.set<PlayerCreateQueueSingleton>();
-    PlayerUpdatesQueueSingleton& playerUpdatesQueueSingleton = _updateFramework.registry.set<PlayerUpdatesQueueSingleton>();
-    PlayerDeleteQueueSingleton& playerDeleteQueueSingleton = _updateFramework.registry.set<PlayerDeleteQueueSingleton>();
-    PlayerPacketQueueSingleton& playerPacketQueueSingleton = _updateFramework.registry.set<PlayerPacketQueueSingleton>();
-    ItemCreateQueueSingleton& itemCreateQueueComponent = _updateFramework.registry.set<ItemCreateQueueSingleton>();
-
-	WorldDatabaseCacheSingleton& worldDatabaseCacheSingleton = _updateFramework.registry.set<WorldDatabaseCacheSingleton>();
-	CharacterDatabaseCacheSingleton& characterDatabaseCacheSingleton = _updateFramework.registry.set<CharacterDatabaseCacheSingleton>();
-	
     singletonComponent.worldNodeHandler = this;
     singletonComponent.deltaTime = 1.0f;
 
+    GuidLookupSingleton& guidLookupSingleton = _updateFramework.registry.set<GuidLookupSingleton>();
+    PlayerCreateQueueSingleton& playerCreateQueueComponent = _updateFramework.registry.set<PlayerCreateQueueSingleton>();
     playerCreateQueueComponent.newPlayerQueue = new moodycamel::ConcurrentQueue<Message>(256);
+
+    PlayerUpdatesQueueSingleton& playerUpdatesQueueSingleton = _updateFramework.registry.set<PlayerUpdatesQueueSingleton>();
+    PlayerDeleteQueueSingleton& playerDeleteQueueSingleton = _updateFramework.registry.set<PlayerDeleteQueueSingleton>();
     playerDeleteQueueSingleton.expiredEntityQueue = new moodycamel::ConcurrentQueue<ExpiredPlayerData>(256);
+
+    PlayerPacketQueueSingleton& playerPacketQueueSingleton = _updateFramework.registry.set<PlayerPacketQueueSingleton>();
     playerPacketQueueSingleton.packetQueue = new moodycamel::ConcurrentQueue<PacketQueueData>(256);
 
+    ItemCreateQueueSingleton& itemCreateQueueComponent = _updateFramework.registry.set<ItemCreateQueueSingleton>();
     itemCreateQueueComponent.newItemQueue = new moodycamel::ConcurrentQueue<ItemCreationInformation>(256);
-
-    characterDatabaseCacheSingleton.cache = new CharacterDatabaseCache();
-    characterDatabaseCacheSingleton.cache->Load();
-
-    worldDatabaseCacheSingleton.cache = new WorldDatabaseCache();
-    worldDatabaseCacheSingleton.cache->Load();
 
     Commands::LoadCommands(_updateFramework.registry);
 

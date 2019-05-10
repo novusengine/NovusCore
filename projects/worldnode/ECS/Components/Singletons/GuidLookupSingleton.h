@@ -22,41 +22,28 @@
     SOFTWARE.
 */
 #pragma once
-#include <NovusTypes.h>
-#include <Networking/ByteBuffer.h>
-#include "../../Utils/CharacterUtils.h"
-#include <vector>
+#include <NovusTypes.h> 
+#include <robin_hood.h>
 
-struct OpcodePacket
+struct GuidLookupSingleton
 {
-    u16 opcode;
-    bool handled;
-    Common::ByteBuffer data;
-};
+    GuidLookupSingleton() : playerToEntityMap() { }
 
-class WorldConnection;
-struct PlayerConnectionComponent
-{
-    template <typename... Args>
-    void SendChatNotification(std::string message, Args... args)
+    bool PlayerExists(u64 playerGuid)
     {
-        Common::ByteBuffer packet = CharacterUtils::BuildNotificationPacket(accountGuid, message, std::forward<Args>(args)...);
-        socket->SendPacket(packet, Common::Opcode::SMSG_MESSAGECHAT);
+        return playerToEntityMap.find(playerGuid) != playerToEntityMap.end();
     }
-    template <typename... Args>
-    void SendConsoleNotification(std::string message, Args... args)
+    bool GetPlayerEntityId(u64 playerGuid, u32& entityId)
     {
-        char str[256];
-        i32 length = StringUtils::FormatString(str, sizeof(str), message.c_str(), args...);
+        auto itr = playerToEntityMap.find(playerGuid);
+        if (itr == playerToEntityMap.end())
+        {
+            return false;
+        }
 
-        Common::ByteBuffer packet;
-        packet.WriteString(str);
-        socket->SendPacket(packet, Common::Opcode::SMSG_NOTIFICATION);
+        entityId = itr->second;
+        return true;
     }
 
-    u32 entityGuid;
-    u32 accountGuid;
-    u64 characterGuid;
-    WorldConnection* socket;
-    std::vector<OpcodePacket> packets;
+    robin_hood::unordered_map<u64, u32> playerToEntityMap;
 };
