@@ -25,13 +25,25 @@
 #include <NovusTypes.h> 
 #include <robin_hood.h>
 
-class WorldNodeHandler;
-struct SingletonComponent 
+struct GuidLookupSingleton
 {
-    SingletonComponent() : deltaTime(0), lifeTimeInS(0), lifeTimeInMS(0), worldNodeHandler(nullptr), accountToEntityMap() { }
-	f32 deltaTime;
-	f32 lifeTimeInS;
-	f32 lifeTimeInMS;
-	WorldNodeHandler* worldNodeHandler;
-    robin_hood::unordered_map<u32, u32> accountToEntityMap;
+    GuidLookupSingleton() : playerToEntityMap() { }
+
+    bool PlayerExists(u64 playerGuid)
+    {
+        return playerToEntityMap.find(playerGuid) != playerToEntityMap.end();
+    }
+    bool GetPlayerEntityId(u64 playerGuid, u32& entityId)
+    {
+        auto itr = playerToEntityMap.find(playerGuid);
+        if (itr == playerToEntityMap.end())
+        {
+            return false;
+        }
+
+        entityId = itr->second;
+        return true;
+    }
+
+    robin_hood::unordered_map<u64, u32> playerToEntityMap;
 };

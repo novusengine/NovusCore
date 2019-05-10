@@ -81,7 +81,7 @@ namespace ConnectionSystem
                     ZoneScopedNC("Packet", tracy::Color::Orange2)
 
                         Common::Opcode opcode = static_cast<Common::Opcode>(packet.opcode);
-                    switch (static_cast<Common::Opcode>(packet.opcode))
+                    switch (opcode)
                     {
                     case Common::Opcode::CMSG_SET_ACTIVE_MOVER:
                     {
