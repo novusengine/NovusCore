@@ -64,6 +64,8 @@ DebugHandler::PrintFatal(message, ##__VA_ARGS__);
 #define NC_LOG_SUCCESS(message, ...) if (!DebugHandler::isInitialized) { DebugHandler::Initialize(); } \
 DebugHandler::PrintSuccess(message, ##__VA_ARGS__);
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-security"
 class DebugHandler
 {
 public:
@@ -145,7 +147,7 @@ private:
                 withColors = message;
         }
 
-        printf(withColors.c_str(), args...);
+        Print(withColors, args...);
 #endif
     }
 
@@ -154,3 +156,4 @@ private:
     static HANDLE _handle;
 #endif
 };
+#pragma GCC diagnostic pop
