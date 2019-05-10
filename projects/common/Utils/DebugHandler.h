@@ -23,7 +23,7 @@
 */
 #pragma once
 
-#ifdef _WIN32
+#if defined (_WIN32)
 #include <Windows.h>
 #endif
 #include <string>
@@ -64,8 +64,10 @@ DebugHandler::PrintFatal(message, ##__VA_ARGS__);
 #define NC_LOG_SUCCESS(message, ...) if (!DebugHandler::isInitialized) { DebugHandler::Initialize(); } \
 DebugHandler::PrintSuccess(message, ##__VA_ARGS__);
 
+#if defined (__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 class DebugHandler
 {
 public:
@@ -155,5 +157,7 @@ private:
     static u32 _defaultColor;
     static HANDLE _handle;
 #endif
-};
+}; 
+#if defined (__clang__)
 #pragma GCC diagnostic pop
+#endif

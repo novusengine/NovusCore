@@ -32,8 +32,11 @@
 /* libmpq generic includes. */
 #include "explode.h"
 
+#if defined (__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Waddress-of-packed-member"
+#endif
+
 /* tables used for data extraction. */
 static const uint8_t pkzip_dist_bits[] = {
 	0x02, 0x04, 0x04, 0x05, 0x05, 0x05, 0x05, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06,
@@ -602,4 +605,6 @@ uint32_t libmpq__do_decompress_pkzip(uint8_t *work_buf, void *param) {
 	/* something failed, so return error. */
 	return LIBMPQ_PKZIP_CMP_ABORT;
 }
+#if defined (__clang__)
 #pragma GCC diagnostic pop
+#endif
