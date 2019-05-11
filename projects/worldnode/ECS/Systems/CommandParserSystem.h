@@ -55,7 +55,7 @@ namespace CommandParserSystem
             for (ChatUpdateData& command : clientUpdateData.chatUpdateData)
             {
                 std::string commandMessage = command.message;
-                if (command.message[0] == '.')
+                if (command.message[0] == '.' && command.message.length() > 1)
                 {
                     std::vector<std::string> commandStrings = SplitString(command.message.substr(1));
                     auto itr = commandData.commandMap.find(StringUtils::fnv1a_32(commandStrings[0].c_str(), commandStrings[0].length()));
