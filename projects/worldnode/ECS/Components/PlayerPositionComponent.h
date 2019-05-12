@@ -35,6 +35,8 @@ struct PlayerPositionComponent
 	f32 z;
 	f32 orientation;
 
+    u32 adtId = std::numeric_limits<u16>().max(); // Invalid ADT
+
     u32 lastMovementOpcodeTime[MAX_MOVEMENT_OPCODES];
     std::vector<PositionUpdateData> positionUpdateData;
 };

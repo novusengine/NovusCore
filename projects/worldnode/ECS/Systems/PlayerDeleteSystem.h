@@ -39,6 +39,7 @@ namespace PlayerDeleteSystem
     {
 		SingletonComponent& singleton = registry.ctx<SingletonComponent>();
         PlayerDeleteQueueSingleton& deletePlayerQueue = registry.ctx<PlayerDeleteQueueSingleton>();
+        MapSingleton& mapSingleton = registry.ctx<MapSingleton>();
 
         Common::ByteBuffer buildPacket;
         std::vector<u64> deletedEntities;
@@ -47,6 +48,19 @@ namespace PlayerDeleteSystem
         ExpiredPlayerData expiredPlayerData;
         while (deletePlayerQueue.expiredEntityQueue->try_dequeue(expiredPlayerData))
         {
+            // Remove player from current ADT
+            PlayerPositionComponent& positionComponent = registry.get<PlayerPositionComponent>(expiredPlayerData.entityGuid);
+            u32 mapId = positionComponent.mapId;
+            u16 adtId = positionComponent.adtId;
+
+            if (adtId != INVALID_ADT)
+            {
+                std::vector<u32>& playerList = mapSingleton.maps[mapId].playersInAdts[adtId];
+                auto iterator = std::find(playerList.begin(), playerList.end(), expiredPlayerData.entityGuid);
+                assert(iterator != playerList.end());
+                playerList.erase(iterator);
+            }
+
             updateData.AddGuid(expiredPlayerData.characterGuid);
             deletedEntities.push_back(expiredPlayerData.characterGuid);
             registry.destroy(expiredPlayerData.entityGuid);

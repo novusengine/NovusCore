@@ -25,11 +25,13 @@
 #include <NovusTypes.h>
 #include <robin_hood.h>
 #include <Math/Vector2.h>
+#include <limits>
 
 #define NOVUSADT_TOKEN 1313685840
 #define NOVUSADT_VERSION 808464433
 
 const u32 blockStride = 64;
+const u16 INVALID_ADT = std::numeric_limits<u16>().max();
 
 #define ADT_CELLS_PER_GRID    16
 #define ADT_CELL_SIZE         8
@@ -144,6 +146,10 @@ struct NovusMap
 	u16 id;
 	std::string mapName;
 	robin_hood::unordered_map<u16, NovusAdt> adts;
+    robin_hood::unordered_map<u16, std::vector<u32>> playersInAdts;
 
 	f32 GetHeight(Vector2& pos);
+    bool GetAdtIdFromWorldPosition(Vector2& pos, u16& adtId);
+    void GetChunkPositionFromAdtId(u16 adtId, u16& x, u16& y);
+    bool GetAdtIdFromChunkPosition(u16 x, u16 y, u16& adtId);
 };

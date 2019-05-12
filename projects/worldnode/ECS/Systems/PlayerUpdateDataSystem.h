@@ -22,6 +22,7 @@
     SOFTWARE.
 */
 #pragma once
+#include <algorithm>
 #include <NovusTypes.h>
 #include <entt.hpp>
 #include <Networking/ByteBuffer.h>
@@ -208,20 +209,21 @@ namespace PlayerUpdateDataSystem
     void Update(entt::registry &registry)
     {
         PlayerUpdatesQueueSingleton& playerUpdatesQueue = registry.ctx<PlayerUpdatesQueueSingleton>();
+        MapSingleton& mapSingleton = registry.ctx<MapSingleton>();
 
         auto view = registry.view<PlayerConnectionComponent, PlayerFieldDataComponent, PlayerUpdateDataComponent, PlayerPositionComponent>();
-        view.each([&playerUpdatesQueue](const auto, PlayerConnectionComponent& clientConnection, PlayerFieldDataComponent& clientFieldData, PlayerUpdateDataComponent& clientUpdateData, PlayerPositionComponent& clientPositionData)
+        view.each([&playerUpdatesQueue, &mapSingleton](const auto, PlayerConnectionComponent& clientConnection, PlayerFieldDataComponent& clientFieldData, PlayerUpdateDataComponent& clientUpdateData, PlayerPositionComponent& clientPositionData)
         {
-			ZoneScopedNC("Connection", tracy::Color::Yellow2)
+            ZoneScopedNC("Connection", tracy::Color::Yellow2)
             /* Only Build Packet if any fields were changed */
             if (clientFieldData.changesMask.Any())
             {
-				ZoneScopedNC("Build Packet", tracy::Color::Yellow2)
+                ZoneScopedNC("Build Packet", tracy::Color::Yellow2)
                 /* Build Self Packet, must be sent immediately */
                 u32 selfVisibleFlags = (UF_FLAG_PUBLIC | UF_FLAG_PRIVATE);
                 u16 buildOpcode = 0;
 
-				// Currently we have not observed any issues with sending private field flags to any other client but themselves, this offers a good speed increase but if we see issues in the future we should recheck this.
+                // Currently we have not observed any issues with sending private field flags to any other client but themselves, this offers a good speed increase but if we see issues in the future we should recheck this.
                 /*NovusHeader novusHeader;
                 Common::ByteBuffer selfPlayerUpdate = BuildplayerFieldData(clientConnection.characterGuid, selfVisibleFlags, clientFieldData, buildOpcode);
                 novusHeader.CreateForwardHeader(clientConnection.accountGuid, buildOpcode, selfPlayerUpdate.GetActualSize());
@@ -242,7 +244,7 @@ namespace PlayerUpdateDataSystem
 
             if (clientUpdateData.positionUpdateData.size() > 0)
             {
-				ZoneScopedNC("PositionUpdate", tracy::Color::Yellow2)
+                ZoneScopedNC("PositionUpdate", tracy::Color::Yellow2)
                 for (PositionUpdateData positionData : clientUpdateData.positionUpdateData)
                 {
                     MovementPacket movementPacket;
@@ -261,6 +263,36 @@ namespace PlayerUpdateDataSystem
 
                     playerUpdatesQueue.playerMovementPacketQueue.push_back(movementPacket);
                 }
+
+                // Figure out what ADT the player is in
+                Vector2 position = Vector2(clientPositionData.x, clientPositionData.y);
+                u32 mapId = clientPositionData.mapId;
+
+                u16 adtId;
+                if (mapSingleton.maps[mapId].GetAdtIdFromWorldPosition(position, adtId))
+                {
+                    // If the ADT doesnt match the previous known ADT we need to update it.
+                    if (adtId != clientPositionData.adtId) 
+                    {
+                        u32 guid = clientConnection.entityGuid;
+
+                        std::vector<u32>& playerList = mapSingleton.maps[mapId].playersInAdts[clientPositionData.adtId];
+                        if (clientPositionData.adtId != INVALID_ADT)
+                        {
+                            auto iterator = std::find(playerList.begin(), playerList.end(), guid);
+                            assert(iterator != playerList.end());
+                            playerList.erase(iterator);
+
+                            clientConnection.SendChatNotification("[DEBUG] Old ADT: %u has %u players", clientPositionData.adtId, playerList.size());
+                        }
+                        
+                        clientPositionData.adtId = adtId;
+
+                        mapSingleton.maps[mapId].playersInAdts[adtId].push_back(guid);
+                        clientConnection.SendChatNotification("[DEBUG] New ADT: %u has %u players", adtId, mapSingleton.maps[mapId].playersInAdts[adtId].size());
+                    }
+                }
+
                 // Clear Position Updates
                 clientUpdateData.positionUpdateData.clear();
             }

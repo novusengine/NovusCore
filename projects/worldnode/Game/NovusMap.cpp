@@ -9,20 +9,15 @@ const u8 cellStride = 8;
 
 f32 NovusMap::GetHeight(Vector2& pos)
 {
-	// This is translated to remap positions [-17066 .. 17066] to [0 ..  34132]
-	// Flipping X and Y here is intended, a quirk of how the ADTs are stored I guess - Pursche
-	Vector2 translatedPos = Vector2(mapSideHalfLength - pos.y, mapSideHalfLength - pos.x);
+    // This is translated to remap positions [-17066 .. 17066] to [0 ..  34132]
+    // Flipping X and Y here is intended, a quirk of how the ADTs are stored I guess - Pursche
+    Vector2 translatedPos = Vector2(mapSideHalfLength - pos.y, mapSideHalfLength - pos.x);
 
-	Vector2 adtPos = translatedPos / adtSideLength;
-	u32 adtID = Math::FloorToInt(adtPos.x) + (Math::FloorToInt(adtPos.y) * blockStride);
+    u16 adtId;
+    if (!GetAdtIdFromWorldPosition(pos, adtId))
+        return 0.0f;
 
-	if (adts.find(adtID) == adts.end())
-	{
-		// This block doesn't exist
-		return 0.0f;
-	}
-
-	NovusAdt& adt = adts[adtID];
+	NovusAdt& adt = adts[adtId];
 
 	Vector2 adtRemainder = translatedPos % adtSideLength;
 	Vector2 chunk = adtRemainder / chunkSideLength;
@@ -148,4 +143,29 @@ f32 NovusMap::GetHeight(Vector2& pos)
 	f32 height = aHeight * alpha + bHeight * beta + cHeight * gamma;
 
 	return height;
+}
+
+bool NovusMap::GetAdtIdFromWorldPosition(Vector2& pos, u16& adtId)
+{
+    // This is translated to remap positions [-17066 .. 17066] to [0 ..  34132]
+    // Flipping X and Y here is intended, a quirk of how the ADTs are stored I guess - Pursche
+    Vector2 translatedPos = Vector2(mapSideHalfLength - pos.y, mapSideHalfLength - pos.x);
+
+    Vector2 adtPos = translatedPos / adtSideLength;
+    adtId = Math::FloorToInt(adtPos.x) + (Math::FloorToInt(adtPos.y) * blockStride);
+
+    return adts.find(adtId) != adts.end();
+}
+
+void NovusMap::GetChunkPositionFromAdtId(u16 adtId, u16& x, u16& y)
+{
+    x = adtId % blockStride;
+    y = adtId / blockStride;
+}
+
+bool NovusMap::GetAdtIdFromChunkPosition(u16 x, u16 y, u16& adtId)
+{
+    adtId = Math::FloorToInt(x) + (Math::FloorToInt(y) * blockStride);
+
+    return adts.find(adtId) != adts.end();
 }
