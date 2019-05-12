@@ -26,7 +26,7 @@
 #include <Utils/ConcurrentQueue.h>
 #include "../../NovusEnums.h"
 #include "../../Message.h"
-#include "../Game/ObjectGuid/ObjectGuid.h"
+#include "../../Game/ObjectGuid/ObjectGuid.h"
 
 struct EntityCreationInformation
 {
