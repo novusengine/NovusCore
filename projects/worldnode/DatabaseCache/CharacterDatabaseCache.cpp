@@ -14,6 +14,8 @@ void CharacterDatabaseCache::Load()
     std::shared_ptr<DatabaseConnector> connector;
     bool result = DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, connector);
     assert(result);
+    if (!result)
+        return;
 
     amy::result_set resultSet;
     connector->Query("SELECT characters.guid, characters.account, characters.name, characters.race, characters.gender, characters.class, characters.level, characters.mapId, characters.zoneId, characters.coordinate_x, characters.coordinate_y, characters.coordinate_z, characters.orientation, characters.online, character_visual_data.skin, character_visual_data.face, character_visual_data.facial_style, character_visual_data.hair_style, character_visual_data.hair_color FROM characters INNER JOIN character_visual_data ON characters.guid = character_visual_data.guid;", resultSet);
@@ -340,6 +342,8 @@ bool CharacterDatabaseCache::GetCharacterData(u64 characterGuid, CharacterData& 
         std::shared_ptr<DatabaseConnector> connector;
         bool result = DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, connector);
         assert(result);
+        if (!result)
+            return false;
 
         PreparedStatement stmt("SELECT * FROM characters WHERE guid = {u};");
         stmt.Bind(characterGuid);
@@ -395,6 +399,8 @@ bool CharacterDatabaseCache::GetCharacterVisualData(u64 characterGuid, Character
         std::shared_ptr<DatabaseConnector> connector;
         bool result = DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, connector);
         assert(result);
+        if (!result)
+            return false;
 
         PreparedStatement stmt("SELECT * FROM character_visual_data WHERE guid = {u};");
         stmt.Bind(characterGuid);
@@ -441,6 +447,8 @@ bool CharacterDatabaseCache::GetCharacterSpellStorage(u64 characterGuid, robin_h
         std::shared_ptr<DatabaseConnector> connector;
         bool result = DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, connector);
         assert(result);
+        if (!result)
+            return false;
 
         PreparedStatement stmt("SELECT guid, spell FROM character_spell_storage WHERE guid = {u};");
         stmt.Bind(characterGuid);
@@ -484,6 +492,8 @@ bool CharacterDatabaseCache::GetCharacterSkillStorage(u64 characterGuid, robin_h
 		std::shared_ptr<DatabaseConnector> connector;
 		bool result = DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, connector);
 		assert(result);
+        if (!result)
+            return false;
 
 		PreparedStatement stmt("SELECT guid, skill, value, character_skill_storage.maxValue FROM character_skill_storage WHERE guid = {u};");
 		stmt.Bind(characterGuid);
@@ -529,6 +539,8 @@ bool CharacterDatabaseCache::GetCharacterItemData(u64 characterGuid, robin_hood:
 		std::shared_ptr<DatabaseConnector> connector;
 		bool result = DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, connector);
 		assert(result);
+        if (!result)
+            return false;
 
 		PreparedStatement stmt("SELECT lowGuid, itemEntry, bagSlot, bagPosition, characterGuid FROM character_items WHERE characterGuid = {u};");
 		stmt.Bind(characterGuid);

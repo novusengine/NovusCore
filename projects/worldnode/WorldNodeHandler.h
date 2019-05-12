@@ -72,7 +72,7 @@ public:
     void PrintMessage(std::string message, Args... args)
     {
         char str[256];
-        i32 length = StringUtils::FormatString(str, sizeof(str), message.c_str(), args...);
+        StringUtils::FormatString(str, sizeof(str), message.c_str(), args...);
 
         Message printMessage;
         printMessage.code = MSG_OUT_PRINT;

@@ -93,8 +93,13 @@ int32_t libmpq__archive_open(mpq_archive_s **mpq_archive, const char *mpq_filena
 		return LIBMPQ_ERROR_MALLOC;
 	}
 
-#pragma warning(push)
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#else
+#pragma warning( push )
 #pragma warning(disable: 4996)
+#endif
 	/* check if file exists and is readable */
 	if (((*mpq_archive)->fp = fopen(mpq_filename, "rb")) == NULL) {
 
@@ -102,7 +107,11 @@ int32_t libmpq__archive_open(mpq_archive_s **mpq_archive, const char *mpq_filena
 		result = LIBMPQ_ERROR_OPEN;
 		goto error;
 	}
-#pragma warning(pop)
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#else
+#pragma warning( pop )
+#endif
 
 	/* assign some default values. */
 	(*mpq_archive)->mpq_header.mpq_magic = 0;
@@ -618,7 +627,7 @@ int32_t libmpq__block_open_offset(mpq_archive_s *mpq_archive, uint32_t file_numb
 	/* some common variables. */
 	uint32_t i;
 	uint32_t packed_size;
-	int32_t rb     = 0;
+	//int32_t rb     = 0;
 	int32_t result = 0;
 
 	/* check if given file number is not out of range. */

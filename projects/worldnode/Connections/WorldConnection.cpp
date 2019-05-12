@@ -243,7 +243,7 @@ bool WorldConnection::HandlePacketRead()
             u32 response = 0;
             _packetBuffer.Read<u32>(response);
 
-            bool test = false;
+            //bool test = false;
             break;
         }
         case Common::Opcode::CMSG_PING:
@@ -369,7 +369,7 @@ void WorldConnection::HandleContinueAuthSession()
         sessionKey.Hex2BN(results[0][1].GetString().c_str());
 
         SHA1Hasher sha;
-        u32 t = 0;
+        //u32 t = 0;
         sha.UpdateHash(username);
         sha.UpdateHashForBn(1, &sessionKey);
         sha.UpdateHash((u8*)&_seed, 4);
@@ -536,7 +536,7 @@ void WorldConnection::HandleAuthSession()
             addonMap.insert(std::make_pair("Blizzard_TradeSkillUI", 1276933997));
             addonMap.insert(std::make_pair("Blizzard_TrainerUI", 1276933997));
 
-            u8 addonPublicKey[256] =
+            /*u8 addonPublicKey[256] =
             {
                 0xC3, 0x5B, 0x50, 0x84, 0xB9, 0x3E, 0x32, 0x42, 0x8C, 0xD0, 0xC7, 0x48, 0xFA, 0x0E, 0x5D, 0x54,
                 0x5A, 0xA3, 0x0E, 0x14, 0xBA, 0x9E, 0x0D, 0xB9, 0x5D, 0x8B, 0xEE, 0xB6, 0x84, 0x93, 0x45, 0x75,
@@ -554,7 +554,7 @@ void WorldConnection::HandleAuthSession()
                 0x45, 0x6E, 0xD5, 0x64, 0x79, 0x0F, 0x17, 0xFC, 0x64, 0xDD, 0x10, 0x6F, 0xF3, 0xF5, 0xE0, 0xA6,
                 0xC3, 0xFB, 0x1B, 0x8C, 0x29, 0xEF, 0x8E, 0xE5, 0x34, 0xCB, 0xD1, 0x2A, 0xCE, 0x79, 0xC3, 0x9A,
                 0x0D, 0x36, 0xEA, 0x01, 0xE0, 0xAA, 0x91, 0x20, 0x54, 0xF0, 0x72, 0xD8, 0x1E, 0xC7, 0x89, 0xD2
-            };
+            };*/
 
             Common::ByteBuffer addonInfo(4);
             for (auto addon : addonMap)

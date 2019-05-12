@@ -7,6 +7,7 @@
 
 #include <chrono>
 #include <ctime>
+#include "../../common.h"
 
 namespace amy {
 
@@ -46,7 +47,18 @@ struct sql_datetime
 	friend std::ostream & operator << (std::ostream &out, const sql_datetime &dt) 
 	{ 
 		char buff[20];
+
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 		strftime(buff, 20, "%Y-%m-%d %H:%M:%S", localtime(&dt.datetime));
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+
 		out << buff;
 		return out; 
 	}

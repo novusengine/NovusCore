@@ -16,7 +16,6 @@ namespace ItemInitializeSystem
 {
     void Update(entt::registry &registry)
     {
-        SingletonComponent& singleton = registry.ctx<SingletonComponent>();
         WorldDatabaseCacheSingleton& worldDatabase = registry.ctx<WorldDatabaseCacheSingleton>();
 
         auto itemView = registry.view<ItemInitializeComponent, ItemFieldDataComponent>();

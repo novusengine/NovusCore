@@ -105,11 +105,11 @@ void WorldNodeHandler::Run()
     singletonComponent.worldNodeHandler = this;
     singletonComponent.deltaTime = 1.0f;
 
-    GuidLookupSingleton& guidLookupSingleton = _updateFramework.registry.set<GuidLookupSingleton>();
+    /*GuidLookupSingleton& guidLookupSingleton = */_updateFramework.registry.set<GuidLookupSingleton>();
     PlayerCreateQueueSingleton& playerCreateQueueComponent = _updateFramework.registry.set<PlayerCreateQueueSingleton>();
     playerCreateQueueComponent.newPlayerQueue = new moodycamel::ConcurrentQueue<Message>(256);
 
-    PlayerUpdatesQueueSingleton& playerUpdatesQueueSingleton = _updateFramework.registry.set<PlayerUpdatesQueueSingleton>();
+    /*PlayerUpdatesQueueSingleton& playerUpdatesQueueSingleton =*/ _updateFramework.registry.set<PlayerUpdatesQueueSingleton>();
     PlayerDeleteQueueSingleton& playerDeleteQueueSingleton = _updateFramework.registry.set<PlayerDeleteQueueSingleton>();
     playerDeleteQueueSingleton.expiredEntityQueue = new moodycamel::ConcurrentQueue<ExpiredPlayerData>(256);
 

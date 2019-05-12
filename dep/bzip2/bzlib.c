@@ -1422,8 +1422,13 @@ BZFILE * bzopen_or_bzdopen
    }
    strcat_s(mode2, 1, writing ? "w" : "r" );
    strcat_s(mode2, 1,"b");   /* binary mode */
-#pragma warning(push)
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#else
+#pragma warning( push )
 #pragma warning(disable: 4996)
+#endif
    if (open_mode==0) {
       if (path==NULL || strcmp(path,"")==0) {
         fp = (writing ? stdout : stdin);
@@ -1438,7 +1443,11 @@ BZFILE * bzopen_or_bzdopen
       fp = fdopen(fd,mode2);
 #endif
    }
-#pragma warning(pop)
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#else
+#pragma warning( pop )
+#endif
    if (fp == NULL) return NULL;
 
    if (writing) {

@@ -2,6 +2,7 @@
 #include <atomic>
 #include <cassert>
 
+#ifndef NDEBUG
 template<typename T>
 struct TypeLock 
 {
@@ -58,3 +59,8 @@ struct ReadLock
 
 #define LockWrite(comp) auto  TOKENPASTE2(wmutex, __LINE__) = WriteLock<comp>{};
 #define LockRead(comp) auto  TOKENPASTE2(rmutex, __LINE__) = ReadLock<comp>{};
+
+#else
+#define LockWrite(comp) ((void)0)
+#define LockRead(comp) ((void)0)
+#endif

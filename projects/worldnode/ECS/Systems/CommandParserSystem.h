@@ -46,11 +46,10 @@ namespace CommandParserSystem
 
 	void Update(entt::registry &registry)
     {
-        SingletonComponent& singleton = registry.ctx<SingletonComponent>();
         CommandDataSingleton& commandData = registry.ctx<CommandDataSingleton>();
 
         auto view = registry.view<PlayerConnectionComponent, PlayerUpdateDataComponent>();
-        view.each([&singleton, &commandData](const auto, PlayerConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData)
+        view.each([&commandData](const auto, PlayerConnectionComponent& clientConnection, PlayerUpdateDataComponent& clientUpdateData)
         {
             for (ChatUpdateData& command : clientUpdateData.chatUpdateData)
             {

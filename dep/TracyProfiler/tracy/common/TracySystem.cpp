@@ -57,12 +57,25 @@ void SetThreadName( std::thread::native_handle_type handle, const char* name )
 {
 #if defined _WIN32 && !defined PTW32_VERSION && !defined __WINPTHREADS_VERSION
 #  if defined NTDDI_WIN10_RS2 && NTDDI_VERSION >= NTDDI_WIN10_RS2
+
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#else
 #pragma warning( push )
 #pragma warning( disable : 4996)
+#endif
+
     wchar_t buf[256];
     mbstowcs( buf, name, 256 );
     SetThreadDescription( static_cast<HANDLE>( handle ), buf );
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#else
 #pragma warning( pop )
+#endif
+
 #  else
     const DWORD MS_VC_EXCEPTION=0x406D1388;
 #    pragma pack( push, 8 )
@@ -150,8 +163,13 @@ const char* GetThreadName( uint64_t id )
 #else
 #  ifdef _WIN32
 #    if defined NTDDI_WIN10_RS2 && NTDDI_VERSION >= NTDDI_WIN10_RS2
-#pragma warning(push)
-#pragma warning(disable : 4996)
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#else
+#pragma warning( push )
+#pragma warning( disable : 4996)
+#endif
     auto hnd = OpenThread( THREAD_QUERY_LIMITED_INFORMATION, FALSE, (DWORD)id );
     if( hnd != 0 )
     {
@@ -164,7 +182,11 @@ const char* GetThreadName( uint64_t id )
             return buf;
         }
     }
-#pragma warning(pop)
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#else
+#pragma warning( pop )
+#endif
 #    endif
 #  elif defined __GLIBC__ && !defined __ANDROID__ && !defined __EMSCRIPTEN__
     if( pthread_getname_np( (pthread_t)id, buf, 256 ) == 0 )

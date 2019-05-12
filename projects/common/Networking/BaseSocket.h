@@ -64,7 +64,7 @@ namespace Common
         }
         bool IsClosed() { return _isClosed; }
     protected:
-        BaseSocket(asio::ip::tcp::socket* socket) : _socket(socket), _byteBuffer(), _isClosed(false)
+        BaseSocket(asio::ip::tcp::socket* socket) : _byteBuffer(), _isClosed(false), _socket(socket)
         {
             _byteBuffer.Resize(4096);
         }

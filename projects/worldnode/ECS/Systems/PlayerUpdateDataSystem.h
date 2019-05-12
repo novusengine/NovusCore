@@ -207,7 +207,6 @@ namespace PlayerUpdateDataSystem
 
     void Update(entt::registry &registry)
     {
-		SingletonComponent& singleton = registry.ctx<SingletonComponent>();
         PlayerUpdatesQueueSingleton& playerUpdatesQueue = registry.ctx<PlayerUpdatesQueueSingleton>();
 
         auto view = registry.view<PlayerConnectionComponent, PlayerFieldDataComponent, PlayerUpdateDataComponent, PlayerPositionComponent>();
@@ -229,7 +228,7 @@ namespace PlayerUpdateDataSystem
                 novusConnection.SendPacket(novusHeader.BuildHeaderPacket(selfPlayerUpdate));*/
 
                 /* Build Self Packet for public */
-                u32 publicVisibleFlags = UF_FLAG_PUBLIC;
+                //u32 publicVisibleFlags = UF_FLAG_PUBLIC;
                 PlayerUpdatePacket playerUpdatePacket;
                 playerUpdatePacket.characterGuid = clientConnection.characterGuid;
                 playerUpdatePacket.updateType = UPDATETYPE_VALUES;

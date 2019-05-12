@@ -18,7 +18,6 @@ namespace PlayerInitializeSystem
 {
     void Update(entt::registry &registry)
     {
-        SingletonComponent& singleton = registry.ctx<SingletonComponent>();
         CharacterDatabaseCacheSingleton& characterDatabase = registry.ctx<CharacterDatabaseCacheSingleton>();
 
         auto view = registry.view<PlayerInitializeComponent, PlayerFieldDataComponent, PlayerPositionComponent, PlayerSpellStorageComponent, PlayerSkillStorageComponent>();

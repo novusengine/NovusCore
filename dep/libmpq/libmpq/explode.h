@@ -36,10 +36,20 @@
 #define LIBMPQ_PKZIP_CMP_BAD_DATA		3
 #define LIBMPQ_PKZIP_CMP_ABORT			4
 
-#pragma warning(push)
-#pragma warning(disable: 4103)
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#else
+#pragma warning( push )
+#pragma warning( disable : 4103 )
+#endif
 #include "pack_begin.h"
-#pragma warning(pop)
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#else
+#pragma warning( pop )
+#endif
+
 /* compression structure. */
 typedef struct {
 	uint32_t	offs0000;		/* 0000 - start. */
@@ -69,10 +79,19 @@ typedef struct {
 	uint8_t		clen_bits[0x10];	/* 3104 - number of valid bits for copied block. */
 	uint16_t	len_base[0x10];		/* 3114 - buffer. */
 } PACK_STRUCT pkzip_cmp_s;
-#pragma warning(push)
-#pragma warning(disable: 4103)
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#else
+#pragma warning( push )
+#pragma warning( disable : 4103 )
+#endif
 #include "pack_end.h"
-#pragma warning(pop)
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#else
+#pragma warning( pop )
+#endif
 
 /* data structure. */
 typedef struct {

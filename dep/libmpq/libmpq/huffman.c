@@ -30,6 +30,16 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wint-to-pointer-cast"
+#else
+#pragma warning( push )
+#pragma warning(disable: 4311)
+#pragma warning(disable: 4312)
+#pragma warning(disable: 4244)
+#endif
+
 /* generic includes. */
 #include <stdlib.h>
 #include <string.h>
@@ -233,10 +243,6 @@ void libmpq__huffman_insert_item(struct huffman_tree_item_s **p_item, struct huf
 
 	/* check the first item already has next one. */
 	if (next != 0) {
-
-#pragma warning(push)
-#pragma warning(disable: 4311)
-#pragma warning(disable: 4312)
 		/* check if previous item exist. */
 		if (PTR_INT(prev) < 0) {
 
@@ -247,7 +253,6 @@ void libmpq__huffman_insert_item(struct huffman_tree_item_s **p_item, struct huf
 			/* add item. */
 			prev += (item - next->prev);
 		}
-#pragma warning(pop)
 
 		/* 150083C1 - remove the item from the tree. */
 		prev->next = next;
@@ -287,10 +292,6 @@ void libmpq__huffman_insert_item(struct huffman_tree_item_s **p_item, struct huf
 			/* set previous item (or last item in the tree). */
 			item->prev = item2->prev;
 
-#pragma warning(push)
-#pragma warning(disable: 4311)
-#pragma warning(disable: 4312)
-#pragma warning(disable: 4244)
 			/* usually NULL. */
 			next2      = PTR_INT(p_item[0]);
 
@@ -317,7 +318,6 @@ void libmpq__huffman_insert_item(struct huffman_tree_item_s **p_item, struct huf
 				/* set next item. */
 				next2 = item2 - item2->next->prev;
 			}
-#pragma warning(push)
 
 			/* add next item to previous one. */
 			prev2       += next2;
@@ -347,6 +347,8 @@ void libmpq__huffman_remove_item(struct huffman_tree_item_s *hi) {
 		/* fetch previous item. */
 		temp = hi->prev;
 
+
+
 		/* check if previous item is a pointer. */
 		if (PTR_INT(temp) <= 0) {
 			temp = PTR_NOT(temp);
@@ -363,27 +365,28 @@ void libmpq__huffman_remove_item(struct huffman_tree_item_s *hi) {
 
 /* get previous huffman tree item. */
 struct huffman_tree_item_s *libmpq__huffman_previous_item(struct huffman_tree_item_s *hi, long value) {
-
 	/* check if previous item exist. */
 	if (PTR_INT(hi->prev) < 0) {
 
+
 		/* return previous item. */
 		return PTR_NOT(hi->prev);
+
 	}
 
-#pragma warning(push)
-#pragma warning(disable: 4244)
+
 	/* check if something else should returned. */
 	if (value < 0) {
 
 		/* fetch previous item of next item. */
 		value = hi - hi->next->prev;
 	}
-#pragma warning(pop)
+
 
 	/* return previous item with value. */
 	return hi->prev + value;
 }
+
 
 /* get one bit from input stream. */
 uint32_t libmpq__huffman_get_1bit(struct huffman_input_stream_s *is) {
@@ -503,7 +506,7 @@ struct huffman_tree_item_s *libmpq__huffman_call_1500E740(struct huffman_tree_s 
 	if (p_prev <= 0) {
 
 		/* fill values. */
-		p_prev          = PTR_NOT(p_prev);
+
 		p_prev->next    = p_item1;
 		p_prev->prev    = p_item2;
 		p_item2->parent = NULL;
@@ -1111,3 +1114,9 @@ int32_t libmpq__do_decompress_huffman(struct huffman_tree_s *ht, struct huffman_
 	/* return copied bytes. */
 	return (out_pos - out_buf);
 }
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#else
+#pragma warning(pop)
+#endif

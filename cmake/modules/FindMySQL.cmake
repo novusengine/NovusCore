@@ -87,12 +87,14 @@ if (NOT MySQL_FOUND)
       "/opt/local/include/mysql5"
       "/usr/local/mysql/include"
       "/usr/local/mysql/include/mysql"
+      "$ENV{ProgramW6432}/MySQL/*/include"
       "$ENV{ProgramFiles}/MySQL/*/include"
       "$ENV{SystemDrive}/MySQL/*/include"
       ${_MySQL_paths}
     PATH_SUFFIXES include include/mysql
     DOC "Location of mysql.h")
   mark_as_advanced(MySQL_INCLUDE_DIR)
+
   find_library(MySQL_LIBRARY
     NAMES libmariadb mysql libmysql mysqlclient
     PATHS
@@ -101,6 +103,7 @@ if (NOT MySQL_FOUND)
       "$ENV{MYSQL_DIR}/libmysql"
       "$ENV{MYSQL_DIR}/client"
       "$ENV{MYSQL_DIR}/libmysql"
+      "$ENV{ProgramW6432}/MySQL/*/lib"
       "$ENV{ProgramFiles}/MySQL/*/lib"
       "$ENV{SystemDrive}/MySQL/*/lib"
       "/usr/lib/mysql"

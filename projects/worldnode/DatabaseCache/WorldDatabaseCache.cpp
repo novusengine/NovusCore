@@ -14,6 +14,8 @@ void WorldDatabaseCache::Load()
     std::shared_ptr<DatabaseConnector> connector;
     bool result = DatabaseConnector::Borrow(DATABASE_TYPE::WORLDSERVER, connector);
     assert(result);
+    if (!result)
+        return;
 
     amy::result_set resultSet;
     connector->Query("SELECT * FROM item_template;", resultSet);

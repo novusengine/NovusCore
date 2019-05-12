@@ -67,7 +67,7 @@ public:
 		}
 
 	private:
-		DBCRow(DBCReader & file, u8* offset) : offset(offset), file(file) { }
+		DBCRow(DBCReader & file, u8* offset) : file(file), offset(offset) { }
 		DBCReader& file;
 		u8* offset;
 

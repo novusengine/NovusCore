@@ -50,7 +50,7 @@ namespace DBCLoader
 					for (u32 i = 0; i < rows; i++)
 					{
 						auto row = dbcReader->GetRow(i);
-						u32 fieldCount = dbcReader->GetNumFields();
+						//u32 fieldCount = dbcReader->GetNumFields();
 						DBCMap map;
 						map.Id = row.GetUInt32(0);
 						map.InternalName = StringUtils::EscapeString(row.GetString(row.GetUInt32(1)));

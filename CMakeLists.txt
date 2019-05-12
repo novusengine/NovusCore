@@ -36,15 +36,27 @@ if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endif()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+    if (NOT MSVC)
+        set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+    endif()
 endif()
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_INSTALL_PREFIX}")
 
 add_compile_definitions($<CONFIG> NOMINMAX WIN32_LEAN_AND_MEAN)
 
+if (WIN32)
+add_compile_definitions(_WIN32_WINDOWS _WINSOCK_DEPRECATED_NO_WARNINGS)
+endif()
+
 if (MSVC)
-    add_definitions("/MP")
-    add_compile_options("/WX")
+    if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang") #MSVC
+        add_definitions("/MP")
+        add_compile_options("/WX")
+    else() #GCC/Clang on Windows
+        add_compile_options("-Werror")
+    endif()
+else() #GCC/Clang
+    #add_compile_options("-Werror")
 endif()
 
 include(cmake/ProjectOptions.cmake)

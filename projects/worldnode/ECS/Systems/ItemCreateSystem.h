@@ -40,9 +40,7 @@ namespace ItemCreateSystem
 {
     void Update(entt::registry &registry)
     {
-		SingletonComponent& singleton = registry.ctx<SingletonComponent>();
         ItemCreateQueueSingleton& createItemQueue = registry.ctx<ItemCreateQueueSingleton>();
-        CharacterDatabaseCacheSingleton& characterDatabase = registry.ctx<CharacterDatabaseCacheSingleton>();
 
         ItemCreationInformation itemCreationInformation;
         while (createItemQueue.newItemQueue->try_dequeue(itemCreationInformation))

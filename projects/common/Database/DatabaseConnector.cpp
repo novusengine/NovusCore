@@ -1,6 +1,7 @@
 #include "DatabaseConnector.h"
 #include <iostream>
 #include <amy/placeholders.hpp>
+#include "../common.h"
 
 DatabaseConnectionDetails DatabaseConnector::_connections[];
 bool                     DatabaseConnector::_initialized = false;

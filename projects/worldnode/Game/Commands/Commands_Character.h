@@ -95,7 +95,6 @@ namespace Commands_Character
                 speed = 50;
 
             PlayerPacketQueueSingleton & playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
-            PlayerFieldDataComponent & clientFieldData = _registry->get<PlayerFieldDataComponent>(clientConnection.entityGuid);
 
             Common::ByteBuffer speedChange;
             CharacterUtils::BuildSpeedChangePacket(clientConnection.accountGuid, clientConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_WALK_SPEED_CHANGE, speedChange);
@@ -134,7 +133,6 @@ namespace Commands_Character
             if (flightState == "on" || flightState == "off")
             {
                 PlayerPacketQueueSingleton& playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
-                PlayerFieldDataComponent& clientFieldData = _registry->get<PlayerFieldDataComponent>(clientConnection.entityGuid);
 
                 Common::ByteBuffer setFly;
                 CharacterUtils::BuildFlyModePacket(clientConnection.accountGuid, clientConnection.characterGuid, flightState == "on", setFly);
@@ -159,7 +157,6 @@ namespace Commands_Character
 
             SingletonComponent& singletonData = _registry->ctx<SingletonComponent>();
             PlayerPacketQueueSingleton& playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
-            PlayerFieldDataComponent& clientFieldData = _registry->get<PlayerFieldDataComponent>(clientConnection.entityGuid);
             PlayerPositionComponent& clientPositionData = _registry->get<PlayerPositionComponent>(clientConnection.entityGuid);
 
             Common::ByteBuffer buffer;
@@ -232,7 +229,6 @@ namespace Commands_Character
                 return false;
             }
 
-            PlayerPacketQueueSingleton& playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
             PlayerFieldDataComponent& playerFieldData = _registry->get<PlayerFieldDataComponent>(clientConnection.entityGuid);
 
             ItemCreationInformation itemCreationInformation;

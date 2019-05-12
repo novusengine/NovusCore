@@ -37,7 +37,6 @@ namespace ClientUpdateSystem
 {
     void Update(entt::registry &registry)
     {
-        SingletonComponent& singleton = registry.ctx<SingletonComponent>();
         PlayerUpdatesQueueSingleton& playerUpdatesQueue = registry.ctx<PlayerUpdatesQueueSingleton>();
         PlayerPacketQueueSingleton& playerPacketQueue = registry.ctx<PlayerPacketQueueSingleton>();
 

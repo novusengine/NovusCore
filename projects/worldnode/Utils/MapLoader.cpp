@@ -9,7 +9,7 @@
 
 bool MapLoader::Load(entt::registry& registry)
 {
-    size_t test = sizeof(NovusAdt);
+    //size_t test = sizeof(NovusAdt);
     std::filesystem::path absolutePath = std::filesystem::absolute("maps");
     if (!std::filesystem::is_directory(absolutePath)) { NC_LOG_ERROR("Failed to find maps folder"); return false; }
 

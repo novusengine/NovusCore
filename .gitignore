@@ -31,3 +31,6 @@
 *.app
 
 build*/
+.vs/
+out/
+CMakeSettings.json

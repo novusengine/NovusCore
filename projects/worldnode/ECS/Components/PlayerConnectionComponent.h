@@ -47,7 +47,7 @@ struct PlayerConnectionComponent
     void SendConsoleNotification(std::string message, Args... args)
     {
         char str[256];
-        i32 length = StringUtils::FormatString(str, sizeof(str), message.c_str(), args...);
+        StringUtils::FormatString(str, sizeof(str), message.c_str(), args...);
 
         Common::ByteBuffer packet;
         packet.WriteString(str);

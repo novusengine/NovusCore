@@ -86,8 +86,6 @@ namespace ItemCreateDataSystem
 
     void Update(entt::registry &registry)
     {
-        SingletonComponent& singleton = registry.ctx<SingletonComponent>();
-
         auto itemView = registry.view<ItemInitializeComponent, ItemFieldDataComponent>();
         if (!itemView.empty())
         {

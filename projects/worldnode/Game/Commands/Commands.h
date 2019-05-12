@@ -38,7 +38,6 @@ namespace Commands
     {
         PlayerPositionComponent& playerPos = _registry->get<PlayerPositionComponent>(clientConnection.entityGuid);
         MapSingleton& mapSingleton = _registry->ctx<MapSingleton>();
-        PlayerPacketQueueSingleton& playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
 
         u16 mapId = playerPos.mapId;
         f32 x = playerPos.x;
