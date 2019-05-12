@@ -238,6 +238,21 @@ bool WorldConnection::HandlePacketRead()
     printf("Received Opcode: %u\n", opcode);
     switch (opcode)
     {
+        case Common::Opcode::CMSG_BUG:
+        {
+            u32 bugType = 0;
+            u32 detailsLength = 0;
+            std::string details = "";
+            u32 descriptionLength = 0;
+            std::string description = "";
+
+            _packetBuffer.Read<u32>(bugType);
+            _packetBuffer.Read<u32>(detailsLength);
+            _packetBuffer.Read(details);
+            _packetBuffer.Read<u32>(descriptionLength);
+            _packetBuffer.Read(description);
+            break;
+        }
         case Common::Opcode::CMSG_SUSPEND_COMMS_ACK:
         {
             u32 response = 0;
