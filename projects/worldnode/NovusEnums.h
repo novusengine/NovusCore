@@ -24,6 +24,18 @@
 #pragma once
 #include <NovusTypes.h>
 
+enum EntityTypeID
+{
+    TYPEID_OBJECT = 0,
+    TYPEID_ITEM = 1,
+    TYPEID_CONTAINER = 2,
+    TYPEID_UNIT = 3,
+    TYPEID_PLAYER = 4,
+    TYPEID_GAMEOBJECT = 5,
+    TYPEID_DYNAMICOBJECT = 6,
+    TYPEID_CORPSE = 7
+};
+
 enum EObjectFields
 {
     OBJECT_FIELD_GUID = 0x0000, // Size: 2, Type: LONG, Flags: PUBLIC

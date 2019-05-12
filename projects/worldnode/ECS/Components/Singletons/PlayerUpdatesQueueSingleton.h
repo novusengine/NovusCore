@@ -24,6 +24,7 @@
 #pragma once
 #include <NovusTypes.h>
 #include <Networking/ByteBuffer.h>
+#include "../../../Game/ObjectGuid/ObjectGuid.h"
 #include <vector>
 
 struct PlayerUpdatePacket
@@ -37,7 +38,7 @@ struct PlayerUpdatePacket
 struct MovementPacket
 {
     u16 opcode;
-    u64 characterGuid;
+    ObjectGuid characterGuid;
     Common::ByteBuffer data;
 };
 

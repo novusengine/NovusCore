@@ -31,6 +31,7 @@
 #include "../../ECS/Components/PlayerFieldDataComponent.h"
 #include "../../ECS/Components/Singletons/CommandDataSingleton.h"
 #include "../../ECS/Components/Singletons/PlayerPacketQueueSingleton.h"
+#include "../../ECS/Components/Singletons/EntityCreateQueueSingleton.h"
 #include "../../ECS/Components/Singletons/WorldDatabaseCacheSingleton.h"
 
 namespace Commands_Character
@@ -229,20 +230,22 @@ namespace Commands_Character
                 return false;
             }
 
+            EntityCreationRequest entityCreationRequest;
+            entityCreationRequest.typeId = TYPEID_ITEM;
+
+            ItemCreationInformation* itemCreationInformation = new ItemCreationInformation();
+            itemCreationInformation->lowGuid = 2;
+            itemCreationInformation->bagSlot = 255;
+            itemCreationInformation->bagPosition = 23;
+            itemCreationInformation->entryId = itemTemplate.entry;
+            itemCreationInformation->characterEntityGuid = clientConnection.entityGuid;
+            itemCreationInformation->characterGuid = clientConnection.characterGuid;
+            entityCreationRequest.typeInformation = itemCreationInformation;
+            _registry->ctx<EntityCreateQueueSingleton>().newEntityQueue->enqueue(entityCreationRequest);
+
             PlayerFieldDataComponent& playerFieldData = _registry->get<PlayerFieldDataComponent>(clientConnection.entityGuid);
-
-            ItemCreationInformation itemCreationInformation;
-            itemCreationInformation.lowGuid = 2;
-            itemCreationInformation.bagSlot = 255;
-            itemCreationInformation.bagPosition = 23;
-            itemCreationInformation.itemEntry = itemTemplate.entry;
-            itemCreationInformation.clientEntityGuid = clientConnection.entityGuid;
-            itemCreationInformation.accountGuid = clientConnection.accountGuid;
-            itemCreationInformation.characterGuid = clientConnection.characterGuid;
-
             u64 itemGuid = (static_cast<u64>(2) | (static_cast<u64>(itemTemplate.entry) << 24) | (static_cast<u64>(0x4000) << 48));
             playerFieldData.SetGuidValue(PLAYER_FIELD_PACK_SLOT_1, itemGuid);
-            _registry->ctx<ItemCreateQueueSingleton>().newItemQueue->enqueue(itemCreationInformation);
 
             clientConnection.SendChatNotification("[AddItem]: %u", itemTemplate.entry);
             return true;

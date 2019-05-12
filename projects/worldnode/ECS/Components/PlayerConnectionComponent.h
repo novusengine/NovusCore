@@ -25,6 +25,7 @@
 #include <NovusTypes.h>
 #include <Networking/ByteBuffer.h>
 #include "../../Utils/CharacterUtils.h"
+#include "../../Game/ObjectGuid/ObjectGuid.h"
 #include <vector>
 
 struct OpcodePacket
@@ -56,7 +57,7 @@ struct PlayerConnectionComponent
 
     u32 entityGuid;
     u32 accountGuid;
-    u64 characterGuid;
+    ObjectGuid characterGuid;
     WorldConnection* socket;
     std::vector<OpcodePacket> packets;
 };

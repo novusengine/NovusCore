@@ -23,12 +23,13 @@
 */
 #pragma once
 #include <NovusTypes.h>
+#include "../../Game/ObjectGuid/ObjectGuid.h"
 
 class WorldConnection;
 struct PlayerInitializeComponent
 {
 	u32 entityGuid;
 	u32 accountGuid;
-	u64 characterGuid;
+	ObjectGuid characterGuid;
     WorldConnection* socket;
 };

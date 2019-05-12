@@ -58,8 +58,10 @@ namespace PlayerCreateSystem
             if (characterDatabase.cache->GetCharacterData(characterGuid, characterData))
             {
                 u32 entity = registry.create();
-                registry.assign<PlayerConnectionComponent>(entity, entity, static_cast<u32>(message.account), characterGuid, message.connection);
-                registry.assign<PlayerInitializeComponent>(entity, entity, static_cast<u32>(message.account), characterGuid, message.connection);
+
+                ObjectGuid charGuid(characterGuid);
+                registry.assign<PlayerConnectionComponent>(entity, entity, static_cast<u32>(message.account), charGuid, message.connection);
+                registry.assign<PlayerInitializeComponent>(entity, entity, static_cast<u32>(message.account), charGuid, message.connection);
 
                 registry.assign<PlayerFieldDataComponent>(entity);
                 registry.assign<PlayerUpdateDataComponent>(entity);

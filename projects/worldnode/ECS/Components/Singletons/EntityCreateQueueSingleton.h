@@ -24,19 +24,30 @@
 #pragma once
 #include <NovusTypes.h>
 #include <Utils/ConcurrentQueue.h>
+#include "../../NovusEnums.h"
 #include "../../Message.h"
+#include "../Game/ObjectGuid/ObjectGuid.h"
 
-struct ItemCreationInformation
+struct EntityCreationInformation
 {
-	u32 lowGuid = 0;
-	u8 bagSlot = 0;
-	u32 bagPosition = 0;
-    u32 itemEntry = 0;
-    u32 clientEntityGuid = 0;
-    u32 accountGuid = 0;
-    u64 characterGuid = 0;
+    u32 lowGuid = 0;
+    u32 entryId = 0;
 };
-struct ItemCreateQueueSingleton
+
+struct ItemCreationInformation : EntityCreationInformation
 {
-    moodycamel::ConcurrentQueue<ItemCreationInformation>* newItemQueue;
+    u8 bagSlot = 0;
+    u32 bagPosition = 0;
+    u32 characterEntityGuid = 0;
+    ObjectGuid characterGuid;
+};
+
+struct EntityCreationRequest
+{
+    EntityTypeID typeId;
+    EntityCreationInformation* typeInformation;
+};
+struct EntityCreateQueueSingleton
+{
+    moodycamel::ConcurrentQueue<EntityCreationRequest>* newEntityQueue;
 };

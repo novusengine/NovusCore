@@ -23,7 +23,8 @@ class ObjectGuid
 public:
 	ObjectGuid() : _objectGuid(0) { }
 	ObjectGuid(HighGuid highPart, u32 counter) : _objectGuid(u64(counter) | (u64(highPart) << 48)) { }
-	ObjectGuid(HighGuid highPart, u32 entry, u32 counter) : _objectGuid(u64(counter) | u64(entry) << 24 | (u64(highPart) << 48)) { }
+    ObjectGuid(HighGuid highPart, u32 entry, u32 counter) : _objectGuid(u64(counter) | u64(entry) << 24 | (u64(highPart) << 48)) {}
+    ObjectGuid(u64 guid) : _objectGuid(guid) {}
 
 	u64 GetGuid() const { return _objectGuid; }
 	HighGuid GetHighType() const { return HighGuid((_objectGuid >> 48) & 0xFFFF); }

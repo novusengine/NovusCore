@@ -16,7 +16,7 @@
 #include "ECS/Systems/PlayerUpdateDataSystem.h"
 #include "ECS/Systems/ClientUpdateSystem.h"
 #include "ECS/Systems/PlayerCreateSystem.h"
-#include "ECS/Systems/ItemCreateSystem.h"
+#include "ECS/Systems/EntityCreateSystem.h"
 #include "ECS/Systems/PlayerDeleteSystem.h"
 
 #include "ECS/Components/Singletons/SingletonComponent.h"
@@ -26,7 +26,7 @@
 #include "ECS/Components/Singletons/PlayerUpdatesQueueSingleton.h"
 #include "ECS/Components/Singletons/PlayerDeleteQueueSingleton.h"
 #include "ECS/Components/Singletons/PlayerPacketQueueSingleton.h"
-#include "ECS/Components/Singletons/ItemCreateQueueSingleton.h"
+#include "ECS/Components/Singletons/EntityCreateQueueSingleton.h"
 #include "ECS/Components/Singletons/CharacterDatabaseCacheSingleton.h"
 #include "ECS/Components/Singletons/WorldDatabaseCacheSingleton.h"
 #include "ECS/Components/Singletons/DBCDatabaseCacheSingleton.h"
@@ -116,8 +116,8 @@ void WorldNodeHandler::Run()
     PlayerPacketQueueSingleton& playerPacketQueueSingleton = _updateFramework.registry.set<PlayerPacketQueueSingleton>();
     playerPacketQueueSingleton.packetQueue = new moodycamel::ConcurrentQueue<PacketQueueData>(256);
 
-    ItemCreateQueueSingleton& itemCreateQueueComponent = _updateFramework.registry.set<ItemCreateQueueSingleton>();
-    itemCreateQueueComponent.newItemQueue = new moodycamel::ConcurrentQueue<ItemCreationInformation>(256);
+    EntityCreateQueueSingleton& entityCreateQueueSingleton = _updateFramework.registry.set<EntityCreateQueueSingleton>();
+    entityCreateQueueSingleton.newEntityQueue = new moodycamel::ConcurrentQueue<EntityCreationRequest>(4096);
 
     Commands::LoadCommands(_updateFramework.registry);
 
@@ -300,7 +300,7 @@ void WorldNodeHandler::SetupUpdateFramework()
     tf::Task itemCreateSystemTask = framework.emplace([&registry]()
     {
         ZoneScopedNC("ItemCreateSystem", tracy::Color::Blue2)
-            ItemCreateSystem::Update(registry);
+            EntityCreateSystem::Update(registry);
     });
     itemCreateSystemTask.gather(playerCreateSystemTask);
 

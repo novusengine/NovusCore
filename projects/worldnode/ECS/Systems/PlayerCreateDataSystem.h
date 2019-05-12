@@ -36,7 +36,7 @@
 #include "../Components/PlayerFieldDataComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
 #include "../Components/Singletons/PlayerUpdatesQueueSingleton.h"
-#include "../Components/Singletons/ItemCreateQueueSingleton.h"
+#include "../Components/Singletons/EntityCreateQueueSingleton.h"
 #include "../Components/Singletons/CharacterDatabaseCacheSingleton.h"
 
 namespace PlayerCreateDataSystem
@@ -248,12 +248,12 @@ namespace PlayerCreateDataSystem
         {
             SingletonComponent& singleton = registry.ctx<SingletonComponent>();
             PlayerUpdatesQueueSingleton& playerUpdatesQueue = registry.ctx<PlayerUpdatesQueueSingleton>();
-			ItemCreateQueueSingleton& itemCreateQueue = registry.ctx<ItemCreateQueueSingleton>();
+            EntityCreateQueueSingleton& entityCreateQueue = registry.ctx<EntityCreateQueueSingleton>();
 			CharacterDatabaseCacheSingleton& characterDatabase = registry.ctx<CharacterDatabaseCacheSingleton>();
             u32 lifeTimeInMS = static_cast<u32>(singleton.lifeTimeInMS);
 
             auto subView = registry.view<PlayerConnectionComponent, PlayerFieldDataComponent, PlayerPositionComponent>();
-            view.each([&playerUpdatesQueue, &itemCreateQueue, &characterDatabase, lifeTimeInMS, subView](const auto, PlayerInitializeComponent& playerInitializeData, PlayerFieldDataComponent& playerFieldData, PlayerPositionComponent& clientPositionData)
+            view.each([&playerUpdatesQueue, &entityCreateQueue, &characterDatabase, lifeTimeInMS, subView](const auto, PlayerInitializeComponent& playerInitializeData, PlayerFieldDataComponent& playerFieldData, PlayerPositionComponent& clientPositionData)
             {
                 /* Build Self Packet, must be sent immediately */
                 u8 updateType = UPDATETYPE_CREATE_OBJECT2;
@@ -267,20 +267,23 @@ namespace PlayerCreateDataSystem
 				robin_hood::unordered_map<u32, CharacterItemData> characterItemData;
 				if (characterDatabase.cache->GetCharacterItemData(playerInitializeData.characterGuid, characterItemData))
 				{
-					ItemCreationInformation itemCreationInformation;
+                    EntityCreationRequest entityCreationRequest;
+                    entityCreationRequest.typeId = TYPEID_ITEM;
+
 					for (auto itr : characterItemData)
 					{
-						itemCreationInformation.lowGuid = itr.second.lowGuid;
-						itemCreationInformation.bagSlot = itr.second.bagSlot;
-						itemCreationInformation.bagPosition = itr.second.bagPosition;
-						itemCreationInformation.itemEntry = itr.second.itemEntry;
-						itemCreationInformation.clientEntityGuid = playerInitializeData.entityGuid;
-						itemCreationInformation.accountGuid = playerInitializeData.accountGuid;
-						itemCreationInformation.characterGuid = playerInitializeData.characterGuid;
-						itemCreateQueue.newItemQueue->enqueue(itemCreationInformation);
+                        ItemCreationInformation* itemCreationInformation = new ItemCreationInformation();
+						itemCreationInformation->lowGuid = itr.second.lowGuid;
+						itemCreationInformation->bagSlot = itr.second.bagSlot;
+						itemCreationInformation->bagPosition = itr.second.bagPosition;
+						itemCreationInformation->entryId = itr.second.itemEntry;
+						itemCreationInformation->characterEntityGuid = playerInitializeData.entityGuid;
+						itemCreationInformation->characterGuid = playerInitializeData.characterGuid;
+                        entityCreationRequest.typeInformation = itemCreationInformation;
+                        entityCreateQueue.newEntityQueue->enqueue(entityCreationRequest);
 
-						ObjectGuid itemGuid(HighGuid::Item, itemCreationInformation.itemEntry, itemCreationInformation.lowGuid);
-						playerFieldData.SetGuidValue(PLAYER_FIELD_PACK_SLOT_1 + (itemCreationInformation.bagPosition - 23) * 2, itemGuid);
+						ObjectGuid itemGuid(HighGuid::Item, itemCreationInformation->entryId, itemCreationInformation->lowGuid);
+						playerFieldData.SetGuidValue(PLAYER_FIELD_PACK_SLOT_1 + (itemCreationInformation->bagPosition - 23) * 2, itemGuid);
 					}
 				}
 

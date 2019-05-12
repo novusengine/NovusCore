@@ -33,25 +33,32 @@
 #include "../Components/ItemDataComponent.h"
 #include "../Components/ItemFieldDataComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
-#include "../Components/Singletons/ItemCreateQueueSingleton.h"
+#include "../Components/Singletons/EntityCreateQueueSingleton.h"
 #include "../Components/Singletons/CharacterDatabaseCacheSingleton.h"
 
-namespace ItemCreateSystem
+namespace EntityCreateSystem
 {
     void Update(entt::registry &registry)
     {
-        ItemCreateQueueSingleton& createItemQueue = registry.ctx<ItemCreateQueueSingleton>();
+        EntityCreateQueueSingleton& entityCreateQueue = registry.ctx<EntityCreateQueueSingleton>();
 
-        ItemCreationInformation itemCreationInformation;
-        while (createItemQueue.newItemQueue->try_dequeue(itemCreationInformation))
+        EntityCreationRequest entityCreationRequest;
+        while (entityCreateQueue.newEntityQueue->try_dequeue(entityCreationRequest))
         {
             u32 entity = registry.create();
 
-			ObjectGuid itemGuid(HighGuid::Item, itemCreationInformation.itemEntry, itemCreationInformation.lowGuid);
-            registry.assign<ItemDataComponent>(entity, entity, itemGuid, itemCreationInformation.bagSlot, itemCreationInformation.bagPosition, itemCreationInformation.accountGuid, itemCreationInformation.characterGuid);
-            registry.assign<ItemInitializeComponent>(entity, itemCreationInformation.clientEntityGuid, itemGuid, itemCreationInformation.bagSlot, itemCreationInformation.bagPosition, itemCreationInformation.accountGuid, itemCreationInformation.characterGuid);
+            if (entityCreationRequest.typeId == TYPEID_ITEM)
+            {
+                ItemCreationInformation* itemCreationInformation = reinterpret_cast<ItemCreationInformation*>(entityCreationRequest.typeInformation);
 
-            registry.assign<ItemFieldDataComponent>(entity);
+                ObjectGuid itemGuid(HighGuid::Item, itemCreationInformation->entryId, itemCreationInformation->lowGuid);
+                registry.assign<ItemDataComponent>(entity, entity, itemGuid, itemCreationInformation->bagSlot, itemCreationInformation->bagPosition, itemCreationInformation->characterGuid);
+                registry.assign<ItemInitializeComponent>(entity, itemCreationInformation->characterEntityGuid, itemGuid, itemCreationInformation->bagSlot, itemCreationInformation->bagPosition, itemCreationInformation->characterGuid);
+
+                registry.assign<ItemFieldDataComponent>(entity);
+
+                delete itemCreationInformation;
+            }
         }
     }
 }

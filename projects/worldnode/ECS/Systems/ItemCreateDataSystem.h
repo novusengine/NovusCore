@@ -89,7 +89,7 @@ namespace ItemCreateDataSystem
         auto itemView = registry.view<ItemInitializeComponent, ItemFieldDataComponent>();
         if (!itemView.empty())
         {
-            itemView.each([&](const auto, ItemInitializeComponent& itemInitializeData, ItemFieldDataComponent& itemFieldData)
+            itemView.each([&registry](const auto, ItemInitializeComponent& itemInitializeData, ItemFieldDataComponent& itemFieldData)
             {
                 /* Build Self Packet, must be sent immediately */
                 u8 updateType = UPDATETYPE_CREATE_OBJECT;
@@ -98,7 +98,8 @@ namespace ItemCreateDataSystem
                 u16 buildOpcode = 0;
 
                 Common::ByteBuffer selfItemUpdate = BuildItemCreateData(itemInitializeData.itemGuid, updateType, selfUpdateFlag, selfVisibleFlags, itemFieldData, buildOpcode);
-                //novusConnection.SendPacket(itemInitializeData.accountGuid, selfItemUpdate, buildOpcode);
+                PlayerConnectionComponent playerConnection = registry.get<PlayerConnectionComponent>(itemInitializeData.clientEntityGuid);
+                playerConnection.socket->SendPacket(selfItemUpdate, buildOpcode);
 
                 Common::ByteBuffer itemPushResult;
                 itemPushResult.Write<u64>(itemInitializeData.characterGuid);
@@ -111,7 +112,7 @@ namespace ItemCreateDataSystem
                 itemPushResult.Write<u32>(0);
                 itemPushResult.Write<u32>(0);
                 itemPushResult.Write<u32>(1);
-                //novusConnection.SendPacket(itemInitializeData.accountGuid, itemPushResult, Common::Opcode::SMSG_ITEM_PUSH_RESULT);
+                playerConnection.socket->SendPacket(itemPushResult, Common::Opcode::SMSG_ITEM_PUSH_RESULT);
             });
             // Remove ItemInitializeComponent from all entities (They've just been handled above)
             registry.reset<ItemInitializeComponent>();

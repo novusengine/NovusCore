@@ -31,6 +31,5 @@ struct ItemInitializeComponent
 	ObjectGuid itemGuid;
 	u8 bagSlot = 0;
 	u32 bagPosition = 0;
-    u32 accountGuid = 0;
     u64 characterGuid = 0;
 };
