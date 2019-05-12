@@ -44,10 +44,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_INSTALL_PREFIX}")
 
 add_compile_definitions($<CONFIG> NOMINMAX WIN32_LEAN_AND_MEAN)
 
-if (WIN32)
-add_compile_definitions(_WIN32_WINDOWS _WINSOCK_DEPRECATED_NO_WARNINGS)
-endif()
-
 if (MSVC)
     if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang") #MSVC
         add_definitions("/MP")

@@ -922,11 +922,11 @@
 #if defined(ASIO_WINDOWS) || defined(__CYGWIN__)
 # if !defined(_WIN32_WINNT) && !defined(_WIN32_WINDOWS)
 #  if defined(_MSC_VER) || defined(__BORLANDC__)
-#   pragma message( \
+/*#   pragma message( \
   "Please define _WIN32_WINNT or _WIN32_WINDOWS appropriately. For example:\n"\
   "- add -D_WIN32_WINNT=0x0501 to the compiler command line; or\n"\
   "- add _WIN32_WINNT=0x0501 to your project's Preprocessor Definitions.\n"\
-  "Assuming _WIN32_WINNT=0x0501 (i.e. Windows XP target).")
+  "Assuming _WIN32_WINNT=0x0501 (i.e. Windows XP target).")*/
 #  else // defined(_MSC_VER) || defined(__BORLANDC__)
 #   warning Please define _WIN32_WINNT or _WIN32_WINDOWS appropriately.
 #   warning For example, add -D_WIN32_WINNT=0x0501 to the compiler command line.
