@@ -30,7 +30,7 @@
 #include "MPQArchive.h"
 #include "MPQFile.h"
 
-const char* _wantedMPQs[] = { "patch.MPQ", "patch-2.MPQ", "patch-3.MPQ", "patch-enUS-3.MPQ" };
+const char* _wantedMPQs[] = { "patch.MPQ", "patch-2.MPQ", "patch-3.MPQ", "patch-enUS-3.MPQ", "patch-enGB-3.MPQ" };
 const i32 _wantedMPQsSize = sizeof(_wantedMPQs) / sizeof(char*);
 
 class MPQHandler
