@@ -93,7 +93,7 @@ if (NOT MySQL_FOUND)
       ${_MySQL_paths}
     PATH_SUFFIXES include include/mysql
     DOC "Location of mysql.h")
-  mark_as_advanced(MySQL_INCLUDE_DIR)
+  #mark_as_advanced(MySQL_INCLUDE_DIR)
 
   find_library(MySQL_LIBRARY
     NAMES libmariadb mysql libmysql mysqlclient
@@ -117,7 +117,7 @@ if (NOT MySQL_FOUND)
       ${_MySQL_paths}
     PATH_SUFFIXES lib lib/opt
     DOC "Location of the mysql library")
-  mark_as_advanced(MySQL_LIBRARY)
+  #mark_as_advanced(MySQL_LIBRARY)
 
   find_package_handle_standard_args(MySQL
     REQUIRED_VARS MySQL_INCLUDE_DIR MySQL_LIBRARY)

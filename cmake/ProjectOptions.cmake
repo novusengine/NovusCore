@@ -20,24 +20,5 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# MySQL Include Directory
-if (NOT MYSQL_INCLUDE_DIR)
-    if (WIN32)
-        set (MYSQL_INCLUDE_DIR "C:/Program Files/MySQL/MySQL Connector C 6.1/include" CACHE PATH "default install path" FORCE )
-    endif (WIN32)
-    if (UNIX)
-        set (MYSQL_INCLUDE_DIR "/usr/local/mysql/include" CACHE PATH "default install path" FORCE )
-    endif (UNIX)
-endif()
-# MySQL Library Directory
-if (NOT MYSQL_LIB_DIR)
-    if (WIN32)
-        set (MYSQL_LIB_DIR "C:/Program Files/MySQL/MySQL Connector C 6.1/lib" CACHE PATH "default install path" FORCE )
-    endif (WIN32)
-    if (UNIX)
-        set (MYSQL_LIB_DIR "/usr/local/mysql/lib" CACHE PATH "default install path" FORCE )
-    endif (UNIX)
-endif()
-
 # Folder Structure Options
 option(WITH_FOLDER_STRUCTURE    "Build source tree"                            1)
