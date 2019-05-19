@@ -35,7 +35,8 @@ enum InputMessages
 	MSG_IN_EXIT,
 	MSG_IN_PING,
     MSG_IN_RELOAD_SCRIPTS,
-    MSG_IN_FOWARD_PACKET
+    MSG_IN_FOWARD_PACKET,
+    MSG_IN_PLAYER_DISCONNECT
 };
 
 enum OutputMessages

@@ -151,6 +151,14 @@ bool WorldConnection::Start()
     AsyncRead();
     return true;
 }
+void WorldConnection::Close(asio::error_code error)
+{
+    printf("Socket Closed: %s\n", error.message().c_str());
+    Message packetMessage;
+    packetMessage.code = MSG_IN_PLAYER_DISCONNECT;
+    packetMessage.account = account;
+    _worldNodeHandler->PassMessage(packetMessage);
+}
 
 void WorldConnection::HandleRead()
 {
@@ -278,7 +286,7 @@ bool WorldConnection::HandlePacketRead()
             }
             break;
         }
-        case Common::Opcode::CMSG_REDIRECT_CLIENT_PROOF:
+        case Common::Opcode::CMSG_REDIRECT_AUTH_PROOF:
         {
             if (account == 0)
             {
@@ -336,7 +344,12 @@ bool WorldConnection::HandlePacketRead()
             packetMessage.opcode = opcode;
             packetMessage.account = account;
             packetMessage.packet = _packetBuffer;
-            packetMessage.connection = this;
+
+            if (opcode == Common::Opcode::CMSG_PLAYER_LOGIN)
+            {
+                packetMessage.connection = this;
+            }
+
             _worldNodeHandler->PassMessage(packetMessage);
             break;
         }

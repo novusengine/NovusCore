@@ -307,7 +307,7 @@ bool RealmConnection::HandlePacketRead()
             }
             break;
         }
-        case Common::Opcode::CMSG_REDIRECT_CLIENT_PROOF:
+        case Common::Opcode::CMSG_REDIRECT_AUTH_PROOF:
         {
             if (account == 0)
             {

@@ -1340,7 +1340,7 @@ namespace Common
         SMSG_SUSPEND_COMMS                              = 0x50F,
         CMSG_SUSPEND_COMMS_ACK                          = 0x510,
         SMSG_RESUME_COMMS                               = 0x511,
-        CMSG_REDIRECT_CLIENT_PROOF                      = 0x512,
+        CMSG_REDIRECT_AUTH_PROOF                        = 0x512,
         CMSG_DROP_NEW_CONNECTION                        = 0x513,
         SMSG_SEND_ALL_COMBAT_LOG                        = 0x514,
         SMSG_OPEN_LFG_DUNGEON_FINDER                    = 0x515,

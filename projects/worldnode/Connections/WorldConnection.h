@@ -104,6 +104,7 @@ public:
     }
 
     bool Start() override;
+    void Close(asio::error_code error) override;
     void HandleRead() override;
     void SendPacket(Common::ByteBuffer& buffer, u16 opcode);
 

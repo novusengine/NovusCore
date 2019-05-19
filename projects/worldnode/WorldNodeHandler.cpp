@@ -204,6 +204,39 @@ bool WorldNodeHandler::Update()
                 ScriptHandler::ReloadScripts();
             }
 
+            if (message.code == MSG_IN_PLAYER_DISCONNECT)
+            {
+                SingletonComponent& singletonComponent = _updateFramework.registry.ctx<SingletonComponent>();
+
+                auto itr = singletonComponent.accountToEntityMap.find(static_cast<u32>(message.account));
+                if (itr != singletonComponent.accountToEntityMap.end())
+                {
+                    CharacterDatabaseCacheSingleton& characterDatabase = _updateFramework.registry.ctx<CharacterDatabaseCacheSingleton>();
+                    PlayerDeleteQueueSingleton& playerDeleteQueue = _updateFramework.registry.ctx<PlayerDeleteQueueSingleton>();
+                    PlayerConnectionComponent& playerConnection = _updateFramework.registry.get<PlayerConnectionComponent>(itr->second);
+                    PlayerPositionComponent& playerPositionData = _updateFramework.registry.get<PlayerPositionComponent>(itr->second);
+                    
+                    ExpiredPlayerData expiredPlayerData;
+                    expiredPlayerData.entityGuid = playerConnection.entityGuid;
+                    expiredPlayerData.accountGuid = playerConnection.accountGuid;
+                    expiredPlayerData.characterGuid = playerConnection.characterGuid;
+                    playerDeleteQueue.expiredEntityQueue->enqueue(expiredPlayerData);
+
+                    CharacterData characterData;
+                    characterDatabase.cache->GetCharacterData(playerConnection.characterGuid, characterData);
+
+                    characterData.mapId = playerPositionData.mapId;
+                    characterData.coordinateX = playerPositionData.x;
+                    characterData.coordinateY = playerPositionData.y;
+                    characterData.coordinateZ = playerPositionData.z;
+                    characterData.orientation = playerPositionData.orientation;
+                    characterData.online = 0;
+                    characterData.UpdateCache(playerConnection.characterGuid);
+
+                    characterDatabase.cache->SaveAndUnloadCharacter(playerConnection.characterGuid);
+                }
+            }
+
             if (message.code == MSG_IN_FOWARD_PACKET)
             {
                 // Create Entity if it doesn't exist, otherwise add
