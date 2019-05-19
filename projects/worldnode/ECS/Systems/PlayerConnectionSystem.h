@@ -98,31 +98,6 @@ namespace ConnectionSystem
                     {
                         ZoneScopedNC("Packet::LogoutRequest", tracy::Color::Orange2)
 
-                            Common::ByteBuffer logoutRequest(0);
-
-                        //playerPacketQueue.packetQueue->enqueue(PacketQueueData(clientConnection.socket, logoutRequest, Common::Opcode::SMSG_LOGOUT_COMPLETE));
-                        clientConnection.socket->SendPacket(logoutRequest, Common::Opcode::SMSG_LOGOUT_COMPLETE);
-
-                        // Here we need to Redirect the client back to Realmserver
-                        Common::ByteBuffer redirectClient;
-                        i32 ip = 16777343;
-                        i16 port = 8000;
-
-                        // 127.0.0.1/1.0.0.127
-                        // 2130706433/16777343(https://www.browserling.com/tools/ip-to-dec)
-                        redirectClient.Write<i32>(ip);
-                        redirectClient.Write<i16>(port);
-                        redirectClient.Write<i32>(0); // unk
-#pragma warning(push)
-#pragma warning(disable: 4312)
-                        HMACH hmac(40, clientConnection.socket->sessionKey.BN2BinArray(20).get());
-                        hmac.UpdateHash((u8*)& ip, 4);
-                        hmac.UpdateHash((u8*)& port, 2);
-                        hmac.Finish();
-                        redirectClient.Append(hmac.GetData(), 20);
-#pragma warning(pop)
-                        clientConnection.socket->SendPacket(redirectClient, Common::Opcode::SMSG_REDIRECT_CLIENT);
-
                         ExpiredPlayerData expiredPlayerData;
                         expiredPlayerData.entityGuid = clientConnection.entityGuid;
                         expiredPlayerData.accountGuid = clientConnection.accountGuid;
@@ -143,6 +118,25 @@ namespace ConnectionSystem
 
                         characterDatabase.cache->SaveAndUnloadCharacter(clientConnection.characterGuid);
 
+                        // Here we need to Redirect the client back to Realmserver. The Realmserver will send SMSG_LOGOUT_COMPLETE
+                        Common::ByteBuffer redirectClient;
+                        i32 ip = 16777343;
+                        i16 port = 8001;
+
+                        // 127.0.0.1/1.0.0.127
+                        // 2130706433/16777343(https://www.browserling.com/tools/ip-to-dec)
+                        redirectClient.Write<i32>(ip);
+                        redirectClient.Write<i16>(port);
+                        redirectClient.Write<i32>(0); // unk
+#pragma warning(push)
+#pragma warning(disable: 4312)
+                        HMACH hmac(40, clientConnection.socket->sessionKey.BN2BinArray(20).get());
+                        hmac.UpdateHash((u8*)& ip, 4);
+                        hmac.UpdateHash((u8*)& port, 2);
+                        hmac.Finish();
+                        redirectClient.Append(hmac.GetData(), 20);
+#pragma warning(pop)
+                        clientConnection.socket->SendPacket(redirectClient, Common::Opcode::SMSG_REDIRECT_CLIENT);
 
                         Common::ByteBuffer suspendComms;
                         suspendComms.Write<u32>(1);

@@ -28,12 +28,14 @@
 
 #include "DatabaseCache/CharacterDatabaseCache.h"
 #include "ConnectionHandlers/RealmConnectionHandler.h"
+#include "ConnectionHandlers/RealmSecondConnectionHandler.h"
 
 #ifdef _WIN32
 #include <Windows.h>
 #endif
 
 RealmConnectionHandler*   RealmConnectionHandler::_instance = nullptr;
+RealmSecondConnectionHandler* RealmSecondConnectionHandler::_instance = nullptr;
 
 //The name of the console window.
 #define WINDOWNAME "Realm Server"
@@ -72,8 +74,12 @@ i32 main()
     characterDatabaseCache.Load();
 
     asio::io_service io_service(2);
-    RealmConnectionHandler realmConnectionHandler(io_service,    ConfigHandler::GetOption<u16>("port", 8000), characterDatabaseCache);
+
+    u16 port = ConfigHandler::GetOption<u16>("port", 8000);
+    RealmConnectionHandler realmConnectionHandler(io_service, port, characterDatabaseCache);
+    RealmSecondConnectionHandler realmSecondConnectionHandler(io_service, port+1, characterDatabaseCache);
     realmConnectionHandler.Start();
+    realmSecondConnectionHandler.Start();
 
     srand(static_cast<u32>(time(NULL)));
     std::thread run_thread([&]
@@ -81,7 +87,7 @@ i32 main()
         io_service.run();
     });
 
-    NC_LOG_SUCCESS("Realmserver running on port: %u", realmConnectionHandler.GetPort());
+    NC_LOG_SUCCESS("Realmserver running on port: (%u, %u)", realmConnectionHandler.GetPort(), realmSecondConnectionHandler.GetPort());
 
     std::getchar();
 	return 0;

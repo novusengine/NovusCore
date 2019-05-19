@@ -94,8 +94,9 @@ struct cCharacterCreateData
 class RealmConnection : public Common::BaseSocket
 {
 public:
-    RealmConnection(asio::ip::tcp::socket* socket, CharacterDatabaseCache& cache) : Common::BaseSocket(socket), account(0), _headerBuffer(), _packetBuffer(), _cache(cache)
+    RealmConnection(asio::ip::tcp::socket* socket, CharacterDatabaseCache& cache, bool resumeConnection) : Common::BaseSocket(socket), account(0), _headerBuffer(), _packetBuffer(), _cache(cache)
     {
+        _resumeConnection = resumeConnection;
         _seed = static_cast<u32>(rand());
         _headerBuffer.Resize(sizeof(Common::ClientPacketHeader));
         sessionKey = new BigNumber();
@@ -132,6 +133,7 @@ public:
     Common::ByteBuffer _headerBuffer;
     Common::ByteBuffer _packetBuffer;
 
+    bool _resumeConnection;
     u32 _seed;
     StreamCrypto _streamCrypto;
     CharacterDatabaseCache& _cache;

@@ -26,22 +26,22 @@
 #include <Networking/TcpServer.h>
 #include "../Connections/RealmConnection.h"
 
-class RealmConnectionHandler : public Common::TcpServer
+class RealmSecondConnectionHandler : public Common::TcpServer
 {
 public:
-    RealmConnectionHandler(asio::io_service& io_service, i32 port, CharacterDatabaseCache& cache) : Common::TcpServer(io_service, port), _cache(cache) { _instance = this; }
+    RealmSecondConnectionHandler(asio::io_service& io_service, i32 port, CharacterDatabaseCache& cache) : Common::TcpServer(io_service, port), _cache(cache) { _instance = this; }
 
     void Start()
     {
         StartListening();
     }
 private:
-    static RealmConnectionHandler* _instance;
+    static RealmSecondConnectionHandler* _instance;
     CharacterDatabaseCache& _cache;
     void StartListening() override
     {
         asio::ip::tcp::socket* socket = new asio::ip::tcp::socket(_ioService);
-        _acceptor.async_accept(*socket, std::bind(&RealmConnectionHandler::HandleNewConnection, this, socket, std::placeholders::_1));
+        _acceptor.async_accept(*socket, std::bind(&RealmSecondConnectionHandler::HandleNewConnection, this, socket, std::placeholders::_1));
     }
 
     void HandleNewConnection(asio::ip::tcp::socket* socket, const asio::error_code& error_code) override
@@ -61,7 +61,7 @@ private:
                 socket->set_option(asio::ip::tcp::no_delay(true), error);
             }
 
-            RealmConnection* connection = new RealmConnection(socket, _cache, false);
+            RealmConnection* connection = new RealmConnection(socket, _cache, true);
             connection->Start();
 
             _connections.push_back(connection);
