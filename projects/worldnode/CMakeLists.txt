@@ -32,6 +32,7 @@ set(WORLDNODE_DEPENDENCIES
     "${CMAKE_SOURCE_DIR}/dep/TracyProfiler"
     "${CMAKE_SOURCE_DIR}/dep/taskflow"
     "${CMAKE_SOURCE_DIR}/dep/asio"
+    "${CMAKE_SOURCE_DIR}/dep/angelscript/include"
 )
 
 add_executable(worldnode ${WORLDNODE_FILES})
@@ -54,7 +55,7 @@ if (ENABLE_TRACY_PROFILER)
 add_compile_definitions(TRACY_ENABLE TRACY_ON_DEMAND)
 endif()
 
-target_link_libraries(worldnode common)
+target_link_libraries(worldnode common angelscript)
 target_include_directories(worldnode PRIVATE ${WORLDNODE_DEPENDENCIES})
 include_directories(worldnode "${common_SOURCE_DIR}")
 install(TARGETS worldnode DESTINATION bin)

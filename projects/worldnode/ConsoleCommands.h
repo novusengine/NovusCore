@@ -34,6 +34,7 @@
 
 #include "ConsoleCommands/QuitCommand.h"
 #include "ConsoleCommands/PingCommand.h"
+#include "ConsoleCommands/ReloadCommand.h"
 
 class ConsoleCommandHandler
 {
@@ -42,6 +43,7 @@ public:
 	{
 		RegisterCommand("quit"_h, &QuitCommand);
 		RegisterCommand("ping"_h, &PingCommand);
+        RegisterCommand("reload"_h, &ReloadCommand);
 	}
 
 	void HandleCommand(WorldNodeHandler& worldNodeHandler, std::string& command)

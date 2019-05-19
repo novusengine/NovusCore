@@ -5,6 +5,7 @@
 #include <Utils/Timer.h>
 #include <Networking/Opcode/Opcode.h>
 #include <tracy/Tracy.hpp>
+#include <Config/ConfigHandler.h>
 
 // Systems
 #include "ECS/Systems/PlayerConnectionSystem.h"
@@ -34,6 +35,9 @@
 // Game
 #include "Game/Commands/Commands.h"
 #include "Game/ObjectGuid/ObjectGuid.h"
+
+// Scripting
+#include "Scripting/ScriptHandler.h"
 
 WorldNodeHandler::WorldNodeHandler(f32 targetTickRate)
     : _isRunning(false)
@@ -78,6 +82,9 @@ void WorldNodeHandler::Stop()
 
 void WorldNodeHandler::Run()
 {
+    std::string scriptDirectory = ConfigHandler::GetOption<std::string>("path", "scripts");
+    ScriptHandler::LoadScriptDirectory(scriptDirectory);
+
     SetupUpdateFramework();
     _updateFramework.registry.create();
 
@@ -190,6 +197,11 @@ bool WorldNodeHandler::Update()
                 pongMessage.code = MSG_OUT_PRINT;
                 pongMessage.message = new std::string("PONG!");
                 _outputQueue.enqueue(pongMessage);
+            }
+
+            if (message.code == MSG_IN_RELOAD_SCRIPTS)
+            {
+                ScriptHandler::ReloadScripts();
             }
 
             if (message.code == MSG_IN_FOWARD_PACKET)
