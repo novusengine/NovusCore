@@ -504,7 +504,7 @@ void ContextPool::wait()
 void ContextPool::ret( int id )
 {
 	ScopedLocker locker(this->_locker);
-	this->_available.push(id);
+    this->_available.enqueue(id);
 	this->_availableCount++;
 }
 
@@ -517,7 +517,7 @@ Context* ContextPool::get()
 	}
 
 	int id = -1;
-	if(!this->_available.try_pop(id))
+	if(!this->_available.try_dequeue(id))
 	{
 		Context* context = new Context(*this, (int)this->_contexts.size());
 		this->_contexts.push_back(context);

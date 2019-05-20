@@ -14,7 +14,7 @@
 #include <unordered_map>
 #include <sstream>
 #include <string>
-#include <concurrent_queue.h>
+#include <Utils/ConcurrentQueue.h>
 #include <angelscript.h>
 #include "Addons/scriptbuilder/scriptbuilder.h"
 #include <Utils/StringUtils.h>
@@ -290,7 +290,7 @@ public:
 
 };
 
-///
+/// 
 /// Context pool class
 ///
 class ContextPool
@@ -310,7 +310,7 @@ private:
 	std::vector<Context*> _contexts;
 
 	/// Stores the queue of available contexts
-	Concurrency::concurrent_queue<int> _available;
+	moodycamel::ConcurrentQueue<int> _available;
 
 	/// Stores the current count of items on the queue
 	unsigned int _availableCount;
