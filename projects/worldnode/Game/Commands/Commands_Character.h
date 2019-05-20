@@ -135,8 +135,7 @@ namespace Commands_Character
             {
                 PlayerPacketQueueSingleton& playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
 
-                Common::ByteBuffer setFly;
-                CharacterUtils::BuildFlyModePacket(clientConnection.accountGuid, clientConnection.characterGuid, flightState == "on", setFly);
+                Common::ByteBuffer setFly = CharacterUtils::BuildFlyModePacket(clientConnection.accountGuid, clientConnection.characterGuid);
                 playerPacketQueue.packetQueue->enqueue(PacketQueueData(clientConnection.socket, setFly, flightState == "on" ? Common::Opcode::SMSG_MOVE_SET_CAN_FLY : Common::Opcode::SMSG_MOVE_UNSET_CAN_FLY));
 
                 clientConnection.SendChatNotification("Flight Mode: %s", flightState.c_str());

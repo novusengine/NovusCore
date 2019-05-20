@@ -282,13 +282,13 @@ namespace CharacterUtils
         speedBuffer.Write<f32>(speed);
         buffer = speedBuffer;
     }
-    inline void BuildFlyModePacket(u32 accountGuid, u64 characterGuid, bool canFly, Common::ByteBuffer& buffer)
+    inline Common::ByteBuffer BuildFlyModePacket(u32 accountGuid, u64 characterGuid)
     {
         Common::ByteBuffer canFlyBuffer;
         canFlyBuffer.AppendGuid(characterGuid);
         canFlyBuffer.Write<u32>(0); // Unk
 
-        buffer = canFlyBuffer;
+        return canFlyBuffer;
     }
 
 	template <typename... Args>
