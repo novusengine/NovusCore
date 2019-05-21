@@ -1,0 +1,43 @@
+version: "#{build}"
+
+image: Visual Studio 2017
+
+branches:
+  only:
+  - master
+
+skip_tags: true
+
+configuration:
+- Debug
+- Release
+
+platform:
+- x64
+
+services:
+- mysql
+
+clone_folder: "c:\\NovusCore"
+
+before_build:
+- git submodule update --init --recursive
+- mkdir build
+- cd build
+- set CMAKE_GENERATOR_NAME=Visual Studio 15 2017 Win64
+- if "%configuration%"=="Debug" set CMAKE_BUILD_TYPE=Debug
+- if "%configuration%"=="Release" set CMAKE_BUILD_TYPE=Release
+- cmake -G "%CMAKE_GENERATOR_NAME%" -DCMAKE_BUILD_TYPE="%CMAKE_BUILD_TYPE%" ..
+
+build:
+  project: "build\\NovusCore.sln"
+  parallel: true
+  verbosity: minimal
+
+notifications:
+- provider: Email
+  to:
+    - admin@novuscore.com
+  on_build_success: false
+  on_build_failure: true
+  on_build_status_changed: true
