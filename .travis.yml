@@ -1,0 +1,94 @@
+branches:
+  only: master
+
+env:
+  global:
+  - GH_REPO_NAME: NovusCore
+  - GH_REPO_REF: github.com/novuscore/NovusCore.git
+  - BUILD_DIR: build
+
+sudo: required
+os: linux
+dist: xenial
+language: cpp
+compiler: gcc
+
+matrix:
+  exclude:
+  - compiler: gcc
+
+  include:
+  - compiler: gcc
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-8
+    env:
+    - C_COMPILER=gcc-8
+    - CXX_COMPILER=g++-8
+    - CMAKE_BUILD_TYPE=Debug
+
+  - compiler: gcc
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-8
+    env:
+    - C_COMPILER=gcc-8
+    - CXX_COMPILER=g++-8
+    - CMAKE_BUILD_TYPE=Release
+
+  - compiler: clang
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        - llvm-toolchain-xenial-6.0
+        packages:
+        - clang-6.0
+        - g++-8
+    env:
+    - C_COMPILER=clang-6.0
+    - CXX_COMPILER=clang++-6.0
+    - CMAKE_BUILD_TYPE=Debug
+
+  - compiler: clang
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        - llvm-toolchain-xenial-6.0
+        packages:
+        - clang-6.0
+        - g++-8
+    env:
+    - C_COMPILER=clang-6.0
+    - CXX_COMPILER=clang++-6.0
+    - CMAKE_BUILD_TYPE=Release
+
+git:
+  submodules: false
+
+before_install:
+- sudo apt-get -qq update
+- sudo apt-get install -y libmysqlclient-dev
+- git submodule update --init --recursive
+
+script:
+- cd $TRAVIS_BUILD_DIR
+- chmod +x travisBuildScript.sh
+- "./travisBuildScript.sh"
+
+after_success:
+- cd $TRAVIS_BUILD_DIR/$BUILD_DIR
+
+notifications:
+  email:
+    recipients:
+    - admin@novuscore.com
+    on_success: change
+    on_failure: always
