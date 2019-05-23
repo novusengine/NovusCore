@@ -24,7 +24,16 @@
 
 #if defined(_WIN32)
 #include <windows.h>
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
+#endif
+
 static std::string demangle( const char* name ) { return name ; }
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 #else
 #include <unistd.h>
 #include <cxxabi.h>
