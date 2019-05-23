@@ -1,23 +1,23 @@
 #include "ScriptEngine.h"
 #include <Utils/DebugHandler.h>
 
-thread_local AngelBinder::Engine* ScriptEngine::_scriptEngine = nullptr;
+thread_local AB_NAMESPACE_QUALIFIER Engine* ScriptEngine::_scriptEngine = nullptr;
 asio::io_service* ScriptEngine::_ioService = nullptr;
 std::vector<NovusConnection*> ScriptEngine::_novusConnections;
 
-void Placeholder(AngelBinder::Engine* engine) {}
+void Placeholder(AB_NAMESPACE_QUALIFIER Engine* engine) {}
 func_t* ScriptEngine::_registerFunction = nullptr;
 
-void PrintScriptOutput(AngelBinder::Engine*, std::string msg) 
+void PrintScriptOutput(AB_NAMESPACE_QUALIFIER Engine*, std::string msg) 
 {
 	NC_LOG_MESSAGE("[Script]: %s", msg.c_str());
 }
 
-AngelBinder::Engine* ScriptEngine::GetScriptEngine()
+AB_NAMESPACE_QUALIFIER Engine* ScriptEngine::GetScriptEngine()
 {
 	if (_scriptEngine == nullptr)
 	{
-		_scriptEngine = new AngelBinder::Engine(PrintScriptOutput);
+		_scriptEngine = new AB_NAMESPACE_QUALIFIER Engine(PrintScriptOutput);
 		_registerFunction(_scriptEngine);
 		_scriptEngine->asEngine()->SetEngineProperty(asEP_DISALLOW_GLOBAL_VARS, true);
 	}
@@ -25,7 +25,7 @@ AngelBinder::Engine* ScriptEngine::GetScriptEngine()
 	return _scriptEngine;
 }
 
-AngelBinder::Context* ScriptEngine::GetScriptContext()
+AB_NAMESPACE_QUALIFIER Context* ScriptEngine::GetScriptContext()
 {
 	return GetScriptEngine()->getContext();
 }

@@ -49,10 +49,11 @@ bool MapLoader::Load(entt::registry& registry)
 
 		int chunkId = x + (y * blockStride);
 		mapSingleton.maps[mapId].adts[chunkId] = adt;
+
 		loadedAdts++;
     }
 
-    if (loadedAdts == 0) { NC_LOG_ERROR("0 maps found in maps directory"); return false; }
+    if (loadedAdts == 0) { NC_LOG_ERROR("0 maps found in (%s)", absolutePath.string().c_str()); return false; }
 
     NC_LOG_SUCCESS("Loaded %u ADTs", loadedAdts);
     return true;

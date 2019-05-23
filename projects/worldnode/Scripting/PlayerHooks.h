@@ -31,7 +31,7 @@ public:
 	{
 		for (auto function : _hooks[id])
 		{
-			AngelBinder::Context* context = ScriptEngine::GetScriptContext();
+			AB_NAMESPACE_QUALIFIER Context* context = ScriptEngine::GetScriptContext();
 			if (context)
 			{
 				context->prepare(function);

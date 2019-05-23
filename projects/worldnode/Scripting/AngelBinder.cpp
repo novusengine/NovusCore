@@ -1,5 +1,5 @@
 //
-//     Copyright © 2011 - João Francisco Biondo Trinca
+//     Copyright ï¿½ 2011 - Joï¿½o Francisco Biondo Trinca
 //          a.k.a WoLfulus <wolfulus@gmail.com>
 //
 // Distributed under the Boost Software License, Version 1.0.
@@ -57,7 +57,7 @@ void Engine::uninitialize()
 	this->_engine = NULL;
 }
 
-void __cdecl Engine::onScriptMessage( const asSMessageInfo *msg, void *param )
+void Engine::onScriptMessage( const asSMessageInfo *msg, void *param )
 {
 	Engine* engine = (Engine*)(param);
 	if(engine != NULL)
@@ -125,7 +125,7 @@ Module* Engine::createModule( std::string name )
 	Module* module = new Module(*this, name);
 	if(module == NULL)
 	{
-		throw std::exception("Couldn't create script module instance.");
+		throw std::runtime_error("Couldn't create script module instance.");
 	}
 	this->_modules[name] = module;
 	return module;
@@ -140,7 +140,7 @@ Module* Engine::getModule( std::string name )
 	}
 	else
 	{
-		throw std::exception("Couldn't create script module instance.");
+		throw std::runtime_error("Couldn't create script module instance.");
 	}
 }
 
@@ -162,7 +162,7 @@ void Engine::sleep( int ms )
 #if defined(_WIN32)
 	Sleep(ms);
 #else
-	#error You must provide a proper "sleep" implementation here
+	usleep(ms*1000);
 #endif
 }
 
@@ -357,7 +357,7 @@ void Context::exceptionCallback( asIScriptContext *context )
 	std::stringstream error;
 	int row = context->GetExceptionLineNumber(&col);
 	error <<  "A script exception occurred: "  << context->GetExceptionString() << " at position (" << row << ',' << col << ')';
-	throw std::exception(error.str().c_str());
+	throw std::runtime_error(error.str().c_str());
 }
 
 void Context::execute()
@@ -555,7 +555,23 @@ void ThreadLocker::unlock()
 }
 
 #else 
-#error You must provide a proper threadlocker implementation
+ThreadLocker::ThreadLocker()
+{
+}
+
+ThreadLocker::~ThreadLocker()
+{
+}
+
+void ThreadLocker::lock()
+{
+	_mutex.lock();
+}
+
+void ThreadLocker::unlock()
+{
+	_mutex.unlock();
+}
 #endif
 
 ScopedLocker::ScopedLocker( ThreadLocker& locker ) : _locker(locker)
