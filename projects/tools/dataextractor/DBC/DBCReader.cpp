@@ -14,7 +14,7 @@ int DBCReader::Load(Common::ByteBuffer& buffer)
 	buffer.Read<u32>(header);
 
 	// Check for WDBC header
-	if (header != 'CBDW')
+	if (header != NOVUSDBC_WDBC_TOKEN)
 		return 2;
 
 	try

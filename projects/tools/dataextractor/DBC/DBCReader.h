@@ -29,6 +29,8 @@
 #include <stdio.h>
 #include <string>
 
+#define NOVUSDBC_WDBC_TOKEN 1128416343
+
 class DBCReader
 {
 public:
