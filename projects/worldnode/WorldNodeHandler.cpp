@@ -11,7 +11,7 @@
 #include "ECS/Systems/PlayerConnectionSystem.h"
 #include "ECS/Systems/PlayerInitializeSystem.h"
 #include "ECS/Systems/ItemInitializeSystem.h"
-#include "ECS/Systems/CommandParserSystem.h"
+//#include "ECS/Systems/CommandParserSystem.h"
 #include "ECS/Systems/PlayerCreateDataSystem.h"
 #include "ECS/Systems/ItemCreateDataSystem.h"
 #include "ECS/Systems/PlayerUpdateDataSystem.h"
@@ -126,7 +126,7 @@ void WorldNodeHandler::Run()
     EntityCreateQueueSingleton& entityCreateQueueSingleton = _updateFramework.registry.set<EntityCreateQueueSingleton>();
     entityCreateQueueSingleton.newEntityQueue = new moodycamel::ConcurrentQueue<EntityCreationRequest>(4096);
 
-    Commands::LoadCommands(_updateFramework.registry);
+    //Commands::LoadCommands(_updateFramework.registry);
 
     Timer timer;
     while (true)
@@ -277,13 +277,13 @@ void WorldNodeHandler::SetupUpdateFramework()
         ConnectionSystem::Update(registry);
     });
 
-    // CommandParserSystem
+    /* CommandParserSystem
     tf::Task commandParserSystemTask = framework.emplace([&registry]()
     {
         ZoneScopedNC("CommandParserSystem", tracy::Color::Blue2)
         CommandParserSystem::Update(registry);
     });
-    commandParserSystemTask.gather(connectionSystemTask);
+    commandParserSystemTask.gather(connectionSystemTask);*/
 
     // PlayerInitializeSystem
     tf::Task playerInitializeSystemTask = framework.emplace([&registry]()
@@ -291,7 +291,7 @@ void WorldNodeHandler::SetupUpdateFramework()
         ZoneScopedNC("PlayerInitializeSystem", tracy::Color::Blue2)
             PlayerInitializeSystem::Update(registry);
     });
-    playerInitializeSystemTask.gather(commandParserSystemTask);
+    playerInitializeSystemTask.gather(connectionSystemTask);
 
     // ItemInitializeSystem
     tf::Task itemInitializeSystemTask = framework.emplace([&registry]()

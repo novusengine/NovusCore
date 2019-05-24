@@ -22,17 +22,16 @@
     SOFTWARE.
 */
 #pragma once
-#include <NovusTypes.h>
+/*#include <NovusTypes.h>
 #include <Utils/StringUtils.h>
 #include "../../ECS/Components/Singletons/CommandDataSingleton.h"
 #include "../../ECS/Components/Singletons/MapSingleton.h"
 
-#include "Commands_Character.h"
+#include "Commands_Character.h"*/
 
 namespace Commands
 {
-    // We need to find a way to access the registry in all the command namespaces without exposing it to the rest of the code
-    static entt::registry* _registry = nullptr;
+    /*static entt::registry* _registry = nullptr;
 
     bool _GPS(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
     {
@@ -50,24 +49,14 @@ namespace Commands
 
         return true;
     }
-    bool _Redirect(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
-    {
-        PlayerPacketQueueSingleton& playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
-
-        Common::ByteBuffer redirect;
-        playerPacketQueue.packetQueue->enqueue(PacketQueueData(clientConnection.socket, redirect, Common::Opcode::SMSG_REDIRECT_CLIENT));
-
-        return true;
-    }
 
     void LoadCommands(entt::registry& registry)
     {
         CommandDataSingleton& commandDataSingleton = registry.set<CommandDataSingleton>();
         commandDataSingleton.commandMap["gps"_h] = CommandEntry(_GPS, 0);
-        commandDataSingleton.commandMap["redirect"_h] = CommandEntry(_Redirect, 0);
 
         Commands_Character::LoadCharacterCommands(registry, commandDataSingleton);
 
         _registry = &registry;
-    }
+    }*/
 }

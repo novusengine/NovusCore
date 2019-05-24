@@ -23,7 +23,7 @@
 */
 
 #pragma once
-#include <NovusTypes.h>
+/*#include <NovusTypes.h>
 #include <Utils/StringUtils.h>
 #include <Math/Math.h>
 #include <Math/Vector2.h>
@@ -32,11 +32,11 @@
 #include "../../ECS/Components/Singletons/CommandDataSingleton.h"
 #include "../../ECS/Components/Singletons/PlayerPacketQueueSingleton.h"
 #include "../../ECS/Components/Singletons/EntityCreateQueueSingleton.h"
-#include "../../ECS/Components/Singletons/WorldDatabaseCacheSingleton.h"
+#include "../../ECS/Components/Singletons/WorldDatabaseCacheSingleton.h"*/
 
 namespace Commands_Character
 {
-    static robin_hood::unordered_map<u32, CommandEntry> characterCommandMap;
+    /*static robin_hood::unordered_map<u32, CommandEntry> characterCommandMap;
     static entt::registry* _registry = nullptr;
 
     bool _Level(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
@@ -163,7 +163,7 @@ namespace Commands_Character
             buffer.AppendGuid(clientConnection.characterGuid);
             buffer.Write<u32>(0); // Teleport Count
 
-            /* Movement */
+            // Movement
             buffer.Write<u32>(0);
             buffer.Write<u16>(0);
             buffer.Write<u32>(static_cast<u32>(singletonData.lifeTimeInMS));
@@ -181,39 +181,6 @@ namespace Commands_Character
         }
         catch (std::exception) {}
 
-        return false;
-    }
-    bool _TeleToMap(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
-    {
-        /*
-            try
-            {
-                u32 mapId = std::stoi(commandStrings[0]);
-                f32 x = std::stof(commandStrings[1]);
-                f32 y = std::stof(commandStrings[2]);
-                f32 z = std::stof(commandStrings[3]);
-
-                NovusHeader header;
-                Common::ByteBuffer transfer;
-                transfer.Write<u32>(mapId);
-
-                header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_TRANSFER_PENDING, transfer.GetActualSize());
-                clientFieldData.packetUpdateData.push_back(header.BuildHeaderPacket(transfer));
-
-                Common::ByteBuffer newWorld;
-                newWorld.Write<u32>(mapId);
-                newWorld.Write<f32>(x);
-                newWorld.Write<f32>(y);
-                newWorld.Write<f32>(z);
-                newWorld.Write<f32>(0);
-
-                header.CreateForwardHeader(clientConnection.accountGuid, Common::Opcode::SMSG_NEW_WORLD, newWorld.GetActualSize());
-                clientFieldData.packetUpdateData.push_back(header.BuildHeaderPacket(newWorld));
-
-                return true;
-            }
-            catch (std::exception) {}
-        */
         return false;
     }
     bool _AddItem(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
@@ -299,7 +266,6 @@ namespace Commands_Character
         characterCommandMap["speed"_h] = CommandEntry(_Speed, 1);
         characterCommandMap["fly"_h] = CommandEntry(_Fly, 1);
         characterCommandMap["tele"_h] = CommandEntry(_Tele, 3);
-        characterCommandMap["teletomap"_h] = CommandEntry(_TeleToMap, 4);
         characterCommandMap["additem"_h] = CommandEntry(_AddItem, 1);
-    }
+    }*/
 }

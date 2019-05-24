@@ -172,6 +172,7 @@ namespace ConnectionSystem
                         CharacterUtils::BuildSpeedChangePacket(playerConnection.accountGuid, playerConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_FLIGHT_BACK_SPEED_CHANGE, speedChange);
                         playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, speedChange, Common::Opcode::SMSG_FORCE_FLIGHT_BACK_SPEED_CHANGE));
 
+                        playerConnection.SendChatNotification("Speed Updated: %f", speed);
                         packet.handled = true;
                         break;
                     }
@@ -443,20 +444,20 @@ namespace ConnectionSystem
                         std::string msgOutput;
                         switch (msgType)
                         {
-                        case CHAT_MSG_SAY:
-                        case CHAT_MSG_YELL:
-                        case CHAT_MSG_EMOTE:
-                        case CHAT_MSG_TEXT_EMOTE:
-                        {
-                            packet.data.Read(msgOutput);
-                            break;
-                        }
+                            case CHAT_MSG_SAY:
+                            case CHAT_MSG_YELL:
+                            case CHAT_MSG_EMOTE:
+                            case CHAT_MSG_TEXT_EMOTE:
+                            {
+                                packet.data.Read(msgOutput);
+                                break;
+                            }
 
-                        default:
-                        {
-                            worldNodeHandler.PrintMessage("Account(%u), Character(%u) sent unhandled message type %u", playerConnection.accountGuid, playerConnection.characterGuid, msgType);
-                            break;
-                        }
+                            default:
+                            {
+                                worldNodeHandler.PrintMessage("Account(%u), Character(%u) sent unhandled message type %u", playerConnection.accountGuid, playerConnection.characterGuid, msgType);
+                                break;
+                            }
                         }
 
                         // Max Message Size is 255
