@@ -31,13 +31,13 @@
 
 // ADT_CELL_SIZE (THIS REPRESENTS THE AMOUNT OF CELLS INSIDE A CHUNK; NOT THE SIZE OF A CELL) TY TC
 
-#define MVER_TOKEN 1297499474
-#define MHDR_TOKEN 1296581714
-#define MCIN_TOKEN 1296255310
-#define MCNK_TOKEN 1296256587
-#define MFBO_TOKEN 1296577103
-#define MH2O_TOKEN 1296577103
-#define MCVT_TOKEN 1296258644
+#define NOVUSMAP_MVER_TOKEN 1297499474
+#define NOVUSMAP_MHDR_TOKEN 1296581714
+#define NOVUSMAP_MCIN_TOKEN 1296255310
+#define NOVUSMAP_MCNK_TOKEN 1296256587
+#define NOVUSMAP_MFBO_TOKEN 1296577103
+#define NOVUSMAP_MH2O_TOKEN 1296577103
+#define NOVUSMAP_MCVT_TOKEN 1296258644
 
 enum LIQUID_ID
 {
@@ -88,7 +88,7 @@ struct MCVT
 	{
 		token = buffer.ReadAt<u32>(offset);
 
-		if (token == 'MCVT')
+		if (token == NOVUSMAP_MCVT_TOKEN)
 		{
 			size = buffer.ReadAt<u32>(offset + 0x4);
 
@@ -176,7 +176,7 @@ struct MCNK
 
 		token = buffer.ReadAt<u32>(offset);
 
-		if (token == 'MCNK')
+		if (token == NOVUSMAP_MCNK_TOKEN)
 		{
 			size = buffer.ReadAt<u32>(offset + 0x4);
 			flags = buffer.ReadAt<u32>(offset + 0x8);
@@ -235,7 +235,7 @@ struct MCIN
 		token = buffer.ReadAt<u32>(baseAddress);
 		baseAddress += 0x04;
 
-		if (token == 'MCIN')
+		if (token == NOVUSMAP_MCIN_TOKEN)
 		{
 			size = buffer.ReadAt<u32>(baseAddress);
 			baseAddress += 0x04;
@@ -273,7 +273,7 @@ struct MFBO
 		token = buffer.ReadAt<u32>(baseAddress);
 		baseAddress += 0x04;
 
-		if (token == 'MFBO')
+		if (token == NOVUSMAP_MFBO_TOKEN)
 		{
 			/* Add Token Size + Skip Size Field */
 			size = buffer.ReadAt<u32>(baseAddress);
@@ -328,7 +328,7 @@ struct MH2O
 		token = buffer.ReadAt<u32>(baseAddress);
 		baseAddress += 0x4;
 
-		if (token == 'MH2O')
+		if (token == NOVUSMAP_MH2O_TOKEN)
 		{
 			size = buffer.ReadAt<u32>(baseAddress);
 			baseAddress += 0x4;
@@ -385,7 +385,7 @@ struct MHDR
 		buffer.Read<u32>(token);
 		buffer.Read<u32>(size);
 
-		if (token == 'MHDR')
+		if (token == NOVUSMAP_MHDR_TOKEN)
 		{
 			buffer.Read<u32>(flags);
 			buffer.Read<u32>(offsetMcin);

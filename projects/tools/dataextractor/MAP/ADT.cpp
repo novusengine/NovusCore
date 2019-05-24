@@ -10,10 +10,10 @@ ADT::ADT(MPQFile& file, std::string fileName, std::string filePath) : _file(file
 void ADT::Convert()
 {
 	mver.Read(_file.Buffer);
-	assert(mver.token == 'MVER' && mver.version == 18);
+	assert(mver.token == NOVUSMAP_MVER_TOKEN && mver.version == 18);
 
 	mhdr.Read(_file.Buffer);
-	assert(mhdr.token == 'MHDR');
+	assert(mhdr.token == NOVUSMAP_MHDR_TOKEN);
 
 	if (!mcin.Read(_file.Buffer, mhdr.offsetMcin + 0x14))
 	{
