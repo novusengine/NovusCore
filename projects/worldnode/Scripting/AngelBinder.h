@@ -1,5 +1,5 @@
 //
-//     Copyright © 2011 - João Francisco Biondo Trinca
+//     Copyright ï¿½ 2011 - Joï¿½o Francisco Biondo Trinca
 //          a.k.a WoLfulus <wolfulus@gmail.com>
 //
 // Distributed under the Boost Software License, Version 1.0.
@@ -14,24 +14,48 @@
 #include <unordered_map>
 #include <sstream>
 #include <string>
-#include <concurrent_queue.h>
+#include <mutex>
+#include <functional>
+#include <type_traits>
+#include <Utils/ConcurrentQueue.h>
 #include <angelscript.h>
 #include "Addons/scriptbuilder/scriptbuilder.h"
 #include <Utils/StringUtils.h>
 
 #if defined(_WIN32)
 #include <windows.h>
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
 #endif
 
-//#ifdef AS_USE_NAMESPACE
+static std::string demangle( const char* name ) { return name ; }
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+#else
+#include <unistd.h>
+#include <cxxabi.h>
+static std::string demangle( const char* mangled_name ) 
+{
+    std::size_t len = 0 ;
+    int status = 0 ;
+    std::unique_ptr< char, decltype(&std::free) > ptr(
+                __cxxabiv1::__cxa_demangle( mangled_name, nullptr, &len, &status ), &std::free ) ;
+    return ptr.get() ;
+}
+#endif
+
+#ifdef AS_USE_NAMESPACE
 #define AB_BEGIN_NAMESPACE		namespace AngelBinder {
 #define AB_END_NAMESPACE		}
 #define AB_NAMESPACE_QUALIFIER	AngelBinder::
-/*#else
+#else
 #define AB_BEGIN_NAMESPACE
 #define AB_END_NAMESPACE
 #define AB_NAMESPACE_QUALIFIER
-#endif*/
+#endif
 
 ///
 /// Namespace start
@@ -58,7 +82,7 @@ AB_BEGIN_NAMESPACE
 	if(!(x)) { \
 		if((t)) { \
 			if((i)->onMessage() != NULL) (i)->onMessage()(i,m); \
-			throw std::exception(m); \
+			throw std::runtime_error(m); \
 		} else { \
 			if((i)->onMessage() != NULL) (i)->onMessage()(i,m); \
 		} \
@@ -73,7 +97,8 @@ AB_BEGIN_NAMESPACE
 
 const std::unordered_map<u32, std::string> typeOverriders =
 {
-	{"class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >"_h, "string"}
+	{"class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >"_h, "string"},
+	{"std::string"_h, "string"}
 };
 
 ///
@@ -82,14 +107,12 @@ const std::unordered_map<u32, std::string> typeOverriders =
 template<typename T>
 struct TypeString
 {
-	
-
 	///
 	/// Retrieves the typeid of T, and then get its name.
 	///
 	static std::string value()
 	{
-		std::string name = std::string(typeid(T).name());
+		std::string name = demangle(typeid(T).name());
 
 		auto it = typeOverriders.find(StringUtils::fnv1a_32(name.c_str(), name.size()));
 		if (it != typeOverriders.end())
@@ -98,6 +121,11 @@ struct TypeString
 		return name;
 	}
 };
+
+/// Empty declaration to use as pointer into the engine
+class Engine;
+class Module;
+class Context;
 
 ///
 /// Macro to help declaring built-in types.
@@ -233,11 +261,6 @@ typedef AS_NAMESPACE_QUALIFIER asIScriptContext ASContext;
 typedef AS_NAMESPACE_QUALIFIER asIScriptModule	ASModule;
 typedef AS_NAMESPACE_QUALIFIER CScriptBuilder	ASBuilder;
 
-/// Empty declaration to use as pointer into the engine
-class Engine;
-class Module;
-class Contex;
-
 ///
 /// Thread locker
 ///
@@ -248,7 +271,7 @@ private:
 #if defined(_WIN32)
 	CRITICAL_SECTION _section;
 #else 
-#error You must provide a proper implementation of a thread locker
+std::mutex _mutex;
 #endif
 
 public:
@@ -290,18 +313,11 @@ public:
 
 };
 
-///
+/// 
 /// Context pool class
 ///
 class ContextPool
 {
-
-	///
-	/// Friend classes
-	///
-	friend class Context;
-	friend class Engine;
-
 private:
 	/// Stores the engine instance
 	Engine* _engine;
@@ -310,7 +326,7 @@ private:
 	std::vector<Context*> _contexts;
 
 	/// Stores the queue of available contexts
-	Concurrency::concurrent_queue<int> _available;
+	moodycamel::ConcurrentQueue<int> _available;
 
 	/// Stores the current count of items on the queue
 	unsigned int _availableCount;
@@ -349,6 +365,11 @@ private:
 	///
 	void wait();
 
+	///
+	/// Friend classes
+	///
+	friend class Context;
+	friend class Engine;
 };
 
 ///
@@ -381,7 +402,7 @@ private:
 	ContextPool _pool;
 
 	/// Raised when script machine writes a message
-	static void __cdecl onScriptMessage( const AS_NAMESPACE_QUALIFIER asSMessageInfo *msg, void *param );
+	static void onScriptMessage( const AS_NAMESPACE_QUALIFIER asSMessageInfo *msg, void *param );
 
 	///
 	/// Startup stuff
@@ -662,7 +683,7 @@ AB_RETURN_READER(float, readFloat);
 AB_RETURN_READER(double, readDouble);
 AB_RETURN_READER(bool, readBool);
 
-#define AB_FUNCTION_CHECK() if(this->_engine == NULL || this->_function == -1) throw std::exception("Script function pointer not initialized.")
+#define AB_FUNCTION_CHECK() if(this->_engine == NULL || this->_function == -1) throw std::runtime_error("Script function pointer not initialized.")
 
 #define AB_FUNCTION_CONSTRUCTOR() \
 	friend class Module; \
@@ -1595,9 +1616,9 @@ public:
 	/// Templated function exporters
 	///
 	template<typename R>
-	FunctionExporter& def(std::string name, R(__stdcall *func)())
+	FunctionExporter& def(std::string name, R(*func)())
 	{
-        FunctionClass fc(Type<R>::toString(), name, CallStdcall, AS_NAMESPACE_QUALIFIER asFUNCTION(func));
+        FunctionClass fc(Type<R>::toString(), name, CallCdecl, AS_NAMESPACE_QUALIFIER asFUNCTION(func));
 		this->_entries.push(fc);
 		return *this;
 	}
@@ -1611,9 +1632,9 @@ public:
 	}*/
 
 	template<typename R, typename A1>
-	FunctionExporter& def(std::string name, R(__stdcall *func)(A1))
+	FunctionExporter& def(std::string name, R(*func)(A1))
 	{
-		FunctionClass fc(Type<R>::toString(), name, CallStdcall, AS_NAMESPACE_QUALIFIER asFUNCTION(func));
+		FunctionClass fc(Type<R>::toString(), name, CallCdecl, AS_NAMESPACE_QUALIFIER asFUNCTION(func));
 		AB_PUSH_ARG(fc, A1); 
 		this->_entries.push(fc);
 		return *this;
@@ -1629,9 +1650,9 @@ public:
 	}*/
 
 	template<typename R, typename A1, typename A2>
-	FunctionExporter& def(std::string name, R(__stdcall *func)(A1, A2))
+	FunctionExporter& def(std::string name, R(*func)(A1, A2))
 	{
-		FunctionClass fc(Type<R>::toString(), name, CallStdcall, AS_NAMESPACE_QUALIFIER asFUNCTION(func));
+		FunctionClass fc(Type<R>::toString(), name, CallCdecl, AS_NAMESPACE_QUALIFIER asFUNCTION(func));
 		AB_PUSH_ARG(fc, A1); AB_PUSH_ARG(fc, A2); 
 		this->_entries.push(fc);
 		return *this;
@@ -1647,9 +1668,9 @@ public:
 	}*/
 
 	template<typename R, typename A1, typename A2, typename A3>
-	FunctionExporter& def(std::string name, R(__stdcall *func)(A1, A2, A3))
+	FunctionExporter& def(std::string name, R(*func)(A1, A2, A3))
 	{
-		FunctionClass fc(Type<R>::toString(), name, CallStdcall, AS_NAMESPACE_QUALIFIER asFUNCTION(func));
+		FunctionClass fc(Type<R>::toString(), name, CallCdecl, AS_NAMESPACE_QUALIFIER asFUNCTION(func));
 		AB_PUSH_ARG(fc, A1); AB_PUSH_ARG(fc, A2); AB_PUSH_ARG(fc, A3); 
 		this->_entries.push(fc);
 		return *this;
@@ -1665,9 +1686,9 @@ public:
 	}*/
 
 	template<typename R, typename A1, typename A2, typename A3, typename A4>
-	FunctionExporter& def(std::string name, R(__stdcall *func)(A1, A2, A3, A4))
+	FunctionExporter& def(std::string name, R(*func)(A1, A2, A3, A4))
 	{
-		FunctionClass fc(Type<R>::toString(), name, CallStdcall, AS_NAMESPACE_QUALIFIER asFUNCTION(func));
+		FunctionClass fc(Type<R>::toString(), name, CallCdecl, AS_NAMESPACE_QUALIFIER asFUNCTION(func));
 		AB_PUSH_ARG(fc, A1); AB_PUSH_ARG(fc, A2); AB_PUSH_ARG(fc, A3); AB_PUSH_ARG(fc, A4); 
 		this->_entries.push(fc);
 		return *this;
@@ -1683,9 +1704,9 @@ public:
 	}*/
 
 	template<typename R, typename A1, typename A2, typename A3, typename A4, typename A5>
-	FunctionExporter& def(std::string name, R(__stdcall *func)(A1, A2, A3, A4, A5))
+	FunctionExporter& def(std::string name, R(*func)(A1, A2, A3, A4, A5))
 	{
-		FunctionClass fc(Type<R>::toString(), name, CallStdcall, AS_NAMESPACE_QUALIFIER asFUNCTION(func));
+		FunctionClass fc(Type<R>::toString(), name, CallCdecl, AS_NAMESPACE_QUALIFIER asFUNCTION(func));
 		AB_PUSH_ARG(fc, A1); AB_PUSH_ARG(fc, A2); AB_PUSH_ARG(fc, A3); AB_PUSH_ARG(fc, A4); AB_PUSH_ARG(fc, A5); 
 		this->_entries.push(fc);
 		return *this;
@@ -1701,9 +1722,9 @@ public:
 	}*/
 
 	template<typename R, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6>
-	FunctionExporter& def(std::string name, R(__stdcall *func)(A1, A2, A3, A4, A5, A6))
+	FunctionExporter& def(std::string name, R(*func)(A1, A2, A3, A4, A5, A6))
 	{
-		FunctionClass fc(Type<R>::toString(), name, CallStdcall, AS_NAMESPACE_QUALIFIER asFUNCTION(func));
+		FunctionClass fc(Type<R>::toString(), name, CallCdecl, AS_NAMESPACE_QUALIFIER asFUNCTION(func));
 		AB_PUSH_ARG(fc, A1); AB_PUSH_ARG(fc, A2); AB_PUSH_ARG(fc, A3); AB_PUSH_ARG(fc, A4); AB_PUSH_ARG(fc, A5); AB_PUSH_ARG(fc, A6); 
 		this->_entries.push(fc);
 		return *this;
@@ -1719,9 +1740,9 @@ public:
 	}*/
 
 	template<typename R, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6, typename A7>
-	FunctionExporter& def(std::string name, R(__stdcall *func)(A1, A2, A3, A4, A5, A6, A7))
+	FunctionExporter& def(std::string name, R(*func)(A1, A2, A3, A4, A5, A6, A7))
 	{
-		FunctionClass fc(Type<R>::toString(), name, CallStdcall, AS_NAMESPACE_QUALIFIER asFUNCTION(func));
+		FunctionClass fc(Type<R>::toString(), name, CallCdecl, AS_NAMESPACE_QUALIFIER asFUNCTION(func));
 		AB_PUSH_ARG(fc, A1); AB_PUSH_ARG(fc, A2); AB_PUSH_ARG(fc, A3); AB_PUSH_ARG(fc, A4); AB_PUSH_ARG(fc, A5); AB_PUSH_ARG(fc, A6); AB_PUSH_ARG(fc, A7); 
 		this->_entries.push(fc);
 		return *this;
@@ -1737,9 +1758,9 @@ public:
 	}*/
 
 	template<typename R, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6, typename A7, typename A8>
-	FunctionExporter& def(std::string name, R(__stdcall *func)(A1, A2, A3, A4, A5, A6, A7, A8))
+	FunctionExporter& def(std::string name, R(*func)(A1, A2, A3, A4, A5, A6, A7, A8))
 	{
-		FunctionClass fc(Type<R>::toString(), name, CallStdcall, AS_NAMESPACE_QUALIFIER asFUNCTION(func));
+		FunctionClass fc(Type<R>::toString(), name, CallCdecl, AS_NAMESPACE_QUALIFIER asFUNCTION(func));
 		AB_PUSH_ARG(fc, A1); AB_PUSH_ARG(fc, A2); AB_PUSH_ARG(fc, A3); AB_PUSH_ARG(fc, A4); AB_PUSH_ARG(fc, A5); AB_PUSH_ARG(fc, A6); AB_PUSH_ARG(fc, A7); AB_PUSH_ARG(fc, A8); 
 		this->_entries.push(fc);
 		return *this;
@@ -1755,9 +1776,9 @@ public:
 	}*/
 
 	template<typename R, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6, typename A7, typename A8, typename A9>
-	FunctionExporter& def(std::string name, R(__stdcall *func)(A1, A2, A3, A4, A5, A6, A7, A8, A9))
+	FunctionExporter& def(std::string name, R(*func)(A1, A2, A3, A4, A5, A6, A7, A8, A9))
 	{
-		FunctionClass fc(Type<R>::toString(), name, CallStdcall, AS_NAMESPACE_QUALIFIER asFUNCTION(func));
+		FunctionClass fc(Type<R>::toString(), name, CallCdecl, AS_NAMESPACE_QUALIFIER asFUNCTION(func));
 		AB_PUSH_ARG(fc, A1); AB_PUSH_ARG(fc, A2); AB_PUSH_ARG(fc, A3); AB_PUSH_ARG(fc, A4); AB_PUSH_ARG(fc, A5); AB_PUSH_ARG(fc, A6); AB_PUSH_ARG(fc, A7); AB_PUSH_ARG(fc, A8); AB_PUSH_ARG(fc, A9); 
 		this->_entries.push(fc);
 		return *this;
@@ -1773,9 +1794,9 @@ public:
 	}*/
 
 	template<typename R, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6, typename A7, typename A8, typename A9, typename A10>
-	FunctionExporter& def(std::string name, R(__stdcall *func)(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10))
+	FunctionExporter& def(std::string name, R(*func)(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10))
 	{
-		FunctionClass fc(Type<R>::toString(), name, CallStdcall, AS_NAMESPACE_QUALIFIER asFUNCTION(func));
+		FunctionClass fc(Type<R>::toString(), name, CallCdecl, AS_NAMESPACE_QUALIFIER asFUNCTION(func));
 		AB_PUSH_ARG(fc, A1); AB_PUSH_ARG(fc, A2); AB_PUSH_ARG(fc, A3); AB_PUSH_ARG(fc, A4); AB_PUSH_ARG(fc, A5); AB_PUSH_ARG(fc, A6); AB_PUSH_ARG(fc, A7); AB_PUSH_ARG(fc, A8); AB_PUSH_ARG(fc, A9); AB_PUSH_ARG(fc, A10); 
 		this->_entries.push(fc);
 		return *this;
@@ -1791,9 +1812,9 @@ public:
 	}*/
 
 	template<typename R, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6, typename A7, typename A8, typename A9, typename A10, typename A11>
-	FunctionExporter& def(std::string name, R(__stdcall *func)(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11))
+	FunctionExporter& def(std::string name, R(*func)(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11))
 	{
-		FunctionClass fc(Type<R>::toString(), name, CallStdcall, AS_NAMESPACE_QUALIFIER asFUNCTION(func));
+		FunctionClass fc(Type<R>::toString(), name, CallCdecl, AS_NAMESPACE_QUALIFIER asFUNCTION(func));
 		AB_PUSH_ARG(fc, A1); AB_PUSH_ARG(fc, A2); AB_PUSH_ARG(fc, A3); AB_PUSH_ARG(fc, A4); AB_PUSH_ARG(fc, A5); AB_PUSH_ARG(fc, A6); AB_PUSH_ARG(fc, A7); AB_PUSH_ARG(fc, A8); AB_PUSH_ARG(fc, A9); AB_PUSH_ARG(fc, A10); AB_PUSH_ARG(fc, A11); 
 		this->_entries.push(fc);
 		return *this;
@@ -1809,9 +1830,9 @@ public:
 	}*/
 
 	template<typename R, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6, typename A7, typename A8, typename A9, typename A10, typename A11, typename A12>
-	FunctionExporter& def(std::string name, R(__stdcall *func)(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12))
+	FunctionExporter& def(std::string name, R(*func)(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12))
 	{
-		FunctionClass fc(Type<R>::toString(), name, CallStdcall, AS_NAMESPACE_QUALIFIER asFUNCTION(func));
+		FunctionClass fc(Type<R>::toString(), name, CallCdecl, AS_NAMESPACE_QUALIFIER asFUNCTION(func));
 		AB_PUSH_ARG(fc, A1); AB_PUSH_ARG(fc, A2); AB_PUSH_ARG(fc, A3); AB_PUSH_ARG(fc, A4); AB_PUSH_ARG(fc, A5); AB_PUSH_ARG(fc, A6); AB_PUSH_ARG(fc, A7); AB_PUSH_ARG(fc, A8); AB_PUSH_ARG(fc, A9); AB_PUSH_ARG(fc, A10); AB_PUSH_ARG(fc, A11); AB_PUSH_ARG(fc, A12); 
 		this->_entries.push(fc);
 		return *this;
@@ -1827,9 +1848,9 @@ public:
 	}*/
 
 	template<typename R, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6, typename A7, typename A8, typename A9, typename A10, typename A11, typename A12, typename A13>
-	FunctionExporter& def(std::string name, R(__stdcall *func)(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13))
+	FunctionExporter& def(std::string name, R(*func)(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13))
 	{
-		FunctionClass fc(Type<R>::toString(), name, CallStdcall, AS_NAMESPACE_QUALIFIER asFUNCTION(func));
+		FunctionClass fc(Type<R>::toString(), name, CallCdecl, AS_NAMESPACE_QUALIFIER asFUNCTION(func));
 		AB_PUSH_ARG(fc, A1); AB_PUSH_ARG(fc, A2); AB_PUSH_ARG(fc, A3); AB_PUSH_ARG(fc, A4); AB_PUSH_ARG(fc, A5); AB_PUSH_ARG(fc, A6); AB_PUSH_ARG(fc, A7); AB_PUSH_ARG(fc, A8); AB_PUSH_ARG(fc, A9); AB_PUSH_ARG(fc, A10); AB_PUSH_ARG(fc, A11); AB_PUSH_ARG(fc, A12); AB_PUSH_ARG(fc, A13); 
 		this->_entries.push(fc);
 		return *this;
@@ -1845,9 +1866,9 @@ public:
 	}*/
 
 	template<typename R, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6, typename A7, typename A8, typename A9, typename A10, typename A11, typename A12, typename A13, typename A14>
-	FunctionExporter& def(std::string name, R(__stdcall *func)(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14))
+	FunctionExporter& def(std::string name, R(*func)(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14))
 	{
-		FunctionClass fc(Type<R>::toString(), name, CallStdcall, AS_NAMESPACE_QUALIFIER asFUNCTION(func));
+		FunctionClass fc(Type<R>::toString(), name, CallCdecl, AS_NAMESPACE_QUALIFIER asFUNCTION(func));
 		AB_PUSH_ARG(fc, A1); AB_PUSH_ARG(fc, A2); AB_PUSH_ARG(fc, A3); AB_PUSH_ARG(fc, A4); AB_PUSH_ARG(fc, A5); AB_PUSH_ARG(fc, A6); AB_PUSH_ARG(fc, A7); AB_PUSH_ARG(fc, A8); AB_PUSH_ARG(fc, A9); AB_PUSH_ARG(fc, A10); AB_PUSH_ARG(fc, A11); AB_PUSH_ARG(fc, A12); AB_PUSH_ARG(fc, A13); AB_PUSH_ARG(fc, A14); 
 		this->_entries.push(fc);
 		return *this;
@@ -2320,8 +2341,9 @@ protected:
 	ClassExporter( int flags ) 
 		: _flags(flags), _dtorset(false), _ctorset(false)
 	{
-		asMemClear(&this->_ctor, sizeof(this->_ctor));
-		asMemClear(&this->_dtor, sizeof(this->_dtor));
+		// Couldn't find any definitions for asMemClear, so far it's been tested and no functional behavior have changed.
+		//asMemClear(&this->_ctor, sizeof(this->_ctor));
+		//asMemClear(&this->_dtor, sizeof(this->_dtor));
 	}
 
 	///
@@ -2335,7 +2357,7 @@ protected:
 		flags |= AS_NAMESPACE_QUALIFIER asOBJ_APP_CLASS;
 		flags |= !this->_ctors.empty() || this->_ctorset ? AS_NAMESPACE_QUALIFIER asOBJ_APP_CLASS_CONSTRUCTOR : 0;
 		flags |= this->_dtorset ? AS_NAMESPACE_QUALIFIER asOBJ_APP_CLASS_DESTRUCTOR : 0;
-		flags |= std::tr1::is_pod<T>::value == true ? AS_NAMESPACE_QUALIFIER asOBJ_POD : 0;
+		flags |= std::is_pod<T>::value == true ? AS_NAMESPACE_QUALIFIER asOBJ_POD : 0;
 		// flags |= this->_assigns.empty() ? 0 : asOBJ_APP_CLASS_ASSIGNMENT;
 		// flags |= this->_copy == NULL ? 0 : asOBJ_APP_CLASS_COPY_CONSTRUCTOR;
 

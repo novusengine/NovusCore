@@ -18,15 +18,16 @@ namespace GlobalFunctions
 	}
 }
 
-void RegisterGlobalFunctions(AngelBinder::Engine* engine)
+void RegisterGlobalFunctions(AB_NAMESPACE_QUALIFIER Engine* engine)
 {
 	// Register*Callback functions need to be registered manually since the binder does not support it
 	engine->asEngine()->RegisterFuncdef("void PlayerCallback(string, uint8)");
 	engine->asEngine()->RegisterGlobalFunction("void RegisterPlayerCallback(uint32 id, PlayerCallback @cb)", asFUNCTION(GlobalFunctions::RegisterPlayerCallback), asCALL_CDECL);
+    //engine->asEngine()->RegisterGlobalFunction("void Print(string message)", asFUNCTION(GlobalFunctions::Print), asCALL_CDECL);
 
-	AngelBinder::Exporter::Export(*engine)
+	AB_NAMESPACE_QUALIFIER Exporter::Export(*engine)
 		[
-			AngelBinder::Exporter::Functions()
+			AB_NAMESPACE_QUALIFIER Exporter::Functions()
 			.def("Print", &GlobalFunctions::Print)
 		];
 }

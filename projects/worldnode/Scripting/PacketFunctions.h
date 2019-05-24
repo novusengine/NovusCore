@@ -10,12 +10,12 @@ namespace PacketFunctions
 	
 }
 
-void RegisterPacketFunctions(AngelBinder::Engine* engine)
+void RegisterPacketFunctions(AB_NAMESPACE_QUALIFIER Engine* engine)
 {
 	engine->asEngine()->SetDefaultNamespace("Packet");
-	/*AngelBinder::Exporter::Export(*engine)
+	/*AB_NAMESPACE_QUALIFIER Exporter::Export(*engine)
 		[
-			AngelBinder::Exporter::Functions()
+			AB_NAMESPACE_QUALIFIER Exporter::Functions()
 			.def("HelloWorld", &PacketFunctions::HelloWorld)
 			.def("SendLoginChallenge", &PacketFunctions::SendLoginChallenge)
 		];*/

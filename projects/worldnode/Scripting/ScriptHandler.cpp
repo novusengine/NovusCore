@@ -80,7 +80,7 @@ void ScriptHandler::LoadScriptDirectory(std::string& path)
 
 bool ScriptHandler::LoadScript(fs::path path)
 {
-	AngelBinder::Engine* engine = ScriptEngine::GetScriptEngine();
+	AB_NAMESPACE_QUALIFIER Engine* engine = ScriptEngine::GetScriptEngine();
 
 	std::string moduleName = path.filename().string();
 
@@ -141,7 +141,7 @@ bool ScriptHandler::LoadScript(fs::path path)
 	return true;
 }
 
-void ScriptHandler::RegisterFunctions(AngelBinder::Engine* engine)
+void ScriptHandler::RegisterFunctions(AB_NAMESPACE_QUALIFIER Engine* engine)
 {
 	// Defaults
 	int result;

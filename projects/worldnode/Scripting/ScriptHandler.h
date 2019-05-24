@@ -2,6 +2,7 @@
 #include <string>
 #include <filesystem>
 #include <asio.hpp>
+#include "AngelBinder.h"
 
 namespace AngelBinder
 {
@@ -16,7 +17,7 @@ public:
 	static void ReloadScripts();
 private:
 	static bool LoadScript(std::filesystem::path path);
-	static void RegisterFunctions(AngelBinder::Engine* engine);
+	static void RegisterFunctions(AB_NAMESPACE_QUALIFIER Engine* engine);
 
 	ScriptHandler();
 private:
