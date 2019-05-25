@@ -70,7 +70,7 @@ namespace DBCLoader
 						ss << "(" << map.Id << ", '" << map.InternalName << "', " << map.InstanceType << ", " << map.Flags << ", '" << map.Name << "', " << map.Expansion << ", " << map.MaxPlayers << ")";
 					}
 
-					ss << ";";
+					ss << ";" << std::endl;
 					sqlOutput += ss.str();
 				}
 			}
@@ -81,5 +81,50 @@ namespace DBCLoader
 		}
 
 		return true;
+	}
+
+	bool LoadEmotes(MPQHandler& handler, std::string& sqlOutput)
+	{
+		MPQFile file;
+		if (handler.GetFile("DBFilesClient\\Emotes.dbc", file))
+		{
+			NC_LOG_MESSAGE("Loading Emotes.dbc...");
+
+			if (DBCReader* dbcReader = DBCReader::GetReader())
+			{
+                if (dbcReader->Load(file.Buffer) == 0)
+                {
+                    u32 rows = dbcReader->GetNumRows();
+                    if (rows == 0) return false;
+
+                    std::stringstream ss;
+                    ss << "DELETE FROM emotes;" << std::endl << "INSERT INTO emotes(Id, name, textEmoteId) VALUES";
+
+                    for (u32 i = 0; i < rows; i++)
+                    {
+                        auto row = dbcReader->GetRow(i);
+
+                        DBCEmote emote;
+                        emote.Id = row.GetUInt32(0);
+                        emote.InternalName = row.GetString(row.GetUInt32(1));
+                        emote.TextEmoteId = row.GetUInt32(2);
+
+                        if (i != 0)
+                            ss << ", ";
+
+                        ss << "(" << emote.Id << ", '" << emote.InternalName << "', " << emote.TextEmoteId << ")";
+                    }
+
+                    ss << ";" << std::endl;
+                    sqlOutput += ss.str();
+                }
+			}
+		}
+		else
+		{
+			NC_LOG_ERROR("Failed to load Emotes.dbc");
+		}
+
+	return true;
 	}
 }
