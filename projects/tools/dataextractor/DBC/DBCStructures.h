@@ -36,9 +36,9 @@ struct DBCMap
 	u32 MaxPlayers;
 };
 
-struct DBCEmote
+struct DBCEmotesText
 {
 	u32 Id;
 	std::string InternalName;
-	u32 TextEmoteId;
+	u32 AnimationId;
 };

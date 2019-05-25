@@ -55,18 +55,20 @@ i32 main()
 
 		std::string sqlOutput = "";
 
-		std::vector<std::string> adtLocations;
-		if (DBCLoader::LoadMap(mpqHandler, sqlOutput, adtLocations))
+		DBCLoader::LoadEmotesText(mpqHandler, sqlOutput);
+
+        std::vector<std::string> adtLocations;
+        bool LoadedMapDBCs = DBCLoader::LoadMap(mpqHandler, sqlOutput, adtLocations);
+
+        NC_LOG_MESSAGE("Building sql...");
+        std::ofstream output(outputPath.string() + "/DBCImportData.sql", std::ofstream::out);
+        output << sqlOutput;
+        output.close();
+        
+        if (LoadedMapDBCs)
 		{
 			MapLoader::LoadMaps(mpqHandler, adtLocations);
 		}
-
-		DBCLoader::LoadEmotes(mpqHandler, sqlOutput);
-
-		NC_LOG_MESSAGE("Building sql...");
-		std::ofstream output(outputPath.string() + "/DBCImportData.sql", std::ofstream::out);
-		output << sqlOutput;
-		output.close();
 
 		mpqHandler.CloseAll();
 		NC_LOG_SUCCESS("Finished extracting all data");

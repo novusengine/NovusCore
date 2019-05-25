@@ -663,14 +663,14 @@ namespace ConnectionSystem
 
                         
                         EmoteData emoteData;
-                        if (dbcDatabase.cache->GetEmoteDataFromTextEmoteId(textEmote, emoteData))
+                        if (dbcDatabase.cache->GetEmoteData(textEmote, emoteData))
                         {
                             /* Play animation packet. */
                             {
                                 //The animation shouldn't play if the player is dead. In the future we should check for that.
 
                                 Common::ByteBuffer emote;
-                                emote.Write<u32>(emoteData.id);
+                                emote.Write<u32>(emoteData.animationId);
                                 emote.Write<u64>(playerConnection.characterGuid);
 
                                 playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, emote, Common::Opcode::SMSG_EMOTE));
@@ -679,9 +679,11 @@ namespace ConnectionSystem
                             /* Emote Chat Message Packet. */
                             {
                                 CharacterInfo targetData;
-                                characterDatabase.cache->GetCharacterInfo(targetGuid, targetData);
-
-                                u32 targetNameLength = static_cast<u32>(targetData.name.size());
+                                u32 targetNameLength = 0;
+                                if (characterDatabase.cache->GetCharacterInfo(targetGuid, targetData))
+                                {
+                                    targetNameLength = static_cast<u32>(targetData.name.size());
+                                }
 
                                 Common::ByteBuffer textEmoteMessage;
                                 textEmoteMessage.Write<u64>(playerConnection.characterGuid);

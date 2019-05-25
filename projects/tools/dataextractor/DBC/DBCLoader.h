@@ -83,12 +83,12 @@ namespace DBCLoader
 		return true;
 	}
 
-	bool LoadEmotes(MPQHandler& handler, std::string& sqlOutput)
+	bool LoadEmotesText(MPQHandler& handler, std::string& sqlOutput)
 	{
 		MPQFile file;
-		if (handler.GetFile("DBFilesClient\\Emotes.dbc", file))
+		if (handler.GetFile("DBFilesClient\\EmotesText.dbc", file))
 		{
-			NC_LOG_MESSAGE("Loading Emotes.dbc...");
+			NC_LOG_MESSAGE("Loading EmotesText.dbc...");
 
 			if (DBCReader* dbcReader = DBCReader::GetReader())
 			{
@@ -98,21 +98,21 @@ namespace DBCLoader
                     if (rows == 0) return false;
 
                     std::stringstream ss;
-                    ss << "DELETE FROM emotes;" << std::endl << "INSERT INTO emotes(id, internalName, textEmoteId) VALUES";
+                    ss << "DELETE FROM emotesText;" << std::endl << "INSERT INTO emotesText(id, internalName, animationId) VALUES";
 
                     for (u32 i = 0; i < rows; i++)
                     {
                         auto row = dbcReader->GetRow(i);
 
-                        DBCEmote emote;
-                        emote.Id = row.GetUInt32(0);
-                        emote.InternalName = row.GetString(row.GetUInt32(1));
-                        emote.TextEmoteId = row.GetUInt32(2);
+                        DBCEmotesText emoteText;
+                        emoteText.Id = row.GetUInt32(0);
+                        emoteText.InternalName = row.GetString(row.GetUInt32(1));
+                        emoteText.AnimationId = row.GetUInt32(2);
 
                         if (i != 0)
                             ss << ", ";
 
-                        ss << "(" << emote.Id << ", '" << emote.InternalName << "', " << emote.TextEmoteId << ")";
+                        ss << "(" << emoteText.Id << ", '" << emoteText.InternalName << "', " << emoteText.AnimationId << ")";
                     }
 
                     ss << ";" << std::endl;
@@ -122,7 +122,7 @@ namespace DBCLoader
 		}
 		else
 		{
-			NC_LOG_ERROR("Failed to load Emotes.dbc");
+			NC_LOG_ERROR("Failed to load EmotesText.dbc");
 		}
 
 	return true;

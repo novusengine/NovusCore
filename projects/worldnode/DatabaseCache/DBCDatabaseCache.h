@@ -40,12 +40,12 @@ struct EmoteData
     {
         id = data.id;
         internalName = data.internalName;
-        textEmoteId = data.textEmoteId;
+        animationId = data.animationId;
     }
 
     u32 id;
     std::string internalName;
-    u32 textEmoteId;
+    u32 animationId;
 private:
     DBCDatabaseCache* _cache;
 };
@@ -65,7 +65,7 @@ public:
 	bool GetMapData(u16 mapId, MapData& output);
 	bool GetMapDataFromInternalName(std::string mapInternalName, MapData& output);
 
-    bool GetEmoteDataFromTextEmoteId(u32 textEmoteId, EmoteData& output);
+    bool GetEmoteData(u32 textEmoteId, EmoteData& output);
 
 private:
     friend MapData;
