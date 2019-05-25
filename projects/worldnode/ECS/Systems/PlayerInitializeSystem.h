@@ -156,18 +156,18 @@ namespace PlayerInitializeSystem
             playerInitializeData.socket->SendPacket(loginSetTimeSpeed, Common::Opcode::SMSG_LOGIN_SETTIMESPEED);
 
             /* Set Initial Fields */
-            CharacterData characterData;
-            characterDatabase.cache->GetCharacterData(playerInitializeData.characterGuid, characterData);
+            CharacterInfo characterInfo;
+            characterDatabase.cache->GetCharacterInfo(playerInitializeData.characterGuid, characterInfo);
             CharacterVisualData characterVisualData;
             characterDatabase.cache->GetCharacterVisualData(playerInitializeData.characterGuid, characterVisualData);
 
-            playerFieldData.SetGuidValue(OBJECT_FIELD_GUID, characterData.guid);
+            playerFieldData.SetGuidValue(OBJECT_FIELD_GUID, characterInfo.guid);
             playerFieldData.SetFieldValue<u32>(OBJECT_FIELD_TYPE, 0x19); // Object Type Player (Player, Unit, Object)
             playerFieldData.SetFieldValue<f32>(OBJECT_FIELD_SCALE_X, 1.0f);
 
-            playerFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_0, characterData.race, 0);
-            playerFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_0, characterData.classId, 1);
-            playerFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_0, characterData.gender, 2);
+            playerFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_0, characterInfo.race, 0);
+            playerFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_0, characterInfo.classId, 1);
+            playerFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_0, characterInfo.gender, 2);
             playerFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_0, 1, 3);
             playerFieldData.SetFieldValue<u32>(UNIT_FIELD_HEALTH, 60);
             playerFieldData.SetFieldValue<u32>(UNIT_FIELD_POWER1, 0);
@@ -185,7 +185,7 @@ namespace PlayerInitializeSystem
             playerFieldData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER5, 0);
             playerFieldData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER6, 8);
             playerFieldData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER7, 1000);
-            playerFieldData.SetFieldValue<u32>(UNIT_FIELD_LEVEL, characterData.level);
+            playerFieldData.SetFieldValue<u32>(UNIT_FIELD_LEVEL, characterInfo.level);
             playerFieldData.SetFieldValue<u32>(UNIT_FIELD_FACTIONTEMPLATE, 14);
             playerFieldData.SetFieldValue<u32>(UNIT_FIELD_FLAGS, 0x00000008);
             playerFieldData.SetFieldValue<u32>(UNIT_FIELD_FLAGS_2, 0x00000800);
@@ -196,7 +196,7 @@ namespace PlayerInitializeSystem
             playerFieldData.SetFieldValue<f32>(UNIT_FIELD_COMBATREACH, 1.5f);
 
             u32 displayId = 0;
-            CharacterUtils::GetDisplayIdFromRace(characterData, displayId);
+            CharacterUtils::GetDisplayIdFromRace(characterInfo, displayId);
 
             playerFieldData.SetFieldValue<u32>(UNIT_FIELD_DISPLAYID, displayId);
             playerFieldData.SetFieldValue<u32>(UNIT_FIELD_NATIVEDISPLAYID, displayId);
@@ -248,7 +248,7 @@ namespace PlayerInitializeSystem
             playerFieldData.SetFieldValue<u8>(PLAYER_BYTES_2, 0, 1);
             playerFieldData.SetFieldValue<u8>(PLAYER_BYTES_2, 0, 2);
             playerFieldData.SetFieldValue<u8>(PLAYER_BYTES_2, 3, 3);
-            playerFieldData.SetFieldValue<u8>(PLAYER_BYTES_3, characterData.gender);
+            playerFieldData.SetFieldValue<u8>(PLAYER_BYTES_3, characterInfo.gender);
             playerFieldData.SetFieldValue<u8>(PLAYER_BYTES_3, 0, 1);
             playerFieldData.SetFieldValue<u8>(PLAYER_BYTES_3, 0, 2);
             playerFieldData.SetFieldValue<u8>(PLAYER_BYTES_3, 0, 3);
@@ -322,7 +322,7 @@ namespace PlayerInitializeSystem
             }
 
             // Call OnPlayerLogin script hooks
-            PlayerHooks::CallHook(PlayerHooks::Hooks::HOOK_ONPLAYERLOGIN, characterData.name, (u8)0);
+            PlayerHooks::CallHook(PlayerHooks::Hooks::HOOK_ONPLAYERLOGIN, characterInfo.name, (u8)0);
         });
     }
 }

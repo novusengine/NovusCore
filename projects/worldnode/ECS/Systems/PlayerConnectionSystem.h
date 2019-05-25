@@ -30,6 +30,7 @@
 #include <Math/Math.h>
 #include <Math/Vector2.h>
 #include <Cryptography/HMAC.h>
+#include <zlib.h>
 
 #include "../../NovusEnums.h"
 #include "../../Utils/CharacterUtils.h"
@@ -104,17 +105,17 @@ namespace ConnectionSystem
                         expiredPlayerData.characterGuid = playerConnection.characterGuid;
                         playerDeleteQueue.expiredEntityQueue->enqueue(expiredPlayerData);
 
-                        CharacterData characterData;
-                        characterDatabase.cache->GetCharacterData(playerConnection.characterGuid, characterData);
+                        CharacterInfo characterInfo;
+                        characterDatabase.cache->GetCharacterInfo(playerConnection.characterGuid, characterInfo);
 
-                        characterData.level = clientFieldData.GetFieldValue<u32>(UNIT_FIELD_LEVEL);
-                        characterData.mapId = clientPositionData.mapId;
-                        characterData.coordinateX = clientPositionData.x;
-                        characterData.coordinateY = clientPositionData.y;
-                        characterData.coordinateZ = clientPositionData.z;
-                        characterData.orientation = clientPositionData.orientation;
-                        characterData.online = 0;
-                        characterData.UpdateCache(playerConnection.characterGuid);
+                        characterInfo.level = clientFieldData.GetFieldValue<u32>(UNIT_FIELD_LEVEL);
+                        characterInfo.mapId = clientPositionData.mapId;
+                        characterInfo.coordinateX = clientPositionData.x;
+                        characterInfo.coordinateY = clientPositionData.y;
+                        characterInfo.coordinateZ = clientPositionData.z;
+                        characterInfo.orientation = clientPositionData.orientation;
+                        characterInfo.online = 0;
+                        characterInfo.UpdateCache(playerConnection.characterGuid);
 
                         characterDatabase.cache->SaveAndUnloadCharacter(playerConnection.characterGuid);
 
@@ -143,6 +144,116 @@ namespace ConnectionSystem
                         playerConnection.socket->SendPacket(suspendComms, Common::Opcode::SMSG_SUSPEND_COMMS);
 
                         packet.handled = true;
+                        break;
+                    }
+                    case Common::Opcode::CMSG_READY_FOR_ACCOUNT_DATA_TIMES:
+                    {
+                        /* Packet Structure */
+                        // UInt32:  Server Time (time(nullptr))
+                        // UInt8:   Unknown Byte Value
+                        // UInt32:  Mask for the account data fields
+
+                        Common::ByteBuffer accountDataTimes;
+
+                        u32 mask = 0x15;
+                        accountDataTimes.Write<u32>(static_cast<u32>(time(nullptr)));
+                        accountDataTimes.Write<u8>(1); // bitmask blocks count
+                        accountDataTimes.Write<u32>(mask);
+
+                        for (u32 i = 0; i < 8; ++i)
+                        {
+                            if (mask & (1 << i))
+                            {
+                                CharacterData characterData;
+                                if (characterDatabase.cache->GetCharacterData(playerConnection.characterGuid, i, characterData))
+                                {
+                                    accountDataTimes.Write<u32>(characterData.timestamp);
+                                }
+                            }
+                        }
+
+                        playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, accountDataTimes, Common::Opcode::SMSG_ACCOUNT_DATA_TIMES));
+                        packet.handled = true; 
+                        break;
+                    }
+                    case Common::Opcode::CMSG_UPDATE_ACCOUNT_DATA:
+                    {
+                        packet.handled = true;
+
+                        u32 type, timestamp, decompressedSize;
+                        packet.data.Read<u32>(type);
+                        packet.data.Read<u32>(timestamp);
+                        packet.data.Read<u32>(decompressedSize);
+
+                        if (type > 8)
+                        {
+                            break;
+                        }
+
+                        bool characterDataUpdate = ((1 << type) & CHARACTER_DATA_CACHE_MASK);
+
+                        // This is here temporarily as I'm not certain if the client will UPDATE any AccountData while connected to a WorldNode
+                        if (!characterDataUpdate)
+                        {
+                            NC_LOG_WARNING("Received AccountDataUpdate");
+                            break;
+                        }
+
+                        // Clear Data
+                        if (decompressedSize == 0)
+                        {
+                            if (characterDataUpdate)
+                            {
+                                CharacterData characterData;
+                                if (characterDatabase.cache->GetCharacterData(playerConnection.characterGuid, type, characterData))
+                                {
+                                    characterData.timestamp = 0;
+                                    characterData.data = "";
+                                    characterData.UpdateCache();
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (decompressedSize > 0xFFFF)
+                            {
+                                break;
+                            }
+
+                            Common::ByteBuffer DataInfo;
+                            DataInfo.Append(packet.data.data() + packet.data._readPos, packet.data.size() - packet.data._readPos);
+
+                            uLongf uSize = decompressedSize;
+                            u32 pos = static_cast<u32>(DataInfo._readPos);
+
+                            Common::ByteBuffer dataInfo;
+                            dataInfo.Resize(decompressedSize);
+
+                            if (uncompress(dataInfo.data(), &uSize, DataInfo.data() + pos, DataInfo.size() - pos) != Z_OK)
+                            {
+                                break;
+                            }
+
+                            std::string finalData = "";
+                            dataInfo.Read(finalData);
+
+                            if (characterDataUpdate)
+                            {
+                                CharacterData characterData;
+                                if (characterDatabase.cache->GetCharacterData(playerConnection.characterGuid, type, characterData))
+                                {
+                                    characterData.timestamp = timestamp;
+                                    characterData.data = finalData;
+                                    characterData.UpdateCache();
+                                }
+                            }
+                        }
+
+                        Common::ByteBuffer updateAccountDataComplete(4 + 4);
+                        updateAccountDataComplete.Write<u32>(type);
+                        updateAccountDataComplete.Write<u32>(0);
+
+                        playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, updateAccountDataComplete, Common::Opcode::SMSG_UPDATE_ACCOUNT_DATA_COMPLETE));
                         break;
                     }
                     case Common::Opcode::MSG_MOVE_SET_ALL_SPEED_CHEAT:
@@ -252,15 +363,15 @@ namespace ConnectionSystem
                         Common::ByteBuffer nameQuery;
                         nameQuery.AppendGuid(guid);
 
-                        CharacterData characterData;
-                        if (characterDatabase.cache->GetCharacterData(guid, characterData))
+                        CharacterInfo characterInfo;
+                        if (characterDatabase.cache->GetCharacterInfo(guid, characterInfo))
                         {
                             nameQuery.Write<u8>(0); // Name Unknown (0 = false, 1 = true);
-                            nameQuery.WriteString(characterData.name);
+                            nameQuery.WriteString(characterInfo.name);
                             nameQuery.Write<u8>(0);
-                            nameQuery.Write<u8>(characterData.race);
-                            nameQuery.Write<u8>(characterData.gender);
-                            nameQuery.Write<u8>(characterData.classId);
+                            nameQuery.Write<u8>(characterInfo.race);
+                            nameQuery.Write<u8>(characterInfo.gender);
+                            nameQuery.Write<u8>(characterInfo.classId);
                         }
                         else
                         {
@@ -567,8 +678,8 @@ namespace ConnectionSystem
 
                         /* Emote Chat Message Packet. */
                         {
-                            CharacterData targetData;
-                            characterDatabase.cache->GetCharacterData(targetGuid, targetData);
+                            CharacterInfo targetData;
+                            characterDatabase.cache->GetCharacterInfo(targetGuid, targetData);
 
                             u32 targetNameLength = static_cast<u32>(targetData.name.size());
 

@@ -30,7 +30,7 @@
 
 namespace CharacterUtils
 {
-    inline void GetDisplayIdFromRace(const CharacterData characterData, u32& displayId)
+    inline void GetDisplayIdFromRace(const CharacterInfo characterData, u32& displayId)
     {
         switch (characterData.race)
         {

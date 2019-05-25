@@ -29,7 +29,7 @@
 class RealmSecondConnectionHandler : public Common::TcpServer
 {
 public:
-    RealmSecondConnectionHandler(asio::io_service& io_service, i32 port, CharacterDatabaseCache& cache) : Common::TcpServer(io_service, port), _cache(cache) { _instance = this; }
+    RealmSecondConnectionHandler(asio::io_service& io_service, i32 port, AuthDatabaseCache& authCache, CharacterDatabaseCache& charCache) : Common::TcpServer(io_service, port), _authCache(authCache), _charCache(charCache) { _instance = this; }
 
     void Start()
     {
@@ -37,7 +37,8 @@ public:
     }
 private:
     static RealmSecondConnectionHandler* _instance;
-    CharacterDatabaseCache& _cache;
+    AuthDatabaseCache& _authCache;
+    CharacterDatabaseCache& _charCache;
     void StartListening() override
     {
         asio::ip::tcp::socket* socket = new asio::ip::tcp::socket(_ioService);
@@ -61,7 +62,7 @@ private:
                 socket->set_option(asio::ip::tcp::no_delay(true), error);
             }
 
-            RealmConnection* connection = new RealmConnection(socket, _cache, true);
+            RealmConnection* connection = new RealmConnection(socket, _authCache, _charCache, true);
             connection->Start();
 
             _connections.push_back(connection);

@@ -27,6 +27,7 @@
 #include <Cryptography/BigNumber.h>
 #include <Cryptography/HMAC.h>
 #include <Database/DatabaseConnector.h>
+#include "../DatabaseCache/AuthDatabaseCache.h"
 
 #include <zlib.h>
 #include <map>
@@ -269,10 +270,10 @@ bool RealmConnection::HandlePacketRead()
 
             DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, [&, characterGuid](std::shared_ptr<DatabaseConnector> & connector)
             {
-                PreparedStatement stmt("UPDATE characters SET online=1 WHERE guid={u};");
+                PreparedStatement stmt("UPDATE characters SET online=1, lastLogin={u} WHERE guid={u};");
+                stmt.Bind(static_cast<u32>(time(nullptr)));
                 stmt.Bind(characterGuid);
                 connector->Execute(stmt);
-
                 
                 /*I'm am not 100% sure where this fits into the picture yet, but I'm sure it has a purpose*/
                 Common::ByteBuffer suspendComms;
@@ -332,12 +333,18 @@ bool RealmConnection::HandlePacketRead()
             u32 mask = 0x15;
             accountDataTimes.Write<u32>(static_cast<u32>(time(nullptr)));
             accountDataTimes.Write<u8>(1); // bitmask blocks count
-            accountDataTimes.Write<u32>(mask); // PER_CHARACTER_CACHE_MASK
+            accountDataTimes.Write<u32>(mask);
 
             for (u32 i = 0; i < 8; ++i)
             {
                 if (mask & (1 << i))
-                    accountDataTimes.Write<u32>(0);
+                {
+                    AccountData accountData;
+                    if (_authCache.GetAccountData(account, i, accountData))
+                    {
+                        accountDataTimes.Write<u32>(accountData.timestamp);
+                    }
+                }
             }
 
             SendPacket(accountDataTimes, Common::Opcode::SMSG_ACCOUNT_DATA_TIMES);
@@ -346,14 +353,85 @@ bool RealmConnection::HandlePacketRead()
         case Common::Opcode::CMSG_UPDATE_ACCOUNT_DATA:
         {
             u32 type, timestamp, decompressedSize;
-            _packetBuffer.Read(&type, 4);
-            _packetBuffer.Read(&timestamp, 4);
-            _packetBuffer.Read(&decompressedSize, 4);
+            _packetBuffer.Read<u32>(type);
+            _packetBuffer.Read<u32>(timestamp);
+            _packetBuffer.Read<u32>(decompressedSize);
 
             if (type > 8)
             {
-                std::cout << "Bad Type." << std::endl;
                 break;
+            }
+            
+            bool accountDataUpdate = ((1 << type) & 0x15);
+
+            // Clear Data
+            if (decompressedSize == 0)
+            { 
+                if (accountDataUpdate)
+                {
+                    AccountData accountData;
+                    if (_authCache.GetAccountData(account, type, accountData))
+                    {
+                        accountData.timestamp = 0;
+                        accountData.data = "";
+                        accountData.UpdateCache();
+                    }
+                }
+                else
+                {
+                    CharacterData characterData;
+                    if (_charCache.GetCharacterData(characterGuid, type, characterData))
+                    {
+                        characterData.timestamp = 0;
+                        characterData.data = "";
+                        characterData.UpdateCache();
+                    }
+                }
+            }
+            else
+            {
+                if (decompressedSize > 0xFFFF)
+                {
+                    break;
+                }
+
+                Common::ByteBuffer DataInfo;
+                DataInfo.Append(_packetBuffer.data() + _packetBuffer._readPos, _packetBuffer.size() - _packetBuffer._readPos);
+
+                uLongf uSize = decompressedSize;
+                u32 pos = static_cast<u32>(DataInfo._readPos);
+
+                Common::ByteBuffer dataInfo;
+                dataInfo.Resize(decompressedSize);
+
+                if (uncompress(dataInfo.data(), &uSize, DataInfo.data() + pos, DataInfo.size() - pos) != Z_OK)
+                {
+                    break;
+                }
+
+                std::string finalData = "";
+                dataInfo.Read(finalData);
+
+                if (accountDataUpdate)
+                {
+                    AccountData accountData;
+                    if (_authCache.GetAccountData(account, type, accountData))
+                    {
+                        accountData.timestamp = timestamp;
+                        accountData.data = finalData;
+                        accountData.UpdateCache();
+                    }
+                }
+                else
+                {
+                    CharacterData characterData;
+                    if (_charCache.GetCharacterData(characterGuid, type, characterData))
+                    {
+                        characterData.timestamp = timestamp;
+                        characterData.data = finalData;
+                        characterData.UpdateCache();
+                    }
+                }
             }
 
             Common::ByteBuffer updateAccountDataComplete(9 + 4 + 4);
@@ -459,7 +537,7 @@ bool RealmConnection::HandlePacketRead()
                     createData->charName[0] = std::toupper(createData->charName[0]);
 
                     CharacterUtils::SpawnPosition spawnPosition;
-                    if (!CharacterUtils::BuildGetDefaultSpawn(_cache.GetDefaultSpawnStorageData(), createData->charRace, createData->charClass, spawnPosition))
+                    if (!CharacterUtils::BuildGetDefaultSpawn(_charCache.GetDefaultSpawnStorageData(), createData->charRace, createData->charClass, spawnPosition))
                     {
                         characterCreateResult.Write<u8>(CHAR_CREATE_DISABLED);
                         SendPacket(characterCreateResult, Common::Opcode::SMSG_CHAR_CREATE);
@@ -497,14 +575,14 @@ bool RealmConnection::HandlePacketRead()
 
                     // Baseline Skills
                     std::string skillSql;
-                    if (CharacterUtils::BuildDefaultSkillSQL(_cache.GetDefaultSkillStorageData(), characterGuid, createData->charRace, createData->charClass, skillSql))
+                    if (CharacterUtils::BuildDefaultSkillSQL(_charCache.GetDefaultSkillStorageData(), characterGuid, createData->charRace, createData->charClass, skillSql))
                     {
                         connector.ExecuteAsync(skillSql);
                     }
 
                     // Baseline Spells
                     std::string spellSql;
-                    if (CharacterUtils::BuildDefaultSpellSQL(_cache.GetDefaultSpellStorageData(), characterGuid, createData->charRace, createData->charClass, spellSql))
+                    if (CharacterUtils::BuildDefaultSpellSQL(_charCache.GetDefaultSpellStorageData(), characterGuid, createData->charRace, createData->charClass, spellSql))
                     {
                         connector.ExecuteAsync(spellSql);
                     }
@@ -914,5 +992,23 @@ void RealmConnection::HandleAuthSession()
     {
         Common::ByteBuffer logoutRequest(0);
         SendPacket(logoutRequest, Common::Opcode::SMSG_LOGOUT_COMPLETE);
+
+        std::shared_ptr<DatabaseConnector> connector = nullptr;
+        if (!DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, connector))
+        {
+            Close(asio::error::interrupted);
+            return;
+        }
+
+        amy::result_set results;
+        PreparedStatement stmt("SELECT guid FROM characters WHERE account={u} ORDER BY lastLogin DESC LIMIT 1;");
+        stmt.Bind(account);
+        if (!connector->Query(stmt, results))
+        {
+            Close(asio::error::interrupted);
+            return;
+        }
+
+        characterGuid = results[0][0].GetU64();
     }
 }

@@ -294,49 +294,6 @@ bool WorldConnection::HandlePacketRead()
             }
             break;
         }
-        case Common::Opcode::CMSG_READY_FOR_ACCOUNT_DATA_TIMES:
-        {
-            /* Packet Structure */
-            // UInt32:  Server Time (time(nullptr))
-            // UInt8:   Unknown Byte Value
-            // UInt32:  Mask for the account data fields
-
-            Common::ByteBuffer accountDataTimes;
-
-            u32 mask = 0x15;
-            accountDataTimes.Write<u32>(static_cast<u32>(time(nullptr)));
-            accountDataTimes.Write<u8>(1); // bitmask blocks count
-            accountDataTimes.Write<u32>(mask); // PER_CHARACTER_CACHE_MASK
-
-            for (u32 i = 0; i < 8; ++i)
-            {
-                if (mask & (1 << i))
-                    accountDataTimes.Write<u32>(0);
-            }
-
-            SendPacket(accountDataTimes, Common::Opcode::SMSG_ACCOUNT_DATA_TIMES);
-            break;
-        }
-        case Common::Opcode::CMSG_UPDATE_ACCOUNT_DATA:
-        {
-            u32 type, timestamp, decompressedSize;
-            _packetBuffer.Read(&type, 4);
-            _packetBuffer.Read(&timestamp, 4);
-            _packetBuffer.Read(&decompressedSize, 4);
-
-            if (type > 8)
-            {
-                std::cout << "Bad Type." << std::endl;
-                break;
-            }
-
-            Common::ByteBuffer updateAccountDataComplete(9 + 4 + 4);
-            updateAccountDataComplete.Write<u32>(type);
-            updateAccountDataComplete.Write<u32>(0);
-
-            SendPacket(updateAccountDataComplete, Common::Opcode::SMSG_UPDATE_ACCOUNT_DATA_COMPLETE);
-            break;
-        }
         default:
         {
             Message packetMessage;

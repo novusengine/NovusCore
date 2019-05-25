@@ -24,24 +24,24 @@ void CharacterDatabaseCache::Load()
     {
         for (auto row : resultSet)
         {
-            CharacterData newCharacterData(this);
-            newCharacterData.guid = row[0].GetU64();
-            newCharacterData.account = row[1].GetU32();
-            newCharacterData.name = row[2].GetString();
-            newCharacterData.race = row[3].GetU8();
-            newCharacterData.gender = row[4].GetU8();
-            newCharacterData.classId = row[5].GetU8();
-            newCharacterData.level = row[6].GetU8();
-            newCharacterData.mapId = row[7].GetU32();
-            newCharacterData.zoneId = row[8].GetU32();
-            newCharacterData.coordinateX = row[9].GetF32();
-            newCharacterData.coordinateY = row[10].GetF32();
-            newCharacterData.coordinateZ = row[11].GetF32();
-            newCharacterData.orientation = row[12].GetF32();
-            newCharacterData.online = row[13].GetU8();
+            CharacterInfo newCharacterInfo(this);
+            newCharacterInfo.guid = row[0].GetU64();
+            newCharacterInfo.account = row[1].GetU32();
+            newCharacterInfo.name = row[2].GetString();
+            newCharacterInfo.race = row[3].GetU8();
+            newCharacterInfo.gender = row[4].GetU8();
+            newCharacterInfo.classId = row[5].GetU8();
+            newCharacterInfo.level = row[6].GetU8();
+            newCharacterInfo.mapId = row[7].GetU32();
+            newCharacterInfo.zoneId = row[8].GetU32();
+            newCharacterInfo.coordinateX = row[9].GetF32();
+            newCharacterInfo.coordinateY = row[10].GetF32();
+            newCharacterInfo.coordinateZ = row[11].GetF32();
+            newCharacterInfo.orientation = row[12].GetF32();
+            newCharacterInfo.online = row[13].GetU8();
 
             CharacterVisualData newCharacterVisualData(this);
-            newCharacterVisualData.guid = newCharacterData.guid;
+            newCharacterVisualData.guid = newCharacterInfo.guid;
             newCharacterVisualData.skin = row[14].GetU8();
             newCharacterVisualData.face = row[15].GetU8();
             newCharacterVisualData.facialStyle = row[16].GetU8();
@@ -49,8 +49,26 @@ void CharacterDatabaseCache::Load()
             newCharacterVisualData.hairColor = row[18].GetU8();
 
             _accessMutex.lock();
-            _characterDataCache[newCharacterData.guid] = newCharacterData;
-            _characterVisualDataCache[newCharacterData.guid] = newCharacterVisualData;
+            _characterInfoCache[newCharacterInfo.guid] = newCharacterInfo;
+            _characterVisualDataCache[newCharacterInfo.guid] = newCharacterVisualData;
+            _accessMutex.unlock();
+        }
+    }
+
+    connector->Query("SELECT guid, type, timestamp, data FROM character_data", resultSet);
+    if (resultSet.affected_rows() > 0)
+    {
+        for (auto row : resultSet)
+        {
+            CharacterData newCharacterData(this);
+            newCharacterData.guid = row[0].as<amy::sql_bigint_unsigned>();
+            newCharacterData.type = row[1].as<amy::sql_int_unsigned>();
+            newCharacterData.timestamp = row[2].as<amy::sql_int_unsigned>();
+            newCharacterData.data = row[3].as<amy::sql_blob>();
+            newCharacterData.loaded = true;
+
+            _accessMutex.lock();
+            _characterDataCache.insert({ newCharacterData.guid, newCharacterData });
             _accessMutex.unlock();
         }
     }
@@ -114,17 +132,17 @@ void CharacterDatabaseCache::Save()
     DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, [this](std::shared_ptr<DatabaseConnector>& connector)
     {
 
-        for (auto itr : _characterDataCache)
+        for (auto itr : _characterInfoCache)
         {
-            CharacterData characterData = itr.second;
+            CharacterInfo characterInfo = itr.second;
             PreparedStatement characterBaseData("UPDATE characters set mapId={u}, zoneId={u}, coordinate_x={f}, coordinate_y={f}, coordinate_z={f}, orientation={f} WHERE guid={u};");
-            characterBaseData.Bind(characterData.mapId);
-            characterBaseData.Bind(characterData.zoneId);
-            characterBaseData.Bind(characterData.coordinateX);
-            characterBaseData.Bind(characterData.coordinateY);
-            characterBaseData.Bind(characterData.coordinateZ);
-            characterBaseData.Bind(characterData.orientation);
-            characterBaseData.Bind(characterData.guid);
+            characterBaseData.Bind(characterInfo.mapId);
+            characterBaseData.Bind(characterInfo.zoneId);
+            characterBaseData.Bind(characterInfo.coordinateX);
+            characterBaseData.Bind(characterInfo.coordinateY);
+            characterBaseData.Bind(characterInfo.coordinateZ);
+            characterBaseData.Bind(characterInfo.orientation);
+            characterBaseData.Bind(characterInfo.guid);
 
             connector->Execute(characterBaseData);
         }
@@ -225,22 +243,22 @@ void CharacterDatabaseCache::SaveCharacter(u64 characterGuid)
 {
     DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, [this, characterGuid](std::shared_ptr<DatabaseConnector>& connector)
     {
-        CharacterData characterData = _characterDataCache[characterGuid];
-        PreparedStatement characterBaseData("UPDATE characters set level={u}, mapId={u}, zoneId={u}, coordinate_x={f}, coordinate_y={f}, coordinate_z={f}, orientation={f}, online={u} WHERE guid={u};");
-        characterBaseData.Bind(characterData.level);
-        characterBaseData.Bind(characterData.mapId);
-        characterBaseData.Bind(characterData.zoneId);
-        characterBaseData.Bind(characterData.coordinateX);
-        characterBaseData.Bind(characterData.coordinateY);
-        characterBaseData.Bind(characterData.coordinateZ);
-        characterBaseData.Bind(characterData.orientation);
-        characterBaseData.Bind(characterData.online);
+        CharacterInfo characterInfo = _characterInfoCache[characterGuid];
+        PreparedStatement characterBaseData("UPDATE characters SET level={u}, mapId={u}, zoneId={u}, coordinate_x={f}, coordinate_y={f}, coordinate_z={f}, orientation={f}, online={u} WHERE guid={u};");
+        characterBaseData.Bind(characterInfo.level);
+        characterBaseData.Bind(characterInfo.mapId);
+        characterBaseData.Bind(characterInfo.zoneId);
+        characterBaseData.Bind(characterInfo.coordinateX);
+        characterBaseData.Bind(characterInfo.coordinateY);
+        characterBaseData.Bind(characterInfo.coordinateZ);
+        characterBaseData.Bind(characterInfo.orientation);
+        characterBaseData.Bind(characterInfo.online);
         characterBaseData.Bind(characterGuid);
         connector->Execute(characterBaseData);
 
         // Save Visual Data
         CharacterVisualData characterVisualData = _characterVisualDataCache[characterGuid];
-        PreparedStatement characterBaseVisualData("UPDATE character_visual_data set skin={u}, face={u}, facial_style={u}, hair_style={u}, hair_color={u} WHERE guid={u};");
+        PreparedStatement characterBaseVisualData("UPDATE character_visual_data SET skin={u}, face={u}, facial_style={u}, hair_style={u}, hair_color={u} WHERE guid={u};");
         characterBaseVisualData.Bind(characterVisualData.skin);
         characterBaseVisualData.Bind(characterVisualData.face);
         characterBaseVisualData.Bind(characterVisualData.facialStyle);
@@ -248,6 +266,23 @@ void CharacterDatabaseCache::SaveCharacter(u64 characterGuid)
         characterBaseVisualData.Bind(characterVisualData.hairColor);
         characterBaseVisualData.Bind(characterGuid);
         connector->Execute(characterBaseVisualData);
+
+        // Save Character Data
+        for (CharacterData characterData : _characterDataCache[characterGuid])
+        {
+            if (characterData.loaded)
+            {
+                PreparedStatement characterDataStmt("INSERT INTO character_data(guid, character_data.type, character_data.timestamp, character_data.data) VALUES({u}, {u}, {u}, {s}) ON DUPLICATE KEY UPDATE character_data.timestamp={u}, character_data.data={s};");
+                characterDataStmt.Bind(characterData.guid);
+                characterDataStmt.Bind(characterData.type);
+                characterDataStmt.Bind(characterData.timestamp);
+                characterDataStmt.Bind(characterData.data);
+                characterDataStmt.Bind(characterData.timestamp);
+                characterDataStmt.Bind(characterData.data);
+
+                connector->Execute(characterDataStmt);
+            }
+        }
 
         // Save Spells
         {
@@ -318,22 +353,23 @@ void CharacterDatabaseCache::SaveCharacter(u64 characterGuid)
 }
 void CharacterDatabaseCache::UnloadCharacter(u64 characterGuid)
 {
-    _characterDataCache.erase(characterGuid);
+    _characterInfoCache.erase(characterGuid);
     _characterVisualDataCache.erase(characterGuid);
     _characterSpellStorageCache.erase(characterGuid);
     _characterSkillStorageCache.erase(characterGuid);
+    _characterDataCache.erase(characterGuid);
 }
 
-bool CharacterDatabaseCache::GetCharacterData(u64 characterGuid, CharacterData& output)
+bool CharacterDatabaseCache::GetCharacterInfo(u64 characterGuid, CharacterInfo& output)
 {
-    auto cache = _characterDataCache.find(characterGuid);
-    if (cache != _characterDataCache.end())
+    auto cache = _characterInfoCache.find(characterGuid);
+    if (cache != _characterInfoCache.end())
     {
         _accessMutex.lock_shared();
-        CharacterData characterData = cache->second;
+        CharacterInfo characterInfo = cache->second;
         _accessMutex.unlock_shared();
 
-        output = characterData;
+        output = characterInfo;
         return true;
     }
     else
@@ -354,32 +390,82 @@ bool CharacterDatabaseCache::GetCharacterData(u64 characterGuid, CharacterData& 
         if (resultSet.affected_rows() == 0)
             return false;
 
-        CharacterData newCharacterData(this);
+        CharacterInfo newCharacterInfo(this);
         amy::row resultRow = resultSet[0];
 
-        newCharacterData.guid = resultRow[0].GetU32();
-        newCharacterData.account = resultRow[1].GetU32();
+        newCharacterInfo.guid = resultRow[0].GetU32();
+        newCharacterInfo.account = resultRow[1].GetU32();
 
-        newCharacterData.name = resultRow[2].GetString();
+        newCharacterInfo.name = resultRow[2].GetString();
 
-        newCharacterData.race = resultRow[3].GetU8();
-        newCharacterData.gender = resultRow[4].GetU8();
-        newCharacterData.classId = resultRow[5].GetU8();
-        newCharacterData.level = resultRow[6].GetU8();
-        newCharacterData.mapId = resultRow[7].GetU32();
-        newCharacterData.zoneId = resultRow[8].GetU32();
-        newCharacterData.coordinateX = resultRow[9].GetF32();
-        newCharacterData.coordinateY = resultRow[10].GetF32();
-        newCharacterData.coordinateZ = resultRow[11].GetF32();
-        newCharacterData.orientation = resultRow[12].GetF32();
+        newCharacterInfo.race = resultRow[3].GetU8();
+        newCharacterInfo.gender = resultRow[4].GetU8();
+        newCharacterInfo.classId = resultRow[5].GetU8();
+        newCharacterInfo.level = resultRow[6].GetU8();
+        newCharacterInfo.mapId = resultRow[7].GetU32();
+        newCharacterInfo.zoneId = resultRow[8].GetU32();
+        newCharacterInfo.coordinateX = resultRow[9].GetF32();
+        newCharacterInfo.coordinateY = resultRow[10].GetF32();
+        newCharacterInfo.coordinateZ = resultRow[11].GetF32();
+        newCharacterInfo.orientation = resultRow[12].GetF32();
 
         _accessMutex.lock();
-        _characterDataCache[characterGuid] = newCharacterData;
+        _characterInfoCache[characterGuid] = newCharacterInfo;
         _accessMutex.unlock();
 
-        output = newCharacterData;
+        output = newCharacterInfo;
         return true;
     }
+}
+bool CharacterDatabaseCache::GetCharacterData(u64 characterGuid, u32 type, CharacterData& output)
+{
+    auto cache = _characterDataCache.find(characterGuid);
+    if (cache != _characterDataCache.end())
+    {
+        CharacterData characterData = cache->second[type];
+        if (characterData.loaded)
+        {
+            output = characterData;
+            return true;
+        }
+    }
+
+    std::shared_ptr<DatabaseConnector> connector;
+    bool result = DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, connector);
+    assert(result);
+    if (!result)
+        return false;
+
+    PreparedStatement stmt("SELECT * FROM character_data WHERE guid = {u} AND type = {u};");
+    stmt.Bind(characterGuid);
+    stmt.Bind(type);
+
+    amy::result_set resultSet;
+    connector->Query(stmt, resultSet);
+
+    CharacterData newCharacterData(this);
+    if (resultSet.affected_rows() == 0)
+    {
+        newCharacterData.guid = characterGuid;
+        newCharacterData.type = type;
+        newCharacterData.timestamp = 0;
+        newCharacterData.data = "";
+    }
+    else
+    {
+        newCharacterData.guid = resultSet[0][0].as<amy::sql_bigint_unsigned>();
+        newCharacterData.type = resultSet[0][1].as<amy::sql_int_unsigned>();
+        newCharacterData.timestamp = resultSet[0][2].as<amy::sql_int_unsigned>();
+        newCharacterData.data = resultSet[0][3].as<amy::sql_blob>();
+    }
+    newCharacterData.loaded = true;
+
+    _accessMutex.lock();
+    _characterDataCache.insert({ characterGuid, newCharacterData });
+    _accessMutex.unlock();
+
+    output = newCharacterData;
+    return true;
 }
 bool CharacterDatabaseCache::GetCharacterVisualData(u64 characterGuid, CharacterVisualData& output)
 {
@@ -570,7 +656,13 @@ bool CharacterDatabaseCache::GetCharacterItemData(u64 characterGuid, robin_hood:
 	}
 }
 
-void CharacterData::UpdateCache(u64 characterGuid)
+void CharacterInfo::UpdateCache(u64 characterGuid)
 {
-    _cache->_characterDataCache[characterGuid] = *this;
+    _cache->_characterInfoCache[characterGuid] = *this;
+}
+void CharacterData::UpdateCache()
+{
+    loaded = true;
+    _cache->_characterDataCache[guid][type] = *this;
+    _cache->Save();
 }

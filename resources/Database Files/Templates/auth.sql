@@ -1,16 +1,6 @@
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET NAMES utf8 */;
-/*!50503 SET NAMES utf8mb4 */;
-/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
-/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
-
-
--- Dumping database structure for auth
-CREATE DATABASE IF NOT EXISTS `auth` /*!40100 DEFAULT CHARACTER SET latin1 */;
+CREATE DATABASE IF NOT EXISTS `auth`;
 USE `auth`;
 
--- Dumping structure for table auth.accounts
-DROP TABLE IF EXISTS `accounts`;
 CREATE TABLE IF NOT EXISTS `accounts` (
   `guid` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `username` varchar(32) NOT NULL,
@@ -20,14 +10,19 @@ CREATE TABLE IF NOT EXISTS `accounts` (
   PRIMARY KEY (`guid`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
 
--- Dumping data for table auth.accounts: ~1 rows (approximately)
-/*!40000 ALTER TABLE `accounts` DISABLE KEYS */;
+DELETE FROM `accounts`;
 INSERT INTO `accounts` (`guid`, `username`, `salt`, `verifier`, `sessionKey`) VALUES
-	(1, 'ADMIN', 'AD31174982EF8F0B8686FCAC4857D89D093D5C000F68DFB102178FBC8D3ADFA9', '10DB5B75BCF6946B5F4DECCA7C5635D04374FFAE4105620C824A644FE876AE92', '');
-/*!40000 ALTER TABLE `accounts` ENABLE KEYS */;
+	(1, 'ADMIN', 'AD31174982EF8F0B8686FCAC4857D89D093D5C000F68DFB102178FBC8D3ADFA9', '10DB5B75BCF6946B5F4DECCA7C5635D04374FFAE4105620C824A644FE876AE92', 'E7379390AA3C1624BEEDA7C6675C245AA84BB4A6962700278E96F60229057A5494FC99568B68B4B7');
 
--- Dumping structure for table auth.realms
-DROP TABLE IF EXISTS `realms`;
+CREATE TABLE IF NOT EXISTS `account_data` (
+  `accountGuid` int(11) unsigned NOT NULL,
+  `type` int(11) unsigned NOT NULL,
+  `timestamp` int(11) unsigned NOT NULL,
+  `data` blob NOT NULL,
+  PRIMARY KEY (`accountGuid`,`type`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+DELETE FROM `account_data`;
+
 CREATE TABLE IF NOT EXISTS `realms` (
   `id` tinyint(3) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(64) NOT NULL DEFAULT 'NovusCore Realm',
@@ -37,27 +32,15 @@ CREATE TABLE IF NOT EXISTS `realms` (
   `timezone` tinyint(3) unsigned NOT NULL DEFAULT '1' COMMENT '0 = hide, > 0 = Timezone',
   `population` float NOT NULL DEFAULT '0' COMMENT '0 = Low, 1 = Medium, 2 = High',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
-
--- Dumping data for table auth.realms: ~1 rows (approximately)
-/*!40000 ALTER TABLE `realms` DISABLE KEYS */;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1;
+DELETE FROM `realms`;
 INSERT INTO `realms` (`id`, `name`, `address`, `type`, `flags`, `timezone`, `population`) VALUES
 	(1, 'NovusCore Realm', '127.0.0.1:8000', 1, 32, 1, 0);
-/*!40000 ALTER TABLE `realms` ENABLE KEYS */;
 
--- Dumping structure for table auth.realm_characters
-DROP TABLE IF EXISTS `realm_characters`;
 CREATE TABLE IF NOT EXISTS `realm_characters` (
   `account` int(10) unsigned NOT NULL,
   `realmId` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `characters` tinyint(3) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`account`,`realmId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
--- Dumping data for table auth.realm_characters: ~0 rows (approximately)
-/*!40000 ALTER TABLE `realm_characters` DISABLE KEYS */;
-/*!40000 ALTER TABLE `realm_characters` ENABLE KEYS */;
-
-/*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
-/*!40014 SET FOREIGN_KEY_CHECKS=IF(@OLD_FOREIGN_KEY_CHECKS IS NULL, 1, @OLD_FOREIGN_KEY_CHECKS) */;
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+DELETE FROM `realm_characters`;

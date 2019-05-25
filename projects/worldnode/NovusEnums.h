@@ -35,7 +35,6 @@ enum EntityTypeID
     TYPEID_DYNAMICOBJECT = 6,
     TYPEID_CORPSE = 7
 };
-
 enum EObjectFields
 {
     OBJECT_FIELD_GUID = 0x0000, // Size: 2, Type: LONG, Flags: PUBLIC
@@ -45,7 +44,6 @@ enum EObjectFields
     OBJECT_FIELD_PADDING = 0x0005, // Size: 1, Type: INT, Flags: NONE
     OBJECT_END = 0x0006
 };
-
 enum EItemFields
 {
     ITEM_FIELD_OWNER = OBJECT_END + 0x0000, // Size: 2, Type: LONG, Flags: PUBLIC
@@ -88,7 +86,6 @@ enum EItemFields
     ITEM_FIELD_PAD = OBJECT_END + 0x0039, // Size: 1, Type: INT, Flags: NONE
     ITEM_END = OBJECT_END + 0x003A
 };
-
 enum EContainerFields
 {
     CONTAINER_FIELD_NUM_SLOTS = ITEM_END + 0x0000, // Size: 1, Type: INT, Flags: PUBLIC
@@ -96,7 +93,6 @@ enum EContainerFields
     CONTAINER_FIELD_SLOT_1 = ITEM_END + 0x0002, // Size: 72, Type: LONG, Flags: PUBLIC
     CONTAINER_END = ITEM_END + 0x004A
 };
-
 enum EUnitFields
 {
     UNIT_FIELD_CHARM = OBJECT_END + 0x0000, // Size: 2, Type: LONG, Flags: PUBLIC
@@ -420,7 +416,7 @@ enum UpdatefieldFlags
     UF_FLAG_UNUSED2 = 0x080,
     UF_FLAG_DYNAMIC = 0x100
 };
-u32 ItemUpdateFieldFlags[CONTAINER_END] =
+static u32 ItemUpdateFieldFlags[CONTAINER_END] =
 {
     UF_FLAG_PUBLIC,                                         // OBJECT_FIELD_GUID
     UF_FLAG_PUBLIC,                                         // OBJECT_FIELD_GUID+1
@@ -1995,3 +1991,18 @@ enum ChatMsgType
     CHAT_MSG_PARTY_LEADER = 0x33
 };
 #define MAX_MSG_TYPE 0x34
+
+enum DataCacheType
+{
+    ACCOUNT_CONFIG_CACHE = 0,
+    CHARACTER_CONFIG_CACHE = 1,
+    ACCOUNT_BINDINGS_CACHE = 2,
+    CHARACTER_BINDINGS_CACHE = 3,
+    ACCOUNT_MACROS_CACHE = 4,
+    CHARACTER_MACROS_CACHE = 5,
+    CHARACTER_LAYOUT_CACHE = 6,
+    CHARACTER_CHAT_CACHE = 7
+};
+#define MAX_DATA_CACHE_TYPES 8
+#define ACCOUNT_DATA_CACHE_MASK 0x15
+#define CHARACTER_DATA_CACHE_MASK 0xEA

@@ -222,16 +222,16 @@ bool WorldNodeHandler::Update()
                     expiredPlayerData.characterGuid = playerConnection.characterGuid;
                     playerDeleteQueue.expiredEntityQueue->enqueue(expiredPlayerData);
 
-                    CharacterData characterData;
-                    characterDatabase.cache->GetCharacterData(playerConnection.characterGuid, characterData);
+                    CharacterInfo characterInfo;
+                    characterDatabase.cache->GetCharacterInfo(playerConnection.characterGuid, characterInfo);
 
-                    characterData.mapId = playerPositionData.mapId;
-                    characterData.coordinateX = playerPositionData.x;
-                    characterData.coordinateY = playerPositionData.y;
-                    characterData.coordinateZ = playerPositionData.z;
-                    characterData.orientation = playerPositionData.orientation;
-                    characterData.online = 0;
-                    characterData.UpdateCache(playerConnection.characterGuid);
+                    characterInfo.mapId = playerPositionData.mapId;
+                    characterInfo.coordinateX = playerPositionData.x;
+                    characterInfo.coordinateY = playerPositionData.y;
+                    characterInfo.coordinateZ = playerPositionData.z;
+                    characterInfo.orientation = playerPositionData.orientation;
+                    characterInfo.online = 0;
+                    characterInfo.UpdateCache(playerConnection.characterGuid);
 
                     characterDatabase.cache->SaveAndUnloadCharacter(playerConnection.characterGuid);
                 }

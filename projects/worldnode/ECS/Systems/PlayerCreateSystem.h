@@ -54,8 +54,8 @@ namespace PlayerCreateSystem
             u64 characterGuid = 0;
             message.packet.Read<u64>(characterGuid);
 
-            CharacterData characterData;
-            if (characterDatabase.cache->GetCharacterData(characterGuid, characterData))
+            CharacterInfo characterInfo;
+            if (characterDatabase.cache->GetCharacterInfo(characterGuid, characterInfo))
             {
                 u32 entity = registry.create();
 
@@ -67,7 +67,7 @@ namespace PlayerCreateSystem
                 registry.assign<PlayerUpdateDataComponent>(entity);
 
                 // Human Starting Location: -8949.950195f, -132.492996f, 83.531197f, 0.f
-                registry.assign<PlayerPositionComponent>(entity, characterData.mapId, characterData.coordinateX, characterData.coordinateY, characterData.coordinateZ, characterData.orientation);
+                registry.assign<PlayerPositionComponent>(entity, characterInfo.mapId, characterInfo.coordinateX, characterInfo.coordinateY, characterInfo.coordinateZ, characterInfo.orientation);
                 registry.assign<PlayerSpellStorageComponent>(entity);
                 registry.assign<PlayerSkillStorageComponent>(entity);
 

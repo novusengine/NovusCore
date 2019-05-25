@@ -26,9 +26,11 @@
 #include <Database/DatabaseConnector.h>
 #include <Utils/DebugHandler.h>
 
+#include "DatabaseCache/AuthDatabaseCache.h"
 #include "DatabaseCache/CharacterDatabaseCache.h"
 #include "ConnectionHandlers/RealmConnectionHandler.h"
 #include "ConnectionHandlers/RealmSecondConnectionHandler.h"
+
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -70,14 +72,16 @@ i32 main()
         return 0;
     }
 
+    AuthDatabaseCache authDatabaseCache;
     CharacterDatabaseCache characterDatabaseCache;
+    authDatabaseCache.Load();
     characterDatabaseCache.Load();
 
     asio::io_service io_service(2);
 
     u16 port = ConfigHandler::GetOption<u16>("port", 8000);
-    RealmConnectionHandler realmConnectionHandler(io_service, port, characterDatabaseCache);
-    RealmSecondConnectionHandler realmSecondConnectionHandler(io_service, port+1, characterDatabaseCache);
+    RealmConnectionHandler realmConnectionHandler(io_service, port, authDatabaseCache, characterDatabaseCache);
+    RealmSecondConnectionHandler realmSecondConnectionHandler(io_service, port+1, authDatabaseCache, characterDatabaseCache);
     realmConnectionHandler.Start();
     realmSecondConnectionHandler.Start();
 

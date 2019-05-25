@@ -31,6 +31,7 @@
 #include <Cryptography/SHA1.h>
 #include <random>
 
+#include "../DatabaseCache/AuthDatabaseCache.h"
 #include "../DatabaseCache/CharacterDatabaseCache.h"
 
 #pragma pack(push, 1)
@@ -94,7 +95,7 @@ struct cCharacterCreateData
 class RealmConnection : public Common::BaseSocket
 {
 public:
-    RealmConnection(asio::ip::tcp::socket* socket, CharacterDatabaseCache& cache, bool resumeConnection) : Common::BaseSocket(socket), account(0), _headerBuffer(), _packetBuffer(), _cache(cache)
+    RealmConnection(asio::ip::tcp::socket* socket, AuthDatabaseCache& authCache, CharacterDatabaseCache& charCache, bool resumeConnection) : Common::BaseSocket(socket), account(0), _headerBuffer(), _packetBuffer(), _authCache(authCache), _charCache(charCache)
     {
         _resumeConnection = resumeConnection;
         _seed = static_cast<u32>(rand());
@@ -136,7 +137,9 @@ public:
     bool _resumeConnection;
     u32 _seed;
     StreamCrypto _streamCrypto;
-    CharacterDatabaseCache& _cache;
+
+    AuthDatabaseCache& _authCache;
+    CharacterDatabaseCache& _charCache;
 };
 
 template<> inline void RealmConnection::convert<0>(char *) { }

@@ -5,11 +5,11 @@
 
 // characters table in DB
 class CharacterDatabaseCache;
-struct CharacterData
+struct CharacterInfo
 {
-    CharacterData() { }
-    CharacterData(CharacterDatabaseCache* cache) { _cache = cache; }
-    CharacterData(const CharacterData& data)
+    CharacterInfo() { }
+    CharacterInfo(CharacterDatabaseCache* cache) { _cache = cache; }
+    CharacterInfo(const CharacterInfo& data)
     {
         guid = data.guid;
         account = data.account;
@@ -44,6 +44,31 @@ struct CharacterData
     void UpdateCache()
     {
     }
+private:
+    CharacterDatabaseCache* _cache;
+};
+// character_data table in DB
+struct CharacterData
+{
+    CharacterData() {}
+    CharacterData(CharacterDatabaseCache* cache) { _cache = cache; }
+    CharacterData(const CharacterData& inData)
+    {
+        guid = inData.guid;
+        type = inData.type;
+        timestamp = inData.timestamp;
+        data = inData.data;
+        loaded = inData.loaded;
+        _cache = inData._cache;
+    }
+
+    u64 guid;
+    u32 type;
+    u32 timestamp;
+    std::string data;
+
+    bool loaded = false;
+    void UpdateCache();
 private:
     CharacterDatabaseCache* _cache;
 };
@@ -171,8 +196,15 @@ public:
     void Save() override;
     void SaveAsync() override;
 
-    // Character cache
-    bool GetCharacterData(u64 guid, CharacterData& output);
+    void SaveAndUnloadCharacter(u64 characterGuid);
+    void SaveCharacter(u64 characterGuid);
+    void UnloadCharacter(u64 characterGuid);
+
+    // Character Info cache
+    bool GetCharacterInfo(u64 guid, CharacterInfo& output);
+
+    // Character Data cache
+    bool GetCharacterData(u64 characterGuid, u32 type, CharacterData& output);
 
     // Character Visual cache
     bool GetCharacterVisualData(u64 guid, CharacterVisualData& output);
@@ -182,8 +214,11 @@ public:
     const std::vector<DefaultSpawnStorage> GetDefaultSpawnStorageData();
 
 private:
-    robin_hood::unordered_map<u64, CharacterData> _characterDataCache;
-    robin_hood::unordered_map<u64, CharacterVisualData> _characterVisualDataCache;
+    friend CharacterData;
+
+    robin_hood::unordered_map<u64, CharacterInfo> _characterInfoCache; // Character Guid
+    robin_hood::unordered_map<u64, CharacterData[8]> _characterDataCache; // Character Guid, DataCache Type
+    robin_hood::unordered_map<u64, CharacterVisualData> _characterVisualDataCache; // Character Guid
     std::vector<DefaultSpellStorage> _defaultSpellStorageCache;
     std::vector<DefaultSkillStorage> _defaultSkillStorageCache;
     std::vector<DefaultSpawnStorage> _defaultSpawnStorageCache;

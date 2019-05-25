@@ -4,11 +4,11 @@
 
 // characters table in DB
 class CharacterDatabaseCache;
-struct CharacterData
+struct CharacterInfo
 {
-    CharacterData() { }
-    CharacterData(CharacterDatabaseCache* cache) { _cache = cache; }
-    CharacterData(const CharacterData& data)
+    CharacterInfo() { }
+    CharacterInfo(CharacterDatabaseCache* cache) { _cache = cache; }
+    CharacterInfo(const CharacterInfo& data)
     {
         guid = data.guid;
         account = data.account;
@@ -43,6 +43,31 @@ struct CharacterData
     u8 online;
 
     void UpdateCache(u64 characterGuid);
+private:
+    CharacterDatabaseCache* _cache;
+};
+// character_data table in DB
+struct CharacterData
+{
+    CharacterData() {}
+    CharacterData(CharacterDatabaseCache* cache) { _cache = cache; }
+    CharacterData(const CharacterData& inData)
+    {
+        guid = inData.guid;
+        type = inData.type;
+        timestamp = inData.timestamp;
+        data = inData.data;
+        loaded = inData.loaded;
+        _cache = inData._cache;
+    }
+
+    u64 guid;
+    u32 type;
+    u32 timestamp;
+    std::string data;
+
+    bool loaded = false;
+    void UpdateCache();
 private:
     CharacterDatabaseCache* _cache;
 };
@@ -169,8 +194,11 @@ public:
     void SaveCharacter(u64 characterGuid);
     void UnloadCharacter(u64 characterGuid);
 
-    // Character cache
-    bool GetCharacterData(u64 characterGuid, CharacterData& output);
+    // Character Info cache
+    bool GetCharacterInfo(u64 characterGuid, CharacterInfo& output);
+
+    // Character Data cache
+    bool GetCharacterData(u64 characterGuid, u32 type, CharacterData& output);
 
     // Character Visual cache
     bool GetCharacterVisualData(u64 characterGuid, CharacterVisualData& output);
@@ -185,13 +213,15 @@ public:
 	bool GetCharacterItemData(u64 characterGuid, robin_hood::unordered_map<u32, CharacterItemData>& output);
 
 private:
+    friend CharacterInfo;
     friend CharacterData;
     friend CharacterVisualData;
     friend CharacterSpellStorage;
 	friend CharacterSkillStorage;
 	friend CharacterItemData;
 
-    robin_hood::unordered_map<u64, CharacterData> _characterDataCache; // Character Guid
+    robin_hood::unordered_map<u64, CharacterInfo> _characterInfoCache; // Character Guid
+    robin_hood::unordered_map<u64, CharacterData[8]> _characterDataCache; // Character Guid, DataCache Type
     robin_hood::unordered_map<u64, CharacterVisualData> _characterVisualDataCache; // Character Guid
     robin_hood::unordered_map<u64, robin_hood::unordered_map<u32, CharacterSpellStorage>> _characterSpellStorageCache; // Character Guid, Spell Id
     robin_hood::unordered_map<u64, robin_hood::unordered_map<u32, CharacterSkillStorage>> _characterSkillStorageCache; // Character Guid, Skill Id
