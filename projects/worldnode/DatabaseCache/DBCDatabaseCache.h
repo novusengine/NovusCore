@@ -32,6 +32,24 @@ private:
 	DBCDatabaseCache* _cache;
 };
 
+struct EmoteData
+{
+    EmoteData() { }
+    EmoteData(DBCDatabaseCache* cache) { _cache = cache; }
+    EmoteData(const EmoteData& data)
+    {
+        id = data.id;
+        internalName = data.internalName;
+        textEmoteId = data.textEmoteId;
+    }
+
+    u32 id;
+    std::string internalName;
+    u32 textEmoteId;
+private:
+    DBCDatabaseCache* _cache;
+};
+
 class DBCDatabaseCache : BaseDatabaseCache
 {
 public:
@@ -47,8 +65,12 @@ public:
 	bool GetMapData(u16 mapId, MapData& output);
 	bool GetMapDataFromInternalName(std::string mapInternalName, MapData& output);
 
+    bool GetEmoteDataFromTextEmoteId(u32 textEmoteId, EmoteData& output);
+
 private:
     friend MapData;
 
     robin_hood::unordered_map<u32, MapData> _mapDataCache;
+
+    robin_hood::unordered_map<u32, EmoteData> _emoteDataCache;
 };

@@ -35,6 +35,7 @@
 #include "../../NovusEnums.h"
 #include "../../Utils/CharacterUtils.h"
 #include "../../DatabaseCache/CharacterDatabaseCache.h"
+#include "../../DatabaseCache/DBCDatabaseCache.h"
 #include "../../WorldNodeHandler.h"
 
 #include "../Components/PlayerConnectionComponent.h"
@@ -46,6 +47,7 @@
 #include "../Components/Singletons/PlayerDeleteQueueSingleton.h"
 #include "../Components/Singletons/CharacterDatabaseCacheSingleton.h"
 #include "../Components/Singletons/WorldDatabaseCacheSingleton.h"
+#include "../Components/Singletons/DBCDatabaseCacheSingleton.h"
 #include "../Components/Singletons/PlayerPacketQueueSingleton.h"
 #include "../Components/Singletons/MapSingleton.h"
 
@@ -59,6 +61,7 @@ namespace ConnectionSystem
         PlayerDeleteQueueSingleton& playerDeleteQueue = registry.ctx<PlayerDeleteQueueSingleton>();
         CharacterDatabaseCacheSingleton& characterDatabase = registry.ctx<CharacterDatabaseCacheSingleton>();
         WorldDatabaseCacheSingleton& worldDatabase = registry.ctx<WorldDatabaseCacheSingleton>();
+        DBCDatabaseCacheSingleton& dbcDatabase = registry.ctx<DBCDatabaseCacheSingleton>();
         PlayerPacketQueueSingleton& playerPacketQueue = registry.ctx<PlayerPacketQueueSingleton>();
         WorldNodeHandler& worldNodeHandler = *singleton.worldNodeHandler;
 		MapSingleton& mapSingleton = registry.ctx<MapSingleton>();
@@ -73,7 +76,7 @@ namespace ConnectionSystem
         LockWrite(PlayerPositionComponent);
 
         auto view = registry.view<PlayerConnectionComponent, PlayerFieldDataComponent, PlayerUpdateDataComponent, PlayerPositionComponent>();
-        view.each([&singleton, &playerDeleteQueue, &characterDatabase, &worldDatabase, &playerPacketQueue, &worldNodeHandler, &mapSingleton](const auto, PlayerConnectionComponent& playerConnection, PlayerFieldDataComponent& clientFieldData, PlayerUpdateDataComponent& clientUpdateData, PlayerPositionComponent& clientPositionData)
+        view.each([&singleton, &playerDeleteQueue, &characterDatabase, &worldDatabase, &dbcDatabase, &playerPacketQueue, &worldNodeHandler, &mapSingleton](const auto, PlayerConnectionComponent& playerConnection, PlayerFieldDataComponent& clientFieldData, PlayerUpdateDataComponent& clientUpdateData, PlayerPositionComponent& clientPositionData)
         {
             ZoneScopedNC("Connection", tracy::Color::Orange2)
 
@@ -658,19 +661,16 @@ namespace ConnectionSystem
                         packet.data.Read<u32>(emoteNum);
                         packet.data.Read<u64>(targetGuid);
 
-                        u32 animationID;
-                        /* Pulling animation ID from database code here. */
-
-                        animationID = 10;
-
-                        /* End pulling animation ID from database here. */
+                        
+                        EmoteData emoteData;
+                        dbcDatabase.cache->GetEmoteDataFromTextEmoteId(textEmote, emoteData);
 
                         /* Play animation packet. */
                         {
                             //The animation shouldn't play if the player is dead. In the future we should check for that.
 
                             Common::ByteBuffer emote;
-                            emote.Write<u32>(animationID);
+                            emote.Write<u32>(emoteData.id);
                             emote.Write<u64>(playerConnection.characterGuid);
 
                             playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, emote, Common::Opcode::SMSG_EMOTE));
