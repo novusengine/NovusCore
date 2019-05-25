@@ -14,6 +14,7 @@
 
 // NovusCore functions
 #include "GlobalFunctions.h"
+#include "PlayerFunctions.h"
 #include "PacketFunctions.h"
 
 // NovusCore hooks
@@ -23,6 +24,7 @@ namespace fs = std::filesystem;
 
 std::string ScriptHandler::_path = "";
 asio::io_service* ScriptHandler::_ioService = nullptr;
+entt::registry* ScriptHandler::_registry = nullptr;
 
 void ScriptHandler::ReloadScripts()
 {
@@ -57,6 +59,7 @@ void ScriptHandler::LoadScriptDirectory(std::string& path)
 	{
 		ScriptEngine::SetRegisterFunction(&RegisterFunctions);
 		ScriptEngine::SetIOService(_ioService);
+        GlobalFunctions::SetRegistry(_registry);
 	}
 		
 	_path = path;
@@ -152,6 +155,8 @@ void ScriptHandler::RegisterFunctions(AB_NAMESPACE_QUALIFIER Engine* engine)
 	RegisterStdStringUtils(engine->asEngine());
 
 	// Packet functions
+    GlobalFunctions::SetRegistry(_registry);
 	RegisterGlobalFunctions(engine);
+    RegisterPlayerFunctions(engine);
 	RegisterPacketFunctions(engine);
 }

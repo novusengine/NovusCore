@@ -1,11 +1,13 @@
 #pragma once
 #include <NovusTypes.h>
 
+class AngelScriptPlayer;
+
 // WARNING: Please consult with Pursche before using this, it's ugly and only used in scripts for unrolling a variadic template argument list
 class any {
 public:
-	enum Type { Void, Bool, I8, I16, I32, I64, U8, U16, U32, U64,  F32, F64, String = 0x400000D}; // The order of types matches the order found in AngelScripts asETypeIdFlags
-	static const size_t TYPECOUNT = 13;
+	enum Type { Void, Bool, I8, I16, I32, I64, U8, U16, U32, U64,  F32, F64, String = 0x400000D, Player = 0x400000F}; // The order of types matches the order found in AngelScripts asETypeIdFlags
+	static const size_t TYPECOUNT = 15;
 	
 	static constexpr const char* GetTypeName(Type type)
 	{
@@ -23,7 +25,8 @@ public:
 		case U64: return "u64"; break;
 		case F32: return "f32"; break;
 		case F64: return "f64"; break;
-		case String: return "string"; break;
+        case String: return "string"; break;
+        case Player: return "AngelScriptPlayer"; break;
 		}
 		return "UNKNOWN";
 	}
@@ -32,35 +35,37 @@ public:
 		return GetTypeName(static_cast<Type>(type));
 	}
 
-	any(u8 e) { m_data.U8 = e; m_type = U8; }
-	any(u16 e) { m_data.U16 = e; m_type = U16; }
-	any(u32 e) { m_data.U32 = e; m_type = U32; }
-	any(u64 e) { m_data.U64 = e; m_type = U64; }
-	any(i8 e) { m_data.I8 = e; m_type = I8; }
-	any(i16 e) { m_data.I16 = e; m_type = I16; }
-	any(i32 e) { m_data.I32 = e; m_type = I32; }
-	any(i64 e) { m_data.I64 = e; m_type = I64; }
-	any(f32 e) { m_data.F32 = e; m_type = F32; }
-	any(f64 e) { m_data.F64 = e; m_type = F64; }
-	any(bool e) { m_data.BOOL = e; m_type = Bool; }
-	any(std::string& e) { m_string = e; m_type = String; }
+	any(u8 e) { _data.U8 = e; _type = U8; }
+	any(u16 e) { _data.U16 = e; _type = U16; }
+	any(u32 e) { _data.U32 = e; _type = U32; }
+	any(u64 e) { _data.U64 = e; _type = U64; }
+	any(i8 e) { _data.I8 = e; _type = I8; }
+	any(i16 e) { _data.I16 = e; _type = I16; }
+	any(i32 e) { _data.I32 = e; _type = I32; }
+	any(i64 e) { _data.I64 = e; _type = I64; }
+	any(f32 e) { _data.F32 = e; _type = F32; }
+	any(f64 e) { _data.F64 = e; _type = F64; }
+	any(bool e) { _data.BOOL = e; _type = Bool; }
+	any(std::string& e) { _string = e; _type = String; }
+    any(AngelScriptPlayer* e) { _player = e; _type = Player; }
 
-	Type get_type() const { return m_type; }
-	u8 get_u8() const { return m_data.U8; }
-	u16 get_u16() const { return m_data.U16; }
-	u32 get_u32() const { return m_data.U32; }
-	u64 get_u64() const { return m_data.U64; }
-	i8 get_i8() const { return m_data.I8; }
-	i16 get_i16() const { return m_data.I16; }
-	i32 get_i32() const { return m_data.I32; }
-	i64 get_i64() const { return m_data.I64; }
-	f32 get_f32() const { return m_data.F32; }
-	f64 get_f64() const { return m_data.F64; }
-	bool get_bool() const { return m_data.BOOL; }
-	std::string& get_string() { return m_string; }
+	Type get_type() const { return _type; }
+	u8 get_u8() const { return _data.U8; }
+	u16 get_u16() const { return _data.U16; }
+	u32 get_u32() const { return _data.U32; }
+	u64 get_u64() const { return _data.U64; }
+	i8 get_i8() const { return _data.I8; }
+	i16 get_i16() const { return _data.I16; }
+	i32 get_i32() const { return _data.I32; }
+	i64 get_i64() const { return _data.I64; }
+	f32 get_f32() const { return _data.F32; }
+	f64 get_f64() const { return _data.F64; }
+	bool get_bool() const { return _data.BOOL; }
+	std::string& get_string() { return _string; }
+    AngelScriptPlayer* get_player() { return _player; }
 
 private:
-	Type m_type;
+	Type _type;
 	union {
 		u8	U8;
 		u16	U16;
@@ -73,6 +78,7 @@ private:
 		f32 F32;
 		f64 F64;
 		bool BOOL;
-	} m_data;
-	std::string m_string;
+	} _data;
+	std::string _string;
+    AngelScriptPlayer* _player;
 };

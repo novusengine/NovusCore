@@ -39,6 +39,8 @@
 #include "../Components/Singletons/EntityCreateQueueSingleton.h"
 #include "../Components/Singletons/CharacterDatabaseCacheSingleton.h"
 
+#include "../../Scripting/PlayerFunctions.h"
+
 namespace PlayerCreateDataSystem
 {
     Common::ByteBuffer BuildPlayerCreateData(u64 characterGuid, u8 updateType, u16 updateFlags, u32 visibleFlags, u32 lifeTimeInMS, PlayerFieldDataComponent& playerFieldData, PlayerPositionComponent position, u16& opcode)
@@ -253,7 +255,7 @@ namespace PlayerCreateDataSystem
             u32 lifeTimeInMS = static_cast<u32>(singleton.lifeTimeInMS);
 
             auto subView = registry.view<PlayerConnectionComponent, PlayerFieldDataComponent, PlayerPositionComponent>();
-            view.each([&playerUpdatesQueue, &entityCreateQueue, &characterDatabase, lifeTimeInMS, subView](const auto, PlayerInitializeComponent& playerInitializeData, PlayerFieldDataComponent& playerFieldData, PlayerPositionComponent& clientPositionData)
+            view.each([&registry, &playerUpdatesQueue, &entityCreateQueue, &characterDatabase, lifeTimeInMS, subView](const auto, PlayerInitializeComponent& playerInitializeData, PlayerFieldDataComponent& playerFieldData, PlayerPositionComponent& clientPositionData)
             {
                 /* Build Self Packet, must be sent immediately */
                 u8 updateType = UPDATETYPE_CREATE_OBJECT2;
@@ -263,6 +265,10 @@ namespace PlayerCreateDataSystem
 
                 Common::ByteBuffer selfPlayerUpdate = BuildPlayerCreateData(playerInitializeData.characterGuid, updateType, selfUpdateFlag, selfVisibleFlags, lifeTimeInMS, playerFieldData, clientPositionData, buildOpcode);
                 playerInitializeData.socket->SendPacket(selfPlayerUpdate, buildOpcode);
+
+                // Call OnPlayerLogin script hooks
+                AngelScriptPlayer asPlayer(playerInitializeData.entityGuid, &registry);
+                PlayerHooks::CallHook(PlayerHooks::Hooks::HOOK_ONPLAYERLOGIN, &asPlayer);
 
 				robin_hood::unordered_map<u32, CharacterItemData> characterItemData;
 				if (characterDatabase.cache->GetCharacterItemData(playerInitializeData.characterGuid, characterItemData))

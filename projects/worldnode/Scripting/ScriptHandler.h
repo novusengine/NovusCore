@@ -2,6 +2,7 @@
 #include <string>
 #include <filesystem>
 #include <asio.hpp>
+#include <entt.hpp>
 #include "AngelBinder.h"
 
 namespace AngelBinder
@@ -13,6 +14,7 @@ class ScriptHandler
 {
 public:
 	static void SetIOService(asio::io_service* service) { _ioService = service; }
+    static void SetRegistry(entt::registry* registry) { _registry = registry; }
 	static void LoadScriptDirectory(std::string& path);
 	static void ReloadScripts();
 private:
@@ -23,4 +25,5 @@ private:
 private:
 	static std::string _path;
 	static asio::io_service* _ioService;
+    static entt::registry* _registry;
 };

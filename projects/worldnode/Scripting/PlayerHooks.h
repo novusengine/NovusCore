@@ -29,14 +29,14 @@ public:
 	template <typename... Args>
 	inline static void CallHook(Hooks id, Args... args)
 	{
+        std::vector<any> arguments = { args... };
+
 		for (auto function : _hooks[id])
 		{
 			AB_NAMESPACE_QUALIFIER Context* context = ScriptEngine::GetScriptContext();
 			if (context)
 			{
 				context->prepare(function);
-
-				std::vector<any> arguments = { args... };
 
 				assert(arguments.size() == function->GetParamCount());
 
@@ -68,6 +68,7 @@ public:
 						case any::F64: context->setDouble(argument.get_f64()); break;
 						case any::Bool: context->setBool(argument.get_bool()); break;
 						case any::String: context->setObject(&argument.get_string()); break;
+                        case any::Player: context->setObject(argument.get_player()); break;
 					}
 				}
 				

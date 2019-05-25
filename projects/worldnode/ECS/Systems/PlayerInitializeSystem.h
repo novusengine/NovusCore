@@ -4,7 +4,6 @@
 
 #include "../../NovusEnums.h"
 #include "../../Utils/CharacterUtils.h"
-#include "../../Scripting/PlayerHooks.h"
 
 #include "../../DatabaseCache/CharacterDatabaseCache.h"
 
@@ -320,9 +319,6 @@ namespace PlayerInitializeSystem
             {
                 playerFieldData.SetFieldValue<f32>(PLAYER_FIELD_GLYPH_SLOTS_1 + i, f32(21 + i));
             }
-
-            // Call OnPlayerLogin script hooks
-            PlayerHooks::CallHook(PlayerHooks::Hooks::HOOK_ONPLAYERLOGIN, characterInfo.name, (u8)0);
         });
     }
 }

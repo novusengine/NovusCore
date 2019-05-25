@@ -82,11 +82,12 @@ void WorldNodeHandler::Stop()
 
 void WorldNodeHandler::Run()
 {
-    std::string scriptDirectory = ConfigHandler::GetOption<std::string>("path", "scripts");
-    ScriptHandler::LoadScriptDirectory(scriptDirectory);
-
     SetupUpdateFramework();
     _updateFramework.registry.create();
+
+    std::string scriptDirectory = ConfigHandler::GetOption<std::string>("path", "scripts");
+    ScriptHandler::SetRegistry(&_updateFramework.registry);
+    ScriptHandler::LoadScriptDirectory(scriptDirectory);
 
     CharacterDatabaseCacheSingleton& characterDatabaseCacheSingleton = _updateFramework.registry.set<CharacterDatabaseCacheSingleton>();
     characterDatabaseCacheSingleton.cache = new CharacterDatabaseCache();
