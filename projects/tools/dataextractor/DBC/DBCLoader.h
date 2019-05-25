@@ -98,7 +98,7 @@ namespace DBCLoader
                     if (rows == 0) return false;
 
                     std::stringstream ss;
-                    ss << "DELETE FROM emotes;" << std::endl << "INSERT INTO emotes(Id, name, textEmoteId) VALUES";
+                    ss << "DELETE FROM emotes;" << std::endl << "INSERT INTO emotes(id, internalName, textEmoteId) VALUES";
 
                     for (u32 i = 0; i < rows; i++)
                     {

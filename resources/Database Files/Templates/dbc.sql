@@ -22,6 +22,15 @@ CREATE TABLE IF NOT EXISTS `map` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
+-- Dumping structure for table dbc.emotes
+DROP TABLE IF EXISTS `emotes`;
+CREATE TABLE IF NOT EXISTS `emotes`(
+	`id` INT unsigned NOT NULL,
+	`internalName` varchar(255) NOT NULL,
+	`textEmoteId` INT unsigned NOT NULL,
+	PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
 -- Data exporting was unselected.
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
 /*!40014 SET FOREIGN_KEY_CHECKS=IF(@OLD_FOREIGN_KEY_CHECKS IS NULL, 1, @OLD_FOREIGN_KEY_CHECKS) */;

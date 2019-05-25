@@ -663,41 +663,42 @@ namespace ConnectionSystem
 
                         
                         EmoteData emoteData;
-                        dbcDatabase.cache->GetEmoteDataFromTextEmoteId(textEmote, emoteData);
-
-                        /* Play animation packet. */
+                        if (dbcDatabase.cache->GetEmoteDataFromTextEmoteId(textEmote, emoteData))
                         {
-                            //The animation shouldn't play if the player is dead. In the future we should check for that.
-
-                            Common::ByteBuffer emote;
-                            emote.Write<u32>(emoteData.id);
-                            emote.Write<u64>(playerConnection.characterGuid);
-
-                            playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, emote, Common::Opcode::SMSG_EMOTE));
-                        }
-
-                        /* Emote Chat Message Packet. */
-                        {
-                            CharacterInfo targetData;
-                            characterDatabase.cache->GetCharacterInfo(targetGuid, targetData);
-
-                            u32 targetNameLength = static_cast<u32>(targetData.name.size());
-
-                            Common::ByteBuffer textEmoteMessage;
-                            textEmoteMessage.Write<u64>(playerConnection.characterGuid);
-                            textEmoteMessage.Write<u32>(textEmote);
-                            textEmoteMessage.Write<u32>(emoteNum);
-                            textEmoteMessage.Write<u32>(targetNameLength);
-                            if (targetNameLength > 1)
+                            /* Play animation packet. */
                             {
-                                textEmoteMessage.Write(targetData.name);
-                            }
-                            else
-                            {
-                                textEmoteMessage.Write<u8>(0x00);
+                                //The animation shouldn't play if the player is dead. In the future we should check for that.
+
+                                Common::ByteBuffer emote;
+                                emote.Write<u32>(emoteData.id);
+                                emote.Write<u64>(playerConnection.characterGuid);
+
+                                playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, emote, Common::Opcode::SMSG_EMOTE));
                             }
 
-                            playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, textEmoteMessage, Common::Opcode::SMSG_TEXT_EMOTE));
+                            /* Emote Chat Message Packet. */
+                            {
+                                CharacterInfo targetData;
+                                characterDatabase.cache->GetCharacterInfo(targetGuid, targetData);
+
+                                u32 targetNameLength = static_cast<u32>(targetData.name.size());
+
+                                Common::ByteBuffer textEmoteMessage;
+                                textEmoteMessage.Write<u64>(playerConnection.characterGuid);
+                                textEmoteMessage.Write<u32>(textEmote);
+                                textEmoteMessage.Write<u32>(emoteNum);
+                                textEmoteMessage.Write<u32>(targetNameLength);
+                                if (targetNameLength > 1)
+                                {
+                                    textEmoteMessage.Write(targetData.name);
+                                }
+                                else
+                                {
+                                    textEmoteMessage.Write<u8>(0x00);
+                                }
+
+                                playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, textEmoteMessage, Common::Opcode::SMSG_TEXT_EMOTE));
+                            }
                         }
 
                         packet.handled = true;
