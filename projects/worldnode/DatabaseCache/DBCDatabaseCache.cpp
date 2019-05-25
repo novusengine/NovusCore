@@ -18,6 +18,7 @@ void DBCDatabaseCache::Load()
         return;
 
     amy::result_set resultSet;
+    /* Map Data*/
     connector->Query("SELECT * FROM map;", resultSet);
 
     if (resultSet.affected_rows() > 0)
@@ -34,6 +35,21 @@ void DBCDatabaseCache::Load()
             mapData.maxPlayers = row[6].GetU32();
             
             _mapDataCache[mapData.id] = mapData;
+        }
+    }
+
+    /* Emote Data*/
+    connector->Query("SELECT * FROM emotes;", resultSet);
+    if (resultSet.affected_rows() > 0)
+    {
+        for (auto row : resultSet)
+        {
+            EmoteData emoteData(this);
+            emoteData.id = row[0].GetU32();
+            emoteData.internalName = row[1].GetString();
+            emoteData.textEmoteId = row[2].GetU32();
+
+            _emoteDataCache[emoteData.id] = emoteData;
         }
     }
 }
@@ -77,4 +93,21 @@ bool DBCDatabaseCache::GetMapDataFromInternalName(std::string internalName, MapD
 	_accessMutex.unlock_shared();
 
 	return false;
+}
+
+
+bool DBCDatabaseCache::GetEmoteDataFromTextEmoteId(u32 textEmoteId, EmoteData& output)
+{
+    _accessMutex.lock_shared();
+    for (auto emoteData : _emoteDataCache)
+    {
+        if (emoteData.second.textEmoteId == textEmoteId)
+        {
+            output = emoteData.second;
+            return true;
+        }
+    }
+    _accessMutex.unlock_shared();
+
+    return false;
 }
