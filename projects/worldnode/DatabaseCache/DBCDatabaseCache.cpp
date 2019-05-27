@@ -97,9 +97,9 @@ bool DBCDatabaseCache::GetMapDataFromInternalName(std::string internalName, MapD
 }
 
 
-bool DBCDatabaseCache::GetEmoteTextData(u32 textEmoteId, EmoteTextData& output)
+bool DBCDatabaseCache::GetEmoteTextData(u32 emoteTextId, EmoteTextData& output)
 {
-    auto cache = _emoteTextDataCache.find(textEmoteId);
+    auto cache = _emoteTextDataCache.find(emoteTextId);
     if (cache != _emoteTextDataCache.end())
     {
         _accessMutex.lock_shared();

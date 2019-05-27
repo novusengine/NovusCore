@@ -65,7 +65,7 @@ public:
 	bool GetMapData(u16 mapId, MapData& output);
 	bool GetMapDataFromInternalName(std::string mapInternalName, MapData& output);
 
-    bool GetEmoteTextData(u32 textEmoteId, EmoteTextData& output);
+    bool GetEmoteTextData(u32 emoteTextId, EmoteTextData& output);
 
 private:
     friend MapData;

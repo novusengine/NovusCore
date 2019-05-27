@@ -653,24 +653,24 @@ namespace ConnectionSystem
                     {
                         ZoneScopedNC("Packet::Text_emote", tracy::Color::Orange2)
 
-                        u32 textEmote;
-                        u32 emoteNum;
+                        u32 emoteTextId;
+                        u32 emoteSoundIndex;
                         u64 targetGuid;
 
-                        packet.data.Read<u32>(textEmote);
-                        packet.data.Read<u32>(emoteNum);
+                        packet.data.Read<u32>(emoteTextId);
+                        packet.data.Read<u32>(emoteSoundIndex);
                         packet.data.Read<u64>(targetGuid);
 
                         
-                        EmoteTextData emoteData;
-                        if (dbcDatabase.cache->GetEmoteTextData(textEmote, emoteData))
+                        EmoteTextData emoteTextData;
+                        if (dbcDatabase.cache->GetEmoteTextData(emoteTextId, emoteTextData))
                         {
-                            /* Play animation packet. */
+                            /* Play emote animation packet. */
                             {
                                 //The animation shouldn't play if the player is dead. In the future we should check for that.
 
                                 Common::ByteBuffer emote;
-                                emote.Write<u32>(emoteData.animationId);
+                                emote.Write<u32>(emoteTextData.animationId);
                                 emote.Write<u64>(playerConnection.characterGuid);
 
                                 playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, emote, Common::Opcode::SMSG_EMOTE));
@@ -687,8 +687,8 @@ namespace ConnectionSystem
 
                                 Common::ByteBuffer textEmoteMessage;
                                 textEmoteMessage.Write<u64>(playerConnection.characterGuid);
-                                textEmoteMessage.Write<u32>(textEmote);
-                                textEmoteMessage.Write<u32>(emoteNum);
+                                textEmoteMessage.Write<u32>(emoteTextId);
+                                textEmoteMessage.Write<u32>(emoteSoundIndex);
                                 textEmoteMessage.Write<u32>(targetNameLength);
                                 if (targetNameLength > 1)
                                 {
