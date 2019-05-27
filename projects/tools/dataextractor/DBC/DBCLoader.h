@@ -125,6 +125,6 @@ namespace DBCLoader
             NC_LOG_ERROR("Failed to load EmotesText.dbc");
         }
 
-	return true;
+	    return true;
 	}
 }
