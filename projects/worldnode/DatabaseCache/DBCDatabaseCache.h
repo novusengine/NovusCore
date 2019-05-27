@@ -32,11 +32,11 @@ private:
 	DBCDatabaseCache* _cache;
 };
 
-struct EmoteData
+struct EmoteTextData
 {
-    EmoteData() { }
-    EmoteData(DBCDatabaseCache* cache) { _cache = cache; }
-    EmoteData(const EmoteData& data)
+    EmoteTextData() { }
+    EmoteTextData(DBCDatabaseCache* cache) { _cache = cache; }
+    EmoteTextData(const EmoteTextData& data)
     {
         id = data.id;
         internalName = data.internalName;
@@ -65,12 +65,12 @@ public:
 	bool GetMapData(u16 mapId, MapData& output);
 	bool GetMapDataFromInternalName(std::string mapInternalName, MapData& output);
 
-    bool GetEmoteData(u32 textEmoteId, EmoteData& output);
+    bool GetEmoteTextData(u32 textEmoteId, EmoteTextData& output);
 
 private:
     friend MapData;
 
     robin_hood::unordered_map<u32, MapData> _mapDataCache;
 
-    robin_hood::unordered_map<u32, EmoteData> _emoteDataCache;
+    robin_hood::unordered_map<u32, EmoteTextData> _emoteTextDataCache;
 };

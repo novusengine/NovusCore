@@ -86,12 +86,12 @@ namespace DBCLoader
 	bool LoadEmotesText(MPQHandler& handler, std::string& sqlOutput)
 	{
 		MPQFile file;
-		if (handler.GetFile("DBFilesClient\\EmotesText.dbc", file))
-		{
-			NC_LOG_MESSAGE("Loading EmotesText.dbc...");
+        if (handler.GetFile("DBFilesClient\\EmotesText.dbc", file))
+        {
+            NC_LOG_MESSAGE("Loading EmotesText.dbc...");
 
-			if (DBCReader* dbcReader = DBCReader::GetReader())
-			{
+            if (DBCReader* dbcReader = DBCReader::GetReader())
+            {
                 if (dbcReader->Load(file.Buffer) == 0)
                 {
                     u32 rows = dbcReader->GetNumRows();
@@ -118,12 +118,12 @@ namespace DBCLoader
                     ss << ";" << std::endl;
                     sqlOutput += ss.str();
                 }
-			}
-		}
-		else
-		{
-			NC_LOG_ERROR("Failed to load EmotesText.dbc");
-		}
+            }
+        }
+        else
+        {
+            NC_LOG_ERROR("Failed to load EmotesText.dbc");
+        }
 
 	return true;
 	}

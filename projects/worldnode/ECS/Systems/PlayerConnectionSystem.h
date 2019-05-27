@@ -662,8 +662,8 @@ namespace ConnectionSystem
                         packet.data.Read<u64>(targetGuid);
 
                         
-                        EmoteData emoteData;
-                        if (dbcDatabase.cache->GetEmoteData(textEmote, emoteData))
+                        EmoteTextData emoteData;
+                        if (dbcDatabase.cache->GetEmoteTextData(textEmote, emoteData))
                         {
                             /* Play animation packet. */
                             {

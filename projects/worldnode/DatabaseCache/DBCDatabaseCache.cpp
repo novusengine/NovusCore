@@ -38,18 +38,18 @@ void DBCDatabaseCache::Load()
         }
     }
 
-    /* Emote Data*/
+    /* EmoteText Data*/
     connector->Query("SELECT * FROM emotesText;", resultSet);
     if (resultSet.affected_rows() > 0)
     {
         for (auto row : resultSet)
         {
-            EmoteData emoteData(this);
-            emoteData.id = row[0].GetU32();
-            emoteData.internalName = row[1].GetString();
-            emoteData.animationId = row[2].GetU32();
+            EmoteTextData emoteTextData(this);
+            emoteTextData.id = row[0].GetU32();
+            emoteTextData.internalName = row[1].GetString();
+            emoteTextData.animationId = row[2].GetU32();
 
-            _emoteDataCache[emoteData.id] = emoteData;
+            _emoteTextDataCache[emoteTextData.id] = emoteTextData;
         }
     }
 }
@@ -97,10 +97,10 @@ bool DBCDatabaseCache::GetMapDataFromInternalName(std::string internalName, MapD
 }
 
 
-bool DBCDatabaseCache::GetEmoteData(u32 textEmoteId, EmoteData& output)
+bool DBCDatabaseCache::GetEmoteTextData(u32 textEmoteId, EmoteTextData& output)
 {
-    auto cache = _emoteDataCache.find(textEmoteId);
-    if (cache != _emoteDataCache.end())
+    auto cache = _emoteTextDataCache.find(textEmoteId);
+    if (cache != _emoteTextDataCache.end())
     {
         _accessMutex.lock_shared();
         output = cache->second;
