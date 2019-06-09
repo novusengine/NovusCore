@@ -33,6 +33,8 @@ they are directly related to each other. (Same goes for Creatures/Raids/Dungeons
 4. Never post a copy paste of a crash log in an issue.
 Use a service like [Github Gist](https://gist.github.com/) to paste your crash log and then link it in the issue with a description.
 
+5. If you have trouble writing in English you can use tools like Google Translate to translate from your native language, make sure to always add the original text in your native language (English + Native Language) as well since maybe someone else speaks that language as well.
+
 **Your title should always be after what the issue is about. For example "Quest: The Denouncement" or "Creature: The Lich King"**
 
 **Your issue should always contain information on How it is Working, How it should Work and the revision you are having on your core/DB.**
