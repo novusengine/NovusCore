@@ -25,11 +25,8 @@
 #include <NovusTypes.h>
 #include "../../Game/ObjectGuid/ObjectGuid.h"
 
-struct ItemInitializeComponent
+struct UnitInitializeComponent
 {
-    u32 characterEntityId = 0;
-	ObjectGuid itemGuid;
-	u8 bagSlot = 0;
-	u32 bagPosition = 0;
-    u64 characterGuid = 0;
+    u32 entityGuid = 0;
+	ObjectGuid unitGuid;
 };

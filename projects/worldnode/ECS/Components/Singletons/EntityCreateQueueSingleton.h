@@ -36,9 +36,23 @@ struct EntityCreationInformation
 
 struct ItemCreationInformation : EntityCreationInformation
 {
+    static ItemCreationInformation* Create(u32 inLowGuid, u32 inEntryId, u8 inBagSlot, u32 inBagPosition, u32 inCharacterEntityId, ObjectGuid inCharacterGuid)
+    {
+        ItemCreationInformation* information = new ItemCreationInformation();
+
+        information->lowGuid = inLowGuid;
+        information->entryId = inEntryId;
+        information->bagSlot = inBagSlot;
+        information->bagPosition = inBagPosition;
+        information->characterEntityId = inCharacterEntityId;
+        information->characterGuid = inCharacterGuid;
+
+        return information;
+    }
+
     u8 bagSlot = 0;
     u32 bagPosition = 0;
-    u32 characterEntityGuid = 0;
+    u32 characterEntityId = 0;
     ObjectGuid characterGuid;
 };
 

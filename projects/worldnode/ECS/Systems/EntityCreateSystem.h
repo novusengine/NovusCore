@@ -32,6 +32,9 @@
 #include "../Components/ItemInitializeComponent.h"
 #include "../Components/ItemDataComponent.h"
 #include "../Components/ItemFieldDataComponent.h"
+#include "../Components/UnitInitializeComponent.h"
+#include "../Components/UnitDataComponent.h"
+#include "../Components/UnitFieldDataComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
 #include "../Components/Singletons/EntityCreateQueueSingleton.h"
 #include "../Components/Singletons/CharacterDatabaseCacheSingleton.h"
@@ -53,11 +56,23 @@ namespace EntityCreateSystem
 
                 ObjectGuid itemGuid(HighGuid::Item, itemCreationInformation->entryId, itemCreationInformation->lowGuid);
                 registry.assign<ItemDataComponent>(entity, entity, itemGuid, itemCreationInformation->bagSlot, itemCreationInformation->bagPosition, itemCreationInformation->characterGuid);
-                registry.assign<ItemInitializeComponent>(entity, itemCreationInformation->characterEntityGuid, itemGuid, itemCreationInformation->bagSlot, itemCreationInformation->bagPosition, itemCreationInformation->characterGuid);
+                registry.assign<ItemInitializeComponent>(entity, itemCreationInformation->characterEntityId, itemGuid, itemCreationInformation->bagSlot, itemCreationInformation->bagPosition, itemCreationInformation->characterGuid);
 
                 registry.assign<ItemFieldDataComponent>(entity);
 
                 delete itemCreationInformation;
+            }
+            else if (entityCreationRequest.typeId == TYPEID_UNIT)
+            {
+                EntityCreationInformation* unitCreationInformation = entityCreationRequest.typeInformation;
+
+                ObjectGuid unitGuid(HighGuid::Unit, unitCreationInformation->entryId, unitCreationInformation->lowGuid);
+                registry.assign<UnitDataComponent>(entity, entity, unitGuid);
+                registry.assign<UnitInitializeComponent>(entity, entity, unitGuid);
+
+                registry.assign<UnitFieldDataComponent>(entity);
+
+                delete unitCreationInformation;
             }
         }
     }

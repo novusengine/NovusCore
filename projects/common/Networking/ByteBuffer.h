@@ -81,7 +81,7 @@ namespace Common
         void Read(std::string& value)
         {
             value.clear();
-            while (_readPos < size())                         // prevent crash at wrong string format in packet
+            while (_readPos < size()) // prevent crash at wrong string format in packet
             {
                 char c = Read();
                 if (c == 0)

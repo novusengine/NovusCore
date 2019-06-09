@@ -17,6 +17,7 @@ _blockCount = (valuesCount + CLIENT_UPDATE_MASK_BITS - 1) / CLIENT_UPDATE_MASK_B
 We should have 42 as our result, notice that there may be decimals, but simply discard them.
 The final step is to take 42 and times it by CLIENT_UPDATE_MASK_BITS which gives us 1344.
 
+31/5/2019: I've come back to this code, and I have to thank myself for this useful note
 */
 template <size_t size>
 class UpdateMask

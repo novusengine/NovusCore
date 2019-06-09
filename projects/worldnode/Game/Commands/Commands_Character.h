@@ -199,13 +199,7 @@ namespace Commands_Character
             EntityCreationRequest entityCreationRequest;
             entityCreationRequest.typeId = TYPEID_ITEM;
 
-            ItemCreationInformation* itemCreationInformation = new ItemCreationInformation();
-            itemCreationInformation->lowGuid = 2;
-            itemCreationInformation->bagSlot = 255;
-            itemCreationInformation->bagPosition = 23;
-            itemCreationInformation->entryId = itemTemplate.entry;
-            itemCreationInformation->characterEntityGuid = clientConnection.entityGuid;
-            itemCreationInformation->characterGuid = clientConnection.characterGuid;
+            ItemCreationInformation* itemCreationInformation = ItemCreationInformation::Create(2, itemTemplate.entry, 255, 23, clientConnection.entityGuid, clientConnection.characterGuid);
             entityCreationRequest.typeInformation = itemCreationInformation;
             _registry->ctx<EntityCreateQueueSingleton>().newEntityQueue->enqueue(entityCreationRequest);
 
