@@ -49,8 +49,9 @@ public:
 	Vector2(i32 inX, i32 inY) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); }
 	Vector2(i32 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); }
 
-	Vector2(Vector2& in) { x = in.x; y = in.y; }
-	Vector2(Vector3& in);
+	//Vector2(Vector2& in) { x = in.x; y = in.y; }
+    Vector2(const Vector2& in) { x = in.x; y = in.y; }
+	Vector2(const Vector3& in);
 
 	// Returns the length of the vector
 	inline f32 Length()
@@ -65,7 +66,7 @@ public:
 	}
 
 	// Returns the dot product of the vector and another vector
-	inline f32 Dot(Vector2& other)
+	inline f32 Dot(const Vector2& other)
 	{
 		return (x * other.x) + (y * other.y);
 	}
@@ -84,205 +85,436 @@ public:
 	}
 
 	// Overloaded operators
-	inline Vector2 operator+ (Vector2 other)
+	inline Vector2 operator+ (const Vector2& other)
 	{
 		return Vector2(x + other.x, y + other.y);
 	}
 
-	inline Vector2 operator+ (f32 other)
+	inline Vector2 operator+ (const f32 other)
 	{
 		return Vector2(x + other, y + other);
 	}
 
-	inline Vector2 operator+ (u8 other)
+	inline Vector2 operator+ (const u8 other)
 	{
 		return Vector2(x + other, y + other);
 	}
 
-	inline Vector2 operator+ (u16 other)
+	inline Vector2 operator+ (const u16 other)
 	{
 		return Vector2(x + other, y + other);
 	}
 
-	inline Vector2 operator+ (u32 other)
+	inline Vector2 operator+ (const u32 other)
 	{
 		return Vector2(x + other, y + other);
 	}
 
-	inline Vector2 operator+ (i8 other)
+	inline Vector2 operator+ (const i8 other)
 	{
 		return Vector2(x + other, y + other);
 	}
 
-	inline Vector2 operator+ (i16 other)
+	inline Vector2 operator+ (const i16 other)
 	{
 		return Vector2(x + other, y + other);
 	}
 
-	inline Vector2 operator+ (i32 other)
+	inline Vector2 operator+ (const i32 other)
 	{
 		return Vector2(x + other, y + other);
 	}
 
-	inline Vector2 operator- (Vector2 other)
+	inline Vector2 operator- (const Vector2& other)
 	{
 		return Vector2(x - other.x, y - other.y);
 	}
 
-	inline Vector2 operator- (f32 other)
+	inline Vector2 operator- (const f32 other)
 	{
 		return Vector2(x - other, y - other);
 	}
 
-	inline Vector2 operator- (u8 other)
+	inline Vector2 operator- (const u8 other)
 	{
 		return Vector2(x - other, y - other);
 	}
 
-	inline Vector2 operator- (u16 other)
+	inline Vector2 operator- (const u16 other)
 	{
 		return Vector2(x - other, y - other);
 	}
 
-	inline Vector2 operator- (u32 other)
+	inline Vector2 operator- (const u32 other)
 	{
 		return Vector2(x - other, y - other);
 	}
 
-	inline Vector2 operator- (i8 other)
+	inline Vector2 operator- (const i8 other)
 	{
 		return Vector2(x - other, y - other);
 	}
 
-	inline Vector2 operator- (i16 other)
+	inline Vector2 operator- (const i16 other)
 	{
 		return Vector2(x - other, y - other);
 	}
 
-	inline Vector2 operator- (i32 other)
+	inline Vector2 operator- (const i32 other)
 	{
 		return Vector2(x - other, y - other);
 	}
 
-	inline Vector2 operator* (Vector2 other)
+	inline Vector2 operator* (const Vector2& other)
 	{
 		return Vector2(x * other.x, y * other.y);
 	}
 
-	inline Vector2 operator* (f32 other)
+	inline Vector2 operator* (const f32 other)
 	{
 		return Vector2(x * other, y * other);
 	}
 
-	inline Vector2 operator* (u8 other)
+	inline Vector2 operator* (const u8 other)
 	{
 		return Vector2(x * other, y * other);
 	}
 
-	inline Vector2 operator* (u16 other)
+	inline Vector2 operator* (const u16 other)
 	{
 		return Vector2(x * other, y * other);
 	}
 
-	inline Vector2 operator* (u32 other)
+	inline Vector2 operator* (const u32 other)
 	{
 		return Vector2(x * other, y * other);
 	}
 
-	inline Vector2 operator* (i8 other)
+	inline Vector2 operator* (const i8 other)
 	{
 		return Vector2(x * other, y * other);
 	}
 
-	inline Vector2 operator* (i16 other)
+	inline Vector2 operator* (const i16 other)
 	{
 		return Vector2(x * other, y * other);
 	}
 
-	inline Vector2 operator* (i32 other)
+	inline Vector2 operator* (const i32 other)
 	{
 		return Vector2(x * other, y * other);
 	}
 
-	inline Vector2 operator/ (Vector2 other)
+	inline Vector2 operator/ (const Vector2& other)
 	{
 		return Vector2(x / other.x, y / other.y);
 	}
 
-	inline Vector2 operator/ (f32 other)
+	inline Vector2 operator/ (const f32 other)
 	{
 		return Vector2(x / other, y / other);
 	}
 
-	inline Vector2 operator/ (u8 other)
+	inline Vector2 operator/ (const u8 other)
 	{
 		return Vector2(x / other, y / other);
 	}
 
-	inline Vector2 operator/ (u16 other)
+	inline Vector2 operator/ (const u16 other)
 	{
 		return Vector2(x / other, y / other);
 	}
 
-	inline Vector2 operator/ (u32 other)
+	inline Vector2 operator/ (const u32 other)
 	{
 		return Vector2(x / other, y / other);
 	}
 
-	inline Vector2 operator/ (i8 other)
+	inline Vector2 operator/ (const i8 other)
 	{
 		return Vector2(x / other, y / other);
 	}
 
-	inline Vector2 operator/ (i16 other)
+	inline Vector2 operator/ (const i16 other)
 	{
 		return Vector2(x / other, y / other);
 	}
 
-	inline Vector2 operator/ (i32 other)
+	inline Vector2 operator/ (const i32 other)
 	{
 		return Vector2(x / other, y / other);
 	}
 
-	inline Vector2 operator% (Vector2 other)
+	inline Vector2 operator% (const Vector2& other)
 	{
 		return Vector2(Math::Modulus(x, other.x), Math::Modulus(y, other.y));
 	}
 
-	inline Vector2 operator% (f32 other)
+	inline Vector2 operator% (const f32 other)
 	{
 		return Vector2(Math::Modulus(x, other), Math::Modulus(y, other));
 	}
 
-	inline Vector2 operator% (u8 other)
+	inline Vector2 operator% (const u8 other)
 	{
 		return Vector2(Math::Modulus(x, static_cast<f32>(other)), Math::Modulus(y, static_cast<f32>(other)));
 	}
 
-	inline Vector2 operator% (u16 other)
+	inline Vector2 operator% (const u16 other)
 	{
 		return Vector2(Math::Modulus(x, static_cast<f32>(other)), Math::Modulus(y, static_cast<f32>(other)));
 	}
 
-	inline Vector2 operator% (u32 other)
+	inline Vector2 operator% (const u32 other)
 	{
 		return Vector2(Math::Modulus(x, static_cast<f32>(other)), Math::Modulus(y, static_cast<f32>(other)));
 	}
 
-	inline Vector2 operator% (i8 other)
+	inline Vector2 operator% (const i8 other)
 	{
 		return Vector2(Math::Modulus(x, static_cast<f32>(other)), Math::Modulus(y, static_cast<f32>(other)));
 	}
 
-	inline Vector2 operator% (i16 other)
+	inline Vector2 operator% (const i16 other)
 	{
 		return Vector2(Math::Modulus(x, static_cast<f32>(other)), Math::Modulus(y, static_cast<f32>(other)));
 	}
 
-	inline Vector2 operator% (i32 other)
+	inline Vector2 operator% (const i32 other)
 	{
 		return Vector2(Math::Modulus(x, static_cast<f32>(other)), Math::Modulus(y, static_cast<f32>(other)));
 	}
+
+    // opAssign
+    inline Vector2& operator+= (const Vector2& other)
+    {
+        x += other.x;
+        y += other.y;
+        return *this;
+    }
+
+    inline Vector2& operator+= (const f32 other)
+    {
+        x += other;
+        y += other;
+        return *this;
+    }
+
+    inline Vector2& operator+= (const u8 other)
+    {
+        x += other;
+        y += other;
+        return *this;
+    }
+
+    inline Vector2& operator+= (const u16 other)
+    {
+        x += other;
+        y += other;
+        return *this;
+    }
+
+    inline Vector2& operator+= (const u32 other)
+    {
+        x += other;
+        y += other;
+        return *this;
+    }
+
+    inline Vector2& operator+= (const i8 other)
+    {
+        x += other;
+        y += other;
+        return *this;
+    }
+
+    inline Vector2& operator+= (const i16 other)
+    {
+        x += other;
+        y += other;
+        return *this;
+    }
+
+    inline Vector2& operator+= (const i32 other)
+    {
+        x += other;
+        y += other;
+        return *this;
+    }
+
+    inline Vector2& operator-= (const Vector2& other)
+    {
+        x -= other.x;
+        y -= other.y;
+        return *this;
+    }
+
+    inline Vector2& operator-= (const f32 other)
+    {
+        x -= other;
+        y -= other;
+        return *this;
+    }
+
+    inline Vector2& operator-= (const u8 other)
+    {
+        x -= other;
+        y -= other;
+        return *this;
+    }
+
+    inline Vector2& operator-= (const u16 other)
+    {
+        x -= other;
+        y -= other;
+        return *this;
+    }
+
+    inline Vector2& operator-= (const u32 other)
+    {
+        x -= other;
+        y -= other;
+        return *this;
+    }
+
+    inline Vector2& operator-= (const i8 other)
+    {
+        x -= other;
+        y -= other;
+        return *this;
+    }
+
+    inline Vector2& operator-= (const i16 other)
+    {
+        x -= other;
+        y -= other;
+        return *this;
+    }
+
+    inline Vector2& operator-= (const i32 other)
+    {
+        x -= other;
+        y -= other;
+        return *this;
+    }
+
+    inline Vector2& operator*= (const Vector2& other)
+    {
+        x *= other.x;
+        y *= other.y;
+        return *this;
+    }
+
+    inline Vector2& operator*= (const f32 other)
+    {
+        x *= other;
+        y *= other;
+        return *this;
+    }
+
+    inline Vector2& operator*= (const u8 other)
+    {
+        x *= other;
+        y *= other;
+        return *this;
+    }
+
+    inline Vector2& operator*= (const u16 other)
+    {
+        x *= other;
+        y *= other;
+        return *this;
+    }
+
+    inline Vector2& operator*= (const u32 other)
+    {
+        x *= other;
+        y *= other;
+        return *this;
+    }
+
+    inline Vector2& operator*= (const i8 other)
+    {
+        x *= other;
+        y *= other;
+        return *this;
+    }
+
+    inline Vector2& operator*= (const i16 other)
+    {
+        x *= other;
+        y *= other;
+        return *this;
+    }
+
+    inline Vector2& operator*= (const i32 other)
+    {
+        x *= other;
+        y *= other;
+        return *this;
+    }
+
+    inline Vector2& operator/= (const Vector2& other)
+    {
+        x /= other.x;
+        y /= other.y;
+        return *this;
+    }
+
+    inline Vector2& operator/= (const f32 other)
+    {
+        x /= other;
+        y /= other;
+        return *this;
+    }
+
+    inline Vector2& operator/= (const u8 other)
+    {
+        x /= other;
+        y /= other;
+        return *this;
+    }
+
+    inline Vector2& operator/= (const u16 other)
+    {
+        x /= other;
+        y /= other;
+        return *this;
+    }
+
+    inline Vector2& operator/= (const u32 other)
+    {
+        x /= other;
+        y /= other;
+        return *this;
+    }
+
+    inline Vector2& operator/= (const i8 other)
+    {
+        x /= other;
+        y /= other;
+        return *this;
+    }
+
+    inline Vector2& operator/= (const i16 other)
+    {
+        x /= other;
+        y /= other;
+        return *this;
+    }
+
+    inline Vector2& operator/= (const i32 other)
+    {
+        x /= other;
+        y /= other;
+        return *this;
+    }
+
+    // Comp
+    bool operator==(const Vector2& other)
+    {
+        return (x == other.x) && (y == other.y);
+    }
 
 public:
 	f32 x = 0.0f;

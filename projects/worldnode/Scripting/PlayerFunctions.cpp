@@ -1,6 +1,6 @@
 #include "PlayerFunctions.h"
 
-PlayerPositionComponent& AngelScriptPlayer::GetPositionComponent()
+/*PlayerPositionComponent& AngelScriptPlayer::GetPositionComponent()
 {
     return _registry->get<PlayerPositionComponent>(_entityId);
 }
@@ -8,4 +8,4 @@ PlayerPositionComponent& AngelScriptPlayer::GetPositionComponent()
 const PlayerPositionComponent& AngelScriptPlayer::GetPositionComponentConst()
 {
     return _registry->get<PlayerPositionComponent>(_entityId);
-}
+}*/

@@ -9,7 +9,7 @@ Vector2 Vector2::South(-1, 0);
 Vector2 Vector2::West(0, 1);
 Vector2 Vector2::East(0, -1);
 
-inline Vector2::Vector2(Vector3& v3)
+Vector2::Vector2(const Vector3& v3)
 {
 	x = v3.x;
 	y = v3.y;

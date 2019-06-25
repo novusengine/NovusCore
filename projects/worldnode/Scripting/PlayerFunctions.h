@@ -11,7 +11,6 @@
 #include "../ECS/Components/PlayerUpdateDataComponent.h"
 #include "../ECS/Components/PlayerPositionComponent.h"
 
-// This is just a thin wrapper around an entityId and a reference to the registry it's contained inside, as well as helper functions for accessing components
 class AngelScriptPlayer
 {
 public:
@@ -23,8 +22,7 @@ public:
     }
 
 public:
-    PlayerPositionComponent& GetPositionComponent();
-    const PlayerPositionComponent& GetPositionComponentConst();
+    
 
 private:
     u32 _entityId;
@@ -59,8 +57,8 @@ inline void RegisterPlayerFunctions(AB_NAMESPACE_QUALIFIER Engine* engine)
     engine->asEngine()->RegisterObjectType("Player", sizeof(AngelScriptPlayer), asOBJ_VALUE | asOBJ_POD | asGetTypeTraits<AngelScriptPlayer>());
 
     // Register functions for Player type
-    engine->asEngine()->RegisterObjectMethod("Player", "PlayerPositionComponent@ GetPositionComponent()", asMETHOD(AngelScriptPlayer, GetPositionComponent), asCALL_THISCALL);
-    engine->asEngine()->RegisterObjectMethod("Player", "const PlayerPositionComponent@ GetPositionComponentConst()", asMETHOD(AngelScriptPlayer, GetPositionComponentConst), asCALL_THISCALL);
+    //engine->asEngine()->RegisterObjectMethod("Player", "PlayerPositionComponent@ GetPositionComponent()", asMETHOD(AngelScriptPlayer, GetPositionComponent), asCALL_THISCALL);
+    //engine->asEngine()->RegisterObjectMethod("Player", "const PlayerPositionComponent@ GetPositionComponentConst()", asMETHOD(AngelScriptPlayer, GetPositionComponentConst), asCALL_THISCALL);
 
     // Register hooks
     engine->asEngine()->RegisterFuncdef("void PlayerCallback(Player)");

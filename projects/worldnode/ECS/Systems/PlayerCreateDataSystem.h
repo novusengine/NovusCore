@@ -103,11 +103,11 @@ namespace PlayerCreateDataSystem
         u32* flags = UnitUpdateFieldFlags;
         i32 fieldDataValue = 0;
         u16 fieldNotifyFlags = UF_FLAG_DYNAMIC;
-
+        
         for (u16 index = 0; index < PLAYER_END; index++)
         {
             playerFieldData.playerFields->Get<i32>(fieldDataValue, index * 4);
-            if (fieldNotifyFlags & flags[index] || ((flags[index] & visibleFlags) & UF_FLAG_SPECIAL_INFO) || fieldDataValue && (flags[index] & visibleFlags))
+            if (fieldNotifyFlags & flags[index] || ((flags[index] & visibleFlags) & UF_FLAG_SPECIAL_INFO) || (fieldDataValue && (flags[index] & visibleFlags)))
             {
                 updateMask.SetBit(index);
 

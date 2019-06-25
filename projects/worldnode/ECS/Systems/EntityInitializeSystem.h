@@ -51,7 +51,7 @@ namespace EntityInitializeSystem
         });
 
         auto unitView = registry.view<UnitInitializeComponent, UnitFieldDataComponent>();
-        unitView.each([&worldDatabase](const auto, UnitInitializeComponent& unitInitializeData, UnitFieldDataComponent& unitFieldData)
+        unitView.each([](const auto, UnitInitializeComponent& unitInitializeData, UnitFieldDataComponent& unitFieldData)
         {
             unitFieldData.ResetFields();
 

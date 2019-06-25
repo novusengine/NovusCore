@@ -402,7 +402,7 @@
 
 // Microsoft Visual C++
 // Ref: http://msdn.microsoft.com/en-us/library/b0084kay.aspx
-#if defined(_MSC_VER) && !defined(__MWERKS__) && !defined(__clang__)
+#if defined(_MSC_VER) && !defined(__MWERKS__)
 	#if _MSC_VER <= 1200 // MSVC6
 		// Disable the useless warnings about truncated symbol names for template instances
 		#pragma warning( disable : 4786 )
@@ -606,8 +606,7 @@
 // GNU C (and MinGW or Cygwin on Windows)
 // Use the following command to determine predefined macros: echo . | g++ -dM -E -
 // MSVC2015 can now use CLang too, but it shouldn't go in here
-#if ((defined(__GNUC__) && !defined(__SNC__) && !defined(_MSC_VER)) || defined(EPPC) || defined(__CYGWIN__) || defined(__clang__)) // JWC -- use this instead for Wii
-
+#if (defined(__GNUC__) && !defined(__SNC__) && !defined(_MSC_VER)) || defined(EPPC) || defined(__CYGWIN__) // JWC -- use this instead for Wii
 #define GNU_STYLE_VIRTUAL_METHOD
 	#define MULTI_BASE_OFFSET(x) (*((asPWORD*)(&x)+1))
 	#define asVSNPRINTF(a, b, c, d) vsnprintf(a, b, c, d)

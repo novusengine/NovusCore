@@ -360,7 +360,7 @@ namespace EntityCreateDataSystem
         auto unitView = registry.view<UnitInitializeComponent, UnitFieldDataComponent>();
         if (!unitView.empty())
         {
-            unitView.each([&registry, &playerUpdatesQueue, lifeTimeInMS](const auto, UnitInitializeComponent& unitInitializeData, UnitFieldDataComponent& unitFieldData)
+            unitView.each([&playerUpdatesQueue, lifeTimeInMS](const auto, UnitInitializeComponent& unitInitializeData, UnitFieldDataComponent& unitFieldData)
             {
                 /* Build Self Packet for public */
                 u8 updateType = UPDATETYPE_CREATE_OBJECT2;
