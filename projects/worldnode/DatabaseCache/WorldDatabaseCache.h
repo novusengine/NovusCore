@@ -1,7 +1,7 @@
 #pragma once
 #include "BaseDatabaseCache.h"
 #include <robin_hood.h>
-#include <Networking/ByteBuffer.h>
+#include <Networking/DataStore.h>
 
 // item_template table in DB
 class WorldDatabaseCache;
@@ -128,8 +128,7 @@ struct ItemTemplate
         _packet = data._packet;
         _cache = data._cache;
     }
-
-    Common::ByteBuffer GetQuerySinglePacket() { return _packet; }
+    std::shared_ptr<DataStore> GetQuerySinglePacket() { return _packet; }
 
     u32 entry;
     u32 itemClass;
@@ -195,7 +194,7 @@ struct ItemTemplate
     u32 holidayId;
 private:
     friend WorldDatabaseCache;
-    Common::ByteBuffer _packet;
+    std::shared_ptr<DataStore> _packet;
     WorldDatabaseCache* _cache;
 };
 

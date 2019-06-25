@@ -51,7 +51,7 @@ namespace ClientUpdateSystem
                 {
                     if (std::find(playerUpdateData.visibleGuids.begin(), playerUpdateData.visibleGuids.end(), playerUpdatePacket.characterGuid) == playerUpdateData.visibleGuids.end())
                     {
-                        playerConnection.socket->SendPacket(playerUpdatePacket.data, playerUpdatePacket.opcode);
+                        playerConnection.socket->SendPacket(playerUpdatePacket.data.get(), playerUpdatePacket.opcode);
                         playerUpdateData.visibleGuids.push_back(playerUpdatePacket.characterGuid);
                     }
                 }
@@ -60,7 +60,7 @@ namespace ClientUpdateSystem
                     // So far we have not observed any issues with sending private field flags to any other client but themselves, this offers a good speed increase but if we see issues in the future we should recheck this.
                     // if (playerUpdatePacket.characterGuid != playerConnection.characterGuid)
                     {
-                        playerConnection.socket->SendPacket(playerUpdatePacket.data, playerUpdatePacket.opcode);
+                        playerConnection.socket->SendPacket(playerUpdatePacket.data.get(), playerUpdatePacket.opcode);
                     }
                 }
             }
@@ -69,13 +69,13 @@ namespace ClientUpdateSystem
             {
                 if (playerConnection.characterGuid != movementPacket.characterGuid)
                 {
-                    playerConnection.socket->SendPacket(movementPacket.data, movementPacket.opcode);
+                    playerConnection.socket->SendPacket(movementPacket.data.get(), movementPacket.opcode);
                 }
             }
 
             for (ChatPacket chatPacket : playerUpdatesQueue.playerChatPacketQueue)
             {
-                playerConnection.socket->SendPacket(chatPacket.data, Common::Opcode::SMSG_MESSAGECHAT);
+                playerConnection.socket->SendPacket(chatPacket.data.get(), Opcode::SMSG_MESSAGECHAT);
             }
         });
 
@@ -83,7 +83,7 @@ namespace ClientUpdateSystem
         PacketQueueData packet;
         while (playerPacketQueue.packetQueue->try_dequeue(packet))
         {
-            packet.connection->SendPacket(packet.data, packet.opcode);
+            packet.connection->SendPacket(packet.data.get(), packet.opcode);
         }
 
         // Clear Queues

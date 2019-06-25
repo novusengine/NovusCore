@@ -56,86 +56,86 @@ namespace PlayerInitializeSystem
             /* Login Code Here */
             playerFieldData.ResetFields();
 
-            /* SMSG_NEW_WORLD */
             /* SMSG_LOGIN_VERIFY_WORLD */
-            Common::ByteBuffer verifyWorld;
-            verifyWorld.Write<u32>(playerFPositionData.mapId);
-            verifyWorld.Write<f32>(playerFPositionData.x);
-            verifyWorld.Write<f32>(playerFPositionData.y);
-            verifyWorld.Write<f32>(playerFPositionData.z);
-            verifyWorld.Write<f32>(playerFPositionData.orientation);
-            playerInitializeData.socket->SendPacket(verifyWorld, Common::Opcode::SMSG_LOGIN_VERIFY_WORLD);
+            std::shared_ptr<DataStore> initializeBuffer = DataStore::Borrow<1024>();
+            initializeBuffer->PutU32(playerFPositionData.mapId);
+            initializeBuffer->PutF32(playerFPositionData.x);
+            initializeBuffer->PutF32(playerFPositionData.y);
+            initializeBuffer->PutF32(playerFPositionData.z);
+            initializeBuffer->PutF32(playerFPositionData.orientation);
+            playerInitializeData.socket->SendPacket(initializeBuffer.get(), Opcode::SMSG_LOGIN_VERIFY_WORLD);
 
             /* SMSG_ACCOUNT_DATA_TIMES */
             u32 mask = 0xEA;
 
-            Common::ByteBuffer accountDataTimes;
-            accountDataTimes.Write<u32>(static_cast<u32>(time(nullptr))); // Unix Time
-            accountDataTimes.Write<u8>(1); // bitmask blocks count
-            accountDataTimes.Write<u32>(mask); // PER_CHARACTER_CACHE_MASK
+            initializeBuffer->Reset();
+            initializeBuffer->PutU32(static_cast<u32>(time(nullptr))); // Unix Time
+            initializeBuffer->PutU8(1); // bitmask blocks count
+            initializeBuffer->PutU32(mask); // PER_CHARACTER_CACHE_MASK
 
             for (u32 i = 0; i < 8; ++i)
             {
                 if (mask & (1 << i))
-                    accountDataTimes.Write<u32>(0);
+                    initializeBuffer->PutU32(0);
             }
 
-            playerInitializeData.socket->SendPacket(accountDataTimes, Common::Opcode::SMSG_ACCOUNT_DATA_TIMES);
+            playerInitializeData.socket->SendPacket(initializeBuffer.get(), Opcode::SMSG_ACCOUNT_DATA_TIMES);
 
 
             /* SMSG_FEATURE_SYSTEM_STATUS */
-            Common::ByteBuffer featureSystemStatus;
-            featureSystemStatus.Write<u8>(2);
-            featureSystemStatus.Write<u8>(0);
-            playerInitializeData.socket->SendPacket(featureSystemStatus, Common::Opcode::SMSG_FEATURE_SYSTEM_STATUS);
+            initializeBuffer->Reset();
+            initializeBuffer->PutU8(2);
+            initializeBuffer->PutU8(0);
+            playerInitializeData.socket->SendPacket(initializeBuffer.get() , Opcode::SMSG_FEATURE_SYSTEM_STATUS);
+
 
             /* SMSG_MOTD */
-            Common::ByteBuffer motd;
-            motd.Write<u32>(0);
-            motd.WriteString("Welcome to NovusCore.");
-            playerInitializeData.socket->SendPacket(motd, Common::Opcode::SMSG_MOTD);
+            initializeBuffer->Reset();
+            initializeBuffer->PutU32(0);
+            initializeBuffer->PutString("Welcome to NovusCore.");
+            playerInitializeData.socket->SendPacket(initializeBuffer.get(), Opcode::SMSG_MOTD);
 
 
             /* SMSG_LEARNED_DANCE_MOVES */
-            Common::ByteBuffer learnedDanceMoves;
-            learnedDanceMoves.Write<u32>(0);
-            learnedDanceMoves.Write<u32>(0);
-            playerInitializeData.socket->SendPacket(learnedDanceMoves, Common::Opcode::SMSG_LEARNED_DANCE_MOVES);
+            initializeBuffer->Reset();
+            initializeBuffer->PutU32(0);
+            initializeBuffer->PutU32(0);
+            playerInitializeData.socket->SendPacket(initializeBuffer.get(), Opcode::SMSG_LEARNED_DANCE_MOVES);
 
 
             /* SMSG_ACTION_BUTTONS */
-            Common::ByteBuffer actionButtons;
-            actionButtons.Write<u8>(1);
+            initializeBuffer->Reset();
+            initializeBuffer->PutU8(1);
             for (u8 button = 0; button < 144; ++button)
             {
-                actionButtons.Write<u32>(0);
+                initializeBuffer->PutU32(0);
             }
-            playerInitializeData.socket->SendPacket(actionButtons, Common::Opcode::SMSG_ACTION_BUTTONS);
+            playerInitializeData.socket->SendPacket(initializeBuffer.get(), Opcode::SMSG_ACTION_BUTTONS);
 
 
             /* SMSG_INITIAL_SPELLS */
-            if (spellStorageData.spells.size() > 0)
+            if (spellStorageData.spells.size())
             {
-                Common::ByteBuffer initialSpells;
-                initialSpells.Write<u8>(0);
-                initialSpells.Write<u16>(static_cast<u16>(spellStorageData.spells.size()));
+                initializeBuffer->Reset();
+                initializeBuffer->PutU8(0);
+                initializeBuffer->PutU16(static_cast<u16>(spellStorageData.spells.size()));
 
                 for (u32 spell : spellStorageData.spells)
                 {
-                    initialSpells.Write<u32>(spell);
-                    initialSpells.Write<u16>(0);
+                    initializeBuffer->PutU32(spell);
+                    initializeBuffer->PutU16(0);
                 }
 
-                initialSpells.Write<u16>(0); // Cooldown History Size
-                playerInitializeData.socket->SendPacket(initialSpells, Common::Opcode::SMSG_INITIAL_SPELLS);
+                initializeBuffer->PutU16(0); // Cooldown History Size
+                playerInitializeData.socket->SendPacket(initializeBuffer.get(), Opcode::SMSG_INITIAL_SPELLS);
             }
 
 
             /* SMSG_ALL_ACHIEVEMENT_DATA */
-            Common::ByteBuffer achievementData;
-            achievementData.Write<i32>(-1);
-            achievementData.Write<i32>(-1);
-            playerInitializeData.socket->SendPacket(achievementData, Common::Opcode::SMSG_ALL_ACHIEVEMENT_DATA);
+            initializeBuffer->Reset();
+            initializeBuffer->PutI32(-1);
+            initializeBuffer->PutI32(-1);
+            playerInitializeData.socket->SendPacket(initializeBuffer.get(), Opcode::SMSG_ALL_ACHIEVEMENT_DATA);
 
 
             /* SMSG_LOGIN_SETTIMESPEED */
@@ -148,11 +148,11 @@ namespace PlayerInitializeSystem
             localtime_r(&tmpServerTime, &lt);
 #endif
 
-            Common::ByteBuffer loginSetTimeSpeed;
-            loginSetTimeSpeed.Write<u32>(((lt.tm_year - 100) << 24 | lt.tm_mon << 20 | (lt.tm_mday - 1) << 14 | lt.tm_wday << 11 | lt.tm_hour << 6 | lt.tm_min));
-            loginSetTimeSpeed.Write<f32>(0.01666667f);
-            loginSetTimeSpeed.Write<u32>(0);
-            playerInitializeData.socket->SendPacket(loginSetTimeSpeed, Common::Opcode::SMSG_LOGIN_SETTIMESPEED);
+            initializeBuffer->Reset();
+            initializeBuffer->PutU32(((lt.tm_year - 100) << 24 | lt.tm_mon << 20 | (lt.tm_mday - 1) << 14 | lt.tm_wday << 11 | lt.tm_hour << 6 | lt.tm_min));
+            initializeBuffer->PutF32(0.01666667f);
+            initializeBuffer->PutU32(0);
+            playerInitializeData.socket->SendPacket(initializeBuffer.get(), Opcode::SMSG_LOGIN_SETTIMESPEED);
 
             /* Set Initial Fields */
             CharacterInfo characterInfo;

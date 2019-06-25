@@ -24,7 +24,6 @@
 */
 #include <NovusTypes.h>
 #include <vector>
-#include <Networking/ByteBuffer.h>
 
 #define MAX_MOVEMENT_OPCODES 27
 struct PlayerPositionComponent 

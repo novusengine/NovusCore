@@ -23,39 +23,42 @@
 */
 #pragma once
 #include <NovusTypes.h>
-#include <Networking/ByteBuffer.h>
+#include <Networking/DataStore.h>
 
 #include "../../NovusEnums.h"
 #include "../../Utils/UpdateMask.h"
 
 struct ItemFieldDataComponent
 {
-    ItemFieldDataComponent() : changesMask(ITEM_END), itemFields(ITEM_END * 4) { }
+    ItemFieldDataComponent() : changesMask(ITEM_END)
+    {
+        itemFields = DataStore::Borrow<ITEM_END * 4>();
+        std::memset(itemFields->GetInternalData(), 0, itemFields->Size);
+    }
 
     void SetGuidValue(u16 index, u64 value)
     {
-        itemFields.WriteAt<u64>(value, index * 4);
+        itemFields->Put<u64>(value, index * 4);
         changesMask.SetBit(index);
         changesMask.SetBit(index + 1);
     }
     template <typename T>
     void SetFieldValue(u16 index, T value, u8 offset = 0)
     {
-        itemFields.WriteAt<T>(value, (index * 4) + offset);
+        itemFields->Put<T>(value, (index * 4) + offset);
         changesMask.SetBit(index);
     }
     template <typename T>
     T GetFieldValue(u16 index, u8 offset = 0)
     {
-        return itemFields.ReadAt<T>((index * 4) + offset);
+        return itemFields->Get<T>((index * 4) + offset);
     }
     void ResetFields()
     {
-        itemFields.Clean();
-        itemFields.Resize(ITEM_END * 4);
         changesMask.Reset();
+        itemFields->Reset();
     }
 
     UpdateMask<64> changesMask;
-    Common::ByteBuffer itemFields;
+    std::shared_ptr<DataStore> itemFields;
 };

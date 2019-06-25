@@ -32,19 +32,22 @@ namespace Common
     {
         std::thread _thread;
         std::mutex _mutex;
-        std::vector<Common::BaseSocket*>* _connections;
+        std::vector<BaseSocket*>* _connections;
     };
 
     static void WorkerThreadMain(WorkerThread* thread)
     {
         while (true)
         {
-            thread->_mutex.lock();
             // Remove closed sessions
+            thread->_mutex.lock();
             if (thread->_connections->size() > 0)
             {
-                thread->_connections->erase(std::remove_if(thread->_connections->begin(), thread->_connections->end(), [](Common::BaseSocket* connection)
+                thread->_connections->erase(std::remove_if(thread->_connections->begin(), thread->_connections->end(), [](BaseSocket* connection)
                 {
+                        if (!connection)
+                            return false;
+
                     return connection->IsClosed();
                 }), thread->_connections->end());
             }
@@ -59,6 +62,8 @@ namespace Common
     public:
         TcpServer(asio::io_service& io_service, i32 port) : _acceptor(io_service, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port)), _ioService(io_service)
         {
+            _connections.resize(4096);
+
             _workerThread = new WorkerThread();
             _workerThread->_connections = &_connections;
             _workerThread->_thread = std::thread(WorkerThreadMain, _workerThread);

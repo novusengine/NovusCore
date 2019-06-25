@@ -23,18 +23,19 @@
 */
 #pragma once
 #include <NovusTypes.h>
-#include <Networking/ByteBuffer.h>
+#include <Networking/DataStore.h>
 #include <Utils/ConcurrentQueue.h>
 
 class WorldConnection;
 struct PacketQueueData
 {
     PacketQueueData() { }
-    PacketQueueData(WorldConnection* conn, Common::ByteBuffer buffer, u16 inOpcode) { connection = conn; data = buffer; opcode = inOpcode; }
+    PacketQueueData(WorldConnection* conn, DataStore buffer, u16 inOpcode) { connection = conn; data = std::shared_ptr<DataStore>(&buffer); opcode = inOpcode; }
+    PacketQueueData(WorldConnection* conn, std::shared_ptr<DataStore> buffer, u16 inOpcode) { connection = conn; data = buffer; opcode = inOpcode; }
 
     WorldConnection* connection;
+    std::shared_ptr<DataStore> data;
     u16 opcode;
-    Common::ByteBuffer data;
 };
 struct PlayerPacketQueueSingleton
 {

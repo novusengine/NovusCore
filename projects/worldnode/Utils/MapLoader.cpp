@@ -1,5 +1,5 @@
 #include "MapLoader.h"
-#include <Networking/ByteBuffer.h>
+#include <Networking/DataStore.h>
 #include <Utils/DebugHandler.h>
 #include <Utils/StringUtils.h>
 #include <filesystem>
@@ -61,22 +61,21 @@ bool MapLoader::Load(entt::registry& registry)
 
 bool MapLoader::ExtractAdtInfo(FileReader& reader, NovusAdt& adt)
 {
-    Common::ByteBuffer buffer;
-    buffer.Resize(reader.Length());
-    reader.Read(buffer, reader.Length());
+    DataStore buffer(nullptr, reader.Length());
+    reader.Read(buffer, buffer.Size);
 
-    buffer.Read<NovusAdtHeader>(adt.adtHeader);
+    buffer.Get<NovusAdtHeader>(adt.adtHeader);
 
-    buffer.Read<NovusAreaHeader>(adt.areaHeader);
+    buffer.Get<NovusAreaHeader>(adt.areaHeader);
     if (adt.areaHeader.hasSubArea)
     {	
-        buffer.Read<NovusAdtAreaIds>(adt.areaIds);
+        buffer.Get<NovusAdtAreaIds>(adt.areaIds);
     }
 
-    buffer.Read<NovusHeightHeader>(adt.heightHeader);
+    buffer.Get<NovusHeightHeader>(adt.heightHeader);
     if (adt.heightHeader.hasHeightBox)
     {
-        buffer.Read<NovusAdtHeightLimit>(adt.heightLimit);
+        buffer.Get<NovusAdtHeightLimit>(adt.heightLimit);
     }
 
     return true;

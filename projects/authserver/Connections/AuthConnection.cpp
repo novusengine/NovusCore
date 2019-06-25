@@ -23,7 +23,6 @@
 */
 
 #include "AuthConnection.h"
-#include <Networking/ByteBuffer.h>
 #include <Networking/DataStore.h>
 
 #pragma pack(push, 1)
@@ -91,12 +90,12 @@ bool AuthConnection::Start()
 
 void AuthConnection::HandleRead()
 {
-    Common::ByteBuffer& byteBuffer = GetByteBuffer();
+    DataStore& buffer = GetReceiveBuffer();
     ResetPacketsReadThisRead();
 
-    while (byteBuffer.GetActualSize())
+    while (u32 activeSize = buffer.GetActiveSize())
     {
-        u8 command = byteBuffer.GetDataPointer()[0];
+        u8 command = buffer.GetInternalData()[0];
 
         auto itr = MessageHandlers.find(command);
         // Client sent wrong command
@@ -122,12 +121,12 @@ void AuthConnection::HandleRead()
         }
 
         u16 size = static_cast<u16>(itr->second.packetSize);
-        if (byteBuffer.GetActualSize() < size)
+        if (activeSize < size)
             break;
 
         if (command == AUTH_CHALLENGE || command == AUTH_RECONNECT_CHALLENGE)
         {
-            cAuthLogonChallenge* logonChallenge = reinterpret_cast<cAuthLogonChallenge*>(byteBuffer.GetReadPointer());
+            cAuthLogonChallenge* logonChallenge = reinterpret_cast<cAuthLogonChallenge*>(buffer.GetReadPointer());
             size += logonChallenge->size;
             if (size > (sizeof(cAuthLogonChallenge) + 16))
             {
@@ -136,7 +135,7 @@ void AuthConnection::HandleRead()
             }
         }
 
-        if (byteBuffer.GetActualSize() < size)
+        if (activeSize < size)
             break;
 
         if (!(*this.*itr->second.handler)())
@@ -145,7 +144,7 @@ void AuthConnection::HandleRead()
             return;
         }
 
-        byteBuffer.ReadBytes(size);
+        buffer.ReadData += size;
     }
 
     AsyncRead();
@@ -155,7 +154,7 @@ bool AuthConnection::HandleCommandChallenge()
 {
     _status = STATUS_CLOSED;
 
-    cAuthLogonChallenge* logonChallenge = reinterpret_cast<cAuthLogonChallenge*>(GetByteBuffer().GetReadPointer());
+    cAuthLogonChallenge* logonChallenge = reinterpret_cast<cAuthLogonChallenge*>(GetReceiveBuffer().GetReadPointer());
     std::string login(reinterpret_cast<char const*>(logonChallenge->username_pointer), logonChallenge->username_length);
     username = login;
 
@@ -239,7 +238,7 @@ void AuthConnection::HandleCommandChallengeCallback(amy::result_set& results)
 bool AuthConnection::HandleCommandProof()
 {
     _status = STATUS_CLOSED;
-    cAuthLogonProof* logonProof = reinterpret_cast<cAuthLogonProof*>(GetByteBuffer().GetReadPointer());
+    cAuthLogonProof* logonProof = reinterpret_cast<cAuthLogonProof*>(GetReceiveBuffer().GetReadPointer());
 
     BigNumber A;
     A.Bin2BN(logonProof->A, 32);
@@ -374,7 +373,7 @@ bool AuthConnection::HandleCommandReconnectChallenge()
 {
     _status = STATUS_CLOSED;
 
-    cAuthLogonChallenge* logonChallenge = reinterpret_cast<cAuthLogonChallenge*>(GetByteBuffer().GetReadPointer());
+    cAuthLogonChallenge* logonChallenge = reinterpret_cast<cAuthLogonChallenge*>(GetReceiveBuffer().GetReadPointer());
     if (logonChallenge->size - (sizeof(cAuthLogonChallenge) - 4 - 1) != logonChallenge->username_length)
         return false;
 
@@ -424,7 +423,7 @@ void AuthConnection::HandleCommandReconnectChallengeCallback(amy::result_set& re
 bool AuthConnection::HandleCommandReconnectProof()
 {
     _status = STATUS_CLOSED;
-    cAuthReconnectProof* reconnectLogonProof = reinterpret_cast<cAuthReconnectProof*>(GetByteBuffer().GetReadPointer());
+    cAuthReconnectProof* reconnectLogonProof = reinterpret_cast<cAuthReconnectProof*>(GetReceiveBuffer().GetReadPointer());
     if (username.length() == 0 || !_reconnectSeed.GetBytes() || !K.GetBytes())
         return false;
 

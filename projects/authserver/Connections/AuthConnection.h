@@ -118,12 +118,12 @@ struct AuthMessageHandler
 };
 #pragma pack(pop)
 
-class AuthConnection : public Common::BaseSocket
+class AuthConnection : public BaseSocket
 {
 public:
     static robin_hood::unordered_map<u8, AuthMessageHandler> InitMessageHandlers();
 
-    AuthConnection(asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), _status(STATUS_CHALLENGE), username()
+    AuthConnection(asio::ip::tcp::socket* socket) : BaseSocket(socket), _status(STATUS_CHALLENGE), username()
     {
         N.Hex2BN("894B645E89E1535BBDAD5B8B290650530801B18EBFBF5E8FAB3C82872A3E9BB7");
         g.SetUInt32(7);

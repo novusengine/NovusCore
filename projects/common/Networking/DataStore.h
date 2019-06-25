@@ -23,6 +23,7 @@
 */
 #pragma once
 #include "../NovusTypes.h"
+#include "../Utils/SharedPool.h"
 #include <cassert>
 
 class DataStore
@@ -30,12 +31,10 @@ class DataStore
 public:
     DataStore(u8* inData = nullptr, size_t inSize = 128)
     {
-        assert(inSize > 0);
-
         if (inData == nullptr)
         {
             _data = new u8[inSize];
-            _isOwner = true;
+            IsOwner = true;
         }
         else
         {
@@ -44,17 +43,57 @@ public:
 
         Size = inSize;
     }
-    ~DataStore() { if (_isOwner) { delete[] _data; _data = nullptr; } }
+    ~DataStore()
+    {
+        if (IsOwner)
+        {
+            delete[] _data;
+            _data = nullptr;
+        }
+    }
 
     bool CanPerformRead(size_t inSize)
     {
         return ReadData + inSize <= Size;
     }
+    bool CanPerformRead(size_t inSize, size_t offset)
+    {
+        return offset + inSize <= Size;
+    }
     bool CanPerformWrite(size_t inSize)
     {
         return WrittenData + inSize <= Size;
     }
+    bool CanPerformWrite(size_t inSize, size_t offset)
+    {
+        return offset + inSize <= Size;
+    }
 
+    template <typename T>
+    bool Get(T& val)
+    {
+        assert(_data != nullptr);
+
+        size_t readSize = sizeof(T);
+        if (!CanPerformRead(readSize))
+            return false;
+
+        val = *reinterpret_cast<T const*>(&_data[ReadData]);
+        ReadData += readSize;
+        return true;
+    }
+    template <typename T>
+    bool Get(T& val, size_t offset)
+    {
+        assert(_data != nullptr);
+
+        size_t readSize = sizeof(T);
+        if (!CanPerformRead(readSize, offset))
+            return false;
+
+        val = *reinterpret_cast<T const*>(&_data[offset]);
+        return true;
+    }
     bool GetI8(i8& val)
     {
         assert(_data != nullptr);
@@ -79,6 +118,17 @@ public:
         ReadData += readSize;
         return true;
     }
+    bool GetBytes(u8* dest, size_t Size)
+    {
+        assert(_data != nullptr);
+
+        if (!CanPerformRead(Size))
+            return false;
+
+        std::memcpy(dest, &_data[ReadData], Size);
+        ReadData += Size;
+        return true;
+    }
     bool GetI16(i16& val)
     {
         assert(_data != nullptr);
@@ -87,7 +137,7 @@ public:
         if (!CanPerformRead(readSize))
             return false;
 
-        val = static_cast<u16>(_data[ReadData]) | (static_cast<u16>(_data[ReadData + 1]) << 8);
+        val = *reinterpret_cast<i16*>(&_data[ReadData]);
         ReadData += readSize;
         return true;
     }
@@ -99,7 +149,7 @@ public:
         if (!CanPerformRead(readSize))
             return false;
 
-        val = static_cast<u16>(_data[ReadData]) | (static_cast<u16>(_data[ReadData + 1]) << 8);
+        val = *reinterpret_cast<u16*>(&_data[ReadData]);
         ReadData += readSize;
         return true;
     }
@@ -111,7 +161,7 @@ public:
         if (!CanPerformRead(readSize))
             return false;
 
-        val = static_cast<u32>(_data[ReadData]) | (static_cast<u32>(_data[ReadData + 1]) << 8) | (static_cast<u32>(_data[ReadData + 2]) << 16) | (static_cast<u32>(_data[ReadData + 3]) << 24);
+        val = *reinterpret_cast<i32*>(&_data[ReadData]);
         ReadData += readSize;
         return true;
     }
@@ -123,7 +173,7 @@ public:
         if (!CanPerformRead(readSize))
             return false;
 
-        val = static_cast<u32>(_data[ReadData]) | (static_cast<u32>(_data[ReadData + 1]) << 8) | (static_cast<u32>(_data[ReadData + 2]) << 16) | (static_cast<u32>(_data[ReadData + 3]) << 24);
+        val = *reinterpret_cast<u32*>(&_data[ReadData]);
         ReadData += readSize;
         return true;
     }
@@ -135,7 +185,7 @@ public:
         if (!CanPerformRead(readSize))
             return false;
 
-        val = *reinterpret_cast<f32*>(_data[ReadData]);
+        val = *reinterpret_cast<f32*>(&_data[ReadData]);
         ReadData += readSize;
         return true;
     }
@@ -147,7 +197,7 @@ public:
         if (!CanPerformRead(readSize))
             return false;
 
-        val = static_cast<u64>(_data[ReadData]) | (static_cast<u64>(_data[ReadData + 1]) << 8) | (static_cast<u64>(_data[ReadData + 2]) << 16) | (static_cast<u64>(_data[ReadData + 3]) << 24) | (static_cast<u64>(_data[ReadData + 4]) << 32) | (static_cast<u64>(_data[ReadData + 5]) << 40) | (static_cast<u64>(_data[ReadData + 6]) << 48) | (static_cast<u64>(_data[ReadData] + 7) << 56);
+        val = *reinterpret_cast<i64*>(&_data[ReadData]);
         ReadData += readSize;
         return true;
     }
@@ -159,7 +209,7 @@ public:
         if (!CanPerformRead(readSize))
             return false;
 
-        val = static_cast<u64>(_data[ReadData]) | (static_cast<u64>(_data[ReadData + 1]) << 8) | (static_cast<u64>(_data[ReadData + 2]) << 16) | (static_cast<u64>(_data[ReadData + 3]) << 24) | (static_cast<u64>(_data[ReadData + 4]) << 32) | (static_cast<u64>(_data[ReadData + 5]) << 40) | (static_cast<u64>(_data[ReadData + 6]) << 48) | (static_cast<u64>(_data[ReadData] + 7) << 56);
+        val = *reinterpret_cast<u64*>(&_data[ReadData]);
         ReadData += readSize;
         return true;
     }
@@ -175,7 +225,67 @@ public:
         ReadData += readSize;
         return true;
     }
+    void GetString(std::string& val)
+    {
+        assert(_data != nullptr);
+        val.clear();
+        while (ReadData < Size)
+        {
+            char c = _data[ReadData++];
+            if (c == 0)
+                break;
 
+            val += c;
+        }
+    }
+    bool GetGuid(u64& val)
+    {
+        val = 0;
+
+        u8 guidmark = 0;
+        if (!GetU8(guidmark))
+            return false;
+
+        for (i32 i = 0; i < 8; ++i)
+        {
+            if (guidmark & (static_cast<u8>(1) << i))
+            {
+                u8 bit;
+                if (!GetU8(bit))
+                    return false;
+
+                val |= (static_cast<u64>(bit) << (i * 8));
+            }
+        }
+
+        return val != 0;
+    }
+
+    template <typename T>
+    bool Put(T val)
+    {
+        assert(_data != nullptr);
+
+        size_t writeSize = sizeof(T);
+        if (!CanPerformWrite(writeSize))
+            return false;
+
+        std::memcpy(&_data[WrittenData], val, writeSize);
+        WrittenData += writeSize;
+        return true;
+    }
+    template <typename T>
+    bool Put(T val, size_t offset)
+    {
+        assert(_data != nullptr);
+
+        size_t writeSize = sizeof(T);
+        if (!CanPerformWrite(writeSize, offset))
+            return false;
+
+        std::memcpy(&_data[offset], &val, writeSize);
+        return true;
+    }
     bool PutI8(i8 val)
     {
         assert(_data != nullptr);
@@ -219,8 +329,7 @@ public:
         if (!CanPerformWrite(writeSize))
             return false;
 
-        _data[WrittenData] = static_cast<u8>(val);
-        _data[WrittenData + 1] = (static_cast<u8>(val >> 8));
+        std::memcpy(&_data[WrittenData], reinterpret_cast<const u8*>(&val), writeSize);
         WrittenData += writeSize;
         return true;
     }
@@ -232,8 +341,7 @@ public:
         if (!CanPerformWrite(writeSize))
             return false;
 
-        _data[WrittenData] = static_cast<u8>(val);
-        _data[WrittenData + 1] = (static_cast<u8>(val >> 8));
+        std::memcpy(&_data[WrittenData], reinterpret_cast<const u8*>(&val), writeSize);
         WrittenData += writeSize;
         return true;
     }
@@ -245,10 +353,7 @@ public:
         if (!CanPerformWrite(writeSize))
             return false;
 
-        _data[WrittenData] = static_cast<u8>(val);
-        _data[WrittenData + 1] = (static_cast<u8>(val >> 8));
-        _data[WrittenData + 2] = (static_cast<u8>(val >> 16));
-        _data[WrittenData + 3] = (static_cast<u8>(val >> 24));
+        std::memcpy(&_data[WrittenData], reinterpret_cast<const u8*>(&val), writeSize);
         WrittenData += writeSize;
         return true;
     }
@@ -260,10 +365,7 @@ public:
         if (!CanPerformWrite(writeSize))
             return false;
 
-        _data[WrittenData] = static_cast<u8>(val);
-        _data[WrittenData + 1] = (static_cast<u8>(val >> 8));
-        _data[WrittenData + 2] = (static_cast<u8>(val >> 16));
-        _data[WrittenData + 3] = (static_cast<u8>(val >> 24));
+        std::memcpy(&_data[WrittenData], reinterpret_cast<const u8*>(&val), writeSize);
         WrittenData += writeSize;
         return true;
     }
@@ -287,14 +389,7 @@ public:
         if (!CanPerformWrite(writeSize))
             return false;
 
-        _data[WrittenData] = static_cast<u8>(val);
-        _data[WrittenData + 1] = (static_cast<u8>(val >> 8));
-        _data[WrittenData + 2] = (static_cast<u8>(val >> 16));
-        _data[WrittenData + 3] = (static_cast<u8>(val >> 24));
-        _data[WrittenData + 4] = (static_cast<u8>(val >> 32));
-        _data[WrittenData + 5] = (static_cast<u8>(val >> 40));
-        _data[WrittenData + 6] = (static_cast<u8>(val >> 48));
-        _data[WrittenData + 7] = (static_cast<u8>(val >> 56));
+        std::memcpy(&_data[WrittenData], reinterpret_cast<const u8*>(&val), writeSize);
         WrittenData += writeSize;
         return true;
     }
@@ -306,14 +401,7 @@ public:
         if (!CanPerformWrite(writeSize))
             return false;
 
-        _data[WrittenData] = static_cast<u8>(val);
-        _data[WrittenData + 1] = (static_cast<u8>(val >> 8));
-        _data[WrittenData + 2] = (static_cast<u8>(val >> 16));
-        _data[WrittenData + 3] = (static_cast<u8>(val >> 24));
-        _data[WrittenData + 4] = (static_cast<u8>(val >> 32));
-        _data[WrittenData + 5] = (static_cast<u8>(val >> 40));
-        _data[WrittenData + 6] = (static_cast<u8>(val >> 48));
-        _data[WrittenData + 7] = (static_cast<u8>(val >> 56));
+        std::memcpy(&_data[WrittenData], reinterpret_cast<const u8*>(&val), writeSize);
         WrittenData += writeSize;
         return true;
     }
@@ -343,15 +431,124 @@ public:
         _data[WrittenData++] = 0;
         return writeSizeTotal;
     }
+    bool PutGuid(u64 val)
+    {
+        u8 packedGuid[8 + 1];
+        packedGuid[0] = 0;
+        size_t size = 1;
 
+        for (u8 i = 0; val != 0; ++i)
+        {
+            if (val & 0xFF)
+            {
+                packedGuid[0] |= static_cast<u8>(1 << i);
+                packedGuid[size] = static_cast<u8>(val & 0xFF);
+                ++size;
+            }
+
+            val >>= 8;
+        }
+
+        return PutBytes(packedGuid, size);
+    }
+
+    void Reset() { WrittenData = 0; ReadData = 0; }
     bool IsEmpty() { return WrittenData == 0; }
+    bool IsFull() { return WrittenData == Size; }
+    u32 GetRemainingSpace() { return static_cast<u32>(Size - WrittenData); }
+    u32 GetActiveSize() { return static_cast<u32>(WrittenData - ReadData); }
 
     size_t WrittenData = 0;
     size_t ReadData = 0;
     size_t Size = 0;
+    bool IsOwner = false;
 
     u8* GetInternalData() { return _data; }
+    u8* GetReadPointer() { return _data + ReadData; }
+    u8* GetWritePointer() { return _data + WrittenData; }
+
+    template <size_t size>
+    static std::shared_ptr<DataStore> Borrow()
+    {
+        static_assert(size <= 8192);
+
+        if constexpr (size <= 128)
+        {
+            if (_dataStores128.empty())
+            {
+                DataStore* newDataStore = new DataStore(nullptr, 128);
+                _dataStores128.add(std::unique_ptr<DataStore>(newDataStore));
+            }
+
+            std::shared_ptr<DataStore> dataStore = _dataStores128.acquire();
+            dataStore->Size = size;
+            dataStore->Reset();
+
+            return dataStore;
+        }
+        else if constexpr (size <= 512)
+        {
+            if (_dataStores512.empty())
+            {
+                DataStore* newDataStore = new DataStore(nullptr, 512);
+                _dataStores512.add(std::unique_ptr<DataStore>(newDataStore));
+            }
+
+            std::shared_ptr<DataStore> dataStore = _dataStores512.acquire();
+            dataStore->Size = size;
+            dataStore->Reset();
+
+            return dataStore;
+        }
+        else if constexpr (size <= 1024)
+        {
+            if (_dataStores1024.empty())
+            {
+                DataStore* newDataStore = new DataStore(nullptr, 1024);
+                _dataStores1024.add(std::unique_ptr<DataStore>(newDataStore));
+            }
+
+            std::shared_ptr<DataStore> dataStore = _dataStores1024.acquire();
+            dataStore->Size = size;
+            dataStore->Reset();
+
+            return dataStore;
+        }
+        else if constexpr (size <= 4096)
+        {
+            if (_dataStores4096.empty())
+            {
+                DataStore* newDataStore = new DataStore(nullptr, 4096);
+                _dataStores4096.add(std::unique_ptr<DataStore>(newDataStore));
+            }
+
+            std::shared_ptr<DataStore> dataStore = _dataStores4096.acquire();
+            dataStore->Size = size;
+            dataStore->Reset();
+
+            return dataStore;
+        }
+        else if constexpr (size <= 8192)
+        {
+            if (_dataStores8192.empty())
+            {
+                DataStore* newDataStore = new DataStore(nullptr, 8192);
+                _dataStores8192.add(std::unique_ptr<DataStore>(newDataStore));
+            }
+
+            std::shared_ptr<DataStore> dataStore = _dataStores8192.acquire();
+            dataStore->Size = size;
+            dataStore->Reset();
+
+            return dataStore;
+        }
+    }
 private:
     u8* _data;
-    bool _isOwner = false;
+
+    static SharedPool<DataStore> _dataStores128;
+    static SharedPool<DataStore> _dataStores512;
+    static SharedPool<DataStore> _dataStores1024;
+    static SharedPool<DataStore> _dataStores4096;
+    static SharedPool<DataStore> _dataStores8192;
 };

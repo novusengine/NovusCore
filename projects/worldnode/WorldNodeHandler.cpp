@@ -241,7 +241,7 @@ bool WorldNodeHandler::Update()
             if (message.code == MSG_IN_FOWARD_PACKET)
             {
                 // Create Entity if it doesn't exist, otherwise add
-                if (static_cast<Common::Opcode>(static_cast<u16>(message.opcode)) == Common::Opcode::CMSG_PLAYER_LOGIN)
+                if (static_cast<Opcode>(static_cast<u16>(message.opcode)) == Opcode::CMSG_PLAYER_LOGIN)
                 {
                     ZoneScopedNC("LoginMessage", tracy::Color::Green3)
                     _updateFramework.registry.ctx<PlayerCreateQueueSingleton>().newPlayerQueue->enqueue(message);

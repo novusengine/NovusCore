@@ -1,19 +1,22 @@
 #pragma once
 #include <NovusTypes.h>
-#include <Networking/ByteBuffer.h>
+#include <Networking/DataStore.h>
 #include <Networking/Opcode/Opcode.h>
 #include <zlib.h>
 
 class UpdateData
 {
 public:
-    UpdateData() : _blockCount(0) { }
+    UpdateData() : _blockCount(0)
+    { 
+        _data = DataStore::Borrow<8192>();
+    }
 
-    bool IsEmpty() { return _data.empty() && _nonVisibleGuids.empty(); }
+    bool IsEmpty() { return _data->IsEmpty() && _nonVisibleGuids.empty(); }
 
-    void AddBlock(Common::ByteBuffer const& block)
+    void AddBlock(DataStore* block)
     {
-        _data.Append(block);
+        _data->PutBytes(block->GetInternalData(), block->WrittenData);
         _blockCount++;
     }
     void AddGuid(u64 guid)
@@ -21,45 +24,41 @@ public:
         _nonVisibleGuids.push_back(guid);
     }
 
-    bool Build(Common::ByteBuffer& packet, u16& opcode)
+    bool Build(DataStore* packet, u16& opcode)
     {
-        Common::ByteBuffer buffer;
-        buffer.Write<u32>(_nonVisibleGuids.empty() ? _blockCount : _blockCount + 1);
+        std::shared_ptr<DataStore> buffer = DataStore::Borrow<8192>();
+        buffer->PutU32(_nonVisibleGuids.empty() ? _blockCount : _blockCount + 1);
 
         if (!_nonVisibleGuids.empty())
         {
-            buffer.Write<u8>(4); // UPDATETYPE_OUT_OF_RANGE_OBJECTS
-            buffer.Write<u32>(static_cast<u32>(_nonVisibleGuids.size()));
+            buffer->PutU8(4); // UPDATETYPE_OUT_OF_RANGE_OBJECTS
+            buffer->PutU32(static_cast<u32>(_nonVisibleGuids.size()));
 
             for (u64 guid : _nonVisibleGuids)
             {
-                buffer.AppendGuid(guid);
+                buffer->PutGuid(guid);
             }
         }
 
-        buffer.Append(_data);
-        size_t pSize = buffer._writePos;
+        buffer->PutBytes(_data->GetInternalData(), _data->WrittenData);
+        size_t pSize = buffer->WrittenData;
 
         if (pSize > 1024) // Update packets over 1kb gets compressed
         {
-            u32 destsize = compressBound(uLong(pSize));
-            packet.Resize(destsize + sizeof(u32));
-            packet._writePos = packet.size();
+            u32 destsize = compressBound(static_cast<uLong>(pSize));
 
-            packet.Replace<u32>(0, u32(pSize));
-            Compress(const_cast<u8*>(packet.data()) + sizeof(u32), &destsize, (void*)buffer.data(), i32(pSize));
+            packet->Put<u32>(static_cast<u32>(pSize), 0);
+            Compress(const_cast<u8*>(packet->GetInternalData()) + sizeof(u32), &destsize, (void*)buffer->GetInternalData(), static_cast<i32>(pSize));
             if (destsize == 0)
                 return false;
 
-            packet.Resize(destsize + sizeof(u32));
-            packet._writePos = packet.size();
-            opcode = Common::Opcode::SMSG_COMPRESSED_UPDATE_OBJECT;
+            packet->WrittenData = destsize + sizeof(u32);
+            opcode = Opcode::SMSG_COMPRESSED_UPDATE_OBJECT;
         }
         else
         {
-            packet.Append(buffer);
-            packet._writePos = packet.size();
-            opcode = Common::Opcode::SMSG_UPDATE_OBJECT;
+            packet->PutBytes(buffer->GetInternalData(), buffer->WrittenData);
+            opcode = Opcode::SMSG_UPDATE_OBJECT;
         }
 
         return true;
@@ -68,7 +67,7 @@ public:
 private:
     u32 _blockCount;
     std::vector<u64> _nonVisibleGuids;
-    Common::ByteBuffer _data;
+    std::shared_ptr<DataStore> _data;
 
     void Compress(void* dst, u32 *dst_size, void* src, i32 src_size)
     {

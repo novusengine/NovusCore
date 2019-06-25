@@ -47,72 +47,41 @@ struct cAuthSessionData
     u64 dosResponse;
     u8  digest[SHA_DIGEST_LENGTH];
 
-    void Read(Common::ByteBuffer& buffer)
+    void Read(DataStore& buffer)
     {
-        buffer.Read<u32>(build);
-        buffer.Read<u32>(loginServerId);
-        buffer.Read(accountName);
-        buffer.Read<u32>(loginServerType);
-        buffer.Read<u32>(localChallenge);
-        buffer.Read<u32>(regionId);
-        buffer.Read<u32>(battlegroupId);
-        buffer.Read<u32>(realmId);
-        buffer.Read<u64>(dosResponse);
-        buffer.Read(&digest, 20);
-    }
-};
-
-struct cCharacterCreateData
-{
-    std::string charName;
-    u8 charRace;
-    u8 charClass;
-    u8 charGender;
-    u8 charSkin;
-    u8 charFace;
-    u8 charHairStyle;
-    u8 charHairColor;
-    u8 charFacialStyle;
-    u8 charOutfitId;
-
-    void Read(Common::ByteBuffer& buffer)
-    {
-        buffer.Read(charName);
-        buffer.Read<u8>(charRace);
-        buffer.Read<u8>(charClass);
-        buffer.Read<u8>(charGender);
-        buffer.Read<u8>(charSkin);
-        buffer.Read<u8>(charFace);
-        buffer.Read<u8>(charHairStyle);
-        buffer.Read<u8>(charHairColor);
-        buffer.Read<u8>(charFacialStyle);
-        buffer.Read<u8>(charOutfitId);
+        buffer.GetU32(build);
+        buffer.GetU32(loginServerId);
+        buffer.GetString(accountName);
+        buffer.GetU32(loginServerType);
+        buffer.GetU32(localChallenge);
+        buffer.GetU32(regionId);
+        buffer.GetU32(battlegroupId);
+        buffer.GetU32(realmId);
+        buffer.GetU64(dosResponse);
+        buffer.GetBytes(digest, 20);
     }
 };
 #pragma pack(pop)
 
 class WorldNodeHandler;
-class WorldConnection : public Common::BaseSocket
+class WorldConnection : public BaseSocket
 {
 public:
-    WorldConnection(WorldNodeHandler* worldNodeHandler, asio::ip::tcp::socket* socket) : Common::BaseSocket(socket), account(0), _headerBuffer(), _packetBuffer()
+    WorldConnection(WorldNodeHandler* worldNodeHandler, asio::ip::tcp::socket* socket) : BaseSocket(socket), account(0), _headerBuffer(nullptr, sizeof(ClientPacketHeader)), _packetBuffer(nullptr, 4096)
     {
         _seed = static_cast<u32>(rand());
-        _headerBuffer.Resize(sizeof(Common::ClientPacketHeader));
-
         _worldNodeHandler = worldNodeHandler;
     }
 
     bool Start() override;
     void Close(asio::error_code error) override;
     void HandleRead() override;
-    void SendPacket(Common::ByteBuffer& buffer, u16 opcode);
+    void SendPacket(DataStore* buffer, u16 opcode);
 
-    bool HandleHeaderRead();
-    bool HandlePacketRead();
+    bool HandleNewHeader();
+    bool HandleNewPacket();
 
     void HandleAuthSession();
-    void HandleContinueAuthSession();
 
     template<size_t T>
     inline void convert(char *val)
@@ -130,12 +99,11 @@ public:
     u32 account;
     u64 characterGuid;
     cAuthSessionData sessionData;
-    BigNumber sessionKey;
-    BigNumber seed1;
-    BigNumber seed2;
+    BigNumber sessionKey, seed1, seed2;
 
-    Common::ByteBuffer _headerBuffer;
-    Common::ByteBuffer _packetBuffer;
+private:
+    DataStore _headerBuffer;
+    DataStore _packetBuffer;
 
     u32 _seed;
     StreamCrypto _streamCrypto;

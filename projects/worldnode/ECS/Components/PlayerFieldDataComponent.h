@@ -23,39 +23,44 @@
 */
 #pragma once
 #include <NovusTypes.h>
-#include <Networking/ByteBuffer.h>
+#include <Networking/DataStore.h>
 
 #include "../../NovusEnums.h"
 #include "../../Utils/UpdateMask.h"
 
 struct PlayerFieldDataComponent
 {
-    PlayerFieldDataComponent() : changesMask(PLAYER_END), playerFields(PLAYER_END * 4) { }
+    PlayerFieldDataComponent() : changesMask(PLAYER_END)
+    { 
+        playerFields = DataStore::Borrow<PLAYER_END * 4>();
+        std::memset(playerFields->GetInternalData(), 0, playerFields->Size);
+    }
 
     void SetGuidValue(u16 index, u64 value)
     {
-        playerFields.WriteAt<u64>(value, index * 4);
+        playerFields->Put<u64>(value, index * 4);
         changesMask.SetBit(index);
         changesMask.SetBit(index + 1);
     }
     template <typename T>
     void SetFieldValue(u16 index, T value, u8 offset = 0)
     {
-        playerFields.WriteAt<T>(value, (index * 4) + offset);
+        playerFields->Put<T>(value, (index * 4) + offset);
         changesMask.SetBit(index);
     }
     template <typename T>
     T GetFieldValue(u16 index, u8 offset = 0)
     {
-        return playerFields.ReadAt<T>((index * 4) + offset);
+        T fieldValue = 0;
+        playerFields->Get<T>(fieldValue, (index * 4) + offset);
+        return fieldValue;
     }
     void ResetFields()
     {
-        playerFields.Clean();
-        playerFields.Resize(PLAYER_END * 4);
         changesMask.Reset();
+        playerFields->Reset();
     }
 
     UpdateMask<1344> changesMask;
-    Common::ByteBuffer playerFields;
+    std::shared_ptr<DataStore> playerFields;
 };

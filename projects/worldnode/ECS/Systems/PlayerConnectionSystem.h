@@ -81,21 +81,21 @@ namespace ConnectionSystem
                 {
                     ZoneScopedNC("Packet", tracy::Color::Orange2)
 
-                        Common::Opcode opcode = static_cast<Common::Opcode>(packet.opcode);
+                    Opcode opcode = static_cast<Opcode>(packet.opcode);
                     switch (opcode)
                     {
-                    case Common::Opcode::CMSG_SET_ACTIVE_MOVER:
+                    case Opcode::CMSG_SET_ACTIVE_MOVER:
                     {
                         ZoneScopedNC("Packet::SetActiveMover", tracy::Color::Orange2)
 
-                            Common::ByteBuffer timeSync(9 + 4);
-                        timeSync.Write<u32>(0);
+                            std::shared_ptr<DataStore> timeSync = DataStore::Borrow<4>();
+                        timeSync->PutU32(0);
 
-                        playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, timeSync, Common::Opcode::SMSG_TIME_SYNC_REQ));
+                        playerConnection.socket->SendPacket(timeSync.get(), Opcode::SMSG_TIME_SYNC_REQ);
                         packet.handled = true;
                         break;
                     }
-                    case Common::Opcode::CMSG_LOGOUT_REQUEST:
+                    case Opcode::CMSG_LOGOUT_REQUEST:
                     {
                         ZoneScopedNC("Packet::LogoutRequest", tracy::Color::Orange2)
 
@@ -120,45 +120,45 @@ namespace ConnectionSystem
                         characterDatabase.cache->SaveAndUnloadCharacter(playerConnection.characterGuid);
 
                         // Here we need to Redirect the client back to Realmserver. The Realmserver will send SMSG_LOGOUT_COMPLETE
-                        Common::ByteBuffer redirectClient;
+                        std::shared_ptr<DataStore> buffer = DataStore::Borrow<30>();
                         i32 ip = 16777343;
                         i16 port = 8001;
 
                         // 127.0.0.1/1.0.0.127
                         // 2130706433/16777343(https://www.browserling.com/tools/ip-to-dec)
-                        redirectClient.Write<i32>(ip);
-                        redirectClient.Write<i16>(port);
-                        redirectClient.Write<i32>(0); // unk
+                        buffer->PutI32(ip);
+                        buffer->PutI16(port);
+                        buffer->PutI32(0); // unk
 #pragma warning(push)
 #pragma warning(disable: 4312)
                         HMACH hmac(40, playerConnection.socket->sessionKey.BN2BinArray(20).get());
                         hmac.UpdateHash((u8*)& ip, 4);
                         hmac.UpdateHash((u8*)& port, 2);
                         hmac.Finish();
-                        redirectClient.Append(hmac.GetData(), 20);
+                        buffer->PutBytes(hmac.GetData(), 20);
 #pragma warning(pop)
-                        playerConnection.socket->SendPacket(redirectClient, Common::Opcode::SMSG_REDIRECT_CLIENT);
+                        playerConnection.socket->SendPacket(buffer.get(), Opcode::SMSG_REDIRECT_CLIENT);
 
-                        Common::ByteBuffer suspendComms;
-                        suspendComms.Write<u32>(1);
-                        playerConnection.socket->SendPacket(suspendComms, Common::Opcode::SMSG_SUSPEND_COMMS);
+                        buffer->Reset();
+                        buffer->PutU32(1);
+                        playerConnection.socket->SendPacket(buffer.get(), Opcode::SMSG_SUSPEND_COMMS);
 
                         packet.handled = true;
                         break;
                     }
-                    case Common::Opcode::CMSG_READY_FOR_ACCOUNT_DATA_TIMES:
+                    case Opcode::CMSG_READY_FOR_ACCOUNT_DATA_TIMES:
                     {
                         /* Packet Structure */
                         // UInt32:  Server Time (time(nullptr))
                         // UInt8:   Unknown Byte Value
                         // UInt32:  Mask for the account data fields
 
-                        Common::ByteBuffer accountDataTimes;
+                        std::shared_ptr<DataStore> accountDataTimes = DataStore::Borrow<41>();
 
                         u32 mask = 0x15;
-                        accountDataTimes.Write<u32>(static_cast<u32>(time(nullptr)));
-                        accountDataTimes.Write<u8>(1); // bitmask blocks count
-                        accountDataTimes.Write<u32>(mask);
+                        accountDataTimes->PutU32(static_cast<u32>(time(nullptr)));
+                        accountDataTimes->PutU8(1); // bitmask blocks count
+                        accountDataTimes->PutU32(mask);
 
                         for (u32 i = 0; i < 8; ++i)
                         {
@@ -167,23 +167,23 @@ namespace ConnectionSystem
                                 CharacterData characterData;
                                 if (characterDatabase.cache->GetCharacterData(playerConnection.characterGuid, i, characterData))
                                 {
-                                    accountDataTimes.Write<u32>(characterData.timestamp);
+                                    accountDataTimes->PutU32(characterData.timestamp);
                                 }
                             }
                         }
 
-                        playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, accountDataTimes, Common::Opcode::SMSG_ACCOUNT_DATA_TIMES));
+                        playerConnection.socket->SendPacket(accountDataTimes.get(), Opcode::SMSG_ACCOUNT_DATA_TIMES);
                         packet.handled = true; 
                         break;
                     }
-                    case Common::Opcode::CMSG_UPDATE_ACCOUNT_DATA:
+                    case Opcode::CMSG_UPDATE_ACCOUNT_DATA:
                     {
                         packet.handled = true;
 
                         u32 type, timestamp, decompressedSize;
-                        packet.data.Read<u32>(type);
-                        packet.data.Read<u32>(timestamp);
-                        packet.data.Read<u32>(decompressedSize);
+                        packet.data->GetU32(type);
+                        packet.data->GetU32(timestamp);
+                        packet.data->GetU32(decompressedSize);
 
                         if (type > 8)
                         {
@@ -220,22 +220,22 @@ namespace ConnectionSystem
                                 break;
                             }
 
-                            Common::ByteBuffer DataInfo;
-                            DataInfo.Append(packet.data.data() + packet.data._readPos, packet.data.size() - packet.data._readPos);
+                            
+                            std::shared_ptr<DataStore> DataInfo = DataStore::Borrow<1024>();
+                            DataInfo->Size = packet.data->Size - packet.data->ReadData;
+                            DataInfo->PutBytes(packet.data->GetInternalData() + packet.data->ReadData, DataInfo->Size);
 
                             uLongf uSize = decompressedSize;
-                            u32 pos = static_cast<u32>(DataInfo._readPos);
-
-                            Common::ByteBuffer dataInfo;
-                            dataInfo.Resize(decompressedSize);
-
-                            if (uncompress(dataInfo.data(), &uSize, DataInfo.data() + pos, DataInfo.size() - pos) != Z_OK)
+                            u32 pos = static_cast<u32>(DataInfo->ReadData);
+                            
+                            std::shared_ptr<DataStore> dataInfo = DataStore::Borrow<8192>();
+                            if (uncompress(dataInfo->GetInternalData(), &uSize, DataInfo->GetInternalData() + pos, static_cast<uLong>(DataInfo->Size - pos)) != Z_OK)
                             {
                                 break;
                             }
 
                             std::string finalData = "";
-                            dataInfo.Read(finalData);
+                            dataInfo->GetString(finalData);
 
                             if (characterDataUpdate)
                             {
@@ -249,196 +249,204 @@ namespace ConnectionSystem
                             }
                         }
 
-                        Common::ByteBuffer updateAccountDataComplete(4 + 4);
-                        updateAccountDataComplete.Write<u32>(type);
-                        updateAccountDataComplete.Write<u32>(0);
+                        std::shared_ptr<DataStore> updateAccountDataComplete = DataStore::Borrow<8>();
+                        updateAccountDataComplete->PutU32(type);
+                        updateAccountDataComplete->PutU32(0);
 
-                        playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, updateAccountDataComplete, Common::Opcode::SMSG_UPDATE_ACCOUNT_DATA_COMPLETE));
+                        playerConnection.socket->SendPacket(updateAccountDataComplete.get(), Opcode::SMSG_UPDATE_ACCOUNT_DATA_COMPLETE);
                         break;
                     }
-                    case Common::Opcode::MSG_MOVE_SET_ALL_SPEED_CHEAT:
+                    case Opcode::MSG_MOVE_SET_ALL_SPEED_CHEAT:
                     {
                         f32 speed = 1;
-                        packet.data.Read<f32>(speed);
+                        packet.data->GetF32(speed);
 
-                        Common::ByteBuffer speedChange;
-                        CharacterUtils::BuildSpeedChangePacket(playerConnection.accountGuid, playerConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_WALK_SPEED_CHANGE, speedChange);
-                        playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, speedChange, Common::Opcode::SMSG_FORCE_WALK_SPEED_CHANGE));
+                        std::shared_ptr<DataStore> speedChange = DataStore::Borrow<12>();
 
-                        CharacterUtils::BuildSpeedChangePacket(playerConnection.accountGuid, playerConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_RUN_SPEED_CHANGE, speedChange);
-                        playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, speedChange, Common::Opcode::SMSG_FORCE_RUN_SPEED_CHANGE));
+                        CharacterUtils::BuildSpeedChangePacket(playerConnection.characterGuid, speed, Opcode::SMSG_FORCE_WALK_SPEED_CHANGE, speedChange);
+                        playerConnection.socket->SendPacket(speedChange.get(), Opcode::SMSG_FORCE_WALK_SPEED_CHANGE);
+                        speedChange->Reset();
 
-                        CharacterUtils::BuildSpeedChangePacket(playerConnection.accountGuid, playerConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_RUN_BACK_SPEED_CHANGE, speedChange);
-                        playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, speedChange, Common::Opcode::SMSG_FORCE_RUN_BACK_SPEED_CHANGE));
+                        CharacterUtils::BuildSpeedChangePacket(playerConnection.characterGuid, speed, Opcode::SMSG_FORCE_RUN_SPEED_CHANGE, speedChange);
+                        playerConnection.socket->SendPacket(speedChange.get(), Opcode::SMSG_FORCE_RUN_SPEED_CHANGE);
+                        speedChange->Reset();
 
-                        CharacterUtils::BuildSpeedChangePacket(playerConnection.accountGuid, playerConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_SWIM_SPEED_CHANGE, speedChange);
-                        playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, speedChange, Common::Opcode::SMSG_FORCE_SWIM_SPEED_CHANGE));
+                        CharacterUtils::BuildSpeedChangePacket(playerConnection.characterGuid, speed, Opcode::SMSG_FORCE_RUN_BACK_SPEED_CHANGE, speedChange);
+                        playerConnection.socket->SendPacket(speedChange.get(), Opcode::SMSG_FORCE_RUN_BACK_SPEED_CHANGE);
+                        speedChange->Reset();
 
-                        CharacterUtils::BuildSpeedChangePacket(playerConnection.accountGuid, playerConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_SWIM_BACK_SPEED_CHANGE, speedChange);
-                        playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, speedChange, Common::Opcode::SMSG_FORCE_SWIM_BACK_SPEED_CHANGE));
+                        CharacterUtils::BuildSpeedChangePacket(playerConnection.characterGuid, speed, Opcode::SMSG_FORCE_SWIM_SPEED_CHANGE, speedChange);
+                        playerConnection.socket->SendPacket(speedChange.get(), Opcode::SMSG_FORCE_SWIM_SPEED_CHANGE);
+                        speedChange->Reset();
 
-                        CharacterUtils::BuildSpeedChangePacket(playerConnection.accountGuid, playerConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_FLIGHT_SPEED_CHANGE, speedChange);
-                        playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, speedChange, Common::Opcode::SMSG_FORCE_FLIGHT_SPEED_CHANGE));
+                        CharacterUtils::BuildSpeedChangePacket(playerConnection.characterGuid, speed, Opcode::SMSG_FORCE_SWIM_BACK_SPEED_CHANGE, speedChange);
+                        playerConnection.socket->SendPacket(speedChange.get(), Opcode::SMSG_FORCE_SWIM_BACK_SPEED_CHANGE);
+                        speedChange->Reset();
 
-                        CharacterUtils::BuildSpeedChangePacket(playerConnection.accountGuid, playerConnection.characterGuid, speed, Common::Opcode::SMSG_FORCE_FLIGHT_BACK_SPEED_CHANGE, speedChange);
-                        playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, speedChange, Common::Opcode::SMSG_FORCE_FLIGHT_BACK_SPEED_CHANGE));
+                        CharacterUtils::BuildSpeedChangePacket(playerConnection.characterGuid, speed, Opcode::SMSG_FORCE_FLIGHT_SPEED_CHANGE, speedChange);
+                        playerConnection.socket->SendPacket(speedChange.get(), Opcode::SMSG_FORCE_FLIGHT_SPEED_CHANGE);
+                        speedChange->Reset();
+
+                        CharacterUtils::BuildSpeedChangePacket(playerConnection.characterGuid, speed, Opcode::SMSG_FORCE_FLIGHT_BACK_SPEED_CHANGE, speedChange);
+                        playerConnection.socket->SendPacket(speedChange.get(), Opcode::SMSG_FORCE_FLIGHT_BACK_SPEED_CHANGE);
 
                         playerConnection.SendChatNotification("Speed Updated: %f", speed);
                         packet.handled = true;
                         break;
                     }
-                    case Common::Opcode::CMSG_MOVE_START_SWIM_CHEAT:
+                    case Opcode::CMSG_MOVE_START_SWIM_CHEAT:
                     {
-                        Common::ByteBuffer enableFlying = CharacterUtils::BuildFlyModePacket(playerConnection.accountGuid, playerConnection.characterGuid);
-                        playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, enableFlying, Common::Opcode::SMSG_MOVE_SET_CAN_FLY));
+                        std::shared_ptr<DataStore> flyMode = DataStore::Borrow<12>();
+                        CharacterUtils::BuildFlyModePacket(playerConnection.characterGuid, flyMode);
+
+                        playerConnection.socket->SendPacket(flyMode.get(), Opcode::SMSG_MOVE_SET_CAN_FLY);
 
                         packet.handled = true;
                         break;
                     }
-                    case Common::Opcode::CMSG_MOVE_STOP_SWIM_CHEAT:
+                    case Opcode::CMSG_MOVE_STOP_SWIM_CHEAT:
                     {
-                        Common::ByteBuffer disableFlying = CharacterUtils::BuildFlyModePacket(playerConnection.accountGuid, playerConnection.characterGuid);
-                        playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, disableFlying, Common::Opcode::SMSG_MOVE_UNSET_CAN_FLY));
+                        std::shared_ptr<DataStore> flyMode = DataStore::Borrow<12>();
+                        CharacterUtils::BuildFlyModePacket(playerConnection.characterGuid, flyMode);
 
+                        playerConnection.socket->SendPacket(flyMode.get(), Opcode::SMSG_MOVE_UNSET_CAN_FLY);
                         packet.handled = true;
                         break;
                     }
-                    case Common::Opcode::CMSG_QUERY_OBJECT_POSITION:
+                    case Opcode::CMSG_QUERY_OBJECT_POSITION:
                     {
                         packet.handled = true;
 
-                        Common::ByteBuffer objectPosition;
-                        objectPosition.Write<f32>(clientPositionData.x);
-                        objectPosition.Write<f32>(clientPositionData.y);
-                        objectPosition.Write<f32>(clientPositionData.z);
+                        std::shared_ptr<DataStore> objectPosition = DataStore::Borrow<12>();
+                        objectPosition->PutF32(clientPositionData.x);
+                        objectPosition->PutF32(clientPositionData.y);
+                        objectPosition->PutF32(clientPositionData.z);
 
-                        playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, objectPosition, Common::Opcode::SMSG_QUERY_OBJECT_POSITION));
+                        playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, objectPosition, Opcode::SMSG_QUERY_OBJECT_POSITION));
                         break;
                     }
-                    case Common::Opcode::CMSG_LEVEL_CHEAT:
+                    case Opcode::CMSG_LEVEL_CHEAT:
                     {
                         packet.handled = true;
                         u32 level = 0;
-                        packet.data.Read<u32>(level);
+                        packet.data->GetU32(level);
 
                         if (level != clientFieldData.GetFieldValue<u32>(UNIT_FIELD_LEVEL))
                             clientFieldData.SetFieldValue<u32>(UNIT_FIELD_LEVEL, level);
                         break;
                     }
-                    case Common::Opcode::CMSG_STANDSTATECHANGE:
+                    case Opcode::CMSG_STANDSTATECHANGE:
                     {
                         ZoneScopedNC("Packet::StandStateChange", tracy::Color::Orange2)
 
                             u32 standState = 0;
-                        packet.data.Read<u32>(standState);
+                        packet.data->GetU32(standState);
 
                         clientFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_1, static_cast<u8>(standState));
 
-                        Common::ByteBuffer standStateChange(0);
-                        standStateChange.Write<u8>(static_cast<u8>(standState));
+                        std::shared_ptr<DataStore> standStateChange = DataStore::Borrow<1>();
+                        standStateChange->PutU8(static_cast<u8>(standState));
 
-                        playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, standStateChange, Common::Opcode::SMSG_STANDSTATE_UPDATE));
+                        playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, standStateChange, Opcode::SMSG_STANDSTATE_UPDATE));
 
                         packet.handled = true;
                         break;
                     }
-                    case Common::Opcode::CMSG_SET_SELECTION:
+                    case Opcode::CMSG_SET_SELECTION:
                     {
                         ZoneScopedNC("Packet::SetSelection", tracy::Color::Orange2)
 
                             u64 selectedGuid = 0;
-                        packet.data.ReadPackedGUID(selectedGuid);
+                        packet.data->GetGuid(selectedGuid);
 
                         clientFieldData.SetGuidValue(UNIT_FIELD_TARGET, selectedGuid);
                         packet.handled = true;
                         break;
                     }
-                    case Common::Opcode::CMSG_NAME_QUERY:
+                    case Opcode::CMSG_NAME_QUERY:
                     {
                         ZoneScopedNC("Packet::NameQuery", tracy::Color::Orange2)
 
                             u64 guid;
-                        packet.data.Read<u64>(guid);
+                        packet.data->GetU64(guid);
 
-                        Common::ByteBuffer nameQuery;
-                        nameQuery.AppendGuid(guid);
+                        std::shared_ptr<DataStore> nameQuery = DataStore::Borrow<30>();
+                        nameQuery->PutGuid(guid);
 
                         CharacterInfo characterInfo;
                         if (characterDatabase.cache->GetCharacterInfo(guid, characterInfo))
                         {
-                            nameQuery.Write<u8>(0); // Name Unknown (0 = false, 1 = true);
-                            nameQuery.WriteString(characterInfo.name);
-                            nameQuery.Write<u8>(0);
-                            nameQuery.Write<u8>(characterInfo.race);
-                            nameQuery.Write<u8>(characterInfo.gender);
-                            nameQuery.Write<u8>(characterInfo.classId);
+                            nameQuery->PutU8(0); // Name Unknown (0 = false, 1 = true);
+                            nameQuery->PutString(characterInfo.name);
+                            nameQuery->PutU8(0);
+                            nameQuery->PutU8(characterInfo.race);
+                            nameQuery->PutU8(characterInfo.gender);
+                            nameQuery->PutU8(characterInfo.classId);
                         }
                         else
                         {
-                            nameQuery.Write<u8>(1); // Name Unknown (0 = false, 1 = true);
-                            nameQuery.WriteString("Unknown");
-                            nameQuery.Write<u8>(0);
-                            nameQuery.Write<u8>(0);
-                            nameQuery.Write<u8>(0);
-                            nameQuery.Write<u8>(0);
+                            nameQuery->PutU8(1); // Name Unknown (0 = false, 1 = true);
+                            nameQuery->PutString("Unknown");
+                            nameQuery->PutU8(0);
+                            nameQuery->PutU8(0);
+                            nameQuery->PutU8(0);
+                            nameQuery->PutU8(0);
                         }
-                        nameQuery.Write<u8>(0);
+                        nameQuery->PutU8(0);
 
-                        playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, nameQuery, Common::Opcode::SMSG_NAME_QUERY_RESPONSE));
-
+                        playerConnection.socket->SendPacket(nameQuery.get(), Opcode::SMSG_NAME_QUERY_RESPONSE);
                         packet.handled = true;
                         break;
                     }
-                    case Common::Opcode::CMSG_ITEM_QUERY_SINGLE:
+                    case Opcode::CMSG_ITEM_QUERY_SINGLE:
                     {
                         u32 itemEntry;
-                        packet.data.Read<u32>(itemEntry);
-                        Common::ByteBuffer itemQuery;
-
+                        packet.data->GetU32(itemEntry);
+                        std::shared_ptr<DataStore> itemQuery;
 
                         ItemTemplate itemTemplate;
                         if (!worldDatabase.cache->GetItemTemplate(itemEntry, itemTemplate))
                         {
-                            itemQuery.Write<u32>(itemEntry | 0x80000000);
+                            itemQuery = DataStore::Borrow<4>();
+                            itemQuery->PutU32(itemEntry | 0x80000000);
+                            playerConnection.socket->SendPacket(itemQuery.get(), Opcode::SMSG_ITEM_QUERY_SINGLE_RESPONSE);
                         }
                         else
                         {
-                            itemQuery = itemTemplate.GetQuerySinglePacket();
+                            playerConnection.socket->SendPacket(itemTemplate.GetQuerySinglePacket().get(), Opcode::SMSG_ITEM_QUERY_SINGLE_RESPONSE);
                         }
-
-                        playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, itemQuery, Common::Opcode::SMSG_ITEM_QUERY_SINGLE_RESPONSE));
 
                         packet.handled = true;
                         break;
                     }
                     /* These packets should be read here, but preferbly handled elsewhere */
-                    case Common::Opcode::MSG_MOVE_STOP:
-                    case Common::Opcode::MSG_MOVE_STOP_STRAFE:
-                    case Common::Opcode::MSG_MOVE_STOP_TURN:
-                    case Common::Opcode::MSG_MOVE_STOP_PITCH:
-                    case Common::Opcode::MSG_MOVE_START_FORWARD:
-                    case Common::Opcode::MSG_MOVE_START_BACKWARD:
-                    case Common::Opcode::MSG_MOVE_START_STRAFE_LEFT:
-                    case Common::Opcode::MSG_MOVE_START_STRAFE_RIGHT:
-                    case Common::Opcode::MSG_MOVE_START_TURN_LEFT:
-                    case Common::Opcode::MSG_MOVE_START_TURN_RIGHT:
-                    case Common::Opcode::MSG_MOVE_START_PITCH_UP:
-                    case Common::Opcode::MSG_MOVE_START_PITCH_DOWN:
-                    case Common::Opcode::MSG_MOVE_START_ASCEND:
-                    case Common::Opcode::MSG_MOVE_STOP_ASCEND:
-                    case Common::Opcode::MSG_MOVE_START_DESCEND:
-                    case Common::Opcode::MSG_MOVE_START_SWIM:
-                    case Common::Opcode::MSG_MOVE_STOP_SWIM:
-                    case Common::Opcode::MSG_MOVE_FALL_LAND:
-                    case Common::Opcode::CMSG_MOVE_FALL_RESET:
-                    case Common::Opcode::MSG_MOVE_JUMP:
-                    case Common::Opcode::MSG_MOVE_SET_FACING:
-                    case Common::Opcode::MSG_MOVE_SET_PITCH:
-                    case Common::Opcode::MSG_MOVE_SET_RUN_MODE:
-                    case Common::Opcode::MSG_MOVE_SET_WALK_MODE:
-                    case Common::Opcode::CMSG_MOVE_SET_FLY:
-                    case Common::Opcode::CMSG_MOVE_CHNG_TRANSPORT:
-                    case Common::Opcode::MSG_MOVE_HEARTBEAT:
+                    case Opcode::MSG_MOVE_STOP:
+                    case Opcode::MSG_MOVE_STOP_STRAFE:
+                    case Opcode::MSG_MOVE_STOP_TURN:
+                    case Opcode::MSG_MOVE_STOP_PITCH:
+                    case Opcode::MSG_MOVE_START_FORWARD:
+                    case Opcode::MSG_MOVE_START_BACKWARD:
+                    case Opcode::MSG_MOVE_START_STRAFE_LEFT:
+                    case Opcode::MSG_MOVE_START_STRAFE_RIGHT:
+                    case Opcode::MSG_MOVE_START_TURN_LEFT:
+                    case Opcode::MSG_MOVE_START_TURN_RIGHT:
+                    case Opcode::MSG_MOVE_START_PITCH_UP:
+                    case Opcode::MSG_MOVE_START_PITCH_DOWN:
+                    case Opcode::MSG_MOVE_START_ASCEND:
+                    case Opcode::MSG_MOVE_STOP_ASCEND:
+                    case Opcode::MSG_MOVE_START_DESCEND:
+                    case Opcode::MSG_MOVE_START_SWIM:
+                    case Opcode::MSG_MOVE_STOP_SWIM:
+                    case Opcode::MSG_MOVE_FALL_LAND:
+                    case Opcode::CMSG_MOVE_FALL_RESET:
+                    case Opcode::MSG_MOVE_JUMP:
+                    case Opcode::MSG_MOVE_SET_FACING:
+                    case Opcode::MSG_MOVE_SET_PITCH:
+                    case Opcode::MSG_MOVE_SET_RUN_MODE:
+                    case Opcode::MSG_MOVE_SET_WALK_MODE:
+                    case Opcode::CMSG_MOVE_SET_FLY:
+                    case Opcode::CMSG_MOVE_CHNG_TRANSPORT:
+                    case Opcode::MSG_MOVE_HEARTBEAT:
                     {
                         ZoneScopedNC("Packet::Passthrough", tracy::Color::Orange2)
 
@@ -456,7 +464,7 @@ namespace ConnectionSystem
                         u32 opcodeTime = clientPositionData.lastMovementOpcodeTime[opcodeIndex];
 
                         // Handle GM Client 'facing' command
-                        if (opcode == Common::Opcode::MSG_MOVE_SET_FACING && packet.data.GetActualSize() == 4)
+                        if (opcode == Opcode::MSG_MOVE_SET_FACING && packet.data->GetActiveSize() == 4)
                         {
                             guid = playerConnection.characterGuid;
                             movementFlags = 0;
@@ -465,35 +473,35 @@ namespace ConnectionSystem
                             position_x = clientPositionData.x;
                             position_y = clientPositionData.y;
                             position_z = clientPositionData.z;
-                            packet.data.Read(&orientation, 4);
+                            packet.data->GetF32(orientation);
                             fallTime = 0;
 
-                            Common::ByteBuffer setFacing;
-                            setFacing.AppendGuid(guid);
-                            setFacing.Write<u32>(movementFlags);
-                            setFacing.Write<u16>(movementFlagsExtra);
-                            setFacing.Write<u32>(gameTime);
-                            setFacing.Write<f32>(position_x);
-                            setFacing.Write<f32>(position_y);
-                            setFacing.Write<f32>(position_z);
-                            setFacing.Write<f32>(orientation);
-                            setFacing.Write<u32>(fallTime);
-                            playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, setFacing, Common::Opcode::MSG_MOVE_SET_FACING));
+                            std::shared_ptr<DataStore> setFacing = DataStore::Borrow<38>();
+                            setFacing->PutGuid(guid);
+                            setFacing->PutU32(movementFlags);
+                            setFacing->PutU16(movementFlagsExtra);
+                            setFacing->PutU32(gameTime);
+                            setFacing->PutF32(position_x);
+                            setFacing->PutF32(position_y);
+                            setFacing->PutF32(position_z);
+                            setFacing->PutF32(orientation);
+                            setFacing->PutU32(fallTime);
+                            playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, setFacing, Opcode::MSG_MOVE_SET_FACING));
                             playerConnection.SendConsoleNotification("Facing set to %f", orientation);
                         }
                         else
                         {
                             // Read GUID here as packed  
-                            packet.data.ReadPackedGUID(guid);
+                            packet.data->GetGuid(guid);
 
-                            packet.data.Read(&movementFlags, 4);
-                            packet.data.Read(&movementFlagsExtra, 2);
-                            packet.data.Read(&gameTime, 4);
-                            packet.data.Read(&position_x, 4);
-                            packet.data.Read(&position_y, 4);
-                            packet.data.Read(&position_z, 4);
-                            packet.data.Read(&orientation, 4);
-                            packet.data.Read(&fallTime, 4);
+                            packet.data->GetU32(movementFlags);
+                            packet.data->GetU16(movementFlagsExtra);
+                            packet.data->GetU32(gameTime);
+                            packet.data->GetF32(position_x);
+                            packet.data->GetF32(position_y);
+                            packet.data->GetF32(position_z);
+                            packet.data->GetF32(orientation);
+                            packet.data->GetU32(fallTime);
                         }
 
                         if (gameTime > opcodeTime)
@@ -523,7 +531,7 @@ namespace ConnectionSystem
                         packet.handled = true;
                         break;
                     }
-                    case Common::Opcode::CMSG_MESSAGECHAT:
+                    case Opcode::CMSG_MESSAGECHAT:
                     {
                         ZoneScopedNC("Packet::MessageChat", tracy::Color::Orange2)
                             packet.handled = true;
@@ -531,8 +539,8 @@ namespace ConnectionSystem
                         u32 msgType;
                         u32 msgLang;
 
-                        packet.data.Read<u32>(msgType);
-                        packet.data.Read<u32>(msgLang);
+                        packet.data->GetU32(msgType);
+                        packet.data->GetU32(msgLang);
 
                         if (msgType >= MAX_MSG_TYPE)
                         {
@@ -560,7 +568,7 @@ namespace ConnectionSystem
                             case CHAT_MSG_EMOTE:
                             case CHAT_MSG_TEXT_EMOTE:
                             {
-                                packet.data.Read(msgOutput);
+                                packet.data->GetString(msgOutput);
                                 break;
                             }
 
@@ -585,68 +593,67 @@ namespace ConnectionSystem
                         clientUpdateData.chatUpdateData.push_back(chatUpdateData);
                         break;
                     }
-                    case Common::Opcode::CMSG_ATTACKSWING:
+                    case Opcode::CMSG_ATTACKSWING:
                     {
                         ZoneScopedNC("Packet::AttackSwing", tracy::Color::Orange2)
 
                             u64 attackGuid;
-                        packet.data.Read<u64>(attackGuid);
+                        packet.data->GetU64(attackGuid);
 
-                        Common::ByteBuffer attackStart;
-                        attackStart.Write<u64>(playerConnection.characterGuid);
-                        attackStart.Write<u64>(attackGuid);
+                        std::shared_ptr<DataStore> attackBuffer = DataStore::Borrow<50>();
+                        attackBuffer->PutU64(playerConnection.characterGuid);
+                        attackBuffer->PutU64(attackGuid);
+                        playerConnection.socket->SendPacket(attackBuffer.get(), Opcode::SMSG_ATTACKSTART);
 
-                        playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, attackStart, Common::Opcode::SMSG_ATTACKSTART));
+                        attackBuffer->Reset();
+                        attackBuffer->PutU32(0);
+                        attackBuffer->PutGuid(playerConnection.characterGuid);
+                        attackBuffer->PutGuid(attackGuid);
+                        attackBuffer->PutU32(5);
+                        attackBuffer->PutU32(0);
+                        attackBuffer->PutU8(1);
 
-                        Common::ByteBuffer attackerStateUpdate;
-                        attackerStateUpdate.Write<u32>(0);
-                        attackerStateUpdate.AppendGuid(playerConnection.characterGuid);
-                        attackerStateUpdate.AppendGuid(attackGuid);
-                        attackerStateUpdate.Write<u32>(5);
-                        attackerStateUpdate.Write<u32>(0);
-                        attackerStateUpdate.Write<u8>(1);
+                        attackBuffer->PutU32(1);
+                        attackBuffer->PutF32(5);
+                        attackBuffer->PutU32(5);
 
-                        attackerStateUpdate.Write<u32>(1);
-                        attackerStateUpdate.Write<f32>(5);
-                        attackerStateUpdate.Write<u32>(5);
+                        attackBuffer->PutU8(0);
+                        attackBuffer->PutU32(0);
+                        attackBuffer->PutU32(0);
 
-                        attackerStateUpdate.Write<u8>(0);
-                        attackerStateUpdate.Write<u32>(0);
-                        attackerStateUpdate.Write<u32>(0);
-
-                        playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, attackerStateUpdate, Common::Opcode::SMSG_ATTACKERSTATEUPDATE));
+                        playerConnection.socket->SendPacket(attackBuffer.get(), Opcode::SMSG_ATTACKERSTATEUPDATE);
 
                         packet.handled = true;
                         break;
                     }
-                    case Common::Opcode::CMSG_ATTACKSTOP:
+                    case Opcode::CMSG_ATTACKSTOP:
                     {
                         ZoneScopedNC("Packet::AttackStop", tracy::Color::Orange2)
 
                             u64 attackGuid = clientFieldData.GetFieldValue<u64>(UNIT_FIELD_TARGET);
 
-                        Common::ByteBuffer attackStop;
-                        attackStop.AppendGuid(playerConnection.characterGuid);
-                        attackStop.AppendGuid(attackGuid);
-                        attackStop.Write<u32>(0);
+                        std::shared_ptr<DataStore> attackStop = DataStore::Borrow<20>();
+                        attackStop->PutGuid(playerConnection.characterGuid);
+                        attackStop->PutGuid(attackGuid);
+                        attackStop->PutU32(0);
 
-                        playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, attackStop, Common::Opcode::SMSG_ATTACKSTOP));
+                        playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, attackStop, Opcode::SMSG_ATTACKSTOP));
 
                         packet.handled = true;
                         break;
                     }
-                    case Common::Opcode::CMSG_SETSHEATHED:
+                    case Opcode::CMSG_SETSHEATHED:
                     {
                         ZoneScopedNC("Packet::SetSheathed", tracy::Color::Orange2)
 
                             u32 state;
-                        packet.data.Read<u32>(state);
+                        packet.data->GetU32(state);
 
                         clientFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_2, static_cast<u8>(state));
                         packet.handled = true;
                         break;
                     }
-                    case Common::Opcode::CMSG_TEXT_EMOTE:
+                    case Opcode::CMSG_TEXT_EMOTE:
                     {
                         ZoneScopedNC("Packet::Text_emote", tracy::Color::Orange2)
 
@@ -654,9 +661,9 @@ namespace ConnectionSystem
                         u32 emoteNum;
                         u64 targetGuid;
 
-                        packet.data.Read<u32>(textEmote);
-                        packet.data.Read<u32>(emoteNum);
-                        packet.data.Read<u64>(targetGuid);
+                        packet.data->GetU32(textEmote);
+                        packet.data->GetU32(emoteNum);
+                        packet.data->GetU64(targetGuid);
 
                         u32 animationID;
                         /* Pulling animation ID from database code here. */
@@ -665,15 +672,16 @@ namespace ConnectionSystem
 
                         /* End pulling animation ID from database here. */
 
+
+                        std::shared_ptr<DataStore> buffer = DataStore::Borrow<36>();
                         /* Play animation packet. */
                         {
                             //The animation shouldn't play if the player is dead. In the future we should check for that.
 
-                            Common::ByteBuffer emote;
-                            emote.Write<u32>(animationID);
-                            emote.Write<u64>(playerConnection.characterGuid);
+                            buffer->PutU32(animationID);
+                            buffer->PutU64(playerConnection.characterGuid);
 
-                            playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, emote, Common::Opcode::SMSG_EMOTE));
+                            playerConnection.socket->SendPacket(buffer.get(), Opcode::SMSG_EMOTE);
                         }
 
                         /* Emote Chat Message Packet. */
@@ -683,39 +691,40 @@ namespace ConnectionSystem
 
                             u32 targetNameLength = static_cast<u32>(targetData.name.size());
 
-                            Common::ByteBuffer textEmoteMessage;
-                            textEmoteMessage.Write<u64>(playerConnection.characterGuid);
-                            textEmoteMessage.Write<u32>(textEmote);
-                            textEmoteMessage.Write<u32>(emoteNum);
-                            textEmoteMessage.Write<u32>(targetNameLength);
+                            buffer->Reset();
+                            buffer->PutU64(playerConnection.characterGuid);
+                            buffer->PutU32(textEmote);
+                            buffer->PutU32(emoteNum);
+                            buffer->PutU32(targetNameLength);
                             if (targetNameLength > 1)
                             {
-                                textEmoteMessage.Write(targetData.name);
+                                buffer->PutString(targetData.name);
                             }
                             else
                             {
-                                textEmoteMessage.Write<u8>(0x00);
+                                buffer->PutU8(0x00);
                             }
 
-                            playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, textEmoteMessage, Common::Opcode::SMSG_TEXT_EMOTE));
+                            playerConnection.socket->SendPacket(buffer.get(), Opcode::SMSG_TEXT_EMOTE);
                         }
 
                         packet.handled = true;
                         break;
                     }
-					case Common::Opcode::CMSG_CAST_SPELL:
+					case Opcode::CMSG_CAST_SPELL:
 					{
 						packet.handled = true;
 
 						u32 spellId = 0, targetFlags = 0;
 						u8 castCount = 0, castFlags = 0;
 
-						packet.data.Read<u8>(castCount);
-						packet.data.Read<u32>(spellId);
-						packet.data.Read<u8>(castFlags);
-						packet.data.Read<u32>(targetFlags);
+						packet.data->GetU8(castCount);
+						packet.data->GetU32(spellId);
+						packet.data->GetU8(castFlags);
+						packet.data->GetU32(targetFlags);
 
 						// As far as I can tell, the client expects SMSG_SPELL_START followed by SMSG_SPELL_GO.
+                        std::shared_ptr<DataStore> buffer = DataStore::Borrow<512>();
 
 						// Handle blink!
 						if (spellId == 1953)
@@ -740,12 +749,12 @@ namespace ConnectionSystem
 
 							if (dest == 20)
 							{
-								Common::ByteBuffer spellFailed;
-								spellFailed.Write<u8>(castCount);
-								spellFailed.Write<u32>(spellId);
-								spellFailed.Write<u8>(173); // SPELL_FAILED_TRY_AGAIN
+                                buffer->Reset();
+                                buffer->PutU8(castCount);
+                                buffer->PutU32(spellId);
+                                buffer->PutU8(173); // SPELL_FAILED_TRY_AGAIN
 
-								playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, spellFailed, Common::Opcode::SMSG_CAST_FAILED));
+                                playerConnection.socket->SendPacket(buffer.get(), Opcode::SMSG_CAST_FAILED);
 								break;
 							}
 
@@ -760,55 +769,54 @@ namespace ConnectionSystem
                             Vector2 newPos(newPositionX, newPositionY);
 							f32 height = mapSingleton.maps[clientPositionData.mapId].GetHeight(newPos);
 
-							Common::ByteBuffer buffer;
-							buffer.AppendGuid(playerConnection.characterGuid);
-							buffer.Write<u32>(0); // Teleport Count
+							buffer->PutGuid(playerConnection.characterGuid);
+							buffer->PutU32(0); // Teleport Count
 
 							/* Movement */
-							buffer.Write<u32>(0);
-							buffer.Write<u16>(0);
-							buffer.Write<u32>(static_cast<u32>(singleton.lifeTimeInMS));
+							buffer->PutU32(0);
+							buffer->PutU16(0);
+							buffer->PutU32(static_cast<u32>(singleton.lifeTimeInMS));
 
-							buffer.Write<f32>(newPositionX);
-							buffer.Write<f32>(newPositionY);
-							buffer.Write<f32>(height);
-							buffer.Write<f32>(clientPositionData.orientation);
+							buffer->PutF32(newPositionX);
+							buffer->PutF32(newPositionY);
+							buffer->PutF32(height);
+							buffer->PutF32(clientPositionData.orientation);
 
-							buffer.Write<u32>(targetFlags);
+							buffer->PutU32(targetFlags);
 
-							playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, buffer, Common::Opcode::MSG_MOVE_TELEPORT_ACK));
+                            playerConnection.socket->SendPacket(buffer.get(), Opcode::MSG_MOVE_TELEPORT_ACK);
 						}
-						Common::ByteBuffer spellStart;
-						spellStart.AppendGuid(playerConnection.characterGuid);
-						spellStart.AppendGuid(playerConnection.characterGuid);
-						spellStart.Write<u8>(0); // CastCount
-						spellStart.Write<u32>(spellId);
-						spellStart.Write<u32>(0x00000002);
-						spellStart.Write<u32>(0);
-						spellStart.Write<u32>(0);
 
-						playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, spellStart, Common::Opcode::SMSG_SPELL_START));
+                        buffer->Reset();
+                        buffer->PutGuid(playerConnection.characterGuid);
+                        buffer->PutGuid(playerConnection.characterGuid);
+                        buffer->PutU8(0); // CastCount
+                        buffer->PutU32(spellId);
+                        buffer->PutU32(0x00000002);
+                        buffer->PutU32(0);
+                        buffer->PutU32(0);
+                        playerConnection.socket->SendPacket(buffer.get(), Opcode::SMSG_SPELL_START);
 
-						Common::ByteBuffer spellCast;
-						spellCast.AppendGuid(playerConnection.characterGuid);
-						spellCast.AppendGuid(playerConnection.characterGuid);
-						spellCast.Write<u8>(0); // CastCount
-						spellCast.Write<u32>(spellId);
-						spellCast.Write<u32>(0x00000100);
-						spellCast.Write<u32>(static_cast<u32>(singleton.lifeTimeInMS));
+                        buffer->Reset();
+                        buffer->PutGuid(playerConnection.characterGuid);
+                        buffer->PutGuid(playerConnection.characterGuid);
+                        buffer->PutU8(0); // CastCount
+                        buffer->PutU32(spellId);
+                        buffer->PutU32(0x00000100);
+                        buffer->PutU32(static_cast<u32>(singleton.lifeTimeInMS));
 
-						spellCast.Write<u8>(1); // Affected Targets
-						spellCast.Write<u64>(playerConnection.characterGuid); // Target GUID
-						spellCast.Write<u8>(0); // Resisted Targets
+                        buffer->PutU8(1); // Affected Targets
+                        buffer->PutU64(playerConnection.characterGuid); // Target GUID
+                        buffer->PutU8(0); // Resisted Targets
 
 						if (targetFlags == 0) // SELF
 						{
 							targetFlags = 0x02; // UNIT
 						}
-						spellCast.Write<u32>(targetFlags); // Target Flags
-						spellCast.Write<u8>(0); // Target Flags
+                        buffer->PutU32(targetFlags); // Target Flags
+                        buffer->PutU8(0); // Target Flags
 
-						playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, spellCast, Common::Opcode::SMSG_SPELL_GO));
+                        playerConnection.socket->SendPacket(buffer.get(), Opcode::SMSG_SPELL_GO);
 						break;
 					}
                     default:

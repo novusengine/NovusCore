@@ -22,11 +22,10 @@ void WorldDatabaseCache::Load()
 
     if (resultSet.affected_rows() > 0)
     {
-        Common::ByteBuffer itemQuery(500);
-        itemQuery.Resize(500);
-
         for (auto row : resultSet)
         {
+            DataStore* itemQuery = new DataStore(nullptr, 500);
+
             ItemTemplate itemTemplate(this);
             itemTemplate.entry = row[0].GetU32();
             itemTemplate.itemClass = row[1].GetU32();
@@ -113,112 +112,111 @@ void WorldDatabaseCache::Load()
             itemTemplate.itemLimitCategory = row[124].GetU32();
             itemTemplate.holidayId = row[125].GetU32();
 
-            itemQuery.Clean();
-            itemQuery.Write<u32>(itemTemplate.entry);
-            itemQuery.Write<u32>(itemTemplate.itemClass);
-            itemQuery.Write<u32>(itemTemplate.itemSubClass);
-            itemQuery.Write<i32>(itemTemplate.soundOverrideSubclass);
-            itemQuery.WriteString(itemTemplate.name);
-            itemQuery.Write<u8>(0); // Name2
-            itemQuery.Write<u8>(0); // Name3
-            itemQuery.Write<u8>(0); // Name4
-            itemQuery.Write<u32>(itemTemplate.displayId);
-            itemQuery.Write<u32>(itemTemplate.quality);
-            itemQuery.Write<u32>(itemTemplate.flags);
-            itemQuery.Write<u32>(itemTemplate.flagsExtra);
-            itemQuery.Write<i32>(itemTemplate.buyPrice);
-            itemQuery.Write<u32>(itemTemplate.sellPrice);
-            itemQuery.Write<u32>(itemTemplate.inventoryType);
-            itemQuery.Write<u32>(itemTemplate.allowableClass);
-            itemQuery.Write<u32>(itemTemplate.allowableRace);
-            itemQuery.Write<u32>(itemTemplate.itemLevel);
-            itemQuery.Write<u32>(itemTemplate.requiredLevel);
-            itemQuery.Write<u32>(itemTemplate.requiredSkill);
-            itemQuery.Write<u32>(itemTemplate.requiredSkillRank);
-            itemQuery.Write<u32>(itemTemplate.requiredSpell);
-            itemQuery.Write<u32>(itemTemplate.requiredHonorRank);
-            itemQuery.Write<u32>(itemTemplate.requiredCityRank);
-            itemQuery.Write<u32>(itemTemplate.requiredReputationFaction);
-            itemQuery.Write<u32>(itemTemplate.requiredReputationRank);
-            itemQuery.Write<i32>(itemTemplate.maxCount);
-            itemQuery.Write<i32>(itemTemplate.stackable);
-            itemQuery.Write<u32>(itemTemplate.containerSlots);
-            itemQuery.Write<u32>(itemTemplate.statsCount);
+            itemQuery->PutU32(itemTemplate.entry);
+            itemQuery->PutU32(itemTemplate.itemClass);
+            itemQuery->PutU32(itemTemplate.itemSubClass);
+            itemQuery->PutI32(itemTemplate.soundOverrideSubclass);
+            itemQuery->PutString(itemTemplate.name);
+            itemQuery->PutU8(0); // Name2
+            itemQuery->PutU8(0); // Name3
+            itemQuery->PutU8(0); // Name4
+            itemQuery->PutU32(itemTemplate.displayId);
+            itemQuery->PutU32(itemTemplate.quality);
+            itemQuery->PutU32(itemTemplate.flags);
+            itemQuery->PutU32(itemTemplate.flagsExtra);
+            itemQuery->PutI32(itemTemplate.buyPrice);
+            itemQuery->PutU32(itemTemplate.sellPrice);
+            itemQuery->PutU32(itemTemplate.inventoryType);
+            itemQuery->PutU32(itemTemplate.allowableClass);
+            itemQuery->PutU32(itemTemplate.allowableRace);
+            itemQuery->PutU32(itemTemplate.itemLevel);
+            itemQuery->PutU32(itemTemplate.requiredLevel);
+            itemQuery->PutU32(itemTemplate.requiredSkill);
+            itemQuery->PutU32(itemTemplate.requiredSkillRank);
+            itemQuery->PutU32(itemTemplate.requiredSpell);
+            itemQuery->PutU32(itemTemplate.requiredHonorRank);
+            itemQuery->PutU32(itemTemplate.requiredCityRank);
+            itemQuery->PutU32(itemTemplate.requiredReputationFaction);
+            itemQuery->PutU32(itemTemplate.requiredReputationRank);
+            itemQuery->PutI32(itemTemplate.maxCount);
+            itemQuery->PutI32(itemTemplate.stackable);
+            itemQuery->PutU32(itemTemplate.containerSlots);
+            itemQuery->PutU32(itemTemplate.statsCount);
 
             /* Item Stats */
             for (u32 i = 0; i < itemTemplate.statsCount; i++)
             {
-                itemQuery.Write<u32>(itemTemplate.statInfo[i].statType);
-                itemQuery.Write<u32>(itemTemplate.statInfo[i].statValue);
+                itemQuery->PutU32(itemTemplate.statInfo[i].statType);
+                itemQuery->PutU32(itemTemplate.statInfo[i].statValue);
             }
 
-            itemQuery.Write<u32>(itemTemplate.scalingStatDistribution);
-            itemQuery.Write<u32>(itemTemplate.scalingStatValue);
+            itemQuery->PutU32(itemTemplate.scalingStatDistribution);
+            itemQuery->PutU32(itemTemplate.scalingStatValue);
 
             /* Item Damage */
             for (u32 i = 0; i < 2; i++)
             {
-                itemQuery.Write<f32>(itemTemplate.damageInfo[i].damageMin);
-                itemQuery.Write<f32>(itemTemplate.damageInfo[i].damageMax);
-                itemQuery.Write<u32>(itemTemplate.damageInfo[i].damageType);
+                itemQuery->PutF32(itemTemplate.damageInfo[i].damageMin);
+                itemQuery->PutF32(itemTemplate.damageInfo[i].damageMax);
+                itemQuery->PutU32(itemTemplate.damageInfo[i].damageType);
             }
 
             /* Item Resistances */
             for (u32 i = 0; i < 7; i++)
             {
-                itemQuery.Write<u32>(itemTemplate.resistances[i]);
+                itemQuery->PutU32(itemTemplate.resistances[i]);
             }
 
-            itemQuery.Write<u32>(itemTemplate.attackSpeed);
-            itemQuery.Write<u32>(itemTemplate.ammoType);
-            itemQuery.Write<f32>(itemTemplate.rangeModifier);
+            itemQuery->PutU32(itemTemplate.attackSpeed);
+            itemQuery->PutU32(itemTemplate.ammoType);
+            itemQuery->PutF32(itemTemplate.rangeModifier);
 
             /* Item Spells */
             for (u32 i = 0; i < 5; i++)
             {
-                itemQuery.Write<u32>(itemTemplate.spellInfo[i].spellId);
-                itemQuery.Write<u32>(itemTemplate.spellInfo[i].spellTrigger);
-                itemQuery.Write<u32>(static_cast<u32>(-abs(itemTemplate.spellInfo[i].spellCharges)));
-                itemQuery.Write<u32>(static_cast<u32>(itemTemplate.spellInfo[i].spellCooldown));
-                itemQuery.Write<u32>(itemTemplate.spellInfo[i].spellCategory);
-                itemQuery.Write<u32>(static_cast<u32>(itemTemplate.spellInfo[i].spellCategoryCooldown));
+                itemQuery->PutU32(itemTemplate.spellInfo[i].spellId);
+                itemQuery->PutU32(itemTemplate.spellInfo[i].spellTrigger);
+                itemQuery->PutU32(static_cast<u32>(-abs(itemTemplate.spellInfo[i].spellCharges)));
+                itemQuery->PutU32(static_cast<u32>(itemTemplate.spellInfo[i].spellCooldown));
+                itemQuery->PutU32(itemTemplate.spellInfo[i].spellCategory);
+                itemQuery->PutU32(static_cast<u32>(itemTemplate.spellInfo[i].spellCategoryCooldown));
             }
 
-            itemQuery.Write<u32>(itemTemplate.bindType);
-            itemQuery.WriteString(itemTemplate.description);
-            itemQuery.Write<u32>(itemTemplate.pageTextId);
-            itemQuery.Write<u32>(itemTemplate.pageLanguageId);
-            itemQuery.Write<u32>(itemTemplate.pageTextureId);
-            itemQuery.Write<u32>(itemTemplate.startQuest);
-            itemQuery.Write<u32>(itemTemplate.lockId);
-            itemQuery.Write<i32>(itemTemplate.materialSound);
-            itemQuery.Write<u32>(itemTemplate.weaponSheath);
-            itemQuery.Write<i32>(itemTemplate.randomPropertyId);
-            itemQuery.Write<i32>(itemTemplate.randomSuffixId);
-            itemQuery.Write<u32>(itemTemplate.shieldBlock);
-            itemQuery.Write<u32>(itemTemplate.itemSetId);
-            itemQuery.Write<u32>(itemTemplate.itemDurability);
-            itemQuery.Write<u32>(itemTemplate.restrictUseToAreaId);
-            itemQuery.Write<u32>(itemTemplate.restrictUseToMapId);
-            itemQuery.Write<u32>(itemTemplate.bagFamilyBitmask);
-            itemQuery.Write<u32>(itemTemplate.toolCategoryId);
+            itemQuery->PutU32(itemTemplate.bindType);
+            itemQuery->PutString(itemTemplate.description);
+            itemQuery->PutU32(itemTemplate.pageTextId);
+            itemQuery->PutU32(itemTemplate.pageLanguageId);
+            itemQuery->PutU32(itemTemplate.pageTextureId);
+            itemQuery->PutU32(itemTemplate.startQuest);
+            itemQuery->PutU32(itemTemplate.lockId);
+            itemQuery->PutI32(itemTemplate.materialSound);
+            itemQuery->PutU32(itemTemplate.weaponSheath);
+            itemQuery->PutI32(itemTemplate.randomPropertyId);
+            itemQuery->PutI32(itemTemplate.randomSuffixId);
+            itemQuery->PutU32(itemTemplate.shieldBlock);
+            itemQuery->PutU32(itemTemplate.itemSetId);
+            itemQuery->PutU32(itemTemplate.itemDurability);
+            itemQuery->PutU32(itemTemplate.restrictUseToAreaId);
+            itemQuery->PutU32(itemTemplate.restrictUseToMapId);
+            itemQuery->PutU32(itemTemplate.bagFamilyBitmask);
+            itemQuery->PutU32(itemTemplate.toolCategoryId);
 
             /* Item Sockets */
             for (u32 i = 0; i < 3; i++)
             {
-                itemQuery.Write<u32>(itemTemplate.socketInfo[i].socketType);
-                itemQuery.Write<u32>(itemTemplate.socketInfo[i].socketAmount);
+                itemQuery->PutU32(itemTemplate.socketInfo[i].socketType);
+                itemQuery->PutU32(itemTemplate.socketInfo[i].socketAmount);
             }
 
-            itemQuery.Write<u32>(itemTemplate.socketBonusId);
-            itemQuery.Write<u32>(itemTemplate.gemPropertiesId);
-            itemQuery.Write<u32>(itemTemplate.requiredDisenchantSkill);
-            itemQuery.Write<f32>(itemTemplate.armorDamageModifier);
-            itemQuery.Write<u32>(itemTemplate.limitedDuration);
-            itemQuery.Write<u32>(itemTemplate.itemLimitCategory);
-            itemQuery.Write<u32>(itemTemplate.holidayId);
+            itemQuery->PutU32(itemTemplate.socketBonusId);
+            itemQuery->PutU32(itemTemplate.gemPropertiesId);
+            itemQuery->PutU32(itemTemplate.requiredDisenchantSkill);
+            itemQuery->PutF32(itemTemplate.armorDamageModifier);
+            itemQuery->PutU32(itemTemplate.limitedDuration);
+            itemQuery->PutU32(itemTemplate.itemLimitCategory);
+            itemQuery->PutU32(itemTemplate.holidayId);
 
-            itemTemplate._packet = itemQuery;
+            itemTemplate._packet = std::shared_ptr<DataStore>(itemQuery);
             _itemTemplateCache[itemTemplate.entry] = itemTemplate;
         }
     }
@@ -233,7 +231,6 @@ void WorldDatabaseCache::Save()
 void WorldDatabaseCache::SaveAsync()
 {
 }
-
 
 bool WorldDatabaseCache::GetItemTemplate(u32 itemEntry, ItemTemplate& output)
 {

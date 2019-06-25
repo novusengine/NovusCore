@@ -23,88 +23,72 @@
 */
 #pragma once
 
+#include "DataStore.h"
+#include "BaseSocket.h"
+
 #include <ctime>
 #include <iostream>
 #include <string>
 #include <functional>
 #include <asio.hpp>
 #include <asio/placeholders.hpp>
-#include "ByteBuffer.h"
-#include "DataStore.h"
 
-namespace Common
+class BaseSocket : public std::enable_shared_from_this<BaseSocket>
 {
-    class BaseSocket : public std::enable_shared_from_this<BaseSocket>
+public:
+    virtual bool Start() = 0;
+    virtual void Close(asio::error_code error) { _socket->close(); _isClosed = true; }
+    virtual void HandleRead() = 0;
+
+    asio::ip::tcp::socket* socket()
     {
-    public:
-        virtual bool Start() = 0;
-        virtual void Close(asio::error_code error) { _socket->close(); _isClosed = true; std::cout << "Closed: " << error.message().c_str() << std::endl; }
-        virtual void HandleRead() = 0;
+        return _socket;
+    }
 
-        asio::ip::tcp::socket* socket()
+    void Send(DataStore& dataStore)
+    {
+        if (!dataStore.IsEmpty() || dataStore.IsFull())
         {
-            return _socket;
+            _socket->async_write_some(asio::buffer(dataStore.GetInternalData(), dataStore.WrittenData),
+                std::bind(&BaseSocket::HandleInternalWrite, this, std::placeholders::_1, std::placeholders::_2));
+        }
+    }
+    bool IsClosed() { return _isClosed; }
+protected:
+    BaseSocket(asio::ip::tcp::socket* socket) : _receiveBuffer(nullptr, 4096), _sendBuffer(nullptr, 4096), _isClosed(false), _socket(socket) { }
+
+    void AsyncRead()
+    {
+        if (!_socket->is_open())
+            return;
+
+        _receiveBuffer.Reset();
+        _socket->async_read_some(asio::buffer(_receiveBuffer.GetWritePointer(), _receiveBuffer.GetRemainingSpace()),
+            std::bind(&BaseSocket::HandleInternalRead, this, std::placeholders::_1, std::placeholders::_2));
+    }
+    void HandleInternalRead(asio::error_code error, size_t bytes)
+    {
+        if (error)
+        {
+            Close(error);
+            return;
         }
 
-        void Send(DataStore& dataStore)
+        _receiveBuffer.WrittenData += bytes;
+        HandleRead();
+    }
+    void HandleInternalWrite(asio::error_code error, std::size_t transferedBytes)
+    {
+        if (error)
         {
-            if (!dataStore.IsEmpty())
-            {
-                _socket->async_write_some(asio::buffer(dataStore.GetInternalData(), dataStore.WrittenData),
-                    std::bind(&BaseSocket::HandleInternalWrite, this, std::placeholders::_1, std::placeholders::_2));
-            }
+            Close(error);
         }
-        void Send(ByteBuffer& buffer)
-        {
-            if (!buffer.empty())
-            {
-                _socket->async_write_some(asio::buffer(buffer.GetReadPointer(), buffer.GetActualSize()),
-                   std::bind(&BaseSocket::HandleInternalWrite, this, std::placeholders::_1, std::placeholders::_2));
-            }
-        }
-        bool IsClosed() { return _isClosed; }
-    protected:
-        BaseSocket(asio::ip::tcp::socket* socket) : _byteBuffer(), _isClosed(false), _socket(socket)
-        {
-            _byteBuffer.Resize(4096);
-        }
+    }
 
-        void AsyncRead()
-        {
-            // Ensure valid connection bound to the socket
-            if (!_socket->is_open())
-                return;
+    DataStore& GetReceiveBuffer() { return _receiveBuffer; }
+    DataStore _receiveBuffer;
+    DataStore _sendBuffer;
 
-            _byteBuffer.CleanBuffer();
-            _byteBuffer.RecalculateSize();
-
-            _socket->async_read_some(asio::buffer(_byteBuffer.GetWritePointer(), _byteBuffer.GetSpaceLeft()),
-                std::bind(&BaseSocket::HandleInternalRead, this, std::placeholders::_1, std::placeholders::_2));
-        }
-        void HandleInternalRead(asio::error_code error, size_t bytes)
-        {
-            if (error)
-            {
-                //printf("HandleInternalRead: Error %s\n", error.message().c_str());
-                Close(error);
-                return;
-            }
-
-            _byteBuffer.WriteBytes(bytes);
-            HandleRead();
-        }
-        void HandleInternalWrite(asio::error_code error, std::size_t transferedBytes)
-        {
-            if (error)
-            {
-                Close(error);
-            }
-        }
-
-        ByteBuffer& GetByteBuffer() { return _byteBuffer; }
-        ByteBuffer _byteBuffer;
-
-        bool _isClosed;
-        asio::ip::tcp::socket* _socket;
-    };
-}
+    bool _isClosed = false;
+    asio::ip::tcp::socket* _socket;
+};

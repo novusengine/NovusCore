@@ -24,7 +24,6 @@
 #pragma once
 #include <NovusTypes.h>
 #include <entt.hpp>
-#include <Networking/ByteBuffer.h>
 
 #include "../../Message.h"
 #include "../../DatabaseCache/CharacterDatabaseCache.h"

@@ -23,17 +23,17 @@
 */
 #pragma once
 #include <string>
-#include <Networking/ByteBuffer.h>
+#include <Networking/DataStore.h>
 #include "Connections/WorldConnection.h"
 
 struct Message
 {
-    Message() { code = -1; opcode = -1; account = -1; message = nullptr; connection = nullptr; }
+    Message() { code = -1; opcode = -1; account = -1; packet = nullptr; message = nullptr; connection = nullptr; }
 
     i32 code;
     i16 opcode;
     i32 account;
-    Common::ByteBuffer packet;
+    std::shared_ptr<DataStore> packet;
 	std::string* message;
     WorldConnection* connection;
 };

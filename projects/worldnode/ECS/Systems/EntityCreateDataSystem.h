@@ -24,7 +24,7 @@
 #pragma once
 #include <NovusTypes.h>
 #include <entt.hpp>
-#include <Networking/ByteBuffer.h>
+#include <Networking/DataStore.h>
 
 #include "../../NovusEnums.h"
 #include "../../Utils/UpdateData.h"
@@ -41,88 +41,93 @@
 
 namespace EntityCreateDataSystem
 {
-    Common::ByteBuffer BuildItemCreateData(u64 itemGuid, u8 updateType, u16 updateFlags, u32 visibleFlags, ItemFieldDataComponent& itemFieldData, u16& opcode)
+    std::shared_ptr<DataStore> BuildItemCreateData(u64 itemGuid, u8 updateType, u16 updateFlags, u32 visibleFlags, ItemFieldDataComponent& itemFieldData, u16& opcode)
     {
-        Common::ByteBuffer buffer(500);
-        buffer.Write<u8>(updateType);
-        buffer.AppendGuid(itemGuid);
-        buffer.Write<u8>(1); // TYPEID_ITEM
+        std::shared_ptr<DataStore> buffer = DataStore::Borrow<4096>();
+        buffer->PutU8(updateType);
+        buffer->PutGuid(itemGuid);
+        buffer->PutU8(1); // TYPEID_ITEM
 
         // BuildMovementUpdate(ByteBuffer* data, uint16 flags)
-        buffer.Write<u16>(updateFlags);
+        buffer->PutU16(updateFlags);
 
         if (updateFlags & UPDATEFLAG_LOWGUID)
         {
-            buffer.Write<u32>(1);
+            buffer->PutU32(1);
         }
 
-        Common::ByteBuffer fieldBuffer;
-        fieldBuffer.Resize(256);
+        std::shared_ptr<DataStore> fieldbuffer = DataStore::Borrow<256>();
         UpdateMask<64> updateMask(ITEM_END);
 
         u32* flags = ItemUpdateFieldFlags;
+        i32 fieldDataValue = 0;
         u16 fieldNotifyFlags = UF_FLAG_DYNAMIC;
 
         for (u16 index = 0; index < ITEM_END; index++)
         {
+            if (updateType != UPDATETYPE_VALUES)
+            {
+                itemFieldData.itemFields->Get<i32>(fieldDataValue, index * 4);
+            }
+
             if (fieldNotifyFlags & flags[index] ||
-                ((updateType == UPDATETYPE_VALUES ? itemFieldData.changesMask.IsSet(index) : itemFieldData.itemFields.ReadAt<i32>(index * 4)) &&
+                ((updateType == UPDATETYPE_VALUES ? itemFieldData.changesMask.IsSet(index) : fieldDataValue) &&
                 (flags[index] & visibleFlags)))
             {
                 updateMask.SetBit(index);
-                fieldBuffer.Write(itemFieldData.itemFields.GetDataPointer() + index * 4, 4);
+                fieldbuffer->PutBytes(itemFieldData.itemFields->GetInternalData() + index * 4, 4);
             }
         }
 
-        buffer.Write<u8>(updateMask.GetBlocks());
-        updateMask.AddTo(buffer);
-        buffer.Append(fieldBuffer);
+        buffer->PutU8(updateMask.GetBlocks());
+        updateMask.AddTo(buffer.get());
+        buffer->PutBytes(fieldbuffer->GetInternalData(), fieldbuffer->WrittenData);
 
         UpdateData updateData;
-        updateData.AddBlock(buffer);
+        updateData.AddBlock(buffer.get());
 
-        Common::ByteBuffer tempBuffer;
-        updateData.Build(tempBuffer, opcode);
+        std::shared_ptr<DataStore> tempBuffer = DataStore::Borrow<8192>();
+        updateData.Build(tempBuffer.get(), opcode);
 
         return tempBuffer;
     }
-    Common::ByteBuffer BuildUnitCreateData(ObjectGuid unitGuid, u8 updateType, u16 updateFlags, u32 visibleFlags, u32 lifeTimeInMS, UnitFieldDataComponent& unitFieldData, u16& opcode)
+    std::shared_ptr<DataStore> BuildUnitCreateData(ObjectGuid unitGuid, u8 updateType, u16 updateFlags, u32 visibleFlags, u32 lifeTimeInMS, UnitFieldDataComponent& unitFieldData, u16& opcode)
     {
-        Common::ByteBuffer buffer(500);
-        buffer.Write<u8>(updateType);
-        buffer.AppendGuid(unitGuid);
+        std::shared_ptr<DataStore> buffer = DataStore::Borrow<4096>();
+        buffer->PutU8(updateType);
+        buffer->PutGuid(unitGuid);
         
         // TypeId
-        buffer.Write<u8>(3);
+        buffer->PutU8(3);
 
         // Build Movement Update
-        buffer.Write<u16>(updateFlags);
+        buffer->PutU16(updateFlags);
 
         if (updateFlags & UPDATEFLAG_LIVING)
         {
-            buffer.Write<u32>(0x00); // MovementFlags
-            buffer.Write<u16>(0x00); // Extra MovementFlags
-            buffer.Write<u32>(lifeTimeInMS); // Game Time
+            buffer->PutU32(0x00); // MovementFlags
+            buffer->PutU16(0x00); // Extra MovementFlags
+            buffer->PutU32(lifeTimeInMS); // Game Time
 
             // X, Y, Z, O
-            buffer.Write<f32>(-4235.57f);
-            buffer.Write<f32>(-12637.f);
-            buffer.Write<f32>(31.8969f);
-            buffer.Write<f32>(4.40294f);
+            buffer->PutF32(-4235.57f);
+            buffer->PutF32(-12637.f);
+            buffer->PutF32(31.8969f);
+            buffer->PutF32(4.40294f);
 
             // FallTime
-            buffer.Write<u32>(0);
+            buffer->PutU32(0);
 
             // Movement Speeds
-            buffer.Write<f32>(2.5f); // MOVE_WALK
-            buffer.Write<f32>(7.0f); // MOVE_RUN
-            buffer.Write<f32>(4.5f); // MOVE_RUN_BACK
-            buffer.Write<f32>(4.722222f); // MOVE_SWIM
-            buffer.Write<f32>(2.5f); // MOVE_SWIM_BACK
-            buffer.Write<f32>(7.0f); // MOVE_FLIGHT
-            buffer.Write<f32>(4.5f); // MOVE_FLIGHT_BACK
-            buffer.Write<f32>(3.141593f); // MOVE_TURN_RATE
-            buffer.Write<f32>(3.141593f); // MOVE_PITCH_RATE
+            buffer->PutF32(2.5f); // MOVE_WALK
+            buffer->PutF32(7.0f); // MOVE_RUN
+            buffer->PutF32(4.5f); // MOVE_RUN_BACK
+            buffer->PutF32(4.722222f); // MOVE_SWIM
+            buffer->PutF32(2.5f); // MOVE_SWIM_BACK
+            buffer->PutF32(7.0f); // MOVE_FLIGHT
+            buffer->PutF32(4.5f); // MOVE_FLIGHT_BACK
+            buffer->PutF32(3.141593f); // MOVE_TURN_RATE
+            buffer->PutF32(3.141593f); // MOVE_PITCH_RATE
         }
         else
         {
@@ -136,60 +141,70 @@ namespace EntityCreateDataSystem
                 {
                     if (unitGuid.GetEntry() == 25)
                     {
-                        buffer.Write<f32>(-4235.57f);
-                        buffer.Write<f32>(-12637.f);
-                        buffer.Write<f32>(31.8969f);
-                        buffer.Write<f32>(4.40294f);
+                        buffer->PutF32(-4235.57f);
+                        buffer->PutF32(-12637.f);
+                        buffer->PutF32(31.8969f);
+                        buffer->PutF32(4.40294f);
                     }
                     else
                     {
-                        buffer.Write<f32>(-4238.56f);
-                        buffer.Write<f32>(-12636.36f);
-                        buffer.Write<f32>(31.79f);
-                        buffer.Write<f32>(4.40294f);
+                        buffer->PutF32(-4238.56f);
+                        buffer->PutF32(-12636.36f);
+                        buffer->PutF32(31.79f);
+                        buffer->PutF32(4.40294f);
                     }
                 }
             }
         }
 
-        Common::ByteBuffer fieldBuffer;
-        fieldBuffer.Resize(640);
+        std::shared_ptr<DataStore> fieldbuffer = DataStore::Borrow<640>();
         UpdateMask<160> updateMask(UNIT_END);
 
         u32* flags = UnitUpdateFieldFlags;
+        i32 fieldDataValue = 0;
         u16 fieldNotifyFlags = UF_FLAG_DYNAMIC;
 
         for (u16 index = 0; index < UNIT_END; index++)
         {
+            if (updateType != UPDATETYPE_VALUES)
+            {
+                unitFieldData.unitFields->Get<i32>(fieldDataValue, index * 4);
+            }
+
             if (fieldNotifyFlags & flags[index] || ((flags[index] & visibleFlags) & UF_FLAG_SPECIAL_INFO)
-                || ((updateType == 0 ? unitFieldData.changesMask.IsSet(index) : unitFieldData.unitFields.ReadAt<i32>(index * 4))
+                || ((updateType == UPDATETYPE_VALUES ? unitFieldData.changesMask.IsSet(index) : fieldDataValue)
                 && (flags[index] & visibleFlags)))
             {
                 updateMask.SetBit(index);
 
                 if (index == UNIT_NPC_FLAGS)
                 {
-                    u32 appendValue = unitFieldData.unitFields.ReadAt<u32>(UNIT_NPC_FLAGS * 4);
+                    u32 appendValue = 0;
+                    unitFieldData.unitFields->Get<u32>(appendValue, UNIT_NPC_FLAGS * 4);
 
                     /*if (creature)
                         if (!target->CanSeeSpellClickOn(creature))
                             appendValue &= ~UNIT_NPC_FLAG_SPELLCLICK;*/
 
-                    fieldBuffer.Write<u32>(appendValue);
+                    fieldbuffer->PutU32(appendValue);
                 }
                 else if (index == UNIT_FIELD_AURASTATE)
                 {
                     // Check per caster aura states to not enable using a spell in client if specified aura is not by target
-                    u32 auraState = unitFieldData.unitFields.ReadAt<u32>(UNIT_FIELD_AURASTATE * 4) & ~(((1 << (14 - 1)) | (1 << (16 - 1))));
+                    u32 auraState = 0;
+                    unitFieldData.unitFields->Get<u32>(auraState, UNIT_FIELD_AURASTATE * 4);
+                    auraState &= ~(((1 << (14 - 1)) | (1 << (16 - 1))));
 
-                    fieldBuffer.Write<u32>(auraState);
+                    fieldbuffer->PutU32(auraState);
                 }
                 // Seems to be fixed already??
                 // FIXME: Some values at server stored in f32 format but must be sent to client in uint32 format
                 else if (index >= UNIT_FIELD_BASEATTACKTIME && index <= UNIT_FIELD_RANGEDATTACKTIME)
                 {
                     // convert from f32 to uint32 and send
-                    fieldBuffer.Write<u32>(static_cast<u32>(unitFieldData.unitFields.ReadAt<i32>(index * 4)));
+                    i32 fieldValue = 0;
+                    unitFieldData.unitFields->Get<i32>(fieldValue, index * 4);
+                    fieldbuffer->PutU32(static_cast<u32>(fieldValue));
                 }
                 // there are some (said f32 in TC, but all these are ints)int values which may be negative or can't get negative due to other checks
                 else if ((index >= UNIT_FIELD_NEGSTAT0 && index <= UNIT_FIELD_NEGSTAT4) ||
@@ -197,21 +212,25 @@ namespace EntityCreateDataSystem
                          (index >= UNIT_FIELD_RESISTANCEBUFFMODSNEGATIVE && index <= (UNIT_FIELD_RESISTANCEBUFFMODSNEGATIVE + 6)) ||
                          (index >= UNIT_FIELD_POSSTAT0 && index <= UNIT_FIELD_POSSTAT4))
                 {
-                    fieldBuffer.Write<u32>(static_cast<u32>(unitFieldData.unitFields.ReadAt<i32>(index * 4)));
+                    i32 fieldValue = 0;
+                    unitFieldData.unitFields->Get<i32>(fieldValue, index * 4);
+                    fieldbuffer->PutU32(static_cast<u32>(fieldValue));
                 }
                 // Gamemasters should be always able to select units - remove not selectable flag
                 else if (index == UNIT_FIELD_FLAGS)
                 {
-                    u32 appendValue = unitFieldData.unitFields.ReadAt<u32>(UNIT_FIELD_FLAGS * 4);
+                    u32 appendValue = 0;
+                    unitFieldData.unitFields->Get<u32>(appendValue, UNIT_FIELD_FLAGS * 4);
                     //if (target->IsGameMaster())
                         //appendValue &= ~UNIT_FLAG_NOT_SELECTABLE;
 
-                    fieldBuffer.Write<u32>(appendValue);
+                    fieldbuffer->PutU32(appendValue);
                 }
                 // use modelid_a if not gm, _h if gm for CREATURE_FLAG_EXTRA_TRIGGER creatures
                 else if (index == UNIT_FIELD_DISPLAYID)
                 {
-                    u32 displayId = unitFieldData.unitFields.ReadAt<u32>(UNIT_FIELD_DISPLAYID * 4);
+                    u32 displayId = 0;
+                    unitFieldData.unitFields->Get<u32>(displayId, UNIT_FIELD_DISPLAYID * 4);
                     /*if (creature)
                     {
                         CreatureTemplate const* cinfo = creature->GetCreatureTemplate();
@@ -229,12 +248,14 @@ namespace EntityCreateDataSystem
                                 displayId = cinfo->GetFirstVisibleModel();
                     }*/
 
-                    fieldBuffer.Write<u32>(displayId);
+                    fieldbuffer->PutU32(displayId);
                 }
                 // hide lootable animation for unallowed players
                 else if (index == UNIT_DYNAMIC_FLAGS)
                 {
-                    u32 dynamicFlags = unitFieldData.unitFields.ReadAt<u32>(UNIT_DYNAMIC_FLAGS * 4) & ~(0x4 | 0x08); // UNIT_DYNFLAG_TAPPED | UNIT_DYNFLAG_TAPPED_BY_PLAYER
+                    u32 dynamicFlags = 0;
+                    unitFieldData.unitFields->Get<u32>(dynamicFlags, UNIT_DYNAMIC_FLAGS * 4); // UNIT_DYNFLAG_TAPPED | UNIT_DYNFLAG_TAPPED_BY_PLAYER
+                    dynamicFlags &= ~(0x4 | 0x08);
 
                     /*if (creature)
                     {
@@ -253,7 +274,7 @@ namespace EntityCreateDataSystem
                         //if (!HasAuraTypeWithCaster(SPELL_AURA_MOD_STALKED, target->GetGUID()))
                             //dynamicFlags &= ~UNIT_DYNFLAG_TRACK_UNIT;
 
-                    fieldBuffer.Write<u32>(dynamicFlags);
+                    fieldbuffer->PutU32(dynamicFlags);
                 }
                 // FG: pretend that OTHER players in own group are friendly ("blue")
                 else if (index == UNIT_FIELD_BYTES_2 || index == UNIT_FIELD_FACTIONTEMPLATE)
@@ -275,25 +296,25 @@ namespace EntityCreateDataSystem
                             //fieldBuffer << m_uint32Values[index];
                     //}
                     //else
-                    fieldBuffer.Write(unitFieldData.unitFields.GetDataPointer() + index * 4, 4);
+                    fieldbuffer->PutBytes(unitFieldData.unitFields->GetInternalData() + index * 4, 4);
                 }
                 else
                 {
                     // send in current format (f32 as f32, uint32 as uint32)
-                    fieldBuffer.Write(unitFieldData.unitFields.GetDataPointer() + index * 4, 4);
+                    fieldbuffer->PutBytes(unitFieldData.unitFields->GetInternalData() + index * 4, 4);
                 }
             }
         }
 
-        buffer.Write<u8>(updateMask.GetBlocks());
-        updateMask.AddTo(buffer);
-        buffer.Append(fieldBuffer);
+        buffer->PutU8(updateMask.GetBlocks());
+        updateMask.AddTo(buffer.get());
+        buffer->PutBytes(fieldbuffer->GetInternalData(), fieldbuffer->WrittenData);
 
         UpdateData updateData;
-        updateData.AddBlock(buffer);
+        updateData.AddBlock(buffer.get());
 
-        Common::ByteBuffer tempBuffer;
-        updateData.Build(tempBuffer, opcode);
+        std::shared_ptr<DataStore> tempBuffer = DataStore::Borrow<8192>();
+        updateData.Build(tempBuffer.get(), opcode);
 
         return tempBuffer;
     }
@@ -315,22 +336,22 @@ namespace EntityCreateDataSystem
                 u32 selfVisibleFlags = (UF_FLAG_PUBLIC | UF_FLAG_OWNER);
                 u16 buildOpcode = 0;
 
-                Common::ByteBuffer selfItemUpdate = BuildItemCreateData(itemInitializeData.itemGuid, updateType, selfUpdateFlag, selfVisibleFlags, itemFieldData, buildOpcode);
+                std::shared_ptr<DataStore> selfItemUpdate = BuildItemCreateData(itemInitializeData.itemGuid, updateType, selfUpdateFlag, selfVisibleFlags, itemFieldData, buildOpcode);
                 PlayerConnectionComponent playerConnection = registry.get<PlayerConnectionComponent>(itemInitializeData.characterEntityId);
-                playerConnection.socket->SendPacket(selfItemUpdate, buildOpcode);
+                playerConnection.socket->SendPacket(selfItemUpdate.get(), buildOpcode);
 
-                Common::ByteBuffer itemPushResult;
-                itemPushResult.Write<u64>(itemInitializeData.characterGuid);
-                itemPushResult.Write<u32>(0); // Received:     0 = Looted,   1 = By NPC
-                itemPushResult.Write<u32>(0); // Created:      0 = Received, 1 = Created
-                itemPushResult.Write<u32>(1); // Show in chat: 0 = No Print, 1 = Print
-                itemPushResult.Write<u8>(itemInitializeData.bagSlot); // BagSlot
-                itemPushResult.Write<u32>(itemInitializeData.bagPosition); // BagPosition
-                itemPushResult.Write<u32>(itemInitializeData.itemGuid.GetEntry());
-                itemPushResult.Write<u32>(0);
-                itemPushResult.Write<u32>(0);
-                itemPushResult.Write<u32>(1);
-                playerConnection.socket->SendPacket(itemPushResult, Common::Opcode::SMSG_ITEM_PUSH_RESULT);
+                std::shared_ptr<DataStore> itemPushResult = DataStore::Borrow<41>();
+                itemPushResult->PutU64(itemInitializeData.characterGuid);
+                itemPushResult->PutU32(0); // Received:     0 = Looted,   1 = By NPC
+                itemPushResult->PutU32(0); // Created:      0 = Received, 1 = Created
+                itemPushResult->PutU32(1); // Show in chat: 0 = No Print, 1 = Print
+                itemPushResult->PutU8(itemInitializeData.bagSlot); // BagSlot
+                itemPushResult->PutU32(itemInitializeData.bagPosition); // BagPosition
+                itemPushResult->PutU32(itemInitializeData.itemGuid.GetEntry());
+                itemPushResult->PutU32(0);
+                itemPushResult->PutU32(0);
+                itemPushResult->PutU32(1);
+                playerConnection.socket->SendPacket(itemPushResult.get(), Opcode::SMSG_ITEM_PUSH_RESULT);
             });
             // Remove ItemInitializeComponent from all entities (They've just been handled above)
             registry.reset<ItemInitializeComponent>();

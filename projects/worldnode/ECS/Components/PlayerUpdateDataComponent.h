@@ -23,7 +23,6 @@
 */
 #pragma once
 #include <NovusTypes.h>
-#include <Networking/ByteBuffer.h>
 #include <vector>
 
 #include "../../NovusEnums.h"

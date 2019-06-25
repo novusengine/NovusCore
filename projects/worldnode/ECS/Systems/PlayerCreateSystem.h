@@ -24,7 +24,6 @@
 #pragma once
 #include <NovusTypes.h>
 #include <entt.hpp>
-#include <Networking/ByteBuffer.h>
 
 #include "../../Message.h"
 #include "../../DatabaseCache/CharacterDatabaseCache.h"
@@ -52,7 +51,7 @@ namespace PlayerCreateSystem
         while (createPlayerQueue.newPlayerQueue->try_dequeue(message))
         {
             u64 characterGuid = 0;
-            message.packet.Read<u64>(characterGuid);
+            message.packet->Get<u64>(characterGuid);
 
             CharacterInfo characterInfo;
             if (characterDatabase.cache->GetCharacterInfo(characterGuid, characterInfo))

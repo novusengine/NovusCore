@@ -23,7 +23,6 @@
 */
 #pragma once
 #include <NovusTypes.h>
-#include <Networking/ByteBuffer.h>
 #include "../../Game/ObjectGuid/ObjectGuid.h"
 #include <vector>
 

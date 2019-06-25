@@ -23,7 +23,7 @@
 */
 #pragma once
 #include <NovusTypes.h>
-#include <Networking/ByteBuffer.h>
+#include <Networking/DataStore.h>
 #include <Networking/Opcode/Opcode.h>
 #include <Utils/StringUtils.h>
 #include "../DatabaseCache/CharacterDatabaseCache.h"
@@ -101,137 +101,137 @@ namespace CharacterUtils
         u8 opcodeIndex = 0;
         switch (opcode)
         {
-            case Common::Opcode::MSG_MOVE_STOP:
+            case Opcode::MSG_MOVE_STOP:
             {
                 opcodeIndex = 0;
                 break;
             }
-            case Common::Opcode::MSG_MOVE_STOP_STRAFE:
+            case Opcode::MSG_MOVE_STOP_STRAFE:
             {
                 opcodeIndex = 1;
                 break;
             }
-            case Common::Opcode::MSG_MOVE_STOP_TURN:
+            case Opcode::MSG_MOVE_STOP_TURN:
             {
                 opcodeIndex = 2;
                 break;
             }
-            case Common::Opcode::MSG_MOVE_STOP_PITCH:
+            case Opcode::MSG_MOVE_STOP_PITCH:
             {
                 opcodeIndex = 3;
                 break;
             }
-            case Common::Opcode::MSG_MOVE_START_FORWARD:
+            case Opcode::MSG_MOVE_START_FORWARD:
             {
                 opcodeIndex = 4;
                 break;
             }
-            case Common::Opcode::MSG_MOVE_START_BACKWARD:
+            case Opcode::MSG_MOVE_START_BACKWARD:
             {
                 opcodeIndex = 5;
                 break;
             }
-            case Common::Opcode::MSG_MOVE_START_STRAFE_LEFT:
+            case Opcode::MSG_MOVE_START_STRAFE_LEFT:
             {
                 opcodeIndex = 6;
                 break;
             }
-            case Common::Opcode::MSG_MOVE_START_STRAFE_RIGHT:
+            case Opcode::MSG_MOVE_START_STRAFE_RIGHT:
             {
                 opcodeIndex = 7;
                 break;
             }
-            case Common::Opcode::MSG_MOVE_START_TURN_LEFT:
+            case Opcode::MSG_MOVE_START_TURN_LEFT:
             {
                 opcodeIndex = 8;
                 break;
             }
-            case Common::Opcode::MSG_MOVE_START_TURN_RIGHT:
+            case Opcode::MSG_MOVE_START_TURN_RIGHT:
             {
                 opcodeIndex = 9;
                 break;
             }
-            case Common::Opcode::MSG_MOVE_START_PITCH_UP:
+            case Opcode::MSG_MOVE_START_PITCH_UP:
             {
                 opcodeIndex = 10;
                 break;
             }
-            case Common::Opcode::MSG_MOVE_START_PITCH_DOWN:
+            case Opcode::MSG_MOVE_START_PITCH_DOWN:
             {
                 opcodeIndex = 11;
                 break;
             }
-            case Common::Opcode::MSG_MOVE_START_ASCEND:
+            case Opcode::MSG_MOVE_START_ASCEND:
             {
                 opcodeIndex = 12;
                 break;
             }
-            case Common::Opcode::MSG_MOVE_STOP_ASCEND:
+            case Opcode::MSG_MOVE_STOP_ASCEND:
             {
                 opcodeIndex = 13;
                 break;
             }
-            case Common::Opcode::MSG_MOVE_START_DESCEND:
+            case Opcode::MSG_MOVE_START_DESCEND:
             {
                 opcodeIndex = 14;
                 break;
             }
-            case Common::Opcode::MSG_MOVE_START_SWIM:
+            case Opcode::MSG_MOVE_START_SWIM:
             {
                 opcodeIndex = 15;
                 break;
             }
-            case Common::Opcode::MSG_MOVE_STOP_SWIM:
+            case Opcode::MSG_MOVE_STOP_SWIM:
             {
                 opcodeIndex = 16;
                 break;
             }
-            case Common::Opcode::MSG_MOVE_FALL_LAND:
+            case Opcode::MSG_MOVE_FALL_LAND:
             {
                 opcodeIndex = 17;
                 break;
             }
-            case Common::Opcode::CMSG_MOVE_FALL_RESET:
+            case Opcode::CMSG_MOVE_FALL_RESET:
             {
                 opcodeIndex = 18;
                 break;
             }
-            case Common::Opcode::MSG_MOVE_JUMP:
+            case Opcode::MSG_MOVE_JUMP:
             {
                 opcodeIndex = 19;
                 break;
             }
-            case Common::Opcode::MSG_MOVE_SET_FACING:
+            case Opcode::MSG_MOVE_SET_FACING:
             {
                 opcodeIndex = 20;
                 break;
             }
-            case Common::Opcode::MSG_MOVE_SET_PITCH:
+            case Opcode::MSG_MOVE_SET_PITCH:
             {
                 opcodeIndex = 21;
                 break;
             }
-            case Common::Opcode::MSG_MOVE_SET_RUN_MODE:
+            case Opcode::MSG_MOVE_SET_RUN_MODE:
             {
                 opcodeIndex = 22;
                 break;
             }
-            case Common::Opcode::MSG_MOVE_SET_WALK_MODE:
+            case Opcode::MSG_MOVE_SET_WALK_MODE:
             {
                 opcodeIndex = 23;
                 break;
             }
-            case Common::Opcode::CMSG_MOVE_SET_FLY:
+            case Opcode::CMSG_MOVE_SET_FLY:
             {
                 opcodeIndex = 24;
                 break;
             }
-            case Common::Opcode::CMSG_MOVE_CHNG_TRANSPORT:
+            case Opcode::CMSG_MOVE_CHNG_TRANSPORT:
             {
                 opcodeIndex = 25;
                 break;
             }
-            case Common::Opcode::MSG_MOVE_HEARTBEAT:
+            case Opcode::MSG_MOVE_HEARTBEAT:
             {
                 opcodeIndex = 26;
                 break;
@@ -241,74 +241,69 @@ namespace CharacterUtils
         return opcodeIndex;
     }
 
-    inline void BuildSpeedChangePacket(u32 accountGuid, u64 characterGuid, f32 speed, Common::Opcode opcode, Common::ByteBuffer& buffer)
+    inline void BuildSpeedChangePacket(u64 characterGuid, f32 speed, Opcode opcode, std::shared_ptr<DataStore> dataStore)
     {
-        Common::ByteBuffer speedBuffer;
-        speedBuffer.AppendGuid(characterGuid);
-        speedBuffer.Write<u32>(0);
+        dataStore->PutGuid(characterGuid);
+        dataStore->PutU32(0);
 
         /* Convert speed to a multiplicative of base speed */
-        if (opcode == Common::Opcode::SMSG_FORCE_WALK_SPEED_CHANGE)
+        if (opcode == Opcode::SMSG_FORCE_WALK_SPEED_CHANGE)
         {
             speed *= 2.5f;
         }
-        else if (opcode == Common::Opcode::SMSG_FORCE_RUN_SPEED_CHANGE)
+        else if (opcode == Opcode::SMSG_FORCE_RUN_SPEED_CHANGE)
         {
             // Write extra bit added in 2.1.0
-            speedBuffer.Write<u8>(1);
+            dataStore->PutU8(1);
             speed *= 7.1111f;
         }
-        else if (opcode == Common::Opcode::SMSG_FORCE_RUN_BACK_SPEED_CHANGE)
+        else if (opcode == Opcode::SMSG_FORCE_RUN_BACK_SPEED_CHANGE)
         {
             speed *= 4.5f;
         }
-        else if (opcode == Common::Opcode::SMSG_FORCE_SWIM_SPEED_CHANGE)
+        else if (opcode == Opcode::SMSG_FORCE_SWIM_SPEED_CHANGE)
         {
             speed *= 4.722222f;
         }
-        else if (opcode == Common::Opcode::SMSG_FORCE_SWIM_BACK_SPEED_CHANGE)
+        else if (opcode == Opcode::SMSG_FORCE_SWIM_BACK_SPEED_CHANGE)
         {
             speed *= 2.5f;
         }
-        else if (opcode == Common::Opcode::SMSG_FORCE_FLIGHT_SPEED_CHANGE)
+        else if (opcode == Opcode::SMSG_FORCE_FLIGHT_SPEED_CHANGE)
         {
             speed *= 7.1111f;
         }
-        else if (opcode == Common::Opcode::SMSG_FORCE_FLIGHT_BACK_SPEED_CHANGE)
+        else if (opcode == Opcode::SMSG_FORCE_FLIGHT_BACK_SPEED_CHANGE)
         {
             speed *= 4.5f;
         }
 
-        speedBuffer.Write<f32>(speed);
-        buffer = speedBuffer;
+        dataStore->PutF32(speed);
     }
-    inline Common::ByteBuffer BuildFlyModePacket(u32 accountGuid, u64 characterGuid)
+    inline void BuildFlyModePacket(u64 characterGuid, std::shared_ptr<DataStore> dataStore)
     {
-        Common::ByteBuffer canFlyBuffer;
-        canFlyBuffer.AppendGuid(characterGuid);
-        canFlyBuffer.Write<u32>(0); // Unk
-
-        return canFlyBuffer;
+        dataStore->PutGuid(characterGuid);
+        dataStore->PutU32(0); // Unk
     }
 
 	template <typename... Args>
-	inline Common::ByteBuffer BuildNotificationPacket(u32 accountGuid, std::string message, Args... args)
+	inline std::shared_ptr<DataStore> BuildNotificationPacket(std::string message, Args... args)
 	{
 		char str[256];
         i32 length = StringUtils::FormatString(str, sizeof(str), message.c_str(), args...);
 
-		Common::ByteBuffer buffer;
-		buffer.Write<u8>(0x00); // CHAT_MSG_SYSTEM
-		buffer.Write<i32>(0x00); // LANG_UNIVERSAL
-		buffer.Write<u64>(0);
-		buffer.Write<u32>(0); // Chat Flag (??)
+        std::shared_ptr<DataStore> buffer = DataStore::Borrow<512>();
+		buffer->PutU8(0x00); // CHAT_MSG_SYSTEM
+		buffer->PutI32(0x00); // LANG_UNIVERSAL
+		buffer->PutU64(0);
+		buffer->PutU32(0); // Chat Flag (??)
 
 		// This is based on chatType
-		buffer.Write<u64>(0); // Receiver (0) for none
+		buffer->PutU64(0); // Receiver (0) for none
 
-		buffer.Write<u32>(static_cast<u32>(length) + 1);
-		buffer.WriteString(str);
-		buffer.Write<u8>(0); // Chat Tag
+		buffer->PutU32(static_cast<u32>(length) + 1);
+		buffer->PutString(str);
+		buffer->PutU8(0); // Chat Tag
 
         return buffer;
 	}

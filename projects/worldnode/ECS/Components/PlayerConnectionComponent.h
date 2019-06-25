@@ -23,7 +23,7 @@
 */
 #pragma once
 #include <NovusTypes.h>
-#include <Networking/ByteBuffer.h>
+#include <Networking/DataStore.h>
 #include "../../Utils/CharacterUtils.h"
 #include "../../Game/ObjectGuid/ObjectGuid.h"
 #include <vector>
@@ -32,7 +32,7 @@ struct OpcodePacket
 {
     u16 opcode;
     bool handled;
-    Common::ByteBuffer data;
+    std::shared_ptr<DataStore> data;
 };
 
 class WorldConnection;
@@ -41,8 +41,8 @@ struct PlayerConnectionComponent
     template <typename... Args>
     void SendChatNotification(std::string message, Args... args)
     {
-        Common::ByteBuffer packet = CharacterUtils::BuildNotificationPacket(accountGuid, message, std::forward<Args>(args)...);
-        socket->SendPacket(packet, Common::Opcode::SMSG_MESSAGECHAT);
+        std::shared_ptr<DataStore> packet = CharacterUtils::BuildNotificationPacket(message, std::forward<Args>(args)...);
+        socket->SendPacket(packet.get(), Opcode::SMSG_MESSAGECHAT);
     }
     template <typename... Args>
     void SendConsoleNotification(std::string message, Args... args)
@@ -50,9 +50,9 @@ struct PlayerConnectionComponent
         char str[256];
         StringUtils::FormatString(str, sizeof(str), message.c_str(), args...);
 
-        Common::ByteBuffer packet;
-        packet.WriteString(str);
-        socket->SendPacket(packet, Common::Opcode::SMSG_NOTIFICATION);
+        std::shared_ptr<DataStore> packet = DataStore::Borrow<256>();
+        packet->PutString(str);
+        socket->SendPacket(packet.get(), Opcode::SMSG_NOTIFICATION);
     }
 
     u32 entityGuid;

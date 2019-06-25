@@ -25,7 +25,7 @@
 #include <NovusTypes.h>
 #include <entt.hpp>
 #include <vector>
-#include <Networking/ByteBuffer.h>
+#include <Networking/DataStore.h>
 #include "../../Message.h"
 
 #include "../Components/PlayerConnectionComponent.h"
@@ -41,7 +41,7 @@ namespace PlayerDeleteSystem
         PlayerDeleteQueueSingleton& deletePlayerQueue = registry.ctx<PlayerDeleteQueueSingleton>();
         MapSingleton& mapSingleton = registry.ctx<MapSingleton>();
 
-        Common::ByteBuffer buildPacket;
+        std::shared_ptr<DataStore> buildPacket = DataStore::Borrow<4096>();
         std::vector<u64> deletedEntities;
         UpdateData updateData;
 
@@ -70,12 +70,12 @@ namespace PlayerDeleteSystem
         if (!updateData.IsEmpty())
         {
             u16 buildOpcode = 0;
-            updateData.Build(buildPacket, buildOpcode);
+            updateData.Build(buildPacket.get(), buildOpcode);
 
             auto view = registry.view<PlayerConnectionComponent, PlayerUpdateDataComponent>();
             view.each([&buildPacket, &deletedEntities, buildOpcode](const auto, PlayerConnectionComponent& playerConnection, PlayerUpdateDataComponent& playerUpdateData)
             {
-                playerConnection.socket->SendPacket(buildPacket, buildOpcode);
+                playerConnection.socket->SendPacket(buildPacket.get(), buildOpcode);
 
                 for (u64 guid : deletedEntities)
                 {
