@@ -24,7 +24,7 @@
 #pragma once
 
 #include <NovusTypes.h>
-#include <Networking/ByteBuffer.h>
+#include "../ByteBuffer.h"
 
 class MPQFile
 {
@@ -38,5 +38,5 @@ public:
 	}
 
 	std::string Name = "";
-	Common::ByteBuffer Buffer;
+	ByteBuffer Buffer;
 };

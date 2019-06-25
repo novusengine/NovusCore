@@ -8,7 +8,7 @@ DBCReader* DBCReader::_reader;
 	3 = Invalid data / string size read
 */
 
-int DBCReader::Load(Common::ByteBuffer& buffer)
+int DBCReader::Load(ByteBuffer& buffer)
 {
 	u32 header = 0;
 	buffer.Read<u32>(header);

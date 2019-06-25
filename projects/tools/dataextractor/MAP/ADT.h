@@ -23,8 +23,8 @@
 */
 #pragma once
 #include <NovusTypes.h>
-#include <Networking/ByteBuffer.h>
 #include "ADTStructs.h"
+#include "../ByteBuffer.h"
 #include "../MPQ/MPQFile.h"
 
 #define NOVUSMAP_TOKEN 1313685840

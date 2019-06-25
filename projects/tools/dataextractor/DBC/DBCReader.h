@@ -24,7 +24,7 @@
 #pragma once
 
 #include <NovusTypes.h>
-#include <Networking/ByteBuffer.h>
+#include "../ByteBuffer.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <string>
@@ -37,7 +37,7 @@ public:
 	DBCReader() { };
 	~DBCReader() { if (_data) { delete[] _data; } }
 
-	int Load(Common::ByteBuffer& buffer);
+	int Load(ByteBuffer& buffer);
 
 	class DBCRow
 	{

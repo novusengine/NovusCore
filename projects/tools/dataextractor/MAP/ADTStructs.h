@@ -23,7 +23,7 @@
 */
 #pragma once
 #include <NovusTypes.h>
-#include <Networking/ByteBuffer.h>
+#include "../ByteBuffer.h"
 
 #define ADT_CELLS_PER_GRID    16
 #define ADT_CELL_SIZE         8
@@ -68,7 +68,7 @@ struct MVER
 	u32 size;
 	u32 version;
 
-	void Read(Common::ByteBuffer& buffer)
+	void Read(ByteBuffer& buffer)
 	{
 		buffer.Read<u32>(token);
 		buffer.Read<u32>(size);
@@ -84,7 +84,7 @@ struct MCVT
 	u32 size;
 	f32 heightMap[(ADT_CELL_SIZE + 1) * (ADT_CELL_SIZE + 1) + ADT_CELL_SIZE * ADT_CELL_SIZE];
 
-	bool Read(Common::ByteBuffer& buffer, u32 offset)
+	bool Read(ByteBuffer& buffer, u32 offset)
 	{
 		token = buffer.ReadAt<u32>(offset);
 
@@ -169,7 +169,7 @@ struct MCNK
 	u32 props;
 	u32 effectId;
 
-	bool Read(Common::ByteBuffer& buffer, u32 offset)
+	bool Read(ByteBuffer& buffer, u32 offset)
 	{
 		if (offset == 0)
 			return false;
@@ -229,7 +229,7 @@ struct MCIN
 	u32 size;
 	u32 chunks[ADT_CELLS_PER_GRID][ADT_CELLS_PER_GRID];
 
-	bool Read(Common::ByteBuffer& buffer, u32 offset)
+	bool Read(ByteBuffer& buffer, u32 offset)
 	{
 		u32 baseAddress = offset;
 		token = buffer.ReadAt<u32>(baseAddress);
@@ -267,7 +267,7 @@ struct MFBO
 	i16 max[9];
 	i16 min[9];
 
-	bool Read(Common::ByteBuffer& buffer, u32 offset)
+	bool Read(ByteBuffer& buffer, u32 offset)
 	{
 		u32 baseAddress = offset;
 		token = buffer.ReadAt<u32>(baseAddress);
@@ -311,7 +311,7 @@ struct MH2O
 		u32 layers;
 		u32 offsetRenderMask;
 
-		static LiquidHeader Read(Common::ByteBuffer& buffer, u32 offset)
+		static LiquidHeader Read(ByteBuffer& buffer, u32 offset)
 		{
 			LiquidHeader header;
 			header.offsetInformation = buffer.ReadAt<u32>(offset);
@@ -322,7 +322,7 @@ struct MH2O
 		}
 	} liquidHeaders[ADT_CELLS_PER_GRID][ADT_CELLS_PER_GRID];
 
-	bool Read(Common::ByteBuffer& buffer, u32 offset)
+	bool Read(ByteBuffer& buffer, u32 offset)
 	{
 		u32 baseAddress = offset;
 		token = buffer.ReadAt<u32>(baseAddress);
@@ -380,7 +380,7 @@ struct MHDR
 	u32 pad6;
 	u32 pad7;
 
-	void Read(Common::ByteBuffer& buffer)
+	void Read(ByteBuffer& buffer)
 	{
 		buffer.Read<u32>(token);
 		buffer.Read<u32>(size);
