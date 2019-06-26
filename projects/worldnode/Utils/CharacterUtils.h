@@ -27,6 +27,12 @@
 #include <Networking/Opcode/Opcode.h>
 #include <Utils/StringUtils.h>
 #include "../DatabaseCache/CharacterDatabaseCache.h"
+#include "../Connections/WorldConnection.h"
+
+#include "../ECS/Components/Singletons/SingletonComponent.h"
+#include "../ECS/Components/PlayerConnectionComponent.h"
+#include "../ECS/Components/PlayerUpdateDataComponent.h"
+#include "../ECS/Components/PlayerPositionComponent.h"
 
 namespace CharacterUtils
 {
@@ -307,4 +313,28 @@ namespace CharacterUtils
 
         return buffer;
 	}
+
+    inline void InvalidatePosition(entt::registry* registry, u32 entityId)
+    {
+        SingletonComponent& singletonData = registry->ctx<SingletonComponent>();
+        PlayerConnectionComponent& playerConnection = registry->get<PlayerConnectionComponent>(entityId);
+        PlayerPositionComponent& playerPositionData = registry->get<PlayerPositionComponent>(entityId);
+
+        std::shared_ptr<DataStore> buffer = DataStore::Borrow<42>();
+        buffer->PutGuid(playerConnection.characterGuid);
+        buffer->PutU32(0); // Teleport Count
+
+        // Movement
+        buffer->PutU32(0);
+        buffer->PutU16(0);
+        buffer->PutU32(static_cast<u32>(singletonData.lifeTimeInMS));
+
+        buffer->PutF32(playerPositionData.x);
+        buffer->PutF32(playerPositionData.y);
+        buffer->PutF32(playerPositionData.z);
+        buffer->PutF32(playerPositionData.orientation);
+        buffer->PutU32(0);
+
+        playerConnection.socket->SendPacket(buffer.get(), Opcode::MSG_MOVE_TELEPORT_ACK);
+    }
 }

@@ -6,7 +6,7 @@ class AngelScriptPlayer;
 // WARNING: Please consult with Pursche before using this, it's ugly and only used in scripts for unrolling a variadic template argument list
 class any {
 public:
-	enum Type { Void, Bool, I8, I16, I32, I64, U8, U16, U32, U64,  F32, F64, String = 0x400000D, Player = 0x4000011}; // The order of types matches the order found in AngelScripts asETypeIdFlags
+	enum Type { Void, Bool, I8, I16, I32, I64, U8, U16, U32, U64,  F32, F64, String = 0x400000D, Player = 0x4000010 }; // The order of types matches the order found in AngelScripts asETypeIdFlags
 	static const size_t TYPECOUNT = 15;
 	
 	static constexpr const char* GetTypeName(Type type)

@@ -1,4 +1,5 @@
 #pragma once
+#include <Math/Vector3.h>
 #include <Utils/DebugHandler.h>
 #include <Config/ConfigHandler.h>
 #include "AngelBinder.h"
@@ -22,7 +23,14 @@ public:
     }
 
 public:
-    
+    u32 GetMapId() const;
+    u32 GetAdtId() const;
+
+    Vector3 GetPosition() const;
+    void SetPosition(Vector3 pos, bool immediate);
+
+    f32 GetOrientation() const;
+    void SetOrientation(f32 orientation, bool immediate);
 
 private:
     u32 _entityId;
@@ -38,27 +46,18 @@ namespace GlobalFunctions
     }
 }
 
-inline void RegisterComponents(AB_NAMESPACE_QUALIFIER Engine* engine)
-{
-    engine->asEngine()->RegisterObjectType("PlayerPositionComponent", 0, asOBJ_REF | asOBJ_NOCOUNT);
-    engine->asEngine()->RegisterObjectProperty("PlayerPositionComponent", "const uint32 mapId", asOFFSET(PlayerPositionComponent, mapId));
-    engine->asEngine()->RegisterObjectProperty("PlayerPositionComponent", "const float x", asOFFSET(PlayerPositionComponent, x));
-    engine->asEngine()->RegisterObjectProperty("PlayerPositionComponent", "const float y", asOFFSET(PlayerPositionComponent, y));
-    engine->asEngine()->RegisterObjectProperty("PlayerPositionComponent", "const float z", asOFFSET(PlayerPositionComponent, z));
-    engine->asEngine()->RegisterObjectProperty("PlayerPositionComponent", "const float orientation", asOFFSET(PlayerPositionComponent, orientation));
-    engine->asEngine()->RegisterObjectProperty("PlayerPositionComponent", "const uint32 adtId", asOFFSET(PlayerPositionComponent, adtId));
-}
-
 inline void RegisterPlayerFunctions(AB_NAMESPACE_QUALIFIER Engine* engine)
 {
-    RegisterComponents(engine);
-
     // Register Player type
     engine->asEngine()->RegisterObjectType("Player", sizeof(AngelScriptPlayer), asOBJ_VALUE | asOBJ_POD | asGetTypeTraits<AngelScriptPlayer>());
 
     // Register functions for Player type
-    //engine->asEngine()->RegisterObjectMethod("Player", "PlayerPositionComponent@ GetPositionComponent()", asMETHOD(AngelScriptPlayer, GetPositionComponent), asCALL_THISCALL);
-    //engine->asEngine()->RegisterObjectMethod("Player", "const PlayerPositionComponent@ GetPositionComponentConst()", asMETHOD(AngelScriptPlayer, GetPositionComponentConst), asCALL_THISCALL);
+    engine->asEngine()->RegisterObjectMethod("Player", "uint32 GetMapId()", asMETHOD(AngelScriptPlayer, GetMapId), asCALL_THISCALL);
+    engine->asEngine()->RegisterObjectMethod("Player", "uint32 GetAdtId()", asMETHOD(AngelScriptPlayer, GetAdtId), asCALL_THISCALL);
+    engine->asEngine()->RegisterObjectMethod("Player", "Vector3 GetPosition()", asMETHOD(AngelScriptPlayer, GetPosition), asCALL_THISCALL);
+    engine->asEngine()->RegisterObjectMethod("Player", "void SetPosition(Vector3, bool = false)", asMETHOD(AngelScriptPlayer, SetPosition), asCALL_THISCALL);
+    engine->asEngine()->RegisterObjectMethod("Player", "float GetOrientation()", asMETHOD(AngelScriptPlayer, GetOrientation), asCALL_THISCALL);
+    engine->asEngine()->RegisterObjectMethod("Player", "void SetOrientation(float, bool = false)", asMETHOD(AngelScriptPlayer, SetOrientation), asCALL_THISCALL);
 
     // Register hooks
     engine->asEngine()->RegisterFuncdef("void PlayerCallback(Player)");

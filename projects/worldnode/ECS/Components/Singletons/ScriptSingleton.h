@@ -31,7 +31,15 @@
 
 struct ScriptSingleton
 {
-    ScriptSingleton() {}
+    ScriptSingleton() : _systemCompleteCount(0), _queueCreateLock(), _transactionQueues() 
+    {
+        _transactionQueues.push_back(moodycamel::ConcurrentQueue<std::function<void()>>());
+    }
+
+    ScriptSingleton& operator=(const ScriptSingleton& o)
+    {
+        return *this;
+    }
 
     void CompleteSystem()
     {
@@ -48,7 +56,7 @@ struct ScriptSingleton
         _systemCompleteCount = 0;
     }
     
-    void AddTransaction(std::function<void()>& transaction)
+    void AddTransaction(std::function<void()> const& transaction)
     {
         _transactionQueues[_systemCompleteCount].enqueue(transaction);
     }
@@ -66,7 +74,7 @@ struct ScriptSingleton
     }
     
 private:
-    std::atomic<u32> _systemCompleteCount = 0;
+    std::atomic<u32> _systemCompleteCount;
     std::mutex _queueCreateLock;
     std::vector<moodycamel::ConcurrentQueue<std::function<void()>>> _transactionQueues;
 };
