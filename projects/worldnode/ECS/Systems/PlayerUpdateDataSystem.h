@@ -44,6 +44,28 @@ namespace PlayerUpdateDataSystem
         ZoneScopedNC("BuildplayerFieldData", tracy::Color::Yellow2)
 
             std::shared_ptr<DataStore> buffer = DataStore::Borrow<8192>();
+        /*
+            Buffer Structure
+
+            Start Core Structure
+            - UpdateType : u8 (Specifies if the Data we are sending is a value update or a new object creation)
+            - CharacterGuid : u64 (A compact GUID of the entity we are sending this update for)
+
+            Movement Structure
+            - UpdateFlags : u16 (Specifies which components should be updated so the client can properly read the data)
+            - MovementFlags : u32 (Specifies which movementflags the entity has)
+            - ExtraMovementFlags : u16 (Specifies which movementflags the entity has)
+            - GameTime : u32 (Specifies the server's time in miliseconds)
+            - Position : Vec4 (Specifies the entity's location + orientation)
+            - FallTime : u32 (Specifies how long an entity have been falling)
+            - MovementSpeeds : 9xf32 (Specifies how fast the entity can move)
+
+            End Core Structure
+            - BlockCount : u8 (Specifies the amount of update blocks in this update packet)
+            - BlockMask : BlockCount x u32 (Specifies the update mask for the given block)
+            - FieldBuffer : DataStore (Specifies the updated EntityFields)
+        */
+
         buffer->PutU8(UPDATETYPE_VALUES);
         buffer->PutGuid(playerGuid);
 
@@ -52,17 +74,15 @@ namespace PlayerUpdateDataSystem
         UpdateMask<1344> updateMask(PLAYER_END);
 
         u32* flags = UnitUpdateFieldFlags;
-        u16 fieldNotifyFlags = UF_FLAG_DYNAMIC;
 
         {
             ZoneScopedNC("BuildplayerFieldData::Loop", tracy::Color::Yellow2)
                 for (u16 index = 0; index < PLAYER_END; index++)
                 {
-                    if (fieldNotifyFlags & flags[index] || ((flags[index] & visibleFlags) & UF_FLAG_SPECIAL_INFO) ||
+                    if (UF_FLAG_DYNAMIC & flags[index] || ((flags[index] & visibleFlags) & UF_FLAG_SPECIAL_INFO) ||
                         (playerFieldData.changesMask.IsSet(index) && (flags[index] & visibleFlags)))
                     {
                         updateMask.SetBit(index);
-                        // Increment Counter
 
                         if (index == UNIT_NPC_FLAGS)
                         {

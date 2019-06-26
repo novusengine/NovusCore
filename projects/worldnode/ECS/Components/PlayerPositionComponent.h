@@ -26,7 +26,8 @@
 #include <vector>
 
 #define MAX_MOVEMENT_OPCODES 27
-struct PlayerPositionComponent 
+#define INVALID_TIME_OFFSET std::numeric_limits<i32>().min()
+struct PlayerPositionComponent
 {
 	u32 mapId;
 	f32 x;
@@ -36,6 +37,7 @@ struct PlayerPositionComponent
 
     u32 adtId = std::numeric_limits<u16>().max(); // Invalid ADT
 
+    i32 timeOffsetToServer = INVALID_TIME_OFFSET;
     u32 lastMovementOpcodeTime[MAX_MOVEMENT_OPCODES];
     std::vector<PositionUpdateData> positionUpdateData;
 };
