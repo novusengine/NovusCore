@@ -66,7 +66,7 @@ namespace PlayerCreateSystem
                 registry.assign<PlayerUpdateDataComponent>(entity);
 
                 // Human Starting Location: -8949.950195f, -132.492996f, 83.531197f, 0.f
-                registry.assign<PlayerPositionComponent>(entity, characterInfo.mapId, characterInfo.coordinateX, characterInfo.coordinateY, characterInfo.coordinateZ, characterInfo.orientation);
+                registry.assign<PlayerPositionComponent>(entity, characterInfo.mapId, characterInfo.position, characterInfo.orientation);
                 registry.assign<PlayerSpellStorageComponent>(entity);
                 registry.assign<PlayerSkillStorageComponent>(entity);
 

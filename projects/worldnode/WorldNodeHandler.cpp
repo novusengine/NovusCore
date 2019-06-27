@@ -230,9 +230,7 @@ bool WorldNodeHandler::Update()
                     characterDatabase.cache->GetCharacterInfo(playerConnection.characterGuid, characterInfo);
 
                     characterInfo.mapId = playerPositionData.mapId;
-                    characterInfo.coordinateX = playerPositionData.x;
-                    characterInfo.coordinateY = playerPositionData.y;
-                    characterInfo.coordinateZ = playerPositionData.z;
+                    characterInfo.position = playerPositionData.position;
                     characterInfo.orientation = playerPositionData.orientation;
                     characterInfo.online = 0;
                     characterInfo.UpdateCache(playerConnection.characterGuid);

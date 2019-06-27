@@ -33,9 +33,7 @@ struct PositionUpdateData
     u32 movementFlags;
     u16 movementFlagsExtra;
     u32 gameTime;
-    f32 x;
-    f32 y;
-    f32 z;
+    Vector3 position;
     f32 orientation;
     u32 fallTime;
 };

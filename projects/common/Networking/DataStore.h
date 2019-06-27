@@ -270,7 +270,7 @@ public:
         if (!CanPerformWrite(writeSize))
             return false;
 
-        std::memcpy(&_data[WrittenData], val, writeSize);
+        std::memcpy(&_data[WrittenData], &val, writeSize);
         WrittenData += writeSize;
         return true;
     }

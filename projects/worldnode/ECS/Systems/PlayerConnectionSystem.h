@@ -110,9 +110,7 @@ namespace ConnectionSystem
 
                             characterInfo.level = clientFieldData.GetFieldValue<u32>(UNIT_FIELD_LEVEL);
                             characterInfo.mapId = playerPositionData.mapId;
-                            characterInfo.coordinateX = playerPositionData.x;
-                            characterInfo.coordinateY = playerPositionData.y;
-                            characterInfo.coordinateZ = playerPositionData.z;
+                            characterInfo.position = playerPositionData.position;
                             characterInfo.orientation = playerPositionData.orientation;
                             characterInfo.online = 0;
                             characterInfo.UpdateCache(playerConnection.characterGuid);
@@ -318,9 +316,7 @@ namespace ConnectionSystem
                             packet.handled = true;
 
                             std::shared_ptr<DataStore> objectPosition = DataStore::Borrow<12>();
-                            objectPosition->PutF32(playerPositionData.x);
-                            objectPosition->PutF32(playerPositionData.y);
-                            objectPosition->PutF32(playerPositionData.z);
+                            objectPosition->Put<Vector3>(playerPositionData.position);
 
                             playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, objectPosition, Opcode::SMSG_QUERY_OBJECT_POSITION));
                             break;
@@ -450,13 +446,11 @@ namespace ConnectionSystem
                         {
                             ZoneScopedNC("Packet::Passthrough", tracy::Color::Orange2)
 
-                                u64 guid = 0;
+                            u64 guid = 0;
                             u32 movementFlags = 0;
                             u16 movementFlagsExtra = 0;
                             u32 gameTime = 0;
-                            f32 position_x = 0;
-                            f32 position_y = 0;
-                            f32 position_z = 0;
+                            Vector3 position = Vector3::Zero;
                             f32 orientation = 0;
                             u32 fallTime = 0;
 
@@ -467,9 +461,7 @@ namespace ConnectionSystem
                             packet.data->GetU32(movementFlags);
                             packet.data->GetU16(movementFlagsExtra);
                             packet.data->GetU32(gameTime);
-                            packet.data->GetF32(position_x);
-                            packet.data->GetF32(position_y);
-                            packet.data->GetF32(position_z);
+                            packet.data->Get<Vector3>(position);
                             packet.data->GetF32(orientation);
                             packet.data->GetU32(fallTime);
 
@@ -490,14 +482,10 @@ namespace ConnectionSystem
                                 positionUpdateData.gameTime = static_cast<u32>(singleton.lifeTimeInMS);
                                 positionUpdateData.fallTime = fallTime;
 
-                                playerPositionData.x = position_x;
-                                playerPositionData.y = position_y;
-                                playerPositionData.z = position_z;
+                                playerPositionData.position = position;
                                 playerPositionData.orientation = orientation;
+                                positionUpdateData.position = position;
 
-                                positionUpdateData.x = position_x;
-                                positionUpdateData.y = position_y;
-                                positionUpdateData.z = position_z;
                                 positionUpdateData.orientation = orientation;
 
                                 playerUpdateData.positionUpdateData.push_back(positionUpdateData);
@@ -704,13 +692,13 @@ namespace ConnectionSystem
                             // Handle blink!
                             if (spellId == 1953)
                             {
-                                f32 tempHeight = playerPositionData.z;
+                                f32 tempHeight = playerPositionData.position.z;
                                 u32 dest = 20;
 
                                 for (u32 i = 0; i < 20; i++)
                                 {
-                                    f32 newPositionX = playerPositionData.x + i * Math::Cos(playerPositionData.orientation);
-                                    f32 newPositionY = playerPositionData.y + i * Math::Sin(playerPositionData.orientation);
+                                    f32 newPositionX = playerPositionData.position.x + i * Math::Cos(playerPositionData.orientation);
+                                    f32 newPositionY = playerPositionData.position.y + i * Math::Sin(playerPositionData.orientation);
                                     Vector2 newPos(newPositionX, newPositionY);
                                     f32 height = mapSingleton.maps[playerPositionData.mapId].GetHeight(newPos);
                                     f32 deltaHeight = Math::Abs(tempHeight - height);
@@ -734,8 +722,8 @@ namespace ConnectionSystem
                                 }
 
 
-                                f32 newPositionX = playerPositionData.x + dest * Math::Cos(playerPositionData.orientation);
-                                f32 newPositionY = playerPositionData.y + dest * Math::Sin(playerPositionData.orientation);
+                                f32 newPositionX = playerPositionData.position.x + dest * Math::Cos(playerPositionData.orientation);
+                                f32 newPositionY = playerPositionData.position.y + dest * Math::Sin(playerPositionData.orientation);
 
                                 /*
                                     Adding 2.0f to the final height will solve 90%+ of issues where we fall through the terrain, remove this to fully test blink's capabilities.

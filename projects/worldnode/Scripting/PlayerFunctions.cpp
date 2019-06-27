@@ -17,7 +17,7 @@ u32 AngelScriptPlayer::GetAdtId() const
 Vector3 AngelScriptPlayer::GetPosition() const
 {
     PlayerPositionComponent& positionComponent = _registry->get<PlayerPositionComponent>(_entityId);
-    return Vector3(positionComponent.x, positionComponent.y, positionComponent.z);
+    return Vector3(positionComponent.position.x, positionComponent.position.y, positionComponent.position.z);
 }
 
 void AngelScriptPlayer::SetPosition(Vector3 pos, bool immediate)
@@ -26,9 +26,9 @@ void AngelScriptPlayer::SetPosition(Vector3 pos, bool immediate)
 
     if (immediate)
     {
-        positionComponent.x = pos.x;
-        positionComponent.y = pos.y;
-        positionComponent.z = pos.z;
+        positionComponent.position.x = pos.x;
+        positionComponent.position.y = pos.y;
+        positionComponent.position.z = pos.z;
         CharacterUtils::InvalidatePosition(_registry, _entityId);
     }
     else
@@ -37,9 +37,9 @@ void AngelScriptPlayer::SetPosition(Vector3 pos, bool immediate)
         u32 entityId = _entityId;
 
         _registry->ctx<ScriptSingleton>().AddTransaction([&positionComponent, &registry, pos, entityId]() {
-            positionComponent.x = pos.x;
-            positionComponent.y = pos.y;
-            positionComponent.z = pos.z;
+            positionComponent.position.x = pos.x;
+            positionComponent.position.y = pos.y;
+            positionComponent.position.z = pos.z;
             CharacterUtils::InvalidatePosition(registry, entityId);
             });
     }

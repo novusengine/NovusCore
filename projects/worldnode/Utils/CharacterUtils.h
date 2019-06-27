@@ -314,6 +314,7 @@ namespace CharacterUtils
         return buffer;
 	}
 
+    // This function will force the clients position to match what we have in our PlayerPositionComponent, use this after serverside movement
     inline void InvalidatePosition(entt::registry* registry, u32 entityId)
     {
         SingletonComponent& singletonData = registry->ctx<SingletonComponent>();
@@ -329,9 +330,7 @@ namespace CharacterUtils
         buffer->PutU16(0);
         buffer->PutU32(static_cast<u32>(singletonData.lifeTimeInMS));
 
-        buffer->PutF32(playerPositionData.x);
-        buffer->PutF32(playerPositionData.y);
-        buffer->PutF32(playerPositionData.z);
+        buffer->Put<Vector3>(playerPositionData.position);
         buffer->PutF32(playerPositionData.orientation);
         buffer->PutU32(0);
 

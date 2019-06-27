@@ -22,7 +22,6 @@
 	SOFTWARE.
 */
 #pragma once
-#include "../NovusTypes.h"
 #include <string>
 #include "Math.h"
 
@@ -34,38 +33,38 @@ class Vector3
 public:
 	// Constructors
 	Vector3() : x(0.0f), y(0.0f), z(0.0f) {};
-    Vector3(f32 inX, f32 inY, f32 inZ) { x = inX; y = inY; z = inZ; }
-	Vector3(f32 in) { x = in; y = in; z = in; }
-	Vector3(u8 inX, u8 inY, u8 inZ) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); z = static_cast<f32>(inZ); }
-	Vector3(u8 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); z = static_cast<f32>(in); }
-	Vector3(u16 inX, u16 inY, f32 inZ) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); z = static_cast<f32>(inZ); }
-	Vector3(u16 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); z = static_cast<f32>(in); }
-	Vector3(u32 inX, u32 inY, f32 inZ) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); z = static_cast<f32>(inZ); }
-	Vector3(u32 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); z = static_cast<f32>(in); }
-	Vector3(i8 inX, i8 inY, f32 inZ) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); z = static_cast<f32>(inZ); }
-	Vector3(i8 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); z = static_cast<f32>(in); }
-	Vector3(i16 inX, i16 inY, f32 inZ) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); z = static_cast<f32>(inZ); }
-	Vector3(i16 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); z = static_cast<f32>(in); }
-	Vector3(i32 inX, i32 inY, f32 inZ) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); z = static_cast<f32>(inZ); }
-	Vector3(i32 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); z = static_cast<f32>(in); }
+    Vector3(float inX, float inY, float inZ) { x = inX; y = inY; z = inZ; }
+	Vector3(float in) { x = in; y = in; z = in; }
+	Vector3(unsigned char inX, unsigned char inY, unsigned char inZ) { x = static_cast<float>(inX); y = static_cast<float>(inY); z = static_cast<float>(inZ); }
+	Vector3(unsigned char in) { x = static_cast<float>(in); y = static_cast<float>(in); z = static_cast<float>(in); }
+	Vector3(unsigned short inX, unsigned short inY, float inZ) { x = static_cast<float>(inX); y = static_cast<float>(inY); z = static_cast<float>(inZ); }
+	Vector3(unsigned short in) { x = static_cast<float>(in); y = static_cast<float>(in); z = static_cast<float>(in); }
+	Vector3(unsigned int inX, unsigned int inY, float inZ) { x = static_cast<float>(inX); y = static_cast<float>(inY); z = static_cast<float>(inZ); }
+	Vector3(unsigned int in) { x = static_cast<float>(in); y = static_cast<float>(in); z = static_cast<float>(in); }
+	Vector3(signed char inX, signed char inY, float inZ) { x = static_cast<float>(inX); y = static_cast<float>(inY); z = static_cast<float>(inZ); }
+	Vector3(signed char in) { x = static_cast<float>(in); y = static_cast<float>(in); z = static_cast<float>(in); }
+	Vector3(signed short inX, signed short inY, float inZ) { x = static_cast<float>(inX); y = static_cast<float>(inY); z = static_cast<float>(inZ); }
+	Vector3(signed short in) { x = static_cast<float>(in); y = static_cast<float>(in); z = static_cast<float>(in); }
+	Vector3(signed int inX, signed int inY, float inZ) { x = static_cast<float>(inX); y = static_cast<float>(inY); z = static_cast<float>(inZ); }
+	Vector3(signed int in) { x = static_cast<float>(in); y = static_cast<float>(in); z = static_cast<float>(in); }
 
 	Vector3(const Vector3& in) { x = in.x; y = in.y; z = in.z; }
 	Vector3(const Vector2& in);
 
 	// Returns the length of the vector
-	inline f32 Length()
+	inline float Length()
 	{
 		return Math::Sqrt(SqrLength());
 	}
 
 	// Returns the squared length of the vector
-	inline f32 SqrLength()
+	inline float SqrLength()
 	{
 		return x * x + y * y + z * z;
 	}
 
 	// Returns the dot product of the vector and another vector
-	inline f32 Dot(const Vector3& other)
+	inline float Dot(const Vector3& other)
 	{
 		return (x * other.x) + (y * other.y) + (z * other.z);
 	}
@@ -73,7 +72,7 @@ public:
 	// Returns the vector with a length of 1, does not modify the original
 	inline Vector3 Normalize()
 	{
-		f32 length = Length();
+		float length = Length();
 		return Vector3(x / length, y / length, z / length);
 	}
 	// Returns a nicely formatted string of the vector
@@ -88,37 +87,37 @@ public:
 		return Vector3(x + other.x, y + other.y, z + other.z);
 	}
 
-	inline Vector3 operator+ (const f32 other)
+	inline Vector3 operator+ (const float other)
 	{
 		return Vector3(x + other, y + other, z + other);
 	}
 	
-	inline Vector3 operator+ (const u8 other)
+	inline Vector3 operator+ (const unsigned char other)
 	{
 		return Vector3(x + other, y + other, z + other);
 	}
 
-	inline Vector3 operator+ (const u16 other)
+	inline Vector3 operator+ (const unsigned short other)
 	{
 		return Vector3(x + other, y + other, z + other);
 	}
 
-	inline Vector3 operator+ (const u32 other)
+	inline Vector3 operator+ (const unsigned int other)
 	{
 		return Vector3(x + other, y + other, z + other);
 	}
 
-	inline Vector3 operator+ (const i8 other)
+	inline Vector3 operator+ (const signed char other)
 	{
 		return Vector3(x + other, y + other, z + other);
 	}
 
-	inline Vector3 operator+ (const i16 other)
+	inline Vector3 operator+ (const signed short other)
 	{
 		return Vector3(x + other, y + other, z + other);
 	}
 
-	inline Vector3 operator+ (const i32 other)
+	inline Vector3 operator+ (const signed int other)
 	{
 		return Vector3(x + other, y + other, z + other);
 	}
@@ -128,37 +127,37 @@ public:
 		return Vector3(x - other.x, y - other.y, z - other.z);
 	}
 
-	inline Vector3 operator- (const f32 other)
+	inline Vector3 operator- (const float other)
 	{
 		return Vector3(x - other, y - other, z - other);
 	}
 
-	inline Vector3 operator- (const u8 other)
+	inline Vector3 operator- (const unsigned char other)
 	{
 		return Vector3(x - other, y - other, z - other);
 	}
 
-	inline Vector3 operator- (const u16 other)
+	inline Vector3 operator- (const unsigned short other)
 	{
 		return Vector3(x - other, y - other, z - other);
 	}
 
-	inline Vector3 operator- (const u32 other)
+	inline Vector3 operator- (const unsigned int other)
 	{
 		return Vector3(x - other, y - other, z - other);
 	}
 
-	inline Vector3 operator- (const i8 other)
+	inline Vector3 operator- (const signed char other)
 	{
 		return Vector3(x - other, y - other, z - other);
 	}
 
-	inline Vector3 operator- (const i16 other)
+	inline Vector3 operator- (const signed short other)
 	{
 		return Vector3(x - other, y - other, z - other);
 	}
 
-	inline Vector3 operator- (const i32 other)
+	inline Vector3 operator- (const signed int other)
 	{
 		return Vector3(x - other, y - other, z - other);
 	}
@@ -168,37 +167,37 @@ public:
 		return Vector3(x * other.x, y * other.y, z * other.z);
 	}
 
-	inline Vector3 operator* (const f32 other)
+	inline Vector3 operator* (const float other)
 	{
 		return Vector3(x * other, y * other, z * other);
 	}
 
-	inline Vector3 operator* (const u8 other)
+	inline Vector3 operator* (const unsigned char other)
 	{
 		return Vector3(x * other, y * other, z * other);
 	}
 
-	inline Vector3 operator* (const u16 other)
+	inline Vector3 operator* (const unsigned short other)
 	{
 		return Vector3(x * other, y * other, z * other);
 	}
 
-	inline Vector3 operator* (const u32 other)
+	inline Vector3 operator* (const unsigned int other)
 	{
 		return Vector3(x * other, y * other, z * other);
 	}
 
-	inline Vector3 operator* (const i8 other)
+	inline Vector3 operator* (const signed char other)
 	{
 		return Vector3(x * other, y * other, z * other);
 	}
 
-	inline Vector3 operator* (const i16 other)
+	inline Vector3 operator* (const signed short other)
 	{
 		return Vector3(x * other, y * other, z * other);
 	}
 
-	inline Vector3 operator* (const i32 other)
+	inline Vector3 operator* (const signed int other)
 	{
 		return Vector3(x * other, y * other, z * other);
 	}
@@ -208,37 +207,37 @@ public:
 		return Vector3(x / other.x, y / other.y, z / other.z);
 	}
 
-	inline Vector3 operator/ (const f32 other)
+	inline Vector3 operator/ (const float other)
 	{
 		return Vector3(x / other, y / other, z / other);
 	}
 
-	inline Vector3 operator/ (const u8 other)
+	inline Vector3 operator/ (const unsigned char other)
 	{
 		return Vector3(x / other, y / other, z / other);
 	}
 
-	inline Vector3 operator/ (const u16 other)
+	inline Vector3 operator/ (const unsigned short other)
 	{
 		return Vector3(x / other, y / other, z / other);
 	}
 
-	inline Vector3 operator/ (const u32 other)
+	inline Vector3 operator/ (const unsigned int other)
 	{
 		return Vector3(x / other, y / other, z / other);
 	}
 
-	inline Vector3 operator/ (const i8 other)
+	inline Vector3 operator/ (const signed char other)
 	{
 		return Vector3(x / other, y / other, z / other);
 	}
 
-	inline Vector3 operator/ (const i16 other)
+	inline Vector3 operator/ (const signed short other)
 	{
 		return Vector3(x / other, y / other, z / other);
 	}
 
-	inline Vector3 operator/ (const i32 other)
+	inline Vector3 operator/ (const signed int other)
 	{
 		return Vector3(x / other, y / other, z / other);
 	}
@@ -248,39 +247,39 @@ public:
 		return Vector3(Math::Modulus(x, other.x), Math::Modulus(y,other.y), Math::Modulus(z, other.z));
 	}
 
-	inline Vector3 operator% (const f32 other)
+	inline Vector3 operator% (const float other)
 	{
 		return Vector3(Math::Modulus(x, other), Math::Modulus(y, other), Math::Modulus(z, other));
 	}
 
-	inline Vector3 operator% (const u8 other)
+	inline Vector3 operator% (const unsigned char other)
 	{
-		return Vector3(Math::Modulus(x, static_cast<f32>(other)), Math::Modulus(y, static_cast<f32>(other)), Math::Modulus(z, static_cast<f32>(other)));
+		return Vector3(Math::Modulus(x, static_cast<float>(other)), Math::Modulus(y, static_cast<float>(other)), Math::Modulus(z, static_cast<float>(other)));
 	}
 
-	inline Vector3 operator% (const u16 other)
+	inline Vector3 operator% (const unsigned short other)
 	{
-		return Vector3(Math::Modulus(x, static_cast<f32>(other)), Math::Modulus(y, static_cast<f32>(other)), Math::Modulus(z, static_cast<f32>(other)));
+		return Vector3(Math::Modulus(x, static_cast<float>(other)), Math::Modulus(y, static_cast<float>(other)), Math::Modulus(z, static_cast<float>(other)));
 	}
 
-	inline Vector3 operator% (const u32 other)
+	inline Vector3 operator% (const unsigned int other)
 	{
-		return Vector3(Math::Modulus(x, static_cast<f32>(other)), Math::Modulus(y, static_cast<f32>(other)), Math::Modulus(z, static_cast<f32>(other)));
+		return Vector3(Math::Modulus(x, static_cast<float>(other)), Math::Modulus(y, static_cast<float>(other)), Math::Modulus(z, static_cast<float>(other)));
 	}
 
-	inline Vector3 operator% (const i8 other)
+	inline Vector3 operator% (const signed char other)
 	{
-		return Vector3(Math::Modulus(x, static_cast<f32>(other)), Math::Modulus(y, static_cast<f32>(other)), Math::Modulus(z, static_cast<f32>(other)));
+		return Vector3(Math::Modulus(x, static_cast<float>(other)), Math::Modulus(y, static_cast<float>(other)), Math::Modulus(z, static_cast<float>(other)));
 	}
 
-	inline Vector3 operator% (const i16 other)
+	inline Vector3 operator% (const signed short other)
 	{
-		return Vector3(Math::Modulus(x, static_cast<f32>(other)), Math::Modulus(y, static_cast<f32>(other)), Math::Modulus(z, static_cast<f32>(other)));
+		return Vector3(Math::Modulus(x, static_cast<float>(other)), Math::Modulus(y, static_cast<float>(other)), Math::Modulus(z, static_cast<float>(other)));
 	}
 
-	inline Vector3 operator% (const i32 other)
+	inline Vector3 operator% (const signed int other)
 	{
-		return Vector3(Math::Modulus(x, static_cast<f32>(other)), Math::Modulus(y, static_cast<f32>(other)), Math::Modulus(z, static_cast<f32>(other)));
+		return Vector3(Math::Modulus(x, static_cast<float>(other)), Math::Modulus(y, static_cast<float>(other)), Math::Modulus(z, static_cast<float>(other)));
 	}
 
     // opAssign
@@ -292,7 +291,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator+= (const f32 other)
+    inline Vector3& operator+= (const float other)
     {
         x += other;
         y += other;
@@ -300,7 +299,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator+= (const u8 other)
+    inline Vector3& operator+= (const unsigned char other)
     {
         x += other;
         y += other;
@@ -308,7 +307,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator+= (const u16 other)
+    inline Vector3& operator+= (const unsigned short other)
     {
         x += other;
         y += other;
@@ -316,7 +315,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator+= (const u32 other)
+    inline Vector3& operator+= (const unsigned int other)
     {
         x += other;
         y += other;
@@ -324,7 +323,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator+= (const i8 other)
+    inline Vector3& operator+= (const signed char other)
     {
         x += other;
         y += other;
@@ -332,7 +331,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator+= (const i16 other)
+    inline Vector3& operator+= (const signed short other)
     {
         x += other;
         y += other;
@@ -340,7 +339,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator+= (const i32 other)
+    inline Vector3& operator+= (const signed int other)
     {
         x += other;
         y += other;
@@ -356,7 +355,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator-= (const f32 other)
+    inline Vector3& operator-= (const float other)
     {
         x -= other;
         y -= other;
@@ -364,7 +363,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator-= (const u8 other)
+    inline Vector3& operator-= (const unsigned char other)
     {
         x -= other;
         y -= other;
@@ -372,7 +371,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator-= (const u16 other)
+    inline Vector3& operator-= (const unsigned short other)
     {
         x -= other;
         y -= other;
@@ -380,7 +379,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator-= (const u32 other)
+    inline Vector3& operator-= (const unsigned int other)
     {
         x -= other;
         y -= other;
@@ -388,7 +387,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator-= (const i8 other)
+    inline Vector3& operator-= (const signed char other)
     {
         x -= other;
         y -= other;
@@ -396,7 +395,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator-= (const i16 other)
+    inline Vector3& operator-= (const signed short other)
     {
         x -= other;
         y -= other;
@@ -404,7 +403,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator-= (const i32 other)
+    inline Vector3& operator-= (const signed int other)
     {
         x -= other;
         y -= other;
@@ -420,7 +419,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator*= (const f32 other)
+    inline Vector3& operator*= (const float other)
     {
         x *= other;
         y *= other;
@@ -428,7 +427,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator*= (const u8 other)
+    inline Vector3& operator*= (const unsigned char other)
     {
         x *= other;
         y *= other;
@@ -436,7 +435,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator*= (const u16 other)
+    inline Vector3& operator*= (const unsigned short other)
     {
         x *= other;
         y *= other;
@@ -444,7 +443,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator*= (const u32 other)
+    inline Vector3& operator*= (const unsigned int other)
     {
         x *= other;
         y *= other;
@@ -452,7 +451,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator*= (const i8 other)
+    inline Vector3& operator*= (const signed char other)
     {
         x *= other;
         y *= other;
@@ -460,7 +459,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator*= (const i16 other)
+    inline Vector3& operator*= (const signed short other)
     {
         x *= other;
         y *= other;
@@ -468,7 +467,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator*= (const i32 other)
+    inline Vector3& operator*= (const signed int other)
     {
         x *= other;
         y *= other;
@@ -484,7 +483,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator/= (const f32 other)
+    inline Vector3& operator/= (const float other)
     {
         x /= other;
         y /= other;
@@ -492,7 +491,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator/= (const u8 other)
+    inline Vector3& operator/= (const unsigned char other)
     {
         x /= other;
         y /= other;
@@ -500,7 +499,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator/= (const u16 other)
+    inline Vector3& operator/= (const unsigned short other)
     {
         x /= other;
         y /= other;
@@ -508,7 +507,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator/= (const u32 other)
+    inline Vector3& operator/= (const unsigned int other)
     {
         x /= other;
         y /= other;
@@ -516,7 +515,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator/= (const i8 other)
+    inline Vector3& operator/= (const signed char other)
     {
         x /= other;
         y /= other;
@@ -524,7 +523,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator/= (const i16 other)
+    inline Vector3& operator/= (const signed short other)
     {
         x /= other;
         y /= other;
@@ -532,7 +531,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator/= (const i32 other)
+    inline Vector3& operator/= (const signed int other)
     {
         x /= other;
         y /= other;
@@ -547,9 +546,9 @@ public:
     }
 
 public:
-	f32 x = 0.0f;
-	f32 y = 0.0f;
-	f32 z = 0.0f;
+	float x = 0.0f;
+	float y = 0.0f;
+	float z = 0.0f;
 
 public:
 	static Vector3 One;

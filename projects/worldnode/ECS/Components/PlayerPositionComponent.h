@@ -23,6 +23,7 @@
     SOFTWARE.
 */
 #include <NovusTypes.h>
+#include <Math/Vector3.h>
 #include <vector>
 
 #define MAX_MOVEMENT_OPCODES 27
@@ -30,10 +31,8 @@
 struct PlayerPositionComponent
 {
 	u32 mapId;
-	f32 x;
-	f32 y;
-	f32 z;
-	f32 orientation;
+    Vector3 position;
+    f32 orientation;
 
     u32 adtId = std::numeric_limits<u16>().max(); // Invalid ADT
 

@@ -78,9 +78,7 @@ namespace PlayerCreateDataSystem
         buffer->PutU16(0x00); // Extra MovementFlags
         buffer->PutU32(lifeTimeInMS); // Game Time
         // TaggedPosition<Position::XYZO>(pos);
-        buffer->PutF32(position.x);
-        buffer->PutF32(position.y);
-        buffer->PutF32(position.z);
+        buffer->Put<Vector3>(position.position);
         buffer->PutF32(position.orientation);
 
         // FallTime

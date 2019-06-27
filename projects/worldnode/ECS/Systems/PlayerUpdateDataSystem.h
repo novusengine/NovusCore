@@ -286,9 +286,7 @@ namespace PlayerUpdateDataSystem
                             movementPacket.data->PutU32(positionData.movementFlags);
                             movementPacket.data->PutU16(positionData.movementFlagsExtra);
                             movementPacket.data->PutU32(positionData.gameTime);
-                            movementPacket.data->PutF32(positionData.x);
-                            movementPacket.data->PutF32(positionData.y);
-                            movementPacket.data->PutF32(positionData.z);
+                            movementPacket.data->Put<Vector3>(positionData.position);
                             movementPacket.data->PutF32(positionData.orientation);
                             movementPacket.data->PutU32(positionData.fallTime);
 
@@ -296,7 +294,7 @@ namespace PlayerUpdateDataSystem
                         }
 
                     // Figure out what ADT the player is in
-                    Vector2 position = Vector2(clientPositionData.x, clientPositionData.y);
+                    Vector2 position = Vector2(clientPositionData.position.x, clientPositionData.position.y);
                     u32 mapId = clientPositionData.mapId;
 
                     u16 adtId;

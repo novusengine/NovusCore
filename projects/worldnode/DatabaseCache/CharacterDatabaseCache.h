@@ -19,9 +19,9 @@ struct CharacterInfo
         level = data.level;
         mapId = data.mapId;
         zoneId = data.zoneId;
-        coordinateX = data.coordinateX;
-        coordinateY = data.coordinateY;
-        coordinateZ = data.coordinateZ;
+        position.x = data.position.x;
+        position.y = data.position.y;
+        position.z = data.position.z;
         orientation = data.orientation;
         online = data.online;
         _cache = data._cache;
@@ -36,9 +36,7 @@ struct CharacterInfo
     u8 level;
     u32 mapId;
     u32 zoneId;
-    f32 coordinateX;
-    f32 coordinateY;
-    f32 coordinateZ;
+    Vector3 position;
     f32 orientation;
     u8 online;
 

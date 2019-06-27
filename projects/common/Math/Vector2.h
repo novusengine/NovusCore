@@ -3,7 +3,7 @@
 
 	Copyright (c) 2018-2019 NovusCore
 
-	Permission is hereby granted, free of charge, to any person obtaining a copy
+	Permission is hereby granted, free of unsigned charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
 	in the Software without restriction, including without limitation the rights
 	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
@@ -22,7 +22,6 @@
 	SOFTWARE.
 */
 #pragma once
-#include "../NovusTypes.h"
 #include <string>
 #include "Math.h"
 
@@ -34,39 +33,39 @@ class Vector2
 public:
 	// Constructors
 	Vector2() {};
-	Vector2(f32 inX, f32 inY) { x = inX; y = inY; }
-	Vector2(f32 in) { x = in; y = in; }
-	Vector2(u8 inX, u8 inY) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); }
-	Vector2(u8 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); }
-	Vector2(u16 inX, u16 inY) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); }
-	Vector2(u16 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); }
-	Vector2(u32 inX, u32 inY) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); }
-	Vector2(u32 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); }
-	Vector2(i8 inX, i8 inY) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); }
-	Vector2(i8 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); }
-	Vector2(i16 inX, i16 inY) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); }
-	Vector2(i16 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); }
-	Vector2(i32 inX, i32 inY) { x = static_cast<f32>(inX); y = static_cast<f32>(inY); }
-	Vector2(i32 in) { x = static_cast<f32>(in); y = static_cast<f32>(in); }
+	Vector2(float inX, float inY) { x = inX; y = inY; }
+	Vector2(float in) { x = in; y = in; }
+	Vector2(unsigned char inX, unsigned char inY) { x = static_cast<float>(inX); y = static_cast<float>(inY); }
+	Vector2(unsigned char in) { x = static_cast<float>(in); y = static_cast<float>(in); }
+	Vector2(unsigned short inX, unsigned short inY) { x = static_cast<float>(inX); y = static_cast<float>(inY); }
+	Vector2(unsigned short in) { x = static_cast<float>(in); y = static_cast<float>(in); }
+	Vector2(unsigned int inX, unsigned int inY) { x = static_cast<float>(inX); y = static_cast<float>(inY); }
+	Vector2(unsigned int in) { x = static_cast<float>(in); y = static_cast<float>(in); }
+	Vector2(signed char inX, signed char inY) { x = static_cast<float>(inX); y = static_cast<float>(inY); }
+	Vector2(signed char in) { x = static_cast<float>(in); y = static_cast<float>(in); }
+	Vector2(signed short inX, signed short inY) { x = static_cast<float>(inX); y = static_cast<float>(inY); }
+	Vector2(signed short in) { x = static_cast<float>(in); y = static_cast<float>(in); }
+	Vector2(signed int inX, signed int inY) { x = static_cast<float>(inX); y = static_cast<float>(inY); }
+	Vector2(signed int in) { x = static_cast<float>(in); y = static_cast<float>(in); }
 
 	//Vector2(Vector2& in) { x = in.x; y = in.y; }
     Vector2(const Vector2& in) { x = in.x; y = in.y; }
 	Vector2(const Vector3& in);
 
 	// Returns the length of the vector
-	inline f32 Length()
+	inline float Length()
 	{
 		return Math::Sqrt(SqrLength());
 	}
 
 	// Returns the squared length of the vector
-	inline f32 SqrLength()
+	inline float SqrLength()
 	{
 		return x * x + y * y;
 	}
 
 	// Returns the dot product of the vector and another vector
-	inline f32 Dot(const Vector2& other)
+	inline float Dot(const Vector2& other)
 	{
 		return (x * other.x) + (y * other.y);
 	}
@@ -74,7 +73,7 @@ public:
 	// Returns the vector with a length of 1, does not modify the original
 	inline Vector2 Normalize()
 	{
-		f32 length = Length();
+		float length = Length();
 		return Vector2(x / length, y / length);
 	}
 
@@ -90,37 +89,37 @@ public:
 		return Vector2(x + other.x, y + other.y);
 	}
 
-	inline Vector2 operator+ (const f32 other)
+	inline Vector2 operator+ (const float other)
 	{
 		return Vector2(x + other, y + other);
 	}
 
-	inline Vector2 operator+ (const u8 other)
+	inline Vector2 operator+ (const unsigned char other)
 	{
 		return Vector2(x + other, y + other);
 	}
 
-	inline Vector2 operator+ (const u16 other)
+	inline Vector2 operator+ (const unsigned short other)
 	{
 		return Vector2(x + other, y + other);
 	}
 
-	inline Vector2 operator+ (const u32 other)
+	inline Vector2 operator+ (const unsigned int other)
 	{
 		return Vector2(x + other, y + other);
 	}
 
-	inline Vector2 operator+ (const i8 other)
+	inline Vector2 operator+ (const signed char other)
 	{
 		return Vector2(x + other, y + other);
 	}
 
-	inline Vector2 operator+ (const i16 other)
+	inline Vector2 operator+ (const signed short other)
 	{
 		return Vector2(x + other, y + other);
 	}
 
-	inline Vector2 operator+ (const i32 other)
+	inline Vector2 operator+ (const signed int other)
 	{
 		return Vector2(x + other, y + other);
 	}
@@ -130,37 +129,37 @@ public:
 		return Vector2(x - other.x, y - other.y);
 	}
 
-	inline Vector2 operator- (const f32 other)
+	inline Vector2 operator- (const float other)
 	{
 		return Vector2(x - other, y - other);
 	}
 
-	inline Vector2 operator- (const u8 other)
+	inline Vector2 operator- (const unsigned char other)
 	{
 		return Vector2(x - other, y - other);
 	}
 
-	inline Vector2 operator- (const u16 other)
+	inline Vector2 operator- (const unsigned short other)
 	{
 		return Vector2(x - other, y - other);
 	}
 
-	inline Vector2 operator- (const u32 other)
+	inline Vector2 operator- (const unsigned int other)
 	{
 		return Vector2(x - other, y - other);
 	}
 
-	inline Vector2 operator- (const i8 other)
+	inline Vector2 operator- (const signed char other)
 	{
 		return Vector2(x - other, y - other);
 	}
 
-	inline Vector2 operator- (const i16 other)
+	inline Vector2 operator- (const signed short other)
 	{
 		return Vector2(x - other, y - other);
 	}
 
-	inline Vector2 operator- (const i32 other)
+	inline Vector2 operator- (const signed int other)
 	{
 		return Vector2(x - other, y - other);
 	}
@@ -170,37 +169,37 @@ public:
 		return Vector2(x * other.x, y * other.y);
 	}
 
-	inline Vector2 operator* (const f32 other)
+	inline Vector2 operator* (const float other)
 	{
 		return Vector2(x * other, y * other);
 	}
 
-	inline Vector2 operator* (const u8 other)
+	inline Vector2 operator* (const unsigned char other)
 	{
 		return Vector2(x * other, y * other);
 	}
 
-	inline Vector2 operator* (const u16 other)
+	inline Vector2 operator* (const unsigned short other)
 	{
 		return Vector2(x * other, y * other);
 	}
 
-	inline Vector2 operator* (const u32 other)
+	inline Vector2 operator* (const unsigned int other)
 	{
 		return Vector2(x * other, y * other);
 	}
 
-	inline Vector2 operator* (const i8 other)
+	inline Vector2 operator* (const signed char other)
 	{
 		return Vector2(x * other, y * other);
 	}
 
-	inline Vector2 operator* (const i16 other)
+	inline Vector2 operator* (const signed short other)
 	{
 		return Vector2(x * other, y * other);
 	}
 
-	inline Vector2 operator* (const i32 other)
+	inline Vector2 operator* (const signed int other)
 	{
 		return Vector2(x * other, y * other);
 	}
@@ -210,37 +209,37 @@ public:
 		return Vector2(x / other.x, y / other.y);
 	}
 
-	inline Vector2 operator/ (const f32 other)
+	inline Vector2 operator/ (const float other)
 	{
 		return Vector2(x / other, y / other);
 	}
 
-	inline Vector2 operator/ (const u8 other)
+	inline Vector2 operator/ (const unsigned char other)
 	{
 		return Vector2(x / other, y / other);
 	}
 
-	inline Vector2 operator/ (const u16 other)
+	inline Vector2 operator/ (const unsigned short other)
 	{
 		return Vector2(x / other, y / other);
 	}
 
-	inline Vector2 operator/ (const u32 other)
+	inline Vector2 operator/ (const unsigned int other)
 	{
 		return Vector2(x / other, y / other);
 	}
 
-	inline Vector2 operator/ (const i8 other)
+	inline Vector2 operator/ (const signed char other)
 	{
 		return Vector2(x / other, y / other);
 	}
 
-	inline Vector2 operator/ (const i16 other)
+	inline Vector2 operator/ (const signed short other)
 	{
 		return Vector2(x / other, y / other);
 	}
 
-	inline Vector2 operator/ (const i32 other)
+	inline Vector2 operator/ (const signed int other)
 	{
 		return Vector2(x / other, y / other);
 	}
@@ -250,39 +249,39 @@ public:
 		return Vector2(Math::Modulus(x, other.x), Math::Modulus(y, other.y));
 	}
 
-	inline Vector2 operator% (const f32 other)
+	inline Vector2 operator% (const float other)
 	{
 		return Vector2(Math::Modulus(x, other), Math::Modulus(y, other));
 	}
 
-	inline Vector2 operator% (const u8 other)
+	inline Vector2 operator% (const unsigned char other)
 	{
-		return Vector2(Math::Modulus(x, static_cast<f32>(other)), Math::Modulus(y, static_cast<f32>(other)));
+		return Vector2(Math::Modulus(x, static_cast<float>(other)), Math::Modulus(y, static_cast<float>(other)));
 	}
 
-	inline Vector2 operator% (const u16 other)
+	inline Vector2 operator% (const unsigned short other)
 	{
-		return Vector2(Math::Modulus(x, static_cast<f32>(other)), Math::Modulus(y, static_cast<f32>(other)));
+		return Vector2(Math::Modulus(x, static_cast<float>(other)), Math::Modulus(y, static_cast<float>(other)));
 	}
 
-	inline Vector2 operator% (const u32 other)
+	inline Vector2 operator% (const unsigned int other)
 	{
-		return Vector2(Math::Modulus(x, static_cast<f32>(other)), Math::Modulus(y, static_cast<f32>(other)));
+		return Vector2(Math::Modulus(x, static_cast<float>(other)), Math::Modulus(y, static_cast<float>(other)));
 	}
 
-	inline Vector2 operator% (const i8 other)
+	inline Vector2 operator% (const signed char other)
 	{
-		return Vector2(Math::Modulus(x, static_cast<f32>(other)), Math::Modulus(y, static_cast<f32>(other)));
+		return Vector2(Math::Modulus(x, static_cast<float>(other)), Math::Modulus(y, static_cast<float>(other)));
 	}
 
-	inline Vector2 operator% (const i16 other)
+	inline Vector2 operator% (const signed short other)
 	{
-		return Vector2(Math::Modulus(x, static_cast<f32>(other)), Math::Modulus(y, static_cast<f32>(other)));
+		return Vector2(Math::Modulus(x, static_cast<float>(other)), Math::Modulus(y, static_cast<float>(other)));
 	}
 
-	inline Vector2 operator% (const i32 other)
+	inline Vector2 operator% (const signed int other)
 	{
-		return Vector2(Math::Modulus(x, static_cast<f32>(other)), Math::Modulus(y, static_cast<f32>(other)));
+		return Vector2(Math::Modulus(x, static_cast<float>(other)), Math::Modulus(y, static_cast<float>(other)));
 	}
 
     // opAssign
@@ -293,49 +292,49 @@ public:
         return *this;
     }
 
-    inline Vector2& operator+= (const f32 other)
+    inline Vector2& operator+= (const float other)
     {
         x += other;
         y += other;
         return *this;
     }
 
-    inline Vector2& operator+= (const u8 other)
+    inline Vector2& operator+= (const unsigned char other)
     {
         x += other;
         y += other;
         return *this;
     }
 
-    inline Vector2& operator+= (const u16 other)
+    inline Vector2& operator+= (const unsigned short other)
     {
         x += other;
         y += other;
         return *this;
     }
 
-    inline Vector2& operator+= (const u32 other)
+    inline Vector2& operator+= (const unsigned int other)
     {
         x += other;
         y += other;
         return *this;
     }
 
-    inline Vector2& operator+= (const i8 other)
+    inline Vector2& operator+= (const signed char other)
     {
         x += other;
         y += other;
         return *this;
     }
 
-    inline Vector2& operator+= (const i16 other)
+    inline Vector2& operator+= (const signed short other)
     {
         x += other;
         y += other;
         return *this;
     }
 
-    inline Vector2& operator+= (const i32 other)
+    inline Vector2& operator+= (const signed int other)
     {
         x += other;
         y += other;
@@ -349,49 +348,49 @@ public:
         return *this;
     }
 
-    inline Vector2& operator-= (const f32 other)
+    inline Vector2& operator-= (const float other)
     {
         x -= other;
         y -= other;
         return *this;
     }
 
-    inline Vector2& operator-= (const u8 other)
+    inline Vector2& operator-= (const unsigned char other)
     {
         x -= other;
         y -= other;
         return *this;
     }
 
-    inline Vector2& operator-= (const u16 other)
+    inline Vector2& operator-= (const unsigned short other)
     {
         x -= other;
         y -= other;
         return *this;
     }
 
-    inline Vector2& operator-= (const u32 other)
+    inline Vector2& operator-= (const unsigned int other)
     {
         x -= other;
         y -= other;
         return *this;
     }
 
-    inline Vector2& operator-= (const i8 other)
+    inline Vector2& operator-= (const signed char other)
     {
         x -= other;
         y -= other;
         return *this;
     }
 
-    inline Vector2& operator-= (const i16 other)
+    inline Vector2& operator-= (const signed short other)
     {
         x -= other;
         y -= other;
         return *this;
     }
 
-    inline Vector2& operator-= (const i32 other)
+    inline Vector2& operator-= (const signed int other)
     {
         x -= other;
         y -= other;
@@ -405,49 +404,49 @@ public:
         return *this;
     }
 
-    inline Vector2& operator*= (const f32 other)
+    inline Vector2& operator*= (const float other)
     {
         x *= other;
         y *= other;
         return *this;
     }
 
-    inline Vector2& operator*= (const u8 other)
+    inline Vector2& operator*= (const unsigned char other)
     {
         x *= other;
         y *= other;
         return *this;
     }
 
-    inline Vector2& operator*= (const u16 other)
+    inline Vector2& operator*= (const unsigned short other)
     {
         x *= other;
         y *= other;
         return *this;
     }
 
-    inline Vector2& operator*= (const u32 other)
+    inline Vector2& operator*= (const unsigned int other)
     {
         x *= other;
         y *= other;
         return *this;
     }
 
-    inline Vector2& operator*= (const i8 other)
+    inline Vector2& operator*= (const signed char other)
     {
         x *= other;
         y *= other;
         return *this;
     }
 
-    inline Vector2& operator*= (const i16 other)
+    inline Vector2& operator*= (const signed short other)
     {
         x *= other;
         y *= other;
         return *this;
     }
 
-    inline Vector2& operator*= (const i32 other)
+    inline Vector2& operator*= (const signed int other)
     {
         x *= other;
         y *= other;
@@ -461,49 +460,49 @@ public:
         return *this;
     }
 
-    inline Vector2& operator/= (const f32 other)
+    inline Vector2& operator/= (const float other)
     {
         x /= other;
         y /= other;
         return *this;
     }
 
-    inline Vector2& operator/= (const u8 other)
+    inline Vector2& operator/= (const unsigned char other)
     {
         x /= other;
         y /= other;
         return *this;
     }
 
-    inline Vector2& operator/= (const u16 other)
+    inline Vector2& operator/= (const unsigned short other)
     {
         x /= other;
         y /= other;
         return *this;
     }
 
-    inline Vector2& operator/= (const u32 other)
+    inline Vector2& operator/= (const unsigned int other)
     {
         x /= other;
         y /= other;
         return *this;
     }
 
-    inline Vector2& operator/= (const i8 other)
+    inline Vector2& operator/= (const signed char other)
     {
         x /= other;
         y /= other;
         return *this;
     }
 
-    inline Vector2& operator/= (const i16 other)
+    inline Vector2& operator/= (const signed short other)
     {
         x /= other;
         y /= other;
         return *this;
     }
 
-    inline Vector2& operator/= (const i32 other)
+    inline Vector2& operator/= (const signed int other)
     {
         x /= other;
         y /= other;
@@ -517,8 +516,8 @@ public:
     }
 
 public:
-	f32 x = 0.0f;
-	f32 y = 0.0f;
+	float x = 0.0f;
+	float y = 0.0f;
 
 public:
 	static Vector2 One;

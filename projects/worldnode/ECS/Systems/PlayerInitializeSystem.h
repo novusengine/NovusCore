@@ -59,9 +59,7 @@ namespace PlayerInitializeSystem
             /* SMSG_LOGIN_VERIFY_WORLD */
             std::shared_ptr<DataStore> initializeBuffer = DataStore::Borrow<1024>();
             initializeBuffer->PutU32(playerFPositionData.mapId);
-            initializeBuffer->PutF32(playerFPositionData.x);
-            initializeBuffer->PutF32(playerFPositionData.y);
-            initializeBuffer->PutF32(playerFPositionData.z);
+            initializeBuffer->Put<Vector3>(playerFPositionData.position);
             initializeBuffer->PutF32(playerFPositionData.orientation);
             playerInitializeData.socket->SendPacket(initializeBuffer.get(), Opcode::SMSG_LOGIN_VERIFY_WORLD);
 

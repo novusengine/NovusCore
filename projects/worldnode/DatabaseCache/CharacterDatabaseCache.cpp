@@ -34,9 +34,9 @@ void CharacterDatabaseCache::Load()
             newCharacterInfo.level = row[6].GetU8();
             newCharacterInfo.mapId = row[7].GetU32();
             newCharacterInfo.zoneId = row[8].GetU32();
-            newCharacterInfo.coordinateX = row[9].GetF32();
-            newCharacterInfo.coordinateY = row[10].GetF32();
-            newCharacterInfo.coordinateZ = row[11].GetF32();
+            newCharacterInfo.position.x = row[9].GetF32();
+            newCharacterInfo.position.y = row[10].GetF32();
+            newCharacterInfo.position.z = row[11].GetF32();
             newCharacterInfo.orientation = row[12].GetF32();
             newCharacterInfo.online = row[13].GetU8();
 
@@ -138,9 +138,9 @@ void CharacterDatabaseCache::Save()
             PreparedStatement characterBaseData("UPDATE characters set mapId={u}, zoneId={u}, coordinate_x={f}, coordinate_y={f}, coordinate_z={f}, orientation={f} WHERE guid={u};");
             characterBaseData.Bind(characterInfo.mapId);
             characterBaseData.Bind(characterInfo.zoneId);
-            characterBaseData.Bind(characterInfo.coordinateX);
-            characterBaseData.Bind(characterInfo.coordinateY);
-            characterBaseData.Bind(characterInfo.coordinateZ);
+            characterBaseData.Bind(characterInfo.position.x);
+            characterBaseData.Bind(characterInfo.position.y);
+            characterBaseData.Bind(characterInfo.position.z);
             characterBaseData.Bind(characterInfo.orientation);
             characterBaseData.Bind(characterInfo.guid);
 
@@ -248,9 +248,9 @@ void CharacterDatabaseCache::SaveCharacter(u64 characterGuid)
         characterBaseData.Bind(characterInfo.level);
         characterBaseData.Bind(characterInfo.mapId);
         characterBaseData.Bind(characterInfo.zoneId);
-        characterBaseData.Bind(characterInfo.coordinateX);
-        characterBaseData.Bind(characterInfo.coordinateY);
-        characterBaseData.Bind(characterInfo.coordinateZ);
+        characterBaseData.Bind(characterInfo.position.x);
+        characterBaseData.Bind(characterInfo.position.y);
+        characterBaseData.Bind(characterInfo.position.z);
         characterBaseData.Bind(characterInfo.orientation);
         characterBaseData.Bind(characterInfo.online);
         characterBaseData.Bind(characterGuid);
@@ -404,9 +404,9 @@ bool CharacterDatabaseCache::GetCharacterInfo(u64 characterGuid, CharacterInfo& 
         newCharacterInfo.level = resultRow[6].GetU8();
         newCharacterInfo.mapId = resultRow[7].GetU32();
         newCharacterInfo.zoneId = resultRow[8].GetU32();
-        newCharacterInfo.coordinateX = resultRow[9].GetF32();
-        newCharacterInfo.coordinateY = resultRow[10].GetF32();
-        newCharacterInfo.coordinateZ = resultRow[11].GetF32();
+        newCharacterInfo.position.x = resultRow[9].GetF32();
+        newCharacterInfo.position.y = resultRow[10].GetF32();
+        newCharacterInfo.position.z = resultRow[11].GetF32();
         newCharacterInfo.orientation = resultRow[12].GetF32();
 
         _accessMutex.lock();

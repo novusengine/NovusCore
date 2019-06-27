@@ -3,7 +3,7 @@
 
 namespace Math
 {
-	f32 Sqrt(f32 in)
+	float Sqrt(float in)
 	{
 		return sqrt(in);
 	}
