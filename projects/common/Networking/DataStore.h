@@ -25,6 +25,7 @@
 #include "../NovusTypes.h"
 #include "../Utils/SharedPool.h"
 #include <cassert>
+#include <cstring>
 
 class DataStore
 {

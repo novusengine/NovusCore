@@ -2,6 +2,7 @@
 
 #include <stack>
 #include <mutex>
+#include <memory>
 
 template <class T>
 class SharedPool
