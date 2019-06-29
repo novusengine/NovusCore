@@ -23,6 +23,7 @@ public:
     }
 
 public:
+    // Position
     u32 GetMapId() const;
     u32 GetAdtId() const;
 
@@ -31,6 +32,9 @@ public:
 
     f32 GetOrientation() const;
     void SetOrientation(f32 orientation, bool immediate);
+
+    // Chat
+    void SendChatMessage(std::string msg);
 
 private:
     u32 _entityId;
@@ -59,8 +63,11 @@ inline void RegisterPlayerFunctions(AB_NAMESPACE_QUALIFIER Engine* engine)
     engine->asEngine()->RegisterObjectMethod("Player", "float GetOrientation()", asMETHOD(AngelScriptPlayer, GetOrientation), asCALL_THISCALL);
     engine->asEngine()->RegisterObjectMethod("Player", "void SetOrientation(float, bool = false)", asMETHOD(AngelScriptPlayer, SetOrientation), asCALL_THISCALL);
 
+    engine->asEngine()->RegisterObjectMethod("Player", "void SendChatMessage(string)", asMETHOD(AngelScriptPlayer, SendChatMessage), asCALL_THISCALL);
+
     // Register hooks
     engine->asEngine()->RegisterFuncdef("void PlayerCallback(Player)");
+    engine->asEngine()->RegisterFuncdef("void PlayerChatCallback(Player, string)");
     engine->asEngine()->RegisterGlobalFunction("void RegisterPlayerCallback(uint32 id, PlayerCallback @cb)", asFUNCTION(GlobalFunctions::RegisterPlayerCallback), asCALL_CDECL);
-
+    engine->asEngine()->RegisterGlobalFunction("void RegisterPlayerCallback(uint32 id, PlayerChatCallback @cb)", asFUNCTION(GlobalFunctions::RegisterPlayerCallback), asCALL_CDECL);
 }

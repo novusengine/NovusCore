@@ -36,7 +36,7 @@ void AngelScriptPlayer::SetPosition(Vector3 pos, bool immediate)
         entt::registry* registry = _registry;
         u32 entityId = _entityId;
 
-        _registry->ctx<ScriptSingleton>().AddTransaction([&positionComponent, &registry, pos, entityId]() {
+        _registry->ctx<ScriptSingleton>().AddTransaction([&positionComponent, registry, pos, entityId]() {
             positionComponent.position.x = pos.x;
             positionComponent.position.y = pos.y;
             positionComponent.position.z = pos.z;
@@ -64,4 +64,13 @@ void AngelScriptPlayer::SetOrientation(f32 orientation, bool immediate)
             positionComponent.orientation = orientation;
             });
     }
+}
+
+void AngelScriptPlayer::SendChatMessage(std::string msg)
+{
+    PlayerConnectionComponent& connectionComponent = _registry->get<PlayerConnectionComponent>(_entityId);
+    
+    _registry->ctx<ScriptSingleton>().AddTransaction([&connectionComponent, msg]() {
+        connectionComponent.SendChatNotification(msg);
+        });
 }

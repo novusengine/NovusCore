@@ -375,7 +375,7 @@ void WorldNodeHandler::SetupUpdateFramework()
     {
         ZoneScopedNC("ScriptTransactionSystem", tracy::Color::Blue2)
         ScriptTransactionSystem::Update(registry);
-        registry.ctx<ScriptSingleton>().CompleteSystem();
+        registry.ctx<ScriptSingleton>().ResetCompletedSystems();
     });
     scriptTransactionSystemTask.gather(playerDeleteSystemTask);
 }

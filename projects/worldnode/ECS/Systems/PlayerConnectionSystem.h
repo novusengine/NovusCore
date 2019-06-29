@@ -36,6 +36,7 @@
 #include "../../Utils/CharacterUtils.h"
 #include "../../DatabaseCache/CharacterDatabaseCache.h"
 #include "../../WorldNodeHandler.h"
+#include "../../Scripting/PlayerFunctions.h"
 
 #include "../Components/PlayerConnectionComponent.h"
 #include "../Components/PlayerFieldDataComponent.h"
@@ -73,7 +74,7 @@ namespace ConnectionSystem
         LockWrite(PlayerPositionComponent);
 
         auto view = registry.view<PlayerConnectionComponent, PlayerFieldDataComponent, PlayerUpdateDataComponent, PlayerPositionComponent>();
-        view.each([&singleton, &playerDeleteQueue, &characterDatabase, &worldDatabase, &playerPacketQueue, &worldNodeHandler, &mapSingleton](const auto, PlayerConnectionComponent& playerConnection, PlayerFieldDataComponent& clientFieldData, PlayerUpdateDataComponent& playerUpdateData, PlayerPositionComponent& playerPositionData)
+        view.each([&registry, &singleton, &playerDeleteQueue, &characterDatabase, &worldDatabase, &playerPacketQueue, &worldNodeHandler, &mapSingleton](const auto, PlayerConnectionComponent& playerConnection, PlayerFieldDataComponent& clientFieldData, PlayerUpdateDataComponent& playerUpdateData, PlayerPositionComponent& playerPositionData)
             {
                 ZoneScopedNC("Connection", tracy::Color::Orange2)
 
@@ -554,6 +555,10 @@ namespace ConnectionSystem
                             chatUpdateData.message = msgOutput;
                             chatUpdateData.handled = false;
                             playerUpdateData.chatUpdateData.push_back(chatUpdateData);
+
+                            // Call OnPlayerChat script hooks
+                            AngelScriptPlayer asPlayer(playerConnection.entityGuid, &registry);
+                            PlayerHooks::CallHook(PlayerHooks::Hooks::HOOK_ONPLAYERCHAT, &asPlayer, msgOutput);
                             break;
                         }
                         case Opcode::CMSG_ATTACKSWING:

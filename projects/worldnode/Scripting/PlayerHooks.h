@@ -12,6 +12,7 @@ public:
 	enum Hooks
 	{
 		HOOK_ONPLAYERLOGIN,
+        HOOK_ONPLAYERCHAT,
 
 		COUNT
 	};
