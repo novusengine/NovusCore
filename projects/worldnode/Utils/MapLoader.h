@@ -32,7 +32,7 @@
 class MapLoader
 {
 public:
-    MapLoader() { }
+    MapLoader() {}
     bool Load(entt::registry& registry);
 
 private:

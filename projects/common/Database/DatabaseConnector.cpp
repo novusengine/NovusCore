@@ -4,7 +4,7 @@
 #include "../common.h"
 
 DatabaseConnectionDetails DatabaseConnector::_connections[];
-bool                     DatabaseConnector::_initialized = false;
+bool DatabaseConnector::_initialized = false;
 SharedPool<DatabaseConnector> DatabaseConnector::_connectorPools[];
 moodycamel::ConcurrentQueue<AsyncSQLJob> DatabaseConnector::_asyncJobQueue(1024);
 
@@ -146,7 +146,7 @@ void DatabaseConnector::AsyncSQLThreadMain()
             if (tries > 100)
             {
                 std::this_thread::sleep_for(std::chrono::microseconds(500)); // Sleep for 0.5 second, 2 checks a second
-                continue; // This continue makes sure that we don't increase tries more than we need to, preventing any possible overflows
+                continue;                                                    // This continue makes sure that we don't increase tries more than we need to, preventing any possible overflows
             }
             if (tries > 10)
                 std::this_thread::sleep_for(std::chrono::microseconds(100)); // Sleep for 0.1 second, 10 checks a second
@@ -160,12 +160,10 @@ void DatabaseConnector::AsyncSQLThreadMain()
 // Non static functions
 DatabaseConnector::DatabaseConnector()
 {
-
 }
 
 DatabaseConnector::~DatabaseConnector()
 {
-
 }
 
 bool DatabaseConnector::_Connect(DATABASE_TYPE type)

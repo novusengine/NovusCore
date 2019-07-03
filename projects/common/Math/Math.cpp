@@ -3,8 +3,8 @@
 
 namespace Math
 {
-	float Sqrt(float in)
-	{
-		return sqrt(in);
-	}
+float Sqrt(float in)
+{
+    return sqrt(in);
 }
+} // namespace Math

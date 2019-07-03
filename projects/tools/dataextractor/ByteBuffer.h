@@ -40,7 +40,7 @@ public:
     {
         _bufferData.reserve(reserveSize);
     }
-    virtual ~ByteBuffer() { }
+    virtual ~ByteBuffer() {}
 
     template <typename T>
     void Read(T& destination)
@@ -207,6 +207,7 @@ public:
     bool empty() const { return _bufferData.empty(); }
 
     size_t _readPos, _writePos;
+
 private:
     std::vector<u8> _bufferData;
 };

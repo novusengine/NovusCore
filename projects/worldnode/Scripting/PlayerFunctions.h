@@ -15,7 +15,7 @@
 class AngelScriptPlayer
 {
 public:
-    AngelScriptPlayer(){}
+    AngelScriptPlayer() {}
     AngelScriptPlayer(u32 entityId, entt::registry* registry)
     {
         _entityId = entityId;
@@ -43,12 +43,12 @@ private:
 
 namespace GlobalFunctions
 {
-    inline void RegisterPlayerCallback(u32 callbackId, asIScriptFunction* callback)
-    {
-        NC_LOG_MESSAGE("Register Callback!");
-        PlayerHooks::Register(static_cast<PlayerHooks::Hooks>(callbackId), callback);
-    }
+inline void RegisterPlayerCallback(u32 callbackId, asIScriptFunction* callback)
+{
+    NC_LOG_MESSAGE("Register Callback!");
+    PlayerHooks::Register(static_cast<PlayerHooks::Hooks>(callbackId), callback);
 }
+} // namespace GlobalFunctions
 
 inline void RegisterPlayerFunctions(AB_NAMESPACE_QUALIFIER Engine* engine)
 {

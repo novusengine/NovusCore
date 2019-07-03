@@ -31,259 +31,334 @@ class Vector2;
 class Vector3
 {
 public:
-	// Constructors
-	Vector3() : x(0.0f), y(0.0f), z(0.0f) {};
-    Vector3(float inX, float inY, float inZ) { x = inX; y = inY; z = inZ; }
-	Vector3(float in) { x = in; y = in; z = in; }
-	Vector3(unsigned char inX, unsigned char inY, unsigned char inZ) { x = static_cast<float>(inX); y = static_cast<float>(inY); z = static_cast<float>(inZ); }
-	Vector3(unsigned char in) { x = static_cast<float>(in); y = static_cast<float>(in); z = static_cast<float>(in); }
-	Vector3(unsigned short inX, unsigned short inY, float inZ) { x = static_cast<float>(inX); y = static_cast<float>(inY); z = static_cast<float>(inZ); }
-	Vector3(unsigned short in) { x = static_cast<float>(in); y = static_cast<float>(in); z = static_cast<float>(in); }
-	Vector3(unsigned int inX, unsigned int inY, float inZ) { x = static_cast<float>(inX); y = static_cast<float>(inY); z = static_cast<float>(inZ); }
-	Vector3(unsigned int in) { x = static_cast<float>(in); y = static_cast<float>(in); z = static_cast<float>(in); }
-	Vector3(signed char inX, signed char inY, float inZ) { x = static_cast<float>(inX); y = static_cast<float>(inY); z = static_cast<float>(inZ); }
-	Vector3(signed char in) { x = static_cast<float>(in); y = static_cast<float>(in); z = static_cast<float>(in); }
-	Vector3(signed short inX, signed short inY, float inZ) { x = static_cast<float>(inX); y = static_cast<float>(inY); z = static_cast<float>(inZ); }
-	Vector3(signed short in) { x = static_cast<float>(in); y = static_cast<float>(in); z = static_cast<float>(in); }
-	Vector3(signed int inX, signed int inY, float inZ) { x = static_cast<float>(inX); y = static_cast<float>(inY); z = static_cast<float>(inZ); }
-	Vector3(signed int in) { x = static_cast<float>(in); y = static_cast<float>(in); z = static_cast<float>(in); }
+    // Constructors
+    Vector3() : x(0.0f), y(0.0f), z(0.0f){};
+    Vector3(float inX, float inY, float inZ)
+    {
+        x = inX;
+        y = inY;
+        z = inZ;
+    }
+    Vector3(float in)
+    {
+        x = in;
+        y = in;
+        z = in;
+    }
+    Vector3(unsigned char inX, unsigned char inY, unsigned char inZ)
+    {
+        x = static_cast<float>(inX);
+        y = static_cast<float>(inY);
+        z = static_cast<float>(inZ);
+    }
+    Vector3(unsigned char in)
+    {
+        x = static_cast<float>(in);
+        y = static_cast<float>(in);
+        z = static_cast<float>(in);
+    }
+    Vector3(unsigned short inX, unsigned short inY, float inZ)
+    {
+        x = static_cast<float>(inX);
+        y = static_cast<float>(inY);
+        z = static_cast<float>(inZ);
+    }
+    Vector3(unsigned short in)
+    {
+        x = static_cast<float>(in);
+        y = static_cast<float>(in);
+        z = static_cast<float>(in);
+    }
+    Vector3(unsigned int inX, unsigned int inY, float inZ)
+    {
+        x = static_cast<float>(inX);
+        y = static_cast<float>(inY);
+        z = static_cast<float>(inZ);
+    }
+    Vector3(unsigned int in)
+    {
+        x = static_cast<float>(in);
+        y = static_cast<float>(in);
+        z = static_cast<float>(in);
+    }
+    Vector3(signed char inX, signed char inY, float inZ)
+    {
+        x = static_cast<float>(inX);
+        y = static_cast<float>(inY);
+        z = static_cast<float>(inZ);
+    }
+    Vector3(signed char in)
+    {
+        x = static_cast<float>(in);
+        y = static_cast<float>(in);
+        z = static_cast<float>(in);
+    }
+    Vector3(signed short inX, signed short inY, float inZ)
+    {
+        x = static_cast<float>(inX);
+        y = static_cast<float>(inY);
+        z = static_cast<float>(inZ);
+    }
+    Vector3(signed short in)
+    {
+        x = static_cast<float>(in);
+        y = static_cast<float>(in);
+        z = static_cast<float>(in);
+    }
+    Vector3(signed int inX, signed int inY, float inZ)
+    {
+        x = static_cast<float>(inX);
+        y = static_cast<float>(inY);
+        z = static_cast<float>(inZ);
+    }
+    Vector3(signed int in)
+    {
+        x = static_cast<float>(in);
+        y = static_cast<float>(in);
+        z = static_cast<float>(in);
+    }
 
-	Vector3(const Vector3& in) { x = in.x; y = in.y; z = in.z; }
-	Vector3(const Vector2& in);
+    Vector3(const Vector3& in)
+    {
+        x = in.x;
+        y = in.y;
+        z = in.z;
+    }
+    Vector3(const Vector2& in);
 
-	// Returns the length of the vector
-	inline float Length()
-	{
-		return Math::Sqrt(SqrLength());
-	}
+    // Returns the length of the vector
+    inline float Length()
+    {
+        return Math::Sqrt(SqrLength());
+    }
 
-	// Returns the squared length of the vector
-	inline float SqrLength()
-	{
-		return x * x + y * y + z * z;
-	}
+    // Returns the squared length of the vector
+    inline float SqrLength()
+    {
+        return x * x + y * y + z * z;
+    }
 
-	// Returns the dot product of the vector and another vector
-	inline float Dot(const Vector3& other)
-	{
-		return (x * other.x) + (y * other.y) + (z * other.z);
-	}
+    // Returns the dot product of the vector and another vector
+    inline float Dot(const Vector3& other)
+    {
+        return (x * other.x) + (y * other.y) + (z * other.z);
+    }
 
-	// Returns the vector with a length of 1, does not modify the original
-	inline Vector3 Normalize()
-	{
-		float length = Length();
-		return Vector3(x / length, y / length, z / length);
-	}
-	// Returns a nicely formatted string of the vector
-	inline std::string ToString() const
-	{
-		return "(" + std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z) + ")";
-	}
+    // Returns the vector with a length of 1, does not modify the original
+    inline Vector3 Normalize()
+    {
+        float length = Length();
+        return Vector3(x / length, y / length, z / length);
+    }
+    // Returns a nicely formatted string of the vector
+    inline std::string ToString() const
+    {
+        return "(" + std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z) + ")";
+    }
 
-	// Overloaded operators
-	inline Vector3 operator+ (const Vector3& other)
-	{
-		return Vector3(x + other.x, y + other.y, z + other.z);
-	}
+    // Overloaded operators
+    inline Vector3 operator+(const Vector3& other)
+    {
+        return Vector3(x + other.x, y + other.y, z + other.z);
+    }
 
-	inline Vector3 operator+ (const float other)
-	{
-		return Vector3(x + other, y + other, z + other);
-	}
-	
-	inline Vector3 operator+ (const unsigned char other)
-	{
-		return Vector3(x + other, y + other, z + other);
-	}
+    inline Vector3 operator+(const float other)
+    {
+        return Vector3(x + other, y + other, z + other);
+    }
 
-	inline Vector3 operator+ (const unsigned short other)
-	{
-		return Vector3(x + other, y + other, z + other);
-	}
+    inline Vector3 operator+(const unsigned char other)
+    {
+        return Vector3(x + other, y + other, z + other);
+    }
 
-	inline Vector3 operator+ (const unsigned int other)
-	{
-		return Vector3(x + other, y + other, z + other);
-	}
+    inline Vector3 operator+(const unsigned short other)
+    {
+        return Vector3(x + other, y + other, z + other);
+    }
 
-	inline Vector3 operator+ (const signed char other)
-	{
-		return Vector3(x + other, y + other, z + other);
-	}
+    inline Vector3 operator+(const unsigned int other)
+    {
+        return Vector3(x + other, y + other, z + other);
+    }
 
-	inline Vector3 operator+ (const signed short other)
-	{
-		return Vector3(x + other, y + other, z + other);
-	}
+    inline Vector3 operator+(const signed char other)
+    {
+        return Vector3(x + other, y + other, z + other);
+    }
 
-	inline Vector3 operator+ (const signed int other)
-	{
-		return Vector3(x + other, y + other, z + other);
-	}
+    inline Vector3 operator+(const signed short other)
+    {
+        return Vector3(x + other, y + other, z + other);
+    }
 
-	inline Vector3 operator- (const Vector3& other)
-	{
-		return Vector3(x - other.x, y - other.y, z - other.z);
-	}
+    inline Vector3 operator+(const signed int other)
+    {
+        return Vector3(x + other, y + other, z + other);
+    }
 
-	inline Vector3 operator- (const float other)
-	{
-		return Vector3(x - other, y - other, z - other);
-	}
+    inline Vector3 operator-(const Vector3& other)
+    {
+        return Vector3(x - other.x, y - other.y, z - other.z);
+    }
 
-	inline Vector3 operator- (const unsigned char other)
-	{
-		return Vector3(x - other, y - other, z - other);
-	}
+    inline Vector3 operator-(const float other)
+    {
+        return Vector3(x - other, y - other, z - other);
+    }
 
-	inline Vector3 operator- (const unsigned short other)
-	{
-		return Vector3(x - other, y - other, z - other);
-	}
+    inline Vector3 operator-(const unsigned char other)
+    {
+        return Vector3(x - other, y - other, z - other);
+    }
 
-	inline Vector3 operator- (const unsigned int other)
-	{
-		return Vector3(x - other, y - other, z - other);
-	}
+    inline Vector3 operator-(const unsigned short other)
+    {
+        return Vector3(x - other, y - other, z - other);
+    }
 
-	inline Vector3 operator- (const signed char other)
-	{
-		return Vector3(x - other, y - other, z - other);
-	}
+    inline Vector3 operator-(const unsigned int other)
+    {
+        return Vector3(x - other, y - other, z - other);
+    }
 
-	inline Vector3 operator- (const signed short other)
-	{
-		return Vector3(x - other, y - other, z - other);
-	}
+    inline Vector3 operator-(const signed char other)
+    {
+        return Vector3(x - other, y - other, z - other);
+    }
 
-	inline Vector3 operator- (const signed int other)
-	{
-		return Vector3(x - other, y - other, z - other);
-	}
+    inline Vector3 operator-(const signed short other)
+    {
+        return Vector3(x - other, y - other, z - other);
+    }
 
-	inline Vector3 operator* (const Vector3& other)
-	{
-		return Vector3(x * other.x, y * other.y, z * other.z);
-	}
+    inline Vector3 operator-(const signed int other)
+    {
+        return Vector3(x - other, y - other, z - other);
+    }
 
-	inline Vector3 operator* (const float other)
-	{
-		return Vector3(x * other, y * other, z * other);
-	}
+    inline Vector3 operator*(const Vector3& other)
+    {
+        return Vector3(x * other.x, y * other.y, z * other.z);
+    }
 
-	inline Vector3 operator* (const unsigned char other)
-	{
-		return Vector3(x * other, y * other, z * other);
-	}
+    inline Vector3 operator*(const float other)
+    {
+        return Vector3(x * other, y * other, z * other);
+    }
 
-	inline Vector3 operator* (const unsigned short other)
-	{
-		return Vector3(x * other, y * other, z * other);
-	}
+    inline Vector3 operator*(const unsigned char other)
+    {
+        return Vector3(x * other, y * other, z * other);
+    }
 
-	inline Vector3 operator* (const unsigned int other)
-	{
-		return Vector3(x * other, y * other, z * other);
-	}
+    inline Vector3 operator*(const unsigned short other)
+    {
+        return Vector3(x * other, y * other, z * other);
+    }
 
-	inline Vector3 operator* (const signed char other)
-	{
-		return Vector3(x * other, y * other, z * other);
-	}
+    inline Vector3 operator*(const unsigned int other)
+    {
+        return Vector3(x * other, y * other, z * other);
+    }
 
-	inline Vector3 operator* (const signed short other)
-	{
-		return Vector3(x * other, y * other, z * other);
-	}
+    inline Vector3 operator*(const signed char other)
+    {
+        return Vector3(x * other, y * other, z * other);
+    }
 
-	inline Vector3 operator* (const signed int other)
-	{
-		return Vector3(x * other, y * other, z * other);
-	}
+    inline Vector3 operator*(const signed short other)
+    {
+        return Vector3(x * other, y * other, z * other);
+    }
 
-	inline Vector3 operator/ (const Vector3& other)
-	{
-		return Vector3(x / other.x, y / other.y, z / other.z);
-	}
+    inline Vector3 operator*(const signed int other)
+    {
+        return Vector3(x * other, y * other, z * other);
+    }
 
-	inline Vector3 operator/ (const float other)
-	{
-		return Vector3(x / other, y / other, z / other);
-	}
+    inline Vector3 operator/(const Vector3& other)
+    {
+        return Vector3(x / other.x, y / other.y, z / other.z);
+    }
 
-	inline Vector3 operator/ (const unsigned char other)
-	{
-		return Vector3(x / other, y / other, z / other);
-	}
+    inline Vector3 operator/(const float other)
+    {
+        return Vector3(x / other, y / other, z / other);
+    }
 
-	inline Vector3 operator/ (const unsigned short other)
-	{
-		return Vector3(x / other, y / other, z / other);
-	}
+    inline Vector3 operator/(const unsigned char other)
+    {
+        return Vector3(x / other, y / other, z / other);
+    }
 
-	inline Vector3 operator/ (const unsigned int other)
-	{
-		return Vector3(x / other, y / other, z / other);
-	}
+    inline Vector3 operator/(const unsigned short other)
+    {
+        return Vector3(x / other, y / other, z / other);
+    }
 
-	inline Vector3 operator/ (const signed char other)
-	{
-		return Vector3(x / other, y / other, z / other);
-	}
+    inline Vector3 operator/(const unsigned int other)
+    {
+        return Vector3(x / other, y / other, z / other);
+    }
 
-	inline Vector3 operator/ (const signed short other)
-	{
-		return Vector3(x / other, y / other, z / other);
-	}
+    inline Vector3 operator/(const signed char other)
+    {
+        return Vector3(x / other, y / other, z / other);
+    }
 
-	inline Vector3 operator/ (const signed int other)
-	{
-		return Vector3(x / other, y / other, z / other);
-	}
+    inline Vector3 operator/(const signed short other)
+    {
+        return Vector3(x / other, y / other, z / other);
+    }
 
-	inline Vector3 operator% (const Vector3& other)
-	{
-		return Vector3(Math::Modulus(x, other.x), Math::Modulus(y,other.y), Math::Modulus(z, other.z));
-	}
+    inline Vector3 operator/(const signed int other)
+    {
+        return Vector3(x / other, y / other, z / other);
+    }
 
-	inline Vector3 operator% (const float other)
-	{
-		return Vector3(Math::Modulus(x, other), Math::Modulus(y, other), Math::Modulus(z, other));
-	}
+    inline Vector3 operator%(const Vector3& other)
+    {
+        return Vector3(Math::Modulus(x, other.x), Math::Modulus(y, other.y), Math::Modulus(z, other.z));
+    }
 
-	inline Vector3 operator% (const unsigned char other)
-	{
-		return Vector3(Math::Modulus(x, static_cast<float>(other)), Math::Modulus(y, static_cast<float>(other)), Math::Modulus(z, static_cast<float>(other)));
-	}
+    inline Vector3 operator%(const float other)
+    {
+        return Vector3(Math::Modulus(x, other), Math::Modulus(y, other), Math::Modulus(z, other));
+    }
 
-	inline Vector3 operator% (const unsigned short other)
-	{
-		return Vector3(Math::Modulus(x, static_cast<float>(other)), Math::Modulus(y, static_cast<float>(other)), Math::Modulus(z, static_cast<float>(other)));
-	}
+    inline Vector3 operator%(const unsigned char other)
+    {
+        return Vector3(Math::Modulus(x, static_cast<float>(other)), Math::Modulus(y, static_cast<float>(other)), Math::Modulus(z, static_cast<float>(other)));
+    }
 
-	inline Vector3 operator% (const unsigned int other)
-	{
-		return Vector3(Math::Modulus(x, static_cast<float>(other)), Math::Modulus(y, static_cast<float>(other)), Math::Modulus(z, static_cast<float>(other)));
-	}
+    inline Vector3 operator%(const unsigned short other)
+    {
+        return Vector3(Math::Modulus(x, static_cast<float>(other)), Math::Modulus(y, static_cast<float>(other)), Math::Modulus(z, static_cast<float>(other)));
+    }
 
-	inline Vector3 operator% (const signed char other)
-	{
-		return Vector3(Math::Modulus(x, static_cast<float>(other)), Math::Modulus(y, static_cast<float>(other)), Math::Modulus(z, static_cast<float>(other)));
-	}
+    inline Vector3 operator%(const unsigned int other)
+    {
+        return Vector3(Math::Modulus(x, static_cast<float>(other)), Math::Modulus(y, static_cast<float>(other)), Math::Modulus(z, static_cast<float>(other)));
+    }
 
-	inline Vector3 operator% (const signed short other)
-	{
-		return Vector3(Math::Modulus(x, static_cast<float>(other)), Math::Modulus(y, static_cast<float>(other)), Math::Modulus(z, static_cast<float>(other)));
-	}
+    inline Vector3 operator%(const signed char other)
+    {
+        return Vector3(Math::Modulus(x, static_cast<float>(other)), Math::Modulus(y, static_cast<float>(other)), Math::Modulus(z, static_cast<float>(other)));
+    }
 
-	inline Vector3 operator% (const signed int other)
-	{
-		return Vector3(Math::Modulus(x, static_cast<float>(other)), Math::Modulus(y, static_cast<float>(other)), Math::Modulus(z, static_cast<float>(other)));
-	}
+    inline Vector3 operator%(const signed short other)
+    {
+        return Vector3(Math::Modulus(x, static_cast<float>(other)), Math::Modulus(y, static_cast<float>(other)), Math::Modulus(z, static_cast<float>(other)));
+    }
+
+    inline Vector3 operator%(const signed int other)
+    {
+        return Vector3(Math::Modulus(x, static_cast<float>(other)), Math::Modulus(y, static_cast<float>(other)), Math::Modulus(z, static_cast<float>(other)));
+    }
 
     // opAssign
-    inline Vector3& operator+= (const Vector3& other)
+    inline Vector3& operator+=(const Vector3& other)
     {
         x += other.x;
         y += other.y;
@@ -291,7 +366,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator+= (const float other)
+    inline Vector3& operator+=(const float other)
     {
         x += other;
         y += other;
@@ -299,7 +374,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator+= (const unsigned char other)
+    inline Vector3& operator+=(const unsigned char other)
     {
         x += other;
         y += other;
@@ -307,7 +382,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator+= (const unsigned short other)
+    inline Vector3& operator+=(const unsigned short other)
     {
         x += other;
         y += other;
@@ -315,7 +390,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator+= (const unsigned int other)
+    inline Vector3& operator+=(const unsigned int other)
     {
         x += other;
         y += other;
@@ -323,7 +398,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator+= (const signed char other)
+    inline Vector3& operator+=(const signed char other)
     {
         x += other;
         y += other;
@@ -331,7 +406,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator+= (const signed short other)
+    inline Vector3& operator+=(const signed short other)
     {
         x += other;
         y += other;
@@ -339,7 +414,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator+= (const signed int other)
+    inline Vector3& operator+=(const signed int other)
     {
         x += other;
         y += other;
@@ -347,15 +422,16 @@ public:
         return *this;
     }
 
-    inline Vector3& operator-= (const Vector3& other)
+    inline Vector3& operator-=(const Vector3& other)
     {
         x -= other.x;
         y -= other.y;
-        z -= other.z;;
+        z -= other.z;
+        ;
         return *this;
     }
 
-    inline Vector3& operator-= (const float other)
+    inline Vector3& operator-=(const float other)
     {
         x -= other;
         y -= other;
@@ -363,7 +439,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator-= (const unsigned char other)
+    inline Vector3& operator-=(const unsigned char other)
     {
         x -= other;
         y -= other;
@@ -371,7 +447,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator-= (const unsigned short other)
+    inline Vector3& operator-=(const unsigned short other)
     {
         x -= other;
         y -= other;
@@ -379,7 +455,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator-= (const unsigned int other)
+    inline Vector3& operator-=(const unsigned int other)
     {
         x -= other;
         y -= other;
@@ -387,7 +463,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator-= (const signed char other)
+    inline Vector3& operator-=(const signed char other)
     {
         x -= other;
         y -= other;
@@ -395,7 +471,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator-= (const signed short other)
+    inline Vector3& operator-=(const signed short other)
     {
         x -= other;
         y -= other;
@@ -403,7 +479,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator-= (const signed int other)
+    inline Vector3& operator-=(const signed int other)
     {
         x -= other;
         y -= other;
@@ -411,7 +487,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator*= (const Vector3& other)
+    inline Vector3& operator*=(const Vector3& other)
     {
         x *= other.x;
         y *= other.y;
@@ -419,7 +495,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator*= (const float other)
+    inline Vector3& operator*=(const float other)
     {
         x *= other;
         y *= other;
@@ -427,7 +503,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator*= (const unsigned char other)
+    inline Vector3& operator*=(const unsigned char other)
     {
         x *= other;
         y *= other;
@@ -435,7 +511,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator*= (const unsigned short other)
+    inline Vector3& operator*=(const unsigned short other)
     {
         x *= other;
         y *= other;
@@ -443,7 +519,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator*= (const unsigned int other)
+    inline Vector3& operator*=(const unsigned int other)
     {
         x *= other;
         y *= other;
@@ -451,7 +527,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator*= (const signed char other)
+    inline Vector3& operator*=(const signed char other)
     {
         x *= other;
         y *= other;
@@ -459,7 +535,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator*= (const signed short other)
+    inline Vector3& operator*=(const signed short other)
     {
         x *= other;
         y *= other;
@@ -467,7 +543,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator*= (const signed int other)
+    inline Vector3& operator*=(const signed int other)
     {
         x *= other;
         y *= other;
@@ -475,7 +551,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator/= (const Vector3& other)
+    inline Vector3& operator/=(const Vector3& other)
     {
         x /= other.x;
         y /= other.y;
@@ -483,7 +559,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator/= (const float other)
+    inline Vector3& operator/=(const float other)
     {
         x /= other;
         y /= other;
@@ -491,7 +567,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator/= (const unsigned char other)
+    inline Vector3& operator/=(const unsigned char other)
     {
         x /= other;
         y /= other;
@@ -499,7 +575,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator/= (const unsigned short other)
+    inline Vector3& operator/=(const unsigned short other)
     {
         x /= other;
         y /= other;
@@ -507,7 +583,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator/= (const unsigned int other)
+    inline Vector3& operator/=(const unsigned int other)
     {
         x /= other;
         y /= other;
@@ -515,7 +591,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator/= (const signed char other)
+    inline Vector3& operator/=(const signed char other)
     {
         x /= other;
         y /= other;
@@ -523,7 +599,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator/= (const signed short other)
+    inline Vector3& operator/=(const signed short other)
     {
         x /= other;
         y /= other;
@@ -531,7 +607,7 @@ public:
         return *this;
     }
 
-    inline Vector3& operator/= (const signed int other)
+    inline Vector3& operator/=(const signed int other)
     {
         x /= other;
         y /= other;
@@ -546,17 +622,17 @@ public:
     }
 
 public:
-	float x = 0.0f;
-	float y = 0.0f;
-	float z = 0.0f;
+    float x = 0.0f;
+    float y = 0.0f;
+    float z = 0.0f;
 
 public:
-	static Vector3 One;
-	static Vector3 Zero;
-	static Vector3 North;
-	static Vector3 South;
-	static Vector3 West;
-	static Vector3 East;
-	static Vector3 Up;
-	static Vector3 Down;
+    static Vector3 One;
+    static Vector3 Zero;
+    static Vector3 North;
+    static Vector3 South;
+    static Vector3 West;
+    static Vector3 East;
+    static Vector3 Up;
+    static Vector3 Down;
 };

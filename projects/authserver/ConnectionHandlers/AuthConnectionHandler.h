@@ -23,21 +23,26 @@
 */
 #pragma once
 
-#include <Networking/TcpServer.h>
 #include "../Connections/AuthConnection.h"
+#include <Networking/TcpServer.h>
 
 class AuthConnectionHandler : public Common::TcpServer
 {
 public:
-    AuthConnectionHandler(asio::io_service& io_service, i32 port) : Common::TcpServer(io_service, port) { }
+    AuthConnectionHandler(asio::io_service& io_service, i32 port)
+        : Common::TcpServer(io_service, port) {}
+
 private:
     void StartListening() override
     {
         asio::ip::tcp::socket* socket = new asio::ip::tcp::socket(_ioService);
-        _acceptor.async_accept(*socket, std::bind(&AuthConnectionHandler::HandleNewConnection, this, socket, std::placeholders::_1));
+        _acceptor.async_accept(
+            *socket, std::bind(&AuthConnectionHandler::HandleNewConnection, this,
+                               socket, std::placeholders::_1));
     }
 
-    void HandleNewConnection(asio::ip::tcp::socket* socket, const asio::error_code& error_code) override
+    void HandleNewConnection(asio::ip::tcp::socket* socket,
+                             const asio::error_code& error_code) override
     {
         if (!error_code)
         {

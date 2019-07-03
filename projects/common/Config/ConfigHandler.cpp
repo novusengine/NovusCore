@@ -19,7 +19,7 @@ bool ConfigHandler::Load(std::string configFileName)
         NC_LOG_FATAL("Could not find '" + configFileName + "' in directory. Press a key to exit.");
         return false;
     }
-    
+
     if (_configFile.size() == 0)
     {
         NC_LOG_FATAL("Failed to initialize config file, found 0 configurations.");
@@ -27,7 +27,7 @@ bool ConfigHandler::Load(std::string configFileName)
     }
 
     NC_LOG_SUCCESS("Loaded config file: '" + configFileName);
-	return true;
+    return true;
 }
 
 json::value_type ConfigHandler::FindOptionInArray(std::string optionName, json::value_type value)

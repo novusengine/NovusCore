@@ -28,62 +28,63 @@
 
 namespace Common
 {
-    struct WorkerThread
-    {
-        std::thread _thread;
-        std::mutex _mutex;
-        std::vector<BaseSocket*>* _connections;
-    };
+struct WorkerThread
+{
+    std::thread _thread;
+    std::mutex _mutex;
+    std::vector<BaseSocket*>* _connections;
+};
 
-    static void WorkerThreadMain(WorkerThread* thread)
+static void WorkerThreadMain(WorkerThread* thread)
+{
+    while (true)
     {
-        while (true)
+        // Remove closed sessions
+        thread->_mutex.lock();
+        if (thread->_connections->size() > 0)
         {
-            // Remove closed sessions
-            thread->_mutex.lock();
-            if (thread->_connections->size() > 0)
-            {
-                thread->_connections->erase(std::remove_if(thread->_connections->begin(), thread->_connections->end(), [](BaseSocket* connection)
-                {
-                        if (!connection)
-                            return false;
+            thread->_connections->erase(std::remove_if(thread->_connections->begin(), thread->_connections->end(), [](BaseSocket* connection) {
+                                            if (!connection)
+                                                return false;
 
-                    return connection->IsClosed();
-                }), thread->_connections->end());
-            }
-
-            thread->_mutex.unlock();
-            std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+                                            return connection->IsClosed();
+                                        }),
+                                        thread->_connections->end());
         }
+
+        thread->_mutex.unlock();
+        std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+    }
+}
+
+class TcpServer
+{
+public:
+    TcpServer(asio::io_service& io_service, i32 port) : _acceptor(io_service, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port)), _ioService(io_service)
+    {
+        _connections.resize(4096);
+
+        _workerThread = new WorkerThread();
+        _workerThread->_connections = &_connections;
+        _workerThread->_thread = std::thread(WorkerThreadMain, _workerThread);
     }
 
-    class TcpServer
+    void Start()
     {
-    public:
-        TcpServer(asio::io_service& io_service, i32 port) : _acceptor(io_service, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port)), _ioService(io_service)
-        {
-            _connections.resize(4096);
+        StartListening();
+    }
+    u16 GetPort()
+    {
+        return _acceptor.local_endpoint().port();
+    }
 
-            _workerThread = new WorkerThread();
-            _workerThread->_connections = &_connections;
-            _workerThread->_thread = std::thread(WorkerThreadMain, _workerThread);
-        }
+protected:
+    virtual void StartListening() = 0;
+    virtual void HandleNewConnection(asio::ip::tcp::socket* socket, const asio::error_code& error) = 0;
 
-        void Start()
-        {
-            StartListening();
-        }
-        u16 GetPort()
-        {
-            return _acceptor.local_endpoint().port();
-        }
-    protected:
-        virtual void StartListening() = 0;
-        virtual void HandleNewConnection(asio::ip::tcp::socket* socket, const asio::error_code& error) = 0;
-
-        std::vector<BaseSocket*> _connections;
-        WorkerThread* _workerThread;
-        asio::ip::tcp::acceptor _acceptor;
-        asio::io_service& _ioService;
-    };
-}
+    std::vector<BaseSocket*> _connections;
+    WorkerThread* _workerThread;
+    asio::ip::tcp::acceptor _acceptor;
+    asio::io_service& _ioService;
+};
+} // namespace Common

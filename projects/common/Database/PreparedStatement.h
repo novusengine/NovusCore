@@ -36,21 +36,21 @@
 class PreparedStatement
 {
 public:
-	PreparedStatement(std::string statement);
+    PreparedStatement(std::string statement);
 
     PreparedStatement& Bind(std::string value);
     PreparedStatement& Bind(u8 value);
     PreparedStatement& Bind(u16 value);
     PreparedStatement& Bind(i16 value);
     PreparedStatement& Bind(u32 value);
-	PreparedStatement& Bind(i32 value);
-	PreparedStatement& Bind(f32 value);
-	PreparedStatement& Bind(f64 value);
+    PreparedStatement& Bind(i32 value);
+    PreparedStatement& Bind(f32 value);
+    PreparedStatement& Bind(f64 value);
     PreparedStatement& Bind(u64 value);
 
-	bool Verify();
-	std::string Get();
+    bool Verify();
+    std::string Get();
 
 private:
-	std::string _statement;
+    std::string _statement;
 };

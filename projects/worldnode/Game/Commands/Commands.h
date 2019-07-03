@@ -31,7 +31,7 @@
 
 namespace Commands
 {
-    /*static entt::registry* _registry = nullptr;
+/*static entt::registry* _registry = nullptr;
 
     bool _GPS(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
     {

@@ -37,9 +37,9 @@
 
 i32 main()
 {
-	/* Set up console window title */
-#ifdef _WIN32  //Windows
-	SetConsoleTitle(WINDOWNAME);
+    /* Set up console window title */
+#ifdef _WIN32 //Windows
+    SetConsoleTitle(WINDOWNAME);
 #endif
 
     /* Load Database Config Handler for server */
@@ -68,8 +68,7 @@ i32 main()
     authConnectionHandler.Start();
 
     srand(static_cast<u32>(time(NULL)));
-    std::thread run_thread([&]
-    {
+    std::thread run_thread([&] {
         io_service.run();
     });
 

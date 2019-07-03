@@ -5,17 +5,16 @@
 class Timer
 {
 public:
+    Timer();
+    ~Timer();
 
-	Timer();
-	~Timer();
+    void Tick();
+    void Reset();
 
-	void Tick();
-	void Reset();
-
-	f32 GetLifeTime();
-	f32 GetDeltaTime();
+    f32 GetLifeTime();
+    f32 GetDeltaTime();
 
 private:
-	std::chrono::time_point<std::chrono::high_resolution_clock> _startTime;
-	std::chrono::time_point<std::chrono::high_resolution_clock> _lastTick;
+    std::chrono::time_point<std::chrono::high_resolution_clock> _startTime;
+    std::chrono::time_point<std::chrono::high_resolution_clock> _lastTick;
 };

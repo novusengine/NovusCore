@@ -27,7 +27,7 @@
 
 void PingCommand(WorldNodeHandler& worldNodeHandler, std::vector<std::string> subCommands)
 {
-	Message pingMessage;
-	pingMessage.code = MSG_IN_PING;
-	worldNodeHandler.PassMessage(pingMessage);
+    Message pingMessage;
+    pingMessage.code = MSG_IN_PING;
+    worldNodeHandler.PassMessage(pingMessage);
 }

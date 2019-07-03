@@ -29,9 +29,9 @@
 #include <memory>
 #include "../NovusTypes.h"
 
-BigNumber::BigNumber() : _bigNum(BN_new()) { }
+BigNumber::BigNumber() : _bigNum(BN_new()) {}
 
-BigNumber::BigNumber(BigNumber const& bigNum) : _bigNum(BN_dup(bigNum._bigNum)) { }
+BigNumber::BigNumber(BigNumber const& bigNum) : _bigNum(BN_dup(bigNum._bigNum)) {}
 BigNumber::BigNumber(u32 val) : _bigNum(BN_new())
 {
     SetUInt32(val);
@@ -96,7 +96,7 @@ std::unique_ptr<u8[]> BigNumber::BN2BinArray(size_t size, bool littleEndian)
     if (neededSize > numBytes)
         memset((void*)array, 0, neededSize);
 
-    BN_bn2bin(_bigNum, (unsigned char *)array);
+    BN_bn2bin(_bigNum, (unsigned char*)array);
 
     // Openssl bignumbers store data as big endian format by default, we should reverse the array if we desire little endian
     if (littleEndian)
@@ -113,7 +113,7 @@ void BigNumber::Rand(size_t bits)
 BigNumber BigNumber::Exponential(BigNumber const& bigNum)
 {
     BigNumber ret;
-    BN_CTX *bigNumContext;
+    BN_CTX* bigNumContext;
 
     bigNumContext = BN_CTX_new();
     BN_exp(ret._bigNum, _bigNum, bigNum._bigNum, bigNumContext);
@@ -124,7 +124,7 @@ BigNumber BigNumber::Exponential(BigNumber const& bigNum)
 BigNumber BigNumber::ModExponential(BigNumber const& bn1, BigNumber const& bn2)
 {
     BigNumber ret;
-    BN_CTX *bigNumContext;
+    BN_CTX* bigNumContext;
 
     bigNumContext = BN_CTX_new();
     BN_mod_exp(ret._bigNum, _bigNum, bn1._bigNum, bn2._bigNum, bigNumContext);
@@ -166,7 +166,7 @@ BigNumber BigNumber::operator-=(BigNumber const& bigNum)
 }
 BigNumber BigNumber::operator*=(BigNumber const& bigNum)
 {
-    BN_CTX *bigNumContext;
+    BN_CTX* bigNumContext;
 
     bigNumContext = BN_CTX_new();
     BN_mul(_bigNum, _bigNum, bigNum._bigNum, bigNumContext);
@@ -176,7 +176,7 @@ BigNumber BigNumber::operator*=(BigNumber const& bigNum)
 }
 BigNumber BigNumber::operator/=(BigNumber const& bigNum)
 {
-    BN_CTX *bigNumContext;
+    BN_CTX* bigNumContext;
 
     bigNumContext = BN_CTX_new();
     BN_div(_bigNum, nullptr, _bigNum, bigNum._bigNum, bigNumContext);
@@ -186,7 +186,7 @@ BigNumber BigNumber::operator/=(BigNumber const& bigNum)
 }
 BigNumber BigNumber::operator%=(BigNumber const& bigNum)
 {
-    BN_CTX *bigNumContext;
+    BN_CTX* bigNumContext;
 
     bigNumContext = BN_CTX_new();
     BN_mod(_bigNum, _bigNum, bigNum._bigNum, bigNumContext);

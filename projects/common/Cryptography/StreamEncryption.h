@@ -10,12 +10,12 @@
 class StreamEncryption
 {
 public:
-    StreamEncryption() : _serverEncryptor(STREAMENCRYPTION_HASH_SIZE), _clientDecryptor(STREAMENCRYPTION_HASH_SIZE) { }
+    StreamEncryption() : _serverEncryptor(STREAMENCRYPTION_HASH_SIZE), _clientDecryptor(STREAMENCRYPTION_HASH_SIZE) {}
     ~StreamEncryption()
     {
-        if (_hmach) 
-        { 
-            delete _hmach; 
+        if (_hmach)
+        {
+            delete _hmach;
         }
     }
 
@@ -58,11 +58,12 @@ public:
             _clientDecryptor.UpdateEncryption(size, buffer);
         }
     }
+
 private:
     bool _setup = false;
     HMACH* _hmach = nullptr;
     ArcFour _serverEncryptor, _clientDecryptor;
 
-    const u8 _serverKey[STREAMENCRYPTION_KEY_SIZE] = { 0xCC, 0x98, 0xAE, 0x04, 0xE8, 0x97, 0xEA, 0xCA, 0x12, 0xDD, 0xC0, 0x93, 0x42, 0x91, 0x53, 0x57 };
-    const u8 _clientKey[STREAMENCRYPTION_KEY_SIZE] = { 0xC2, 0xB3, 0x72, 0x3C, 0xC6, 0xAE, 0xD9, 0xB5, 0x34, 0x3C, 0x53, 0xEE, 0x2F, 0x43, 0x67, 0xCE };
+    const u8 _serverKey[STREAMENCRYPTION_KEY_SIZE] = {0xCC, 0x98, 0xAE, 0x04, 0xE8, 0x97, 0xEA, 0xCA, 0x12, 0xDD, 0xC0, 0x93, 0x42, 0x91, 0x53, 0x57};
+    const u8 _clientKey[STREAMENCRYPTION_KEY_SIZE] = {0xC2, 0xB3, 0x72, 0x3C, 0xC6, 0xAE, 0xD9, 0xB5, 0x34, 0x3C, 0x53, 0xEE, 0x2F, 0x43, 0x67, 0xCE};
 };

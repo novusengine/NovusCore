@@ -7,34 +7,35 @@ class DBCDatabaseCache;
 
 struct MapData
 {
-	MapData() { }
-	MapData(DBCDatabaseCache* cache) { _cache = cache; }
-	MapData(const MapData& data)
+    MapData() {}
+    MapData(DBCDatabaseCache* cache) { _cache = cache; }
+    MapData(const MapData& data)
     {
         id = data.id;
         internalName = data.internalName;
-		instanceType = data.instanceType;
-		flags = data.flags;
-		name = data.name;
-		expansion = data.expansion;
-		maxPlayers = data.maxPlayers;
+        instanceType = data.instanceType;
+        flags = data.flags;
+        name = data.name;
+        expansion = data.expansion;
+        maxPlayers = data.maxPlayers;
         _cache = data._cache;
     }
-   
+
     u16 id;
-	std::string internalName;
-	u32 instanceType;
-	u32 flags;
-	std::string name;
-	u32 expansion;
-	u32 maxPlayers;
+    std::string internalName;
+    u32 instanceType;
+    u32 flags;
+    std::string name;
+    u32 expansion;
+    u32 maxPlayers;
+
 private:
-	DBCDatabaseCache* _cache;
+    DBCDatabaseCache* _cache;
 };
 
 struct EmoteTextData
 {
-    EmoteTextData() { }
+    EmoteTextData() {}
     EmoteTextData(DBCDatabaseCache* cache) { _cache = cache; }
     EmoteTextData(const EmoteTextData& data)
     {
@@ -46,6 +47,7 @@ struct EmoteTextData
     u32 id;
     std::string internalName;
     u32 animationId;
+
 private:
     DBCDatabaseCache* _cache;
 };
@@ -53,7 +55,7 @@ private:
 class DBCDatabaseCache : BaseDatabaseCache
 {
 public:
-	DBCDatabaseCache();
+    DBCDatabaseCache();
     ~DBCDatabaseCache();
 
     void Load() override;
@@ -62,8 +64,8 @@ public:
     void SaveAsync() override;
 
     // Map Data cache
-	bool GetMapData(u16 mapId, MapData& output);
-	bool GetMapDataFromInternalName(std::string mapInternalName, MapData& output);
+    bool GetMapData(u16 mapId, MapData& output);
+    bool GetMapDataFromInternalName(std::string mapInternalName, MapData& output);
 
     bool GetEmoteTextData(u32 emoteTextId, EmoteTextData& output);
 

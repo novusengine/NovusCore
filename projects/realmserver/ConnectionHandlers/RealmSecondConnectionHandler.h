@@ -35,6 +35,7 @@ public:
     {
         StartListening();
     }
+
 private:
     static RealmSecondConnectionHandler* _instance;
     AuthDatabaseCache& _authCache;

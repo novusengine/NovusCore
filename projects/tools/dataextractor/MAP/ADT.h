@@ -91,6 +91,7 @@ public:
     MCIN mcin;
     MH2O mh2o;
     MFBO mfbo;
+
 private:
     // Grid Data Storage
     u16 areaIds[ADT_CELLS_PER_GRID][ADT_CELLS_PER_GRID];
@@ -99,7 +100,7 @@ private:
     i16 heightBoxMax[3][3];
     i16 heightBoxMin[3][3];
 
-    MPQFile & _file;
+    MPQFile& _file;
     std::string _fileName;
     std::string _filePath;
 };

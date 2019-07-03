@@ -26,16 +26,16 @@
 #include <stdint.h>
 #include "../NovusTypes.h"
 
-class ArcFour 
+class ArcFour
 {
-    public:
-        ArcFour(size_t size);
-        ArcFour(u8* seed, size_t size);
-        ~ArcFour();
+public:
+    ArcFour(size_t size);
+    ArcFour(u8* seed, size_t size);
+    ~ArcFour();
 
-        void Setup(u8* seed);
-        void UpdateEncryption(size_t size, u8* data);
+    void Setup(u8* seed);
+    void UpdateEncryption(size_t size, u8* data);
 
-    private:
-        EVP_CIPHER_CTX* _CIPHER_CONTEXT;
+private:
+    EVP_CIPHER_CTX* _CIPHER_CONTEXT;
 };

@@ -453,7 +453,11 @@ public:
         return PutBytes(packedGuid, size);
     }
 
-    void Reset() { WrittenData = 0; ReadData = 0; }
+    void Reset()
+    {
+        WrittenData = 0;
+        ReadData = 0;
+    }
     bool IsEmpty() { return WrittenData == 0; }
     bool IsFull() { return WrittenData == Size; }
     u32 GetRemainingSpace() { return static_cast<u32>(Size - WrittenData); }
@@ -544,6 +548,7 @@ public:
             return dataStore;
         }
     }
+
 private:
     u8* _data;
 

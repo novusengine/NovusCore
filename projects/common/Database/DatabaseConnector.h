@@ -102,7 +102,6 @@ public:
     static void QueryAsync(DATABASE_TYPE type, PreparedStatement statement, std::function<void(amy::result_set& results, DatabaseConnector& connector)> const& func) { QueryAsync(type, statement.Get(), func); }
     static void ExecuteAsync(DATABASE_TYPE type, PreparedStatement statement) { ExecuteAsync(type, statement.Get()); }
 
-
     bool Execute(std::string sql);
     inline bool Execute(PreparedStatement statement) { return Execute(statement.Get()); }
     inline void ExecuteAsync(std::string sql) { ExecuteAsync(_type, sql); }
@@ -114,6 +113,7 @@ public:
     inline void QueryAsync(PreparedStatement statement, std::function<void(amy::result_set& results, DatabaseConnector& connector)> const& func) { QueryAsync(_type, statement.Get(), func); }
 
     ~DatabaseConnector();
+
 private:
     DatabaseConnector(); // Constructor is private because we don't want to allow newing these, use Create to aquire a smartpointer.
     bool _Connect(DATABASE_TYPE type);

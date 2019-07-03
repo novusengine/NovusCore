@@ -28,59 +28,69 @@
 #pragma pack(push, 1)
 struct cAuthLogonChallenge
 {
-    u8   command;
-    u8   error;
-    u16  size;
-    u8   gamename[4];
-    u8   version1;
-    u8   version2;
-    u8   version3;
-    u16  build;
-    u8   platform[4];
-    u8   os[4];
-    u8   country[4];
-    u32  timezone_bias;
-    u32  ip;
-    u8   username_length;
-    u8   username_pointer[1];
+    u8 command;
+    u8 error;
+    u16 size;
+    u8 gamename[4];
+    u8 version1;
+    u8 version2;
+    u8 version3;
+    u16 build;
+    u8 platform[4];
+    u8 os[4];
+    u8 country[4];
+    u32 timezone_bias;
+    u32 ip;
+    u8 username_length;
+    u8 username_pointer[1];
 };
 
 struct cAuthLogonProof
 {
-    u8   command;
-    u8   A[32];
-    u8   M1[20];
-    u8   crc_hash[20];
-    u8   number_of_keys;
-    u8   securityFlags;
+    u8 command;
+    u8 A[32];
+    u8 M1[20];
+    u8 crc_hash[20];
+    u8 number_of_keys;
+    u8 securityFlags;
 };
 
 struct cAuthReconnectProof
 {
-    u8   cmd;
-    u8   R1[16];
-    u8   R2[20];
-    u8   R3[20];
-    u8   number_of_keys;
+    u8 cmd;
+    u8 R1[16];
+    u8 R2[20];
+    u8 R3[20];
+    u8 number_of_keys;
 };
 #pragma pack(pop)
 
-std::array<u8, 16> VersionChallenge = { { 0xBA, 0xA3, 0x1E, 0x99, 0xA0, 0x0B, 0x21, 0x57, 0xFC, 0x37, 0x3F, 0xB3, 0x69, 0xCD, 0xD2, 0xF1 } };
+std::array<u8, 16> VersionChallenge = {{0xBA, 0xA3, 0x1E, 0x99, 0xA0, 0x0B,
+                                        0x21, 0x57, 0xFC, 0x37, 0x3F, 0xB3,
+                                        0x69, 0xCD, 0xD2, 0xF1}};
 #define MAX_REALM_COUNT 256
 
-robin_hood::unordered_map<u8, AuthMessageHandler> AuthConnection::InitMessageHandlers()
+robin_hood::unordered_map<u8, AuthMessageHandler>
+AuthConnection::InitMessageHandlers()
 {
     robin_hood::unordered_map<u8, AuthMessageHandler> messageHandlers;
 
-    messageHandlers[AUTH_CHALLENGE] = { STATUS_CHALLENGE, 4, 1, &AuthConnection::HandleCommandChallenge };
-    messageHandlers[AUTH_PROOF] = { STATUS_PROOF, sizeof(cAuthLogonProof), 1, &AuthConnection::HandleCommandProof };
-    messageHandlers[AUTH_RECONNECT_CHALLENGE] = { STATUS_CHALLENGE, 4, 1, &AuthConnection::HandleCommandReconnectChallenge };
-    messageHandlers[AUTH_RECONNECT_PROOF] = { STATUS_RECONNECT_PROOF, sizeof(cAuthReconnectProof), 1, &AuthConnection::HandleCommandReconnectProof };
-    messageHandlers[AUTH_REALMSERVER_LIST] = { STATUS_AUTHED, 5, 3, &AuthConnection::HandleCommandRealmserverList };
+    messageHandlers[AUTH_CHALLENGE] = {STATUS_CHALLENGE, 4, 1,
+                                       &AuthConnection::HandleCommandChallenge};
+    messageHandlers[AUTH_PROOF] = {STATUS_PROOF, sizeof(cAuthLogonProof), 1,
+                                   &AuthConnection::HandleCommandProof};
+    messageHandlers[AUTH_RECONNECT_CHALLENGE] = {
+        STATUS_CHALLENGE, 4, 1, &AuthConnection::HandleCommandReconnectChallenge};
+    messageHandlers[AUTH_RECONNECT_PROOF] = {
+        STATUS_RECONNECT_PROOF, sizeof(cAuthReconnectProof), 1,
+        &AuthConnection::HandleCommandReconnectProof};
+    messageHandlers[AUTH_REALMSERVER_LIST] = {
+        STATUS_AUTHED, 5, 3, &AuthConnection::HandleCommandRealmserverList};
 
     return messageHandlers;
 }
-robin_hood::unordered_map<u8, AuthMessageHandler> const MessageHandlers = AuthConnection::InitMessageHandlers();
+robin_hood::unordered_map<u8, AuthMessageHandler> const MessageHandlers =
+    AuthConnection::InitMessageHandlers();
 
 bool AuthConnection::Start()
 {
@@ -104,7 +114,7 @@ void AuthConnection::HandleRead()
             _socket->close();
             return;
         }
-        
+
         if (command < AUTH_REALMSERVER_LIST)
         {
             packetsReadOfType = packetsReadThisRead[command]++;
@@ -126,7 +136,8 @@ void AuthConnection::HandleRead()
 
         if (command == AUTH_CHALLENGE || command == AUTH_RECONNECT_CHALLENGE)
         {
-            cAuthLogonChallenge* logonChallenge = reinterpret_cast<cAuthLogonChallenge*>(buffer.GetReadPointer());
+            cAuthLogonChallenge* logonChallenge =
+                reinterpret_cast<cAuthLogonChallenge*>(buffer.GetReadPointer());
             size += logonChallenge->size;
             if (size > (sizeof(cAuthLogonChallenge) + 16))
             {
@@ -154,13 +165,21 @@ bool AuthConnection::HandleCommandChallenge()
 {
     _status = STATUS_CLOSED;
 
-    cAuthLogonChallenge* logonChallenge = reinterpret_cast<cAuthLogonChallenge*>(GetReceiveBuffer().GetReadPointer());
-    std::string login(reinterpret_cast<char const*>(logonChallenge->username_pointer), logonChallenge->username_length);
+    cAuthLogonChallenge* logonChallenge = reinterpret_cast<cAuthLogonChallenge*>(
+        GetReceiveBuffer().GetReadPointer());
+    std::string login(
+        reinterpret_cast<char const*>(logonChallenge->username_pointer),
+        logonChallenge->username_length);
     username = login;
 
-    PreparedStatement stmt("SELECT guid, salt, verifier FROM accounts WHERE username={s};");
+    PreparedStatement stmt(
+        "SELECT guid, salt, verifier FROM accounts WHERE username={s};");
     stmt.Bind(username);
-    DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, stmt, [this](amy::result_set& results, DatabaseConnector& connector) { HandleCommandChallengeCallback(results); });
+    DatabaseConnector::QueryAsync(
+        DATABASE_TYPE::AUTHSERVER, stmt,
+        [this](amy::result_set& results, DatabaseConnector& connector) {
+            HandleCommandChallengeCallback(results);
+        });
 
     return true;
 }
@@ -168,11 +187,11 @@ void AuthConnection::HandleCommandChallengeCallback(amy::result_set& results)
 {
     /* Logon Challenge Data Structure
 
-       - Type: u8,      Name: Packet Command
-       - Type: u8,      Name: Error Code
-       - Type: u8,      Name: Result Code
-       - Type:  ?,      Name: Logon Challenge Data (See below for structure)
-    */
+     - Type: u8,      Name: Packet Command
+     - Type: u8,      Name: Error Code
+     - Type: u8,      Name: Result Code
+     - Type:  ?,      Name: Logon Challenge Data (See below for structure)
+  */
     DataStore dataStore;
     dataStore.PutU8(AUTH_CHALLENGE);
     dataStore.PutU8(0);
@@ -201,7 +220,6 @@ void AuthConnection::HandleCommandChallengeCallback(amy::result_set& results)
 
     /* Check Wow Client Build Version Here */
     {
-
     }
 
     _status = STATUS_PROOF;
@@ -209,16 +227,16 @@ void AuthConnection::HandleCommandChallengeCallback(amy::result_set& results)
 
     /* Logon Challenge Data Structure
 
-       - Type: u8[32],  Name: B
-       - Type: u8,      Name: Lenght of G
-       - Type: u8,      Name: G
-       - Type: u8,      Name: Lenght of N
-       - Type: u8[32],  Name: N
-       - Type: u8[32],  Name: Salt
-       - Type: u8[16],  Name: Version Challenge
-       - Type: u8,      Name: Security Flag
-       https://en.wikipedia.org/wiki/Secure_Remote_Password_protocol
-    */
+     - Type: u8[32],  Name: B
+     - Type: u8,      Name: Lenght of G
+     - Type: u8,      Name: G
+     - Type: u8,      Name: Lenght of N
+     - Type: u8[32],  Name: N
+     - Type: u8[32],  Name: Salt
+     - Type: u8[16],  Name: Version Challenge
+     - Type: u8,      Name: Security Flag
+     https://en.wikipedia.org/wiki/Secure_Remote_Password_protocol
+  */
     dataStore.PutBytes(B.BN2BinArray(32).get(), 32);
     dataStore.PutU8(1);
     dataStore.PutU8(g.BN2BinArray(1).get()[0]);
@@ -229,8 +247,8 @@ void AuthConnection::HandleCommandChallengeCallback(amy::result_set& results)
     dataStore.PutU8(0);
 
     /*
-        We should check here if we need to handle security flags
-    */
+      We should check here if we need to handle security flags
+  */
 
     Send(dataStore);
 }
@@ -238,7 +256,8 @@ void AuthConnection::HandleCommandChallengeCallback(amy::result_set& results)
 bool AuthConnection::HandleCommandProof()
 {
     _status = STATUS_CLOSED;
-    cAuthLogonProof* logonProof = reinterpret_cast<cAuthLogonProof*>(GetReceiveBuffer().GetReadPointer());
+    cAuthLogonProof* logonProof =
+        reinterpret_cast<cAuthLogonProof*>(GetReceiveBuffer().GetReadPointer());
 
     BigNumber A;
     A.Bin2BN(logonProof->A, 32);
@@ -322,42 +341,46 @@ bool AuthConnection::HandleCommandProof()
         memcpy(proofM2, sha.GetData(), 20);
 
         // Update Database with SessionKey
-        PreparedStatement stmt("UPDATE accounts SET sessionkey={s} WHERE username={s};");
+        PreparedStatement stmt(
+            "UPDATE accounts SET sessionkey={s} WHERE username={s};");
         stmt.Bind(K.BN2Hex());
         stmt.Bind(username);
-        DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, stmt, [this, proofM2](amy::result_set& results, DatabaseConnector& connector)
-        {
-            /* Logon Proof Data Structure
+        DatabaseConnector::QueryAsync(
+            DATABASE_TYPE::AUTHSERVER, stmt,
+            [this, proofM2](amy::result_set& results,
+                            DatabaseConnector& connector) {
+                /* Logon Proof Data Structure
 
-               - Type: u8,      Name: Packet Command
-               - Type: u8,      Name: Error Code
-               - Type: u8[20],  Name: SRP6 Hash Proof
-               - Type: u32,     Name: Account Flags
-               - Type: u32,     Name: SurveyId
-               - Type: u16,     Name: Login Flags
+             - Type: u8,      Name: Packet Command
+             - Type: u8,      Name: Error Code
+             - Type: u8[20],  Name: SRP6 Hash Proof
+             - Type: u32,     Name: Account Flags
+             - Type: u32,     Name: SurveyId
+             - Type: u16,     Name: Login Flags
 
-               https://en.wikipedia.org/wiki/Secure_Remote_Password_protocol
-            */
-            DataStore dataStore;
-            dataStore.PutU8(AUTH_PROOF);
-            dataStore.PutU8(0);
-            dataStore.PutBytes(const_cast<u8*>(reinterpret_cast<const u8*>(proofM2)), 20);
-            dataStore.PutU32(0);
-            dataStore.PutU32(0);
-            dataStore.PutU16(0);
+             https://en.wikipedia.org/wiki/Secure_Remote_Password_protocol
+          */
+                DataStore dataStore;
+                dataStore.PutU8(AUTH_PROOF);
+                dataStore.PutU8(0);
+                dataStore.PutBytes(
+                    const_cast<u8*>(reinterpret_cast<const u8*>(proofM2)), 20);
+                dataStore.PutU32(0);
+                dataStore.PutU32(0);
+                dataStore.PutU16(0);
 
-            Send(dataStore);
-            _status = STATUS_AUTHED;
-        });
+                Send(dataStore);
+                _status = STATUS_AUTHED;
+            });
     }
     else
     {
         /* Logon Proof Data Structure
 
-           - Type: u8,      Name: Packet Command
-           - Type: u8,      Name: Error Code
-           - Type: u16,     Name: Login Flags
-        */
+       - Type: u8,      Name: Packet Command
+       - Type: u8,      Name: Error Code
+       - Type: u16,     Name: Login Flags
+    */
         DataStore dataStore;
         dataStore.PutU8(AUTH_PROOF);
         dataStore.PutU8(AUTH_FAIL_UNKNOWN_ACCOUNT);
@@ -373,30 +396,40 @@ bool AuthConnection::HandleCommandReconnectChallenge()
 {
     _status = STATUS_CLOSED;
 
-    cAuthLogonChallenge* logonChallenge = reinterpret_cast<cAuthLogonChallenge*>(GetReceiveBuffer().GetReadPointer());
-    if (logonChallenge->size - (sizeof(cAuthLogonChallenge) - 4 - 1) != logonChallenge->username_length)
+    cAuthLogonChallenge* logonChallenge = reinterpret_cast<cAuthLogonChallenge*>(
+        GetReceiveBuffer().GetReadPointer());
+    if (logonChallenge->size - (sizeof(cAuthLogonChallenge) - 4 - 1) !=
+        logonChallenge->username_length)
         return false;
 
-    std::string login(reinterpret_cast<char const*>(logonChallenge->username_pointer), logonChallenge->username_length);
+    std::string login(
+        reinterpret_cast<char const*>(logonChallenge->username_pointer),
+        logonChallenge->username_length);
     username = login;
 
-    PreparedStatement stmt("SELECT guid, sessionKey FROM accounts WHERE username={s};");
+    PreparedStatement stmt(
+        "SELECT guid, sessionKey FROM accounts WHERE username={s};");
     stmt.Bind(username);
-    DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, stmt, [this](amy::result_set& results, DatabaseConnector& connector) { HandleCommandReconnectChallengeCallback(results); });
+    DatabaseConnector::QueryAsync(
+        DATABASE_TYPE::AUTHSERVER, stmt,
+        [this](amy::result_set& results, DatabaseConnector& connector) {
+            HandleCommandReconnectChallengeCallback(results);
+        });
 
     return true;
 }
-void AuthConnection::HandleCommandReconnectChallengeCallback(amy::result_set& results)
+void AuthConnection::HandleCommandReconnectChallengeCallback(
+    amy::result_set& results)
 {
     /* Logon Proof Data Structure
 
-       - Type: u8,      Name: Packet Command
-       - Type: u8,      Name: Error Code
-       - Type: u8[20],  Name: Reconnect Seed
-       - Type: u8[20],  Name: Version Challenge
+     - Type: u8,      Name: Packet Command
+     - Type: u8,      Name: Error Code
+     - Type: u8[20],  Name: Reconnect Seed
+     - Type: u8[20],  Name: Version Challenge
 
-       https://en.wikipedia.org/wiki/Secure_Remote_Password_protocol
-    */
+     https://en.wikipedia.org/wiki/Secure_Remote_Password_protocol
+  */
     DataStore dataStore;
     dataStore.PutU8(AUTH_RECONNECT_CHALLENGE);
 
@@ -423,7 +456,9 @@ void AuthConnection::HandleCommandReconnectChallengeCallback(amy::result_set& re
 bool AuthConnection::HandleCommandReconnectProof()
 {
     _status = STATUS_CLOSED;
-    cAuthReconnectProof* reconnectLogonProof = reinterpret_cast<cAuthReconnectProof*>(GetReceiveBuffer().GetReadPointer());
+    cAuthReconnectProof* reconnectLogonProof =
+        reinterpret_cast<cAuthReconnectProof*>(
+            GetReceiveBuffer().GetReadPointer());
     if (username.length() == 0 || !_reconnectSeed.GetBytes() || !K.GetBytes())
         return false;
 
@@ -440,10 +475,10 @@ bool AuthConnection::HandleCommandReconnectProof()
     {
         /* Logon Proof Data Structure
 
-           - Type: u8,      Name: Packet Command
-           - Type: u8,      Name: Error Code
-           - Type: u16,     Name: Login Flags
-        */
+       - Type: u8,      Name: Packet Command
+       - Type: u8,      Name: Error Code
+       - Type: u16,     Name: Login Flags
+    */
         DataStore dataStore;
         dataStore.PutU8(AUTH_RECONNECT_PROOF);
         dataStore.PutU8(0);
@@ -461,89 +496,99 @@ bool AuthConnection::HandleCommandRealmserverList()
 {
     _status = STATUS_WAITING_FOR_REALMSERVER_LIST;
 
-    PreparedStatement realmCharacterCount("SELECT realmId, characters FROM realm_characters WHERE account={u};");
+    PreparedStatement realmCharacterCount(
+        "SELECT realmId, characters FROM realm_characters WHERE account={u};");
     realmCharacterCount.Bind(accountGuid);
-    DatabaseConnector::QueryAsync(DATABASE_TYPE::AUTHSERVER, realmCharacterCount, [this](amy::result_set& result, DatabaseConnector& connector)
-    {
-        std::vector<u8> realmCharacterData(MAX_REALM_COUNT);
-        std::fill(realmCharacterData.begin(), realmCharacterData.end(), 0);
+    DatabaseConnector::QueryAsync(
+        DATABASE_TYPE::AUTHSERVER, realmCharacterCount,
+        [this](amy::result_set& result, DatabaseConnector& connector) {
+            std::vector<u8> realmCharacterData(MAX_REALM_COUNT);
+            std::fill(realmCharacterData.begin(), realmCharacterData.end(), 0);
 
-        for (auto row : result)
-        {
-            realmCharacterData[row[0].GetU8()] = row[1].GetU8();
-        }
+            for (auto row : result)
+            {
+                realmCharacterData[row[0].GetU8()] = row[1].GetU8();
+            }
 
-        amy::result_set realmserverListResultData;
-        if (!connector.Query("SELECT id, name, address, type, flags, timezone, population FROM realms;", realmserverListResultData))
-            return;
+            amy::result_set realmserverListResultData;
+            if (!connector.Query("SELECT id, name, address, type, flags, timezone, "
+                                 "population FROM realms;",
+                                 realmserverListResultData))
+                return;
 
-        /* Logon Proof Data Structure
+            /* Logon Proof Data Structure
 
            - Type: u8,      Name: Packet Command
            - Type: u16,     Name: Packet Payload Size (Excluding command + self)
-           - Type: u32,     Name: Unknown (I've been unable to figure out what this does so far)
+           - Type: u32,     Name: Unknown (I've been unable to figure out what
+           this does so far)
            - Type: u16,     Name: Count of available realms
 
-           - Type: ?,       Name: Realm Data (See Below for structure information)
+           - Type: ?,       Name: Realm Data (See Below for structure
+           information)
 
            - Type: u8,      Name: Unknown (This value depends on game version)
            - Type: u8,      Name: Unknown (This value depends on game version)
 
         */
-        DataStore dataStore(nullptr, 32768);
-        dataStore.PutU8(AUTH_REALMSERVER_LIST);
+            DataStore dataStore(nullptr, 32768);
+            dataStore.PutU8(AUTH_REALMSERVER_LIST);
 
-        // Calculate expected payload size. Realm Strings are accounted for later.
-        size_t dataStoreSize = 6 + (realmserverListResultData.affected_rows() * 10) + 2;
+            // Calculate expected payload size. Realm Strings are accounted for
+            // later.
+            size_t dataStoreSize =
+                6 + (realmserverListResultData.affected_rows() * 10) + 2;
 
-        // Store WritePos to later write Payload Size. Reserve 2 bytes.
-        size_t dataStoreSizeWrittenPos = dataStore.WrittenData;
-        dataStore.PutU16(0);
+            // Store WritePos to later write Payload Size. Reserve 2 bytes.
+            size_t dataStoreSizeWrittenPos = dataStore.WrittenData;
+            dataStore.PutU16(0);
 
-        dataStore.PutU32(0);
-        dataStore.PutU16(static_cast<u16>(realmserverListResultData.affected_rows()));
+            dataStore.PutU32(0);
+            dataStore.PutU16(
+                static_cast<u16>(realmserverListResultData.affected_rows()));
 
-        for (auto row : realmserverListResultData)
-        {
-            /*
-               - Type: u8,      Name: Realm Type
-               - Type: u8,      Name: Is Realm Locked
-               - Type: u8,      Name: Realm Flags
-               - Type: string,  Name: Realm Name
-               - Type: string,  Name: Realm Address
-               - Type: f32,     Name: Realm Population (Valid values are 0, 1, 2)
-               - Type: u8,      Name: Count of characters for the player on the given realm
-               - Type: u8,      Name: Realm Timezone
-               - Type: u8,      Name: Realm Id
-            */
-            u8 realmId = row[0].GetU8();
-            dataStore.PutU8(row[3].GetU8());
-            dataStore.PutU8(0);
-            dataStore.PutU8(row[4].GetU8());
-            size_t realmNameSize = dataStore.PutString(row[1].GetString());
-            size_t realmAddressSize = dataStore.PutString(row[2].GetString());
-            dataStore.PutF32(row[6].GetF32());
-            dataStore.PutU8(realmCharacterData[realmId]);
-            dataStore.PutU8(row[5].GetU8());
-            dataStore.PutU8(realmId);
+            for (auto row : realmserverListResultData)
+            {
+                /*
+             - Type: u8,      Name: Realm Type
+             - Type: u8,      Name: Is Realm Locked
+             - Type: u8,      Name: Realm Flags
+             - Type: string,  Name: Realm Name
+             - Type: string,  Name: Realm Address
+             - Type: f32,     Name: Realm Population (Valid values are 0, 1, 2)
+             - Type: u8,      Name: Count of characters for the player on the
+             given realm
+             - Type: u8,      Name: Realm Timezone
+             - Type: u8,      Name: Realm Id
+          */
+                u8 realmId = row[0].GetU8();
+                dataStore.PutU8(row[3].GetU8());
+                dataStore.PutU8(0);
+                dataStore.PutU8(row[4].GetU8());
+                size_t realmNameSize = dataStore.PutString(row[1].GetString());
+                size_t realmAddressSize = dataStore.PutString(row[2].GetString());
+                dataStore.PutF32(row[6].GetF32());
+                dataStore.PutU8(realmCharacterData[realmId]);
+                dataStore.PutU8(row[5].GetU8());
+                dataStore.PutU8(realmId);
 
-            // Add Realm String Sizes to Payload Size
-            dataStoreSize += realmNameSize + realmAddressSize;
-        }
+                // Add Realm String Sizes to Payload Size
+                dataStoreSize += realmNameSize + realmAddressSize;
+            }
 
-        // (Only needed for clients TBC+)
-        dataStore.PutU8(0x10); // Unk1
-        dataStore.PutU8(0x00); // Unk2
+            // (Only needed for clients TBC+)
+            dataStore.PutU8(0x10); // Unk1
+            dataStore.PutU8(0x00); // Unk2
 
-        // Store WritePos. Write Payload Size. Restore WritePos
-        size_t dataStoreFinalWritePos = dataStore.WrittenData;
-        dataStore.WrittenData = dataStoreSizeWrittenPos;
-        dataStore.PutU16(static_cast<u16>(dataStoreSize));
-        dataStore.WrittenData = dataStoreFinalWritePos;
+            // Store WritePos. Write Payload Size. Restore WritePos
+            size_t dataStoreFinalWritePos = dataStore.WrittenData;
+            dataStore.WrittenData = dataStoreSizeWrittenPos;
+            dataStore.PutU16(static_cast<u16>(dataStoreSize));
+            dataStore.WrittenData = dataStoreFinalWritePos;
 
-        Send(dataStore);
-        _status = STATUS_AUTHED;
-    });
+            Send(dataStore);
+            _status = STATUS_AUTHED;
+        });
 
     return true;
 }

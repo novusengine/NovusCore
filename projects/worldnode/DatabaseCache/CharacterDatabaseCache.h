@@ -6,7 +6,7 @@
 class CharacterDatabaseCache;
 struct CharacterInfo
 {
-    CharacterInfo() { }
+    CharacterInfo() {}
     CharacterInfo(CharacterDatabaseCache* cache) { _cache = cache; }
     CharacterInfo(const CharacterInfo& data)
     {
@@ -41,6 +41,7 @@ struct CharacterInfo
     u8 online;
 
     void UpdateCache(u64 characterGuid);
+
 private:
     CharacterDatabaseCache* _cache;
 };
@@ -66,13 +67,14 @@ struct CharacterData
 
     bool loaded = false;
     void UpdateCache();
+
 private:
     CharacterDatabaseCache* _cache;
 };
 // character_visual_data table in DB
 struct CharacterVisualData
 {
-    CharacterVisualData() { }
+    CharacterVisualData() {}
     CharacterVisualData(CharacterDatabaseCache* cache) { _cache = cache; }
     CharacterVisualData(const CharacterVisualData& data)
     {
@@ -96,13 +98,14 @@ struct CharacterVisualData
     {
         //_cache->_characterVisualDataCache[characterGuid] = *this;
     }
+
 private:
     CharacterDatabaseCache* _cache;
 };
 // character_spell_storage table in DB
 struct CharacterSpellStorage
 {
-    CharacterSpellStorage() { }
+    CharacterSpellStorage() {}
     CharacterSpellStorage(CharacterDatabaseCache* cache) { _cache = cache; }
     CharacterSpellStorage(const CharacterSpellStorage& data)
     {
@@ -120,13 +123,14 @@ struct CharacterSpellStorage
     {
         //_cache->_characterSpellStorageCache[characterGuid].erase(id);
     }
+
 private:
     CharacterDatabaseCache* _cache;
 };
 // character_skill_storage table in DB
 struct CharacterSkillStorage
 {
-    CharacterSkillStorage() { }
+    CharacterSkillStorage() {}
     CharacterSkillStorage(CharacterDatabaseCache* cache) { _cache = cache; }
     CharacterSkillStorage(const CharacterSkillStorage& data)
     {
@@ -148,33 +152,35 @@ struct CharacterSkillStorage
     {
         //_cache->_characterSkillStorageCache[characterGuid].erase(id);
     }
+
 private:
     CharacterDatabaseCache* _cache;
 };
 // character_items table in DB
 struct CharacterItemData
 {
-	CharacterItemData() { }
-	CharacterItemData(CharacterDatabaseCache* cache) { _cache = cache; }
-	CharacterItemData(const CharacterItemData& data)
-	{
-		lowGuid = data.lowGuid;
-		itemEntry = data.itemEntry;
-		bagSlot = data.bagSlot;
-		bagPosition = data.bagPosition;
-		characterGuid = data.characterGuid;
-		_cache = data._cache;
-	}
+    CharacterItemData() {}
+    CharacterItemData(CharacterDatabaseCache* cache) { _cache = cache; }
+    CharacterItemData(const CharacterItemData& data)
+    {
+        lowGuid = data.lowGuid;
+        itemEntry = data.itemEntry;
+        bagSlot = data.bagSlot;
+        bagPosition = data.bagPosition;
+        characterGuid = data.characterGuid;
+        _cache = data._cache;
+    }
 
-	u32 lowGuid;
-	u32 itemEntry;
-	u8 bagSlot;
-	u32 bagPosition;
-	u64 characterGuid;
+    u32 lowGuid;
+    u32 itemEntry;
+    u8 bagSlot;
+    u32 bagPosition;
+    u64 characterGuid;
 
-	void UpdateCache(u64 characterGuid, u32 itemEntry);
+    void UpdateCache(u64 characterGuid, u32 itemEntry);
+
 private:
-	CharacterDatabaseCache* _cache;
+    CharacterDatabaseCache* _cache;
 };
 
 class CharacterDatabaseCache : BaseDatabaseCache
@@ -187,7 +193,7 @@ public:
     void LoadAsync() override;
     void Save() override;
     void SaveAsync() override;
-    
+
     void SaveAndUnloadCharacter(u64 characterGuid);
     void SaveCharacter(u64 characterGuid);
     void UnloadCharacter(u64 characterGuid);
@@ -204,24 +210,24 @@ public:
     // Character Spell Storage cache
     bool GetCharacterSpellStorage(u64 characterGuid, robin_hood::unordered_map<u32, CharacterSpellStorage>& output);
 
-	// Character Skill Storage cache
-	bool GetCharacterSkillStorage(u64 characterGuid, robin_hood::unordered_map<u32, CharacterSkillStorage>& output);
+    // Character Skill Storage cache
+    bool GetCharacterSkillStorage(u64 characterGuid, robin_hood::unordered_map<u32, CharacterSkillStorage>& output);
 
-	// Character Item cache
-	bool GetCharacterItemData(u64 characterGuid, robin_hood::unordered_map<u32, CharacterItemData>& output);
+    // Character Item cache
+    bool GetCharacterItemData(u64 characterGuid, robin_hood::unordered_map<u32, CharacterItemData>& output);
 
 private:
     friend CharacterInfo;
     friend CharacterData;
     friend CharacterVisualData;
     friend CharacterSpellStorage;
-	friend CharacterSkillStorage;
-	friend CharacterItemData;
+    friend CharacterSkillStorage;
+    friend CharacterItemData;
 
-    robin_hood::unordered_map<u64, CharacterInfo> _characterInfoCache; // Character Guid
-    robin_hood::unordered_map<u64, CharacterData[8]> _characterDataCache; // Character Guid, DataCache Type
-    robin_hood::unordered_map<u64, CharacterVisualData> _characterVisualDataCache; // Character Guid
+    robin_hood::unordered_map<u64, CharacterInfo> _characterInfoCache;                                                 // Character Guid
+    robin_hood::unordered_map<u64, CharacterData[8]> _characterDataCache;                                              // Character Guid, DataCache Type
+    robin_hood::unordered_map<u64, CharacterVisualData> _characterVisualDataCache;                                     // Character Guid
     robin_hood::unordered_map<u64, robin_hood::unordered_map<u32, CharacterSpellStorage>> _characterSpellStorageCache; // Character Guid, Spell Id
     robin_hood::unordered_map<u64, robin_hood::unordered_map<u32, CharacterSkillStorage>> _characterSkillStorageCache; // Character Guid, Skill Id
-	robin_hood::unordered_map<u64, robin_hood::unordered_map<u32, CharacterItemData>> _characteritemDataCache; // Character Guid, Item LowGuid
+    robin_hood::unordered_map<u64, robin_hood::unordered_map<u32, CharacterItemData>> _characteritemDataCache;         // Character Guid, Item LowGuid
 };

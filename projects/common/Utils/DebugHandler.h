@@ -23,7 +23,7 @@
 */
 #pragma once
 
-#if defined (_WIN32)
+#if defined(_WIN32)
 #include <Windows.h>
 #endif
 #include <string>
@@ -46,25 +46,49 @@ enum ColorCode
     RED = 12,
 };
 
-#define NC_LOG_MESSAGE(message, ...) if (!DebugHandler::isInitialized) { DebugHandler::Initialize(); } \
-DebugHandler::Print(message, ##__VA_ARGS__);
+#define NC_LOG_MESSAGE(message, ...)  \
+    if (!DebugHandler::isInitialized) \
+    {                                 \
+        DebugHandler::Initialize();   \
+    }                                 \
+    DebugHandler::Print(message, ##__VA_ARGS__);
 
-#define NC_LOG_WARNING(message, ...) if (!DebugHandler::isInitialized) { DebugHandler::Initialize(); } \
-DebugHandler::PrintWarning(message, ##__VA_ARGS__);
+#define NC_LOG_WARNING(message, ...)  \
+    if (!DebugHandler::isInitialized) \
+    {                                 \
+        DebugHandler::Initialize();   \
+    }                                 \
+    DebugHandler::PrintWarning(message, ##__VA_ARGS__);
 
-#define NC_LOG_DEPRECATED(message, ...) if (!DebugHandler::isInitialized) { DebugHandler::Initialize(); } \
-DebugHandler::PrintDeprecated(message, ##__VA_ARGS__);
+#define NC_LOG_DEPRECATED(message, ...) \
+    if (!DebugHandler::isInitialized)   \
+    {                                   \
+        DebugHandler::Initialize();     \
+    }                                   \
+    DebugHandler::PrintDeprecated(message, ##__VA_ARGS__);
 
-#define NC_LOG_ERROR(message, ...) if (!DebugHandler::isInitialized) { DebugHandler::Initialize(); } \
-DebugHandler::PrintError(message, ##__VA_ARGS__);
+#define NC_LOG_ERROR(message, ...)    \
+    if (!DebugHandler::isInitialized) \
+    {                                 \
+        DebugHandler::Initialize();   \
+    }                                 \
+    DebugHandler::PrintError(message, ##__VA_ARGS__);
 
-#define NC_LOG_FATAL(message, ...) if (!DebugHandler::isInitialized) { DebugHandler::Initialize(); } \
-DebugHandler::PrintFatal(message, ##__VA_ARGS__);
+#define NC_LOG_FATAL(message, ...)    \
+    if (!DebugHandler::isInitialized) \
+    {                                 \
+        DebugHandler::Initialize();   \
+    }                                 \
+    DebugHandler::PrintFatal(message, ##__VA_ARGS__);
 
-#define NC_LOG_SUCCESS(message, ...) if (!DebugHandler::isInitialized) { DebugHandler::Initialize(); } \
-DebugHandler::PrintSuccess(message, ##__VA_ARGS__);
+#define NC_LOG_SUCCESS(message, ...)  \
+    if (!DebugHandler::isInitialized) \
+    {                                 \
+        DebugHandler::Initialize();   \
+    }                                 \
+    DebugHandler::PrintSuccess(message, ##__VA_ARGS__);
 
-#if defined (__clang__)
+#if defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
@@ -115,9 +139,10 @@ public:
         PrintColor("[Success]: ", ColorCode::GREEN);
         Print(message, args...);
     }
+
 private:
     template <typename... Args>
-    inline static void PrintColor(std::string message, ColorCode color, Args...args)
+    inline static void PrintColor(std::string message, ColorCode color, Args... args)
     {
 #ifdef _WIN32
         SetConsoleTextAttribute(_handle, color);
@@ -131,22 +156,22 @@ private:
         const std::string reset("\033[0m");
 
         std::string withColors;
-        switch(color)
+        switch (color)
         {
-            case ColorCode::RED:
-                withColors = red + message + reset;
-                break;
-            case ColorCode::YELLOW:
-                withColors = yellow + message + reset;
-                break;
-            case ColorCode::MAGENTA:
-                withColors = magenta + message + reset;
-                break;
-            case ColorCode::GREEN:
-                withColors = green + message + reset;
-                break;
-            default:
-                withColors = message;
+        case ColorCode::RED:
+            withColors = red + message + reset;
+            break;
+        case ColorCode::YELLOW:
+            withColors = yellow + message + reset;
+            break;
+        case ColorCode::MAGENTA:
+            withColors = magenta + message + reset;
+            break;
+        case ColorCode::GREEN:
+            withColors = green + message + reset;
+            break;
+        default:
+            withColors = message;
         }
 
         Print(withColors, args...);
@@ -157,7 +182,7 @@ private:
     static u32 _defaultColor;
     static HANDLE _handle;
 #endif
-}; 
-#if defined (__clang__)
+};
+#if defined(__clang__)
 #pragma GCC diagnostic pop
 #endif

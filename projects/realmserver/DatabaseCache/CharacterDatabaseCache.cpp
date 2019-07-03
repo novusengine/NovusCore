@@ -49,8 +49,8 @@ void CharacterDatabaseCache::Load()
             newCharacterVisualData.hairColor = row[17].as<amy::sql_tinyint_unsigned>();
 
             _accessMutex.lock();
-            _characterInfoCache.insert({ newCharacterInfo.guid, newCharacterInfo });
-            _characterVisualDataCache.insert({ newCharacterVisualData.guid, newCharacterVisualData });
+            _characterInfoCache.insert({newCharacterInfo.guid, newCharacterInfo});
+            _characterVisualDataCache.insert({newCharacterVisualData.guid, newCharacterVisualData});
             _accessMutex.unlock();
         }
     }
@@ -68,12 +68,12 @@ void CharacterDatabaseCache::Load()
             newCharacterData.loaded = true;
 
             _accessMutex.lock();
-            _characterDataCache.insert({ newCharacterData.guid, newCharacterData });
+            _characterDataCache.insert({newCharacterData.guid, newCharacterData});
             _accessMutex.unlock();
         }
     }
 
-    connector->Query("SELECT raceMask, classMask, spell FROM default_spells;", resultSet); 
+    connector->Query("SELECT raceMask, classMask, spell FROM default_spells;", resultSet);
     if (resultSet.affected_rows() > 0)
     {
         for (auto row : resultSet)
@@ -135,8 +135,7 @@ void CharacterDatabaseCache::LoadAsync()
 
 void CharacterDatabaseCache::Save()
 {
-    DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, [this](std::shared_ptr<DatabaseConnector> & connector)
-    {
+    DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, [this](std::shared_ptr<DatabaseConnector>& connector) {
         // Save Character Data
         for (auto itr : _characterDataCache)
         {
@@ -170,8 +169,7 @@ void CharacterDatabaseCache::SaveAndUnloadCharacter(u64 characterGuid)
 }
 void CharacterDatabaseCache::SaveCharacter(u64 characterGuid)
 {
-    DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, [this, characterGuid](std::shared_ptr<DatabaseConnector> & connector)
-    {
+    DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, [this, characterGuid](std::shared_ptr<DatabaseConnector>& connector) {
         CharacterInfo characterInfo = _characterInfoCache[characterGuid];
         PreparedStatement characterBaseData("UPDATE characters SET level={u}, mapId={u}, zoneId={u}, coordinate_x={f}, coordinate_y={f}, coordinate_z={f}, orientation={f} WHERE guid={u};");
         characterBaseData.Bind(characterInfo.level);
@@ -268,7 +266,7 @@ bool CharacterDatabaseCache::GetCharacterInfo(u64 guid, CharacterInfo& output)
         newCharacterInfo.orientation = resultSet[0][12].as<amy::sql_float>();
 
         _accessMutex.lock();
-        _characterInfoCache.insert({ guid, newCharacterInfo });
+        _characterInfoCache.insert({guid, newCharacterInfo});
         _accessMutex.unlock();
 
         output = newCharacterInfo;
@@ -319,7 +317,7 @@ bool CharacterDatabaseCache::GetCharacterData(u64 characterGuid, u32 type, Chara
     newCharacterData.loaded = true;
 
     _accessMutex.lock();
-    _characterDataCache.insert({ characterGuid, newCharacterData });
+    _characterDataCache.insert({characterGuid, newCharacterData});
     _accessMutex.unlock();
 
     output = newCharacterData;
@@ -364,7 +362,7 @@ bool CharacterDatabaseCache::GetCharacterVisualData(u64 guid, CharacterVisualDat
         newCharacterVisualData.hairColor = resultSet[0][5].as<amy::sql_tinyint_unsigned>();
 
         _accessMutex.lock();
-        _characterVisualDataCache.insert({ guid, newCharacterVisualData });
+        _characterVisualDataCache.insert({guid, newCharacterVisualData});
         _accessMutex.unlock();
 
         output = newCharacterVisualData;

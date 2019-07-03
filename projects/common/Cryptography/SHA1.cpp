@@ -35,7 +35,7 @@ SHA1Hasher::SHA1Hasher(bool broken /* = false */)
     if (broken)
     {
         _state.h0 = 0;
-        _state.h1 = 0;    
+        _state.h1 = 0;
         _state.h2 = 1732584193;
         _state.h3 = -271733879;
         _state.h4 = -1732584194;

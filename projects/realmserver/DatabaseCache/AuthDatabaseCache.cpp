@@ -33,7 +33,7 @@ void AuthDatabaseCache::Load()
             newAccountData.loaded = true;
 
             _accessMutex.lock();
-            _accountDataCache.insert({ newAccountData.accountGuid, newAccountData });
+            _accountDataCache.insert({newAccountData.accountGuid, newAccountData});
             _accessMutex.unlock();
         }
     }
@@ -49,13 +49,11 @@ void AuthDatabaseCache::Save()
 
 void AuthDatabaseCache::SaveAsync()
 {
-
 }
 
 void AuthDatabaseCache::SaveAccountData(u32 accountGuid, u32 type)
 {
-    DatabaseConnector::Borrow(DATABASE_TYPE::AUTHSERVER, [this, accountGuid, type](std::shared_ptr<DatabaseConnector> & connector)
-    {
+    DatabaseConnector::Borrow(DATABASE_TYPE::AUTHSERVER, [this, accountGuid, type](std::shared_ptr<DatabaseConnector>& connector) {
         AccountData accountData = _accountDataCache[accountGuid][type];
         if (accountData.loaded)
         {
@@ -116,7 +114,7 @@ bool AuthDatabaseCache::GetAccountData(u32 accountGuid, u32 type, AccountData& o
     newAccountData.loaded = true;
 
     _accessMutex.lock();
-    _accountDataCache.insert({ accountGuid, newAccountData });
+    _accountDataCache.insert({accountGuid, newAccountData});
     _accessMutex.unlock();
 
     output = newAccountData;

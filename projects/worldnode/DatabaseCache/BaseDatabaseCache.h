@@ -6,8 +6,8 @@
 class BaseDatabaseCache
 {
 public:
-    BaseDatabaseCache() {};
-    ~BaseDatabaseCache() {};
+    BaseDatabaseCache(){};
+    ~BaseDatabaseCache(){};
 
     virtual void Load() = 0;
     virtual void LoadAsync() = 0;
@@ -16,7 +16,6 @@ public:
     virtual void SaveAsync() = 0;
 
 private:
-
 protected:
     std::shared_mutex _accessMutex;
 };

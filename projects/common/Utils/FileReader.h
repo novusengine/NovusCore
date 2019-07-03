@@ -6,11 +6,11 @@
 class FileReader
 {
 public:
-    FileReader(std::string path, std::string fileName) : _path(path), _fileName(fileName), _length(0) { }
+    FileReader(std::string path, std::string fileName) : _path(path), _fileName(fileName), _length(0) {}
 
     bool Open()
     {
-		_fileStream.open(_path, std::ios_base::in | std::ios_base::binary);
+        _fileStream.open(_path, std::ios_base::in | std::ios_base::binary);
         if (!_fileStream)
             return false;
 
@@ -36,6 +36,7 @@ public:
     std::string Path() { return _path; }
     std::string FileName() { return _fileName; }
     size_t Length() { return _length; }
+
 private:
     std::ifstream _fileStream;
     std::string _path;

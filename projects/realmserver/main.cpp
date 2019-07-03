@@ -31,12 +31,11 @@
 #include "ConnectionHandlers/RealmConnectionHandler.h"
 #include "ConnectionHandlers/RealmSecondConnectionHandler.h"
 
-
 #ifdef _WIN32
 #include <Windows.h>
 #endif
 
-RealmConnectionHandler*   RealmConnectionHandler::_instance = nullptr;
+RealmConnectionHandler* RealmConnectionHandler::_instance = nullptr;
 RealmSecondConnectionHandler* RealmSecondConnectionHandler::_instance = nullptr;
 
 //The name of the console window.
@@ -44,9 +43,9 @@ RealmSecondConnectionHandler* RealmSecondConnectionHandler::_instance = nullptr;
 
 i32 main()
 {
-	/* Set up console window title */
-#ifdef _WIN32  //Windows
-	SetConsoleTitle(WINDOWNAME);
+    /* Set up console window title */
+#ifdef _WIN32 //Windows
+    SetConsoleTitle(WINDOWNAME);
 #endif
 
     /* Load Database Config Handler for server */
@@ -81,18 +80,17 @@ i32 main()
 
     u16 port = ConfigHandler::GetOption<u16>("port", 8000);
     RealmConnectionHandler realmConnectionHandler(io_service, port, authDatabaseCache, characterDatabaseCache);
-    RealmSecondConnectionHandler realmSecondConnectionHandler(io_service, port+1, authDatabaseCache, characterDatabaseCache);
+    RealmSecondConnectionHandler realmSecondConnectionHandler(io_service, port + 1, authDatabaseCache, characterDatabaseCache);
     realmConnectionHandler.Start();
     realmSecondConnectionHandler.Start();
 
     srand(static_cast<u32>(time(NULL)));
-    std::thread run_thread([&]
-    {
+    std::thread run_thread([&] {
         io_service.run();
     });
 
     NC_LOG_SUCCESS("Realmserver running on port: (%u, %u)", realmConnectionHandler.GetPort(), realmSecondConnectionHandler.GetPort());
 
     std::getchar();
-	return 0;
+    return 0;
 }
