@@ -636,7 +636,7 @@ namespace ConnectionSystem
                             packet.data->GetU32(emoteSoundIndex);
                             packet.data->GetU64(targetGuid);
 
-							EmoteTextData emoteTextData;
+                            EmoteTextData emoteTextData;
                             if (dbcDatabase.cache->GetEmoteTextData(emoteTextId, emoteTextData))
                             {
                                 std::shared_ptr<DataStore> buffer = DataStore::Borrow<36>();
