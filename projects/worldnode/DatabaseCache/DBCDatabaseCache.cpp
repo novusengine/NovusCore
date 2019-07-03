@@ -39,7 +39,7 @@ void DBCDatabaseCache::Load()
     }
 
     /* EmoteText Data*/
-    connector->Query("SELECT * FROM emotesText;", resultSet);
+    connector->Query("SELECT * FROM emotes_text;", resultSet);
     if (resultSet.affected_rows() > 0)
     {
         for (auto row : resultSet)
