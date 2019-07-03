@@ -30,7 +30,7 @@
 #include "MPQArchive.h"
 #include "MPQFile.h"
 
-const char* _wantedMPQs[] = { "patch.MPQ", "patch-2.MPQ", "patch-3.MPQ", "patch-enUS-3.MPQ", "patch-enGB-3.MPQ" };
+const char* _wantedMPQs[] = { "patch.MPQ", "patch-2.MPQ", "patch-3.MPQ", "patch-enUS.MPQ", "patch-enUS-2.MPQ", "patch-enUS-3.MPQ", "patch-enGB.MPQ", "patch-enGB-2.MPQ", "patch-enGB-3.MPQ" };
 const i32 _wantedMPQsSize = sizeof(_wantedMPQs) / sizeof(char*);
 
 class MPQHandler
@@ -83,6 +83,8 @@ public:
 	}
 	bool GetFile(std::string name, MPQFile& output)
 	{
+        bool fileFound = false;
+
 		for (MPQArchive archive : Archives)
 		{
 			u32 fileNumber = 0;
@@ -97,10 +99,10 @@ public:
 			if (!archive.ReadFile(fileNumber, file.Buffer.data(), fileSize)) continue;
 
 			output = file;
-			return true;
+            fileFound = true;
 		}
 
-		return false;
+		return fileFound;
 	}
 
 	void CloseAll()

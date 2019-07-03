@@ -61,6 +61,8 @@ i32 main()
 			MapLoader::LoadMaps(mpqHandler, adtLocations);
 		}
 
+        DBCLoader::LoadEmotesText(mpqHandler, sqlOutput);
+
 		NC_LOG_MESSAGE("Building sql...");
 		std::ofstream output(outputPath.string() + "/DBCImportData.sql", std::ofstream::out);
 		output << sqlOutput;

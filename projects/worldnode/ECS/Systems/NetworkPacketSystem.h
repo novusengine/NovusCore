@@ -35,6 +35,7 @@
 #include "../../NovusEnums.h"
 #include "../../Utils/CharacterUtils.h"
 #include "../../DatabaseCache/CharacterDatabaseCache.h"
+#include "../../DatabaseCache/DBCDatabaseCache.h"
 #include "../../WorldNodeHandler.h"
 #include "../../Scripting/PlayerFunctions.h"
 
@@ -47,6 +48,7 @@
 #include "../Components/Singletons/PlayerDeleteQueueSingleton.h"
 #include "../Components/Singletons/CharacterDatabaseCacheSingleton.h"
 #include "../Components/Singletons/WorldDatabaseCacheSingleton.h"
+#include "../Components/Singletons/DBCDatabaseCacheSingleton.h"
 #include "../Components/Singletons/PlayerPacketQueueSingleton.h"
 #include "../Components/Singletons/MapSingleton.h"
 
@@ -60,6 +62,7 @@ namespace ConnectionSystem
         PlayerDeleteQueueSingleton& playerDeleteQueue = registry.ctx<PlayerDeleteQueueSingleton>();
         CharacterDatabaseCacheSingleton& characterDatabase = registry.ctx<CharacterDatabaseCacheSingleton>();
         WorldDatabaseCacheSingleton& worldDatabase = registry.ctx<WorldDatabaseCacheSingleton>();
+		DBCDatabaseCacheSingleton& dbcDatabase = registry.ctx<DBCDatabaseCacheSingleton>();
         PlayerPacketQueueSingleton& playerPacketQueue = registry.ctx<PlayerPacketQueueSingleton>();
         WorldNodeHandler& worldNodeHandler = *singleton.worldNodeHandler;
         MapSingleton& mapSingleton = registry.ctx<MapSingleton>();
@@ -74,7 +77,7 @@ namespace ConnectionSystem
         LockWrite(PlayerPositionComponent);
 
         auto view = registry.view<PlayerConnectionComponent, PlayerFieldDataComponent, PlayerUpdateDataComponent, PlayerPositionComponent>();
-        view.each([&registry, &singleton, &playerDeleteQueue, &characterDatabase, &worldDatabase, &playerPacketQueue, &worldNodeHandler, &mapSingleton](const auto, PlayerConnectionComponent& playerConnection, PlayerFieldDataComponent& clientFieldData, PlayerUpdateDataComponent& playerUpdateData, PlayerPositionComponent& playerPositionData)
+        view.each([&registry, &singleton, &playerDeleteQueue, &characterDatabase, &worldDatabase, &dbcDatabase, &playerPacketQueue, &worldNodeHandler, &mapSingleton](const auto, PlayerConnectionComponent& playerConnection, PlayerFieldDataComponent& clientFieldData, PlayerUpdateDataComponent& playerUpdateData, PlayerPositionComponent& playerPositionData)
             {
                 ZoneScopedNC("Connection", tracy::Color::Orange2)
 
@@ -625,57 +628,54 @@ namespace ConnectionSystem
                         {
                             ZoneScopedNC("Packet::Text_emote", tracy::Color::Orange2)
 
-                                u32 textEmote;
-                            u32 emoteNum;
+                            u32 emoteTextId;
+                            u32 emoteSoundIndex;
                             u64 targetGuid;
 
-                            packet.data->GetU32(textEmote);
-                            packet.data->GetU32(emoteNum);
+                            packet.data->GetU32(emoteTextId);
+                            packet.data->GetU32(emoteSoundIndex);
                             packet.data->GetU64(targetGuid);
 
-                            u32 animationID;
-                            /* Pulling animation ID from database code here. */
-
-                            animationID = 10;
-
-                            /* End pulling animation ID from database here. */
-
-
-                            std::shared_ptr<DataStore> buffer = DataStore::Borrow<36>();
-                            /* Play animation packet. */
+                            EmoteTextData emoteTextData;
+                            if (dbcDatabase.cache->GetEmoteTextData(emoteTextId, emoteTextData))
                             {
-                                //The animation shouldn't play if the player is dead. In the future we should check for that.
-
-                                buffer->PutU32(animationID);
-                                buffer->PutU64(playerConnection.characterGuid);
-
-                                playerConnection.socket->SendPacket(buffer.get(), Opcode::SMSG_EMOTE);
-                            }
-
-                            /* Emote Chat Message Packet. */
-                            {
-                                CharacterInfo targetData;
-                                characterDatabase.cache->GetCharacterInfo(targetGuid, targetData);
-
-                                u32 targetNameLength = static_cast<u32>(targetData.name.size());
-
-                                buffer->Reset();
-                                buffer->PutU64(playerConnection.characterGuid);
-                                buffer->PutU32(textEmote);
-                                buffer->PutU32(emoteNum);
-                                buffer->PutU32(targetNameLength);
-                                if (targetNameLength > 1)
+                                std::shared_ptr<DataStore> buffer = DataStore::Borrow<36>();
+                                /* Play animation packet. */
                                 {
-                                    buffer->PutString(targetData.name);
-                                }
-                                else
-                                {
-                                    buffer->PutU8(0x00);
+                                    //The animation shouldn't play if the player is dead. In the future we should check for that.
+
+                                    buffer->PutU32(emoteTextData.animationId);
+                                    buffer->PutU64(playerConnection.characterGuid);
+
+                                    playerConnection.socket->SendPacket(buffer.get(), Opcode::SMSG_EMOTE);
                                 }
 
-                                playerConnection.socket->SendPacket(buffer.get(), Opcode::SMSG_TEXT_EMOTE);
-                            }
+                                /* Emote Chat Message Packet. */
+                                {
+                                    CharacterInfo targetData;
+                                    u32 targetNameLength = 0;
+                                    if (characterDatabase.cache->GetCharacterInfo(targetGuid, targetData))
+                                    {
+                                        targetNameLength = static_cast<u32>(targetData.name.size());
+                                    }
 
+                                    buffer->Reset();
+                                    buffer->PutU64(playerConnection.characterGuid);
+                                    buffer->PutU32(emoteTextId);
+                                    buffer->PutU32(emoteSoundIndex);
+                                    buffer->PutU32(targetNameLength);
+                                    if (targetNameLength > 1)
+                                    {
+                                        buffer->PutString(targetData.name);
+                                    }
+                                    else
+                                    {
+                                        buffer->PutU8(0x00);
+                                    }
+
+                                    playerConnection.socket->SendPacket(buffer.get(), Opcode::SMSG_TEXT_EMOTE);
+                                }
+                            }
                             packet.handled = true;
                             break;
                         }
