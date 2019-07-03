@@ -15,8 +15,9 @@ CREATE TABLE IF NOT EXISTS `map` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
-DROP TABLE IF EXISTS `emotesText`;
-CREATE TABLE IF NOT EXISTS `emotesText`(
+-- Dumping structure for table dbc.emotes_text
+DROP TABLE IF EXISTS `emotes_text`;
+CREATE TABLE IF NOT EXISTS `emotes_text`(
 	`id` INT unsigned NOT NULL,
 	`internalName` varchar(255) NOT NULL,
 	`animationId` INT unsigned NOT NULL,
