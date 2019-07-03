@@ -35,3 +35,10 @@ struct DBCMap
 	u32 Expansion;
 	u32 MaxPlayers;
 };
+
+struct DBCEmotesText
+{
+    u32 Id;
+    std::string InternalName;
+    u32 AnimationId;
+};
