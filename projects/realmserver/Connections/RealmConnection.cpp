@@ -212,7 +212,7 @@ void RealmConnection::HandleRead()
 bool RealmConnection::HandleNewHeader()
 {
     ClientPacketHeader* header = reinterpret_cast<ClientPacketHeader*>(_headerBuffer.GetReadPointer());
-    _streamCrypto.Decrypt(_headerBuffer.GetReadPointer(), sizeof(ClientPacketHeader));
+    _streamEncryption.Decrypt(_headerBuffer.GetReadPointer(), sizeof(ClientPacketHeader));
 
     // Reverse size bytes
     EndianConvertReverse(header->size);
@@ -251,8 +251,8 @@ bool RealmConnection::HandleNewPacket()
 #pragma warning(push)
 #pragma warning(disable: 4312)
             HMACH hmac(40, sessionKey->BN2BinArray(20).get());
-            hmac.UpdateHash((u8*)&ip, 4);
-            hmac.UpdateHash((u8*)&port, 2);
+            hmac.UpdateHash((u8*)&ip, sizeof(i32));
+            hmac.UpdateHash((u8*)&port, sizeof(i16));
             hmac.Finish();
             redirectClient.PutBytes(hmac.GetData(), 20);
 #pragma warning(pop)
@@ -268,10 +268,10 @@ bool RealmConnection::HandleNewPacket()
                 stmt.Bind(characterGuid);
                 connector->Execute(stmt);
                 
-                /*I'm am not 100% sure where this fits into the picture yet, but I'm sure it has a purpose*/
+                /* I'm am not 100% sure where this fits into the picture yet, but I'm sure it has a purpose
                 DataStore suspendComms;
                 suspendComms.PutU32(1);
-                SendPacket(suspendComms, Opcode::SMSG_SUSPEND_COMMS);
+                SendPacket(suspendComms, Opcode::SMSG_SUSPEND_COMMS);*/
                 
             });
             break;
@@ -660,7 +660,7 @@ void RealmConnection::SendPacket(DataStore& packet, Opcode opcode)
     u8 headerSize = header.GetLength();
     i32 packetSize = packet.GetActiveSize() + headerSize;
 
-    _streamCrypto.Encrypt(header.data, headerSize);
+    _streamEncryption.Encrypt(header.data, headerSize);
     _sendBuffer.Size = packetSize;
 
     if (!_sendBuffer.PutBytes(header.data, headerSize))
@@ -759,7 +759,7 @@ void RealmConnection::HandleAuthSession()
         return;
     }
 
-    _streamCrypto.SetupServer(sessionKey);
+    _streamEncryption.Setup(sessionKey);
     account = results[0][0].GetU32();
 
     /* SMSG_AUTH_RESPONSE */

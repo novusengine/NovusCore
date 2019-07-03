@@ -87,13 +87,13 @@ namespace ClientUpdateSystem
         }
 
         // Clear Queues
-        if (playerUpdatesQueue.playerUpdatePacketQueue.size() != 0)
+        if (!playerUpdatesQueue.playerUpdatePacketQueue.empty())
             playerUpdatesQueue.playerUpdatePacketQueue.clear();
 
-        if (playerUpdatesQueue.playerMovementPacketQueue.size() != 0)
+        if (!playerUpdatesQueue.playerMovementPacketQueue.empty())
             playerUpdatesQueue.playerMovementPacketQueue.clear();
 
-        if (playerUpdatesQueue.playerChatPacketQueue.size() != 0)
+        if (!playerUpdatesQueue.playerChatPacketQueue.empty())
             playerUpdatesQueue.playerChatPacketQueue.clear();
     }
 }

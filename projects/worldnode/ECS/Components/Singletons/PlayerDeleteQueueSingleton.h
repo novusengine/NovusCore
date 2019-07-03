@@ -28,7 +28,7 @@
 
 struct ExpiredPlayerData
 {
-    u32 entityGuid;
+    u32 entityId;
     u32 accountGuid;
     u64 characterGuid;
 };

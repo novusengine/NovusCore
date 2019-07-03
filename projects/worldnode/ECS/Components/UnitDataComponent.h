@@ -28,6 +28,6 @@
 
 struct UnitDataComponent
 {
-    u32 entityGuid;
+    u32 entityId;
     ObjectGuid unitGuid;
 };

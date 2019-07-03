@@ -8,16 +8,16 @@
 #include <Config/ConfigHandler.h>
 
 // Systems
-#include "ECS/Systems/PlayerConnectionSystem.h"
+#include "ECS/Systems/NetworkPacketSystem.h"
 #include "ECS/Systems/PlayerInitializeSystem.h"
 #include "ECS/Systems/EntityInitializeSystem.h"
 //#include "ECS/Systems/CommandParserSystem.h"
-#include "ECS/Systems/PlayerCreateDataSystem.h"
+#include "ECS/Systems/PlayerBuildDataSystem.h"
 #include "ECS/Systems/EntityCreateDataSystem.h"
-#include "ECS/Systems/PlayerUpdateDataSystem.h"
+#include "ECS/Systems/PlayerUpdateSystem.h"
 #include "ECS/Systems/ClientUpdateSystem.h"
-#include "ECS/Systems/PlayerCreateSystem.h"
-#include "ECS/Systems/EntityCreateSystem.h"
+#include "ECS/Systems/PlayerAddSystem.h"
+#include "ECS/Systems/EntityAddSystem.h"
 #include "ECS/Systems/PlayerDeleteSystem.h"
 #include "ECS/Systems/ScriptTransactionSystem.h"
 
@@ -132,6 +132,12 @@ void WorldNodeHandler::Run()
 
     //Commands::LoadCommands(_updateFramework.registry);
 
+
+    Message setupCompleteMessage;
+    setupCompleteMessage.code = MSG_OUT_SETUP_COMPLETE;
+    setupCompleteMessage;
+    _outputQueue.enqueue(setupCompleteMessage);
+
     Timer timer;
     while (true)
     {
@@ -192,9 +198,10 @@ bool WorldNodeHandler::Update()
                 assert(false);
 
             if (message.code == MSG_IN_EXIT)
+            {
                 return false;
-
-            if (message.code == MSG_IN_PING)
+            }
+            else if (message.code == MSG_IN_PING)
             {
                 ZoneScopedNC("Ping", tracy::Color::Green3)
                 Message pongMessage;
@@ -202,13 +209,11 @@ bool WorldNodeHandler::Update()
                 pongMessage.message = new std::string("PONG!");
                 _outputQueue.enqueue(pongMessage);
             }
-
-            if (message.code == MSG_IN_RELOAD_SCRIPTS)
+            else if (message.code == MSG_IN_RELOAD_SCRIPTS)
             {
                 ScriptHandler::ReloadScripts();
             }
-
-            if (message.code == MSG_IN_PLAYER_DISCONNECT)
+            else if (message.code == MSG_IN_PLAYER_DISCONNECT)
             {
                 SingletonComponent& singletonComponent = _updateFramework.registry.ctx<SingletonComponent>();
 
@@ -221,7 +226,7 @@ bool WorldNodeHandler::Update()
                     PlayerPositionComponent& playerPositionData = _updateFramework.registry.get<PlayerPositionComponent>(itr->second);
                     
                     ExpiredPlayerData expiredPlayerData;
-                    expiredPlayerData.entityGuid = playerConnection.entityGuid;
+                    expiredPlayerData.entityId = playerConnection.entityId;
                     expiredPlayerData.accountGuid = playerConnection.accountGuid;
                     expiredPlayerData.characterGuid = playerConnection.characterGuid;
                     playerDeleteQueue.expiredEntityQueue->enqueue(expiredPlayerData);
@@ -238,26 +243,21 @@ bool WorldNodeHandler::Update()
                     characterDatabase.cache->SaveAndUnloadCharacter(playerConnection.characterGuid);
                 }
             }
-
-            if (message.code == MSG_IN_FOWARD_PACKET)
+            else if (message.code == MSG_IN_PLAYER_CONNECTED)
             {
-                // Create Entity if it doesn't exist, otherwise add
-                if (static_cast<Opcode>(static_cast<u16>(message.opcode)) == Opcode::CMSG_PLAYER_LOGIN)
-                {
-                    ZoneScopedNC("LoginMessage", tracy::Color::Green3)
+                ZoneScopedNC("LoginMessage", tracy::Color::Green3)
                     _updateFramework.registry.ctx<PlayerCreateQueueSingleton>().newPlayerQueue->enqueue(message);
-                }
-                else
-                {
-                    ZoneScopedNC("ForwardMessage", tracy::Color::Green3)
+            }
+            else if (message.code == MSG_IN_NET_PACKET)
+            {
+                ZoneScopedNC("ForwardMessage", tracy::Color::Green3)
                     SingletonComponent& singletonComponent = _updateFramework.registry.ctx<SingletonComponent>();
 
-                    auto itr = singletonComponent.accountToEntityMap.find(static_cast<u32>(message.account));
-                    if (itr != singletonComponent.accountToEntityMap.end())
-                    {
-                        PlayerConnectionComponent& connection = _updateFramework.registry.get<PlayerConnectionComponent>(itr->second);
-                        connection.packets.push_back({ static_cast<u16>(message.opcode), false, message.packet });
-                    }
+                auto itr = singletonComponent.accountToEntityMap.find(static_cast<u32>(message.account));
+                if (itr != singletonComponent.accountToEntityMap.end())
+                {
+                    PlayerConnectionComponent& connection = _updateFramework.registry.get<PlayerConnectionComponent>(itr->second);
+                    connection.packets.push_back({ static_cast<u16>(message.opcode), false, message.packet });
                 }
             }
         }
@@ -291,45 +291,45 @@ void WorldNodeHandler::SetupUpdateFramework()
 
     // PlayerInitializeSystem
     tf::Task playerInitializeSystemTask = framework.emplace([&registry]()
-    {
-        ZoneScopedNC("PlayerInitializeSystem", tracy::Color::Blue2)
-        PlayerInitializeSystem::Update(registry);
-        registry.ctx<ScriptSingleton>().CompleteSystem();
-    });
+        {
+            ZoneScopedNC("PlayerInitializeSystem", tracy::Color::Blue2)
+                PlayerInitializeSystem::Update(registry);
+            registry.ctx<ScriptSingleton>().CompleteSystem();
+        });
     playerInitializeSystemTask.gather(connectionSystemTask);
 
     // EntityInitializeSystem
     tf::Task entityInitializeSystemTask = framework.emplace([&registry]()
-    {
-        ZoneScopedNC("EntityInitializeSystem", tracy::Color::Blue2)
-        EntityInitializeSystem::Update(registry);
-        registry.ctx<ScriptSingleton>().CompleteSystem();
-    });
+        {
+            ZoneScopedNC("EntityInitializeSystem", tracy::Color::Blue2)
+                EntityInitializeSystem::Update(registry);
+            registry.ctx<ScriptSingleton>().CompleteSystem();
+        });
     entityInitializeSystemTask.gather(playerInitializeSystemTask);
 
-    // PlayerCreateDataSystem
-    tf::Task playerCreateDataSystemTask = framework.emplace([&registry]()
-    {
-        ZoneScopedNC("PlayerCreateDataSystem", tracy::Color::Blue2)
-        PlayerCreateDataSystem::Update(registry);
-        registry.ctx<ScriptSingleton>().CompleteSystem();
-    });
-    playerCreateDataSystemTask.gather(entityInitializeSystemTask);
+    // PlayerBuildDataSystem
+    tf::Task playerBuildDataSystemTask = framework.emplace([&registry]()
+        {
+            ZoneScopedNC("PlayerBuildDataSystem", tracy::Color::Blue2)
+                PlayerBuildDataSystem::Update(registry);
+            registry.ctx<ScriptSingleton>().CompleteSystem();
+        });
+    playerBuildDataSystemTask.gather(entityInitializeSystemTask);
 
     // EntityCreateDataSystem
     tf::Task entityCreateDataSystemTask = framework.emplace([&registry]()
-    {
-        ZoneScopedNC("EntityCreateDataSystem", tracy::Color::Blue2)
-        EntityCreateDataSystem::Update(registry);
-        registry.ctx<ScriptSingleton>().CompleteSystem();
-    });
-    entityCreateDataSystemTask.gather(playerCreateDataSystemTask);
+        {
+            ZoneScopedNC("EntityCreateDataSystem", tracy::Color::Blue2)
+                EntityCreateDataSystem::Update(registry);
+            registry.ctx<ScriptSingleton>().CompleteSystem();
+        });
+    entityCreateDataSystemTask.gather(playerBuildDataSystemTask);
 
-    // PlayerUpdateDataSystem
+    // PlayerUpdateSystem
     tf::Task playerUpdateDataSystemTask = framework.emplace([&registry]()
     {
-        ZoneScopedNC("PlayerUpdateDataSystem", tracy::Color::Yellow2)
-        PlayerUpdateDataSystem::Update(registry);
+        ZoneScopedNC("PlayerUpdateSystem", tracy::Color::Yellow2)
+        PlayerUpdateSystem::Update(registry);
         registry.ctx<ScriptSingleton>().CompleteSystem();
     });
     playerUpdateDataSystemTask.gather(entityCreateDataSystemTask);
@@ -343,23 +343,23 @@ void WorldNodeHandler::SetupUpdateFramework()
     });
     clientUpdateSystemTask.gather(playerUpdateDataSystemTask);
 
-    // PlayerCreateSystem
-    tf::Task playerCreateSystemTask = framework.emplace([&registry]()
+    // PlayerAddSystem
+    tf::Task playerAddSystemTask = framework.emplace([&registry]()
     {
-        ZoneScopedNC("PlayerCreateSystem", tracy::Color::Blue2)
-        PlayerCreateSystem::Update(registry);
+        ZoneScopedNC("PlayerAddSystem", tracy::Color::Blue2)
+        PlayerAddSystem::Update(registry);
         registry.ctx<ScriptSingleton>().CompleteSystem();
     });
-    playerCreateSystemTask.gather(clientUpdateSystemTask);
+    playerAddSystemTask.gather(clientUpdateSystemTask);
 
     // ItemCreateSystem
-    tf::Task entityCreateSystemTask = framework.emplace([&registry]()
+    tf::Task entityAddSystemTask = framework.emplace([&registry]()
     {
-        ZoneScopedNC("EntityCreateSystem", tracy::Color::Blue2)
-        EntityCreateSystem::Update(registry);
+        ZoneScopedNC("EntityAddSystem", tracy::Color::Blue2)
+        EntityAddSystem::Update(registry);
         registry.ctx<ScriptSingleton>().CompleteSystem();
     });
-    entityCreateSystemTask.gather(playerCreateSystemTask);
+    entityAddSystemTask.gather(playerAddSystemTask);
 
     // PlayerDeleteSystem
     tf::Task playerDeleteSystemTask = framework.emplace([&registry]()
@@ -368,7 +368,7 @@ void WorldNodeHandler::SetupUpdateFramework()
         PlayerDeleteSystem::Update(registry);
         registry.ctx<ScriptSingleton>().CompleteSystem();
     });
-    playerDeleteSystemTask.gather(entityCreateSystemTask);
+    playerDeleteSystemTask.gather(entityAddSystemTask);
 
     // ScriptTransactionSystem - Always process this last, this is where all the changes from scripts gets applied back into the ECS
     tf::Task scriptTransactionSystemTask = framework.emplace([&registry]()

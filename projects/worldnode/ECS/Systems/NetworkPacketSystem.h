@@ -78,7 +78,7 @@ namespace ConnectionSystem
             {
                 ZoneScopedNC("Connection", tracy::Color::Orange2)
 
-                    for (OpcodePacket& packet : playerConnection.packets)
+                    for (NetPacket& packet : playerConnection.packets)
                     {
                         ZoneScopedNC("Packet", tracy::Color::Orange2)
 
@@ -101,7 +101,7 @@ namespace ConnectionSystem
                             ZoneScopedNC("Packet::LogoutRequest", tracy::Color::Orange2)
 
                                 ExpiredPlayerData expiredPlayerData;
-                            expiredPlayerData.entityGuid = playerConnection.entityGuid;
+                            expiredPlayerData.entityId = playerConnection.entityId;
                             expiredPlayerData.accountGuid = playerConnection.accountGuid;
                             expiredPlayerData.characterGuid = playerConnection.characterGuid;
                             playerDeleteQueue.expiredEntityQueue->enqueue(expiredPlayerData);
@@ -506,7 +506,7 @@ namespace ConnectionSystem
                             packet.data->GetU32(msgType);
                             packet.data->GetU32(msgLang);
 
-                            if (msgType >= MAX_MSG_TYPE)
+                            if (msgType >= CHAT_MSG_TYPE_MAX)
                             {
                                 // Client tried to use invalid type
                                 break;
@@ -557,7 +557,7 @@ namespace ConnectionSystem
                             playerUpdateData.chatUpdateData.push_back(chatUpdateData);
 
                             // Call OnPlayerChat script hooks
-                            AngelScriptPlayer asPlayer(playerConnection.entityGuid, &registry);
+                            AngelScriptPlayer asPlayer(playerConnection.entityId, &registry);
                             PlayerHooks::CallHook(PlayerHooks::Hooks::HOOK_ONPLAYERCHAT, &asPlayer, msgOutput);
                             break;
                         }
@@ -806,7 +806,7 @@ namespace ConnectionSystem
                 if (playerConnection.packets.size() > 0)
                 {
                     ZoneScopedNC("Packet::PacketClear", tracy::Color::Orange2)
-                        playerConnection.packets.erase(std::remove_if(playerConnection.packets.begin(), playerConnection.packets.end(), [](OpcodePacket& packet)
+                        playerConnection.packets.erase(std::remove_if(playerConnection.packets.begin(), playerConnection.packets.end(), [](NetPacket& packet)
                             {
                                 return packet.handled;
                             }), playerConnection.packets.end());

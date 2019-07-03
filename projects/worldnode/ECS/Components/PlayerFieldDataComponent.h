@@ -27,6 +27,7 @@
 
 #include "../../NovusEnums.h"
 #include "../../Utils/UpdateMask.h"
+#include "../../Utils/UpdateData.h"
 
 struct PlayerFieldDataComponent
 {
@@ -62,5 +63,6 @@ struct PlayerFieldDataComponent
     }
 
     UpdateMask<1344> changesMask;
+    UpdateData updateData;
     std::shared_ptr<DataStore> playerFields;
 };

@@ -65,15 +65,8 @@ i32 main()
 
     asio::io_service io_service(2);
     WorldConnectionHandler WorldConnectionHandler(io_service, ConfigHandler::GetOption<u16>("port", 8001), &worldNodeHandler);
-    WorldConnectionHandler.Start();
 
-    srand(static_cast<u32>(time(NULL)));
-    std::thread run_thread([&]
-    {
-        io_service.run();
-    });
-
-    NC_LOG_SUCCESS("Worldnode running on port: %u", WorldConnectionHandler.GetPort());
+    std::thread* run_thread;
 
     ConsoleCommandHandler consoleCommandHandler;
 	auto future = std::async(std::launch::async, GetLineFromCin);
@@ -88,12 +81,23 @@ i32 main()
 				shouldExit = true;
 				break;
 			}
-			if (message.code == MSG_OUT_PRINT)
+			else if (message.code == MSG_OUT_PRINT)
 			{
 				NC_LOG_MESSAGE(*message.message);
 				//std::cout <<  << std::endl;
 				delete message.message;
 			}
+            else if (message.code == MSG_OUT_SETUP_COMPLETE)
+            {
+                WorldConnectionHandler.Start();
+
+                srand(static_cast<u32>(time(NULL)));
+                run_thread = new std::thread([&]
+                    {
+                        io_service.run();
+                    });
+                NC_LOG_SUCCESS("Worldnode running on port: %u", WorldConnectionHandler.GetPort());
+            }
 		}
 
 		if (shouldExit)

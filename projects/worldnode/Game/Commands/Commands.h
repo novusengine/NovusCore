@@ -35,7 +35,7 @@ namespace Commands
 
     bool _GPS(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)
     {
-        PlayerPositionComponent& playerPos = _registry->get<PlayerPositionComponent>(clientConnection.entityGuid);
+        PlayerPositionComponent& playerPos = _registry->get<PlayerPositionComponent>(clientConnection.entityId);
         MapSingleton& mapSingleton = _registry->ctx<MapSingleton>();
 
         u16 mapId = playerPos.mapId;

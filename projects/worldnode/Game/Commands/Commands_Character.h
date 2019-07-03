@@ -50,7 +50,7 @@ namespace Commands_Character
                 level = 255;
 
             PlayerPacketQueueSingleton & playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
-            PlayerFieldDataComponent & clientFieldData = _registry->get<PlayerFieldDataComponent>(clientConnection.entityGuid);
+            PlayerFieldDataComponent & clientFieldData = _registry->get<PlayerFieldDataComponent>(clientConnection.entityId);
             u32 playerLevel = clientFieldData.GetFieldValue<u32>(UNIT_FIELD_LEVEL);
             if (playerLevel != level)
             {
@@ -157,7 +157,7 @@ namespace Commands_Character
 
             SingletonComponent& singletonData = _registry->ctx<SingletonComponent>();
             PlayerPacketQueueSingleton& playerPacketQueue = _registry->ctx<PlayerPacketQueueSingleton>();
-            PlayerPositionComponent& clientPositionData = _registry->get<PlayerPositionComponent>(clientConnection.entityGuid);
+            PlayerPositionComponent& clientPositionData = _registry->get<PlayerPositionComponent>(clientConnection.entityId);
 
             Common::ByteBuffer buffer;
             buffer.AppendGuid(clientConnection.characterGuid);
@@ -199,11 +199,11 @@ namespace Commands_Character
             EntityCreationRequest entityCreationRequest;
             entityCreationRequest.typeId = TYPEID_ITEM;
 
-            ItemCreationInformation* itemCreationInformation = ItemCreationInformation::Create(2, itemTemplate.entry, 255, 23, clientConnection.entityGuid, clientConnection.characterGuid);
+            ItemCreationInformation* itemCreationInformation = ItemCreationInformation::Create(2, itemTemplate.entry, 255, 23, clientConnection.entityId, clientConnection.characterGuid);
             entityCreationRequest.typeInformation = itemCreationInformation;
             _registry->ctx<EntityCreateQueueSingleton>().newEntityQueue->enqueue(entityCreationRequest);
 
-            PlayerFieldDataComponent& playerFieldData = _registry->get<PlayerFieldDataComponent>(clientConnection.entityGuid);
+            PlayerFieldDataComponent& playerFieldData = _registry->get<PlayerFieldDataComponent>(clientConnection.entityId);
             u64 itemGuid = (static_cast<u64>(2) | (static_cast<u64>(itemTemplate.entry) << 24) | (static_cast<u64>(0x4000) << 48));
             playerFieldData.SetGuidValue(PLAYER_FIELD_PACK_SLOT_1, itemGuid);
 

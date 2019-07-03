@@ -31,6 +31,7 @@
 #include "../Components/PlayerConnectionComponent.h"
 #include "../Components/PlayerUpdateDataComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
+#include "../Components/Singletons/GuidLookupSingleton.h"
 #include "../Components/Singletons/PlayerDeleteQueueSingleton.h"
 
 namespace PlayerDeleteSystem
@@ -38,54 +39,47 @@ namespace PlayerDeleteSystem
     void Update(entt::registry &registry)
     {
 		SingletonComponent& singleton = registry.ctx<SingletonComponent>();
+        GuidLookupSingleton& guidLookupSingleton = registry.ctx<GuidLookupSingleton>();
         PlayerDeleteQueueSingleton& deletePlayerQueue = registry.ctx<PlayerDeleteQueueSingleton>();
         MapSingleton& mapSingleton = registry.ctx<MapSingleton>();
 
         std::shared_ptr<DataStore> buildPacket = DataStore::Borrow<4096>();
-        std::vector<u64> deletedEntities;
-        UpdateData updateData;
 
         ExpiredPlayerData expiredPlayerData;
         while (deletePlayerQueue.expiredEntityQueue->try_dequeue(expiredPlayerData))
         {
-            // Remove player from current ADT
-            PlayerPositionComponent& positionComponent = registry.get<PlayerPositionComponent>(expiredPlayerData.entityGuid);
+            u64 characterGuid = expiredPlayerData.characterGuid;
+
+            PlayerPositionComponent& positionComponent = registry.get<PlayerPositionComponent>(expiredPlayerData.entityId);
             u32 mapId = positionComponent.mapId;
             u16 adtId = positionComponent.adtId;
 
+            // Remove player from current ADT
             if (adtId != INVALID_ADT)
             {
                 std::vector<u32>& playerList = mapSingleton.maps[mapId].playersInAdts[adtId];
-                auto iterator = std::find(playerList.begin(), playerList.end(), expiredPlayerData.entityGuid);
+                auto iterator = std::find(playerList.begin(), playerList.end(), expiredPlayerData.entityId);
                 assert(iterator != playerList.end());
                 playerList.erase(iterator);
-            }
 
-            updateData.AddGuid(expiredPlayerData.characterGuid);
-            deletedEntities.push_back(expiredPlayerData.characterGuid);
-            registry.destroy(expiredPlayerData.entityGuid);
-            singleton.accountToEntityMap.erase(expiredPlayerData.accountGuid);
-        }
-
-        if (!updateData.IsEmpty())
-        {
-            u16 buildOpcode = 0;
-            updateData.Build(buildPacket.get(), buildOpcode);
-
-            auto view = registry.view<PlayerConnectionComponent, PlayerUpdateDataComponent>();
-            view.each([&buildPacket, &deletedEntities, buildOpcode](const auto, PlayerConnectionComponent& playerConnection, PlayerUpdateDataComponent& playerUpdateData)
-            {
-                playerConnection.socket->SendPacket(buildPacket.get(), buildOpcode);
-
-                for (u64 guid : deletedEntities)
+                for (u32 entity : playerList)
                 {
-                    auto position = std::find(playerUpdateData.visibleGuids.begin(), playerUpdateData.visibleGuids.end(), guid);
-                    if (position != playerUpdateData.visibleGuids.end())
+                    PlayerConnectionComponent& currentConnection = registry.get<PlayerConnectionComponent>(entity);
+                    PlayerUpdateDataComponent& currentUpdateData = registry.get<PlayerUpdateDataComponent>(entity);
+                    PlayerFieldDataComponent& currentFieldData = registry.get<PlayerFieldDataComponent>(entity);
+
+                    auto iterator = std::find(currentUpdateData.visibleGuids.begin(), currentUpdateData.visibleGuids.end(), characterGuid);
+                    if (iterator != currentUpdateData.visibleGuids.end())
                     {
-                        playerUpdateData.visibleGuids.erase(position);
+                        currentUpdateData.visibleGuids.erase(iterator);
+                        currentFieldData.updateData.AddInvalidGuid(characterGuid);
                     }
                 }
-            });
+            }
+
+            singleton.accountToEntityMap.erase(expiredPlayerData.accountGuid);
+            guidLookupSingleton.playerToEntityMap.erase(expiredPlayerData.entityId);
+            registry.destroy(expiredPlayerData.entityId);
         }
     }
 }

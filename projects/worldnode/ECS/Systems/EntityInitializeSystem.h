@@ -1,4 +1,4 @@
-#include "PlayerConnectionSystem.h"
+#include "NetworkPacketSystem.h"
 #include <NovusTypes.h>
 #include <Networking/Opcode/Opcode.h>
 

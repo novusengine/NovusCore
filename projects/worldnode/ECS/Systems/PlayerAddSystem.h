@@ -36,16 +36,19 @@
 #include "../Components/PlayerSkillStorageComponent.h"
 #include "../Components/PlayerInitializeComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
+#include "../Components/Singletons/GuidLookupSingleton.h"
 #include "../Components/Singletons/PlayerCreateQueueSingleton.h"
 #include "../Components/Singletons/CharacterDatabaseCacheSingleton.h"
 
-namespace PlayerCreateSystem
+namespace PlayerAddSystem
 {
     void Update(entt::registry &registry)
     {
 		SingletonComponent& singleton = registry.ctx<SingletonComponent>();
+        GuidLookupSingleton& guidLookupSingleton = registry.ctx<GuidLookupSingleton>();
         PlayerCreateQueueSingleton& createPlayerQueue = registry.ctx<PlayerCreateQueueSingleton>();
         CharacterDatabaseCacheSingleton& characterDatabase = registry.ctx<CharacterDatabaseCacheSingleton>();
+        MapSingleton& mapSingleton = registry.ctx<MapSingleton>();
 
         Message message;
         while (createPlayerQueue.newPlayerQueue->try_dequeue(message))
@@ -56,21 +59,31 @@ namespace PlayerCreateSystem
             CharacterInfo characterInfo;
             if (characterDatabase.cache->GetCharacterInfo(characterGuid, characterInfo))
             {
-                u32 entity = registry.create();
-
+                u32 entityId = registry.create();
+                u32 accountId = static_cast<u32>(message.account);
                 ObjectGuid charGuid(characterGuid);
-                registry.assign<PlayerConnectionComponent>(entity, entity, static_cast<u32>(message.account), charGuid, message.connection);
-                registry.assign<PlayerInitializeComponent>(entity, entity, static_cast<u32>(message.account), charGuid, message.connection);
 
-                registry.assign<PlayerFieldDataComponent>(entity);
-                registry.assign<PlayerUpdateDataComponent>(entity);
+                registry.assign<PlayerConnectionComponent>(entityId, entityId, accountId, charGuid, message.connection);
+                registry.assign<PlayerInitializeComponent>(entityId, entityId, accountId, charGuid, message.connection);
 
-                // Human Starting Location: -8949.950195f, -132.492996f, 83.531197f, 0.f
-                registry.assign<PlayerPositionComponent>(entity, characterInfo.mapId, characterInfo.position, characterInfo.orientation);
-                registry.assign<PlayerSpellStorageComponent>(entity);
-                registry.assign<PlayerSkillStorageComponent>(entity);
+                registry.assign<PlayerFieldDataComponent>(entityId);
+                registry.assign<PlayerUpdateDataComponent>(entityId);
 
-                singleton.accountToEntityMap[static_cast<u32>(message.account)] = entity;
+                PlayerPositionComponent& playerPositionComponent = registry.assign<PlayerPositionComponent>(entityId, characterInfo.mapId, characterInfo.position, characterInfo.orientation);
+                Vector2 position = Vector2(playerPositionComponent.position.x, playerPositionComponent.position.y);
+
+                u16 adtId = 0;
+                if (mapSingleton.maps[playerPositionComponent.mapId].GetAdtIdFromWorldPosition(position, adtId))
+                {
+                    playerPositionComponent.adtId = adtId;
+                    mapSingleton.maps[playerPositionComponent.mapId].playersInAdts[adtId].push_back(entityId);
+                }
+
+                registry.assign<PlayerSpellStorageComponent>(entityId);
+                registry.assign<PlayerSkillStorageComponent>(entityId);
+
+                singleton.accountToEntityMap[static_cast<u32>(message.account)] = entityId;
+                guidLookupSingleton.playerToEntityMap[characterGuid] = entityId;
             }
         }
     }

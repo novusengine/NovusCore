@@ -39,12 +39,12 @@ public:
 private:
     static WorldConnectionHandler* _instance;
     WorldNodeHandler* _worldNodeHandler;
+
     void StartListening() override
     {
         asio::ip::tcp::socket* socket = new asio::ip::tcp::socket(_ioService);
         _acceptor.async_accept(*socket, std::bind(&WorldConnectionHandler::HandleNewConnection, this, socket, std::placeholders::_1));
     }
-
     void HandleNewConnection(asio::ip::tcp::socket* socket, const asio::error_code& error_code) override
     {
         if (!error_code)

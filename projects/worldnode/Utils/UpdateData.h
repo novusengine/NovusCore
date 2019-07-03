@@ -12,29 +12,34 @@ public:
         _data = DataStore::Borrow<8192>();
     }
 
-    bool IsEmpty() { return _data->IsEmpty() && _nonVisibleGuids.empty(); }
+    void ResetBlocks() { _data->Reset(); _blockCount = 0; }
+    void ResetInvalidGuids() { _invalidGuids.clear(); }
+    bool IsEmpty() { return _data->IsEmpty() && _invalidGuids.empty(); }
 
     void AddBlock(DataStore* block)
     {
         _data->PutBytes(block->GetInternalData(), block->WrittenData);
         _blockCount++;
     }
-    void AddGuid(u64 guid)
+    void AddInvalidGuid(u64 guid)
     {
-        _nonVisibleGuids.push_back(guid);
+        _invalidGuids.push_back(guid);
     }
 
     bool Build(DataStore* packet, u16& opcode)
     {
+        if (_blockCount == 0 && _invalidGuids.size() == 0)
+            return false;
+
         std::shared_ptr<DataStore> buffer = DataStore::Borrow<8192>();
-        buffer->PutU32(_nonVisibleGuids.empty() ? _blockCount : _blockCount + 1);
+        buffer->PutU32(_invalidGuids.empty() ? _blockCount : _blockCount + 1);
 
-        if (!_nonVisibleGuids.empty())
+        if (!_invalidGuids.empty())
         {
-            buffer->PutU8(4); // UPDATETYPE_OUT_OF_RANGE_OBJECTS
-            buffer->PutU32(static_cast<u32>(_nonVisibleGuids.size()));
+            buffer->PutU8(UPDATETYPE_OUT_OF_RANGE_OBJECTS);
+            buffer->PutU32(static_cast<u32>(_invalidGuids.size()));
 
-            for (u64 guid : _nonVisibleGuids)
+            for (u64 guid : _invalidGuids)
             {
                 buffer->PutGuid(guid);
             }
@@ -66,7 +71,7 @@ public:
 
 private:
     u32 _blockCount;
-    std::vector<u64> _nonVisibleGuids;
+    std::vector<u64> _invalidGuids;
     std::shared_ptr<DataStore> _data;
 
     void Compress(void* dst, u32 *dst_size, void* src, i32 src_size)

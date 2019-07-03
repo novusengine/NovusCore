@@ -28,7 +28,7 @@
 
 struct ItemDataComponent
 {
-    u32 entityGuid;
+    u32 entityId;
     ObjectGuid itemGuid;
 	u8 bagSlot;
 	u32 bagPosition;

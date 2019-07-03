@@ -26,7 +26,7 @@
 #include <asio/ip/tcp.hpp>
 #include <Networking/BaseSocket.h>
 #include <Networking/Opcode/Opcode.h>
-#include <Cryptography/StreamCrypto.h>
+#include <Cryptography/StreamEncryption.h>
 #include <Cryptography/BigNumber.h>
 #include <Cryptography/SHA1.h>
 #include <random>
@@ -106,7 +106,7 @@ private:
     DataStore _packetBuffer;
 
     u32 _seed;
-    StreamCrypto _streamCrypto;
+    StreamEncryption _streamEncryption;
     WorldNodeHandler* _worldNodeHandler;
 };
 

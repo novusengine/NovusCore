@@ -28,7 +28,7 @@
 class WorldConnection;
 struct PlayerInitializeComponent
 {
-	u32 entityGuid;
+	u32 entityId;
 	u32 accountGuid;
 	ObjectGuid characterGuid;
     WorldConnection* socket;

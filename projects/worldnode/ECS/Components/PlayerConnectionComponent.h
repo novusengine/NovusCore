@@ -28,7 +28,7 @@
 #include "../../Game/ObjectGuid/ObjectGuid.h"
 #include <vector>
 
-struct OpcodePacket
+struct NetPacket
 {
     u16 opcode;
     bool handled;
@@ -55,9 +55,9 @@ struct PlayerConnectionComponent
         socket->SendPacket(packet.get(), Opcode::SMSG_NOTIFICATION);
     }
 
-    u32 entityGuid;
+    u32 entityId;
     u32 accountGuid;
     ObjectGuid characterGuid;
     WorldConnection* socket;
-    std::vector<OpcodePacket> packets;
+    std::vector<NetPacket> packets;
 };

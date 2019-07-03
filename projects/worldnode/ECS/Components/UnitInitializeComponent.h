@@ -27,6 +27,6 @@
 
 struct UnitInitializeComponent
 {
-    u32 entityGuid = 0;
+    u32 entityId = 0;
 	ObjectGuid unitGuid;
 };

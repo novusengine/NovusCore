@@ -61,7 +61,7 @@ namespace EntityCreateDataSystem
 
         u32* flags = ItemUpdateFieldFlags;
         i32 fieldDataValue = 0;
-        u16 fieldNotifyFlags = UF_FLAG_DYNAMIC;
+        u16 fieldNotifyFlags = UPDATEFIELD_FLAG_ALL;
 
         for (u16 index = 0; index < ITEM_END; index++)
         {
@@ -162,7 +162,7 @@ namespace EntityCreateDataSystem
 
         u32* flags = UnitUpdateFieldFlags;
         i32 fieldDataValue = 0;
-        u16 fieldNotifyFlags = UF_FLAG_DYNAMIC;
+        u16 fieldNotifyFlags = UPDATEFIELD_FLAG_ALL;
 
         for (u16 index = 0; index < UNIT_END; index++)
         {
@@ -171,7 +171,7 @@ namespace EntityCreateDataSystem
                 unitFieldData.unitFields->Get<i32>(fieldDataValue, index * 4);
             }
 
-            if (fieldNotifyFlags & flags[index] || ((flags[index] & visibleFlags) & UF_FLAG_SPECIAL_INFO)
+            if (fieldNotifyFlags & flags[index] || ((flags[index] & visibleFlags) & UPDATEFIELD_FLAG_SPECIAL_INFO)
                 || ((updateType == UPDATETYPE_VALUES ? unitFieldData.changesMask.IsSet(index) : fieldDataValue)
                 && (flags[index] & visibleFlags)))
             {
@@ -333,7 +333,7 @@ namespace EntityCreateDataSystem
                 /* Build Self Packet, must be sent immediately */
                 u8 updateType = UPDATETYPE_CREATE_OBJECT;
                 u16 selfUpdateFlag = UPDATEFLAG_LOWGUID;
-                u32 selfVisibleFlags = (UF_FLAG_PUBLIC | UF_FLAG_OWNER);
+                u32 selfVisibleFlags = (UPDATEFIELD_FLAG_PUBLIC | UPDATEFIELD_FLAG_ITEM_OWNER);
                 u16 buildOpcode = 0;
 
                 std::shared_ptr<DataStore> selfItemUpdate = BuildItemCreateData(itemInitializeData.itemGuid, updateType, selfUpdateFlag, selfVisibleFlags, itemFieldData, buildOpcode);
@@ -365,7 +365,7 @@ namespace EntityCreateDataSystem
                 /* Build Self Packet for public */
                 u8 updateType = UPDATETYPE_CREATE_OBJECT2;
                 u16 publicUpdateFlag = (UPDATEFLAG_LIVING | UPDATEFLAG_STATIONARY_POSITION);
-                u32 publicVisibleFlags = UF_FLAG_PUBLIC;
+                u32 publicVisibleFlags = UPDATEFIELD_FLAG_PUBLIC;
                 u16 buildOpcode = 0;
 
                 PlayerUpdatePacket playerUpdatePacket;

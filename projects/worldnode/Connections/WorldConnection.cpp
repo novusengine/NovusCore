@@ -216,7 +216,7 @@ void WorldConnection::HandleRead()
 bool WorldConnection::HandleNewHeader()
 {
     ClientPacketHeader* header = reinterpret_cast<ClientPacketHeader*>(_headerBuffer.GetReadPointer());
-    _streamCrypto.Decrypt(_headerBuffer.GetReadPointer(), sizeof(ClientPacketHeader));
+    _streamEncryption.Decrypt(_headerBuffer.GetReadPointer(), sizeof(ClientPacketHeader));
 
     // Reverse size bytes
     EndianConvertReverse(header->size);
@@ -284,7 +284,7 @@ bool WorldConnection::HandleNewPacket()
         default:
         {
             Message packetMessage;
-            packetMessage.code = MSG_IN_FOWARD_PACKET;
+            packetMessage.code = MSG_IN_NET_PACKET;
             packetMessage.opcode = opcode;
             packetMessage.account = account;
 
@@ -313,7 +313,7 @@ void WorldConnection::SendPacket(DataStore* packet, u16 opcode)
     u8 headerSize = header.GetLength();
     i32 packetSize = packet->GetActiveSize() + headerSize;
 
-    _streamCrypto.Encrypt(header.data, headerSize);
+    _streamEncryption.Encrypt(header.data, headerSize);
     _sendBuffer.Size = packetSize;
 
     if (!_sendBuffer.IsFull())
@@ -401,7 +401,7 @@ void WorldConnection::HandleAuthSession()
                 return;
             }
 
-            _streamCrypto.SetupServer(&sessionKey);
+            _streamEncryption.Setup(&sessionKey);
             account = results[0][0].GetU32();
 
             /* SMSG_AUTH_RESPONSE */
@@ -507,7 +507,7 @@ void WorldConnection::HandleAuthSession()
                         u64 characterGuid = result[0][0].GetU64();
 
                         Message packetMessage;
-                        packetMessage.code = MSG_IN_FOWARD_PACKET;
+                        packetMessage.code = MSG_IN_PLAYER_CONNECTED;
                         packetMessage.opcode = Opcode::CMSG_PLAYER_LOGIN;
                         packetMessage.account = account;
 
