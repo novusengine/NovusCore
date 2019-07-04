@@ -27,10 +27,10 @@
 #include <cassert>
 #include <cstring>
 
-class DataStore
+class ByteBuffer
 {
 public:
-    DataStore(u8* inData = nullptr, size_t inSize = 128)
+    ByteBuffer(u8* inData = nullptr, size_t inSize = 128)
     {
         if (inData == nullptr)
         {
@@ -44,7 +44,7 @@ public:
 
         Size = inSize;
     }
-    ~DataStore()
+    ~ByteBuffer()
     {
         if (IsOwner)
         {
@@ -473,88 +473,88 @@ public:
     u8* GetWritePointer() { return _data + WrittenData; }
 
     template <size_t size>
-    static std::shared_ptr<DataStore> Borrow()
+    static std::shared_ptr<ByteBuffer> Borrow()
     {
         static_assert(size <= 8192);
 
         if constexpr (size <= 128)
         {
-            if (_dataStores128.empty())
+            if (_byteBuffer128.empty())
             {
-                DataStore* newDataStore = new DataStore(nullptr, 128);
-                _dataStores128.add(std::unique_ptr<DataStore>(newDataStore));
+                ByteBuffer* newDataStore = new ByteBuffer(nullptr, 128);
+                _byteBuffer128.add(std::unique_ptr<ByteBuffer>(newDataStore));
             }
 
-            std::shared_ptr<DataStore> dataStore = _dataStores128.acquire();
-            dataStore->Size = size;
-            dataStore->Reset();
+            std::shared_ptr<ByteBuffer> buffer = _byteBuffer128.acquire();
+            buffer->Size = size;
+            buffer->Reset();
 
-            return dataStore;
+            return buffer;
         }
         else if constexpr (size <= 512)
         {
-            if (_dataStores512.empty())
+            if (_byteBuffer512.empty())
             {
-                DataStore* newDataStore = new DataStore(nullptr, 512);
-                _dataStores512.add(std::unique_ptr<DataStore>(newDataStore));
+                ByteBuffer* newDataStore = new ByteBuffer(nullptr, 512);
+                _byteBuffer512.add(std::unique_ptr<ByteBuffer>(newDataStore));
             }
 
-            std::shared_ptr<DataStore> dataStore = _dataStores512.acquire();
-            dataStore->Size = size;
-            dataStore->Reset();
+            std::shared_ptr<ByteBuffer> buffer = _byteBuffer512.acquire();
+            buffer->Size = size;
+            buffer->Reset();
 
-            return dataStore;
+            return buffer;
         }
         else if constexpr (size <= 1024)
         {
-            if (_dataStores1024.empty())
+            if (_byteBuffer1024.empty())
             {
-                DataStore* newDataStore = new DataStore(nullptr, 1024);
-                _dataStores1024.add(std::unique_ptr<DataStore>(newDataStore));
+                ByteBuffer* newDataStore = new ByteBuffer(nullptr, 1024);
+                _byteBuffer1024.add(std::unique_ptr<ByteBuffer>(newDataStore));
             }
 
-            std::shared_ptr<DataStore> dataStore = _dataStores1024.acquire();
-            dataStore->Size = size;
-            dataStore->Reset();
+            std::shared_ptr<ByteBuffer> buffer = _byteBuffer1024.acquire();
+            buffer->Size = size;
+            buffer->Reset();
 
-            return dataStore;
+            return buffer;
         }
         else if constexpr (size <= 4096)
         {
-            if (_dataStores4096.empty())
+            if (_byteBuffer4096.empty())
             {
-                DataStore* newDataStore = new DataStore(nullptr, 4096);
-                _dataStores4096.add(std::unique_ptr<DataStore>(newDataStore));
+                ByteBuffer* newDataStore = new ByteBuffer(nullptr, 4096);
+                _byteBuffer4096.add(std::unique_ptr<ByteBuffer>(newDataStore));
             }
 
-            std::shared_ptr<DataStore> dataStore = _dataStores4096.acquire();
-            dataStore->Size = size;
-            dataStore->Reset();
+            std::shared_ptr<ByteBuffer> buffer = _byteBuffer4096.acquire();
+            buffer->Size = size;
+            buffer->Reset();
 
-            return dataStore;
+            return buffer;
         }
         else if constexpr (size <= 8192)
         {
-            if (_dataStores8192.empty())
+            if (_byteBuffer8192.empty())
             {
-                DataStore* newDataStore = new DataStore(nullptr, 8192);
-                _dataStores8192.add(std::unique_ptr<DataStore>(newDataStore));
+                ByteBuffer* newDataStore = new ByteBuffer(nullptr, 8192);
+                _byteBuffer8192.add(std::unique_ptr<ByteBuffer>(newDataStore));
             }
 
-            std::shared_ptr<DataStore> dataStore = _dataStores8192.acquire();
-            dataStore->Size = size;
-            dataStore->Reset();
+            std::shared_ptr<ByteBuffer> buffer = _byteBuffer8192.acquire();
+            buffer->Size = size;
+            buffer->Reset();
 
-            return dataStore;
+            return buffer;
         }
     }
 
 private:
     u8* _data;
 
-    static SharedPool<DataStore> _dataStores128;
-    static SharedPool<DataStore> _dataStores512;
-    static SharedPool<DataStore> _dataStores1024;
-    static SharedPool<DataStore> _dataStores4096;
-    static SharedPool<DataStore> _dataStores8192;
+    static SharedPool<ByteBuffer> _byteBuffer128;
+    static SharedPool<ByteBuffer> _byteBuffer512;
+    static SharedPool<ByteBuffer> _byteBuffer1024;
+    static SharedPool<ByteBuffer> _byteBuffer4096;
+    static SharedPool<ByteBuffer> _byteBuffer8192;
 };

@@ -23,7 +23,7 @@
 */
 #pragma once
 
-#include "DataStore.h"
+#include "ByteBuffer.h"
 #include "BaseSocket.h"
 
 #include <ctime>
@@ -49,11 +49,11 @@ public:
         return _socket;
     }
 
-    void Send(DataStore& dataStore)
+    void Send(ByteBuffer& buffer)
     {
-        if (!dataStore.IsEmpty() || dataStore.IsFull())
+        if (!buffer.IsEmpty() || buffer.IsFull())
         {
-            _socket->async_write_some(asio::buffer(dataStore.GetInternalData(), dataStore.WrittenData),
+            _socket->async_write_some(asio::buffer(buffer.GetInternalData(), buffer.WrittenData),
                                       std::bind(&BaseSocket::HandleInternalWrite, this, std::placeholders::_1, std::placeholders::_2));
         }
     }
@@ -90,9 +90,9 @@ protected:
         }
     }
 
-    DataStore& GetReceiveBuffer() { return _receiveBuffer; }
-    DataStore _receiveBuffer;
-    DataStore _sendBuffer;
+    ByteBuffer& GetReceiveBuffer() { return _receiveBuffer; }
+    ByteBuffer _receiveBuffer;
+    ByteBuffer _sendBuffer;
 
     bool _isClosed = false;
     asio::ip::tcp::socket* _socket;

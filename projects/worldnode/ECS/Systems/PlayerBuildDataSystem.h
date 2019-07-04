@@ -25,7 +25,7 @@
 #include <NovusTypes.h>
 #include <entt.hpp>
 #include <tracy\Tracy.hpp>
-#include <Networking/DataStore.h>
+#include <Networking/ByteBuffer.h>
 
 #include "../../NovusEnums.h"
 #include "../../Utils/UpdateData.h"
@@ -44,12 +44,12 @@
 
 namespace PlayerBuildDataSystem
 {
-std::shared_ptr<DataStore> PlayerBuildInitialData(u64 characterGuid, u8 updateType, u16 updateFlags, u32 visibleFlags, u32 lifeTimeInMS, PlayerFieldDataComponent& playerFieldData, PlayerPositionComponent position, u16& opcode)
+std::shared_ptr<ByteBuffer> PlayerBuildInitialData(u64 characterGuid, u8 updateType, u16 updateFlags, u32 visibleFlags, u32 lifeTimeInMS, PlayerFieldDataComponent& playerFieldData, PlayerPositionComponent position, u16& opcode)
 {
     ZoneScopedNC("PlayerBuildInitialData", tracy::Color::Yellow2)
 
-        std::shared_ptr<DataStore>
-            buffer = DataStore::Borrow<8192>();
+        std::shared_ptr<ByteBuffer>
+            buffer = ByteBuffer::Borrow<8192>();
     /*
             Buffer Structure
 
@@ -70,7 +70,7 @@ std::shared_ptr<DataStore> PlayerBuildInitialData(u64 characterGuid, u8 updateTy
             End Core Structure
             - BlockCount : u8 (Specifies the amount of update blocks in this update packet)
             - BlockMask : BlockCount x u32 (Specifies the update mask for the given block)
-            - FieldBuffer : DataStore (Specifies the updated EntityFields)
+            - FieldBuffer : ByteBuffer (Specifies the updated EntityFields)
         */
 
     buffer->PutU8(updateType);
@@ -99,7 +99,7 @@ std::shared_ptr<DataStore> PlayerBuildInitialData(u64 characterGuid, u8 updateTy
     buffer->PutF32(3.141593f); // MOVE_TURN_RATE
     buffer->PutF32(3.141593f); // MOVE_PITCH_RATE
 
-    std::shared_ptr<DataStore> fieldbuffer = DataStore::Borrow<5304>();
+    std::shared_ptr<ByteBuffer> fieldbuffer = ByteBuffer::Borrow<5304>();
     UpdateMask<1344> updateMask(PLAYER_END);
 
     u32* flags = UnitUpdateFieldFlags;
@@ -155,7 +155,7 @@ std::shared_ptr<DataStore> PlayerBuildInitialData(u64 characterGuid, u8 updateTy
             updateData.AddBlock(buffer.get());
     }
 
-    std::shared_ptr<DataStore> tempBuffer = DataStore::Borrow<8192>();
+    std::shared_ptr<ByteBuffer> tempBuffer = ByteBuffer::Borrow<8192>();
     {
         ZoneScopedNC("PlayerBuildInitialData::Build", tracy::Color::Yellow2)
             updateData.Build(tempBuffer.get(), opcode);
@@ -167,8 +167,8 @@ void PlayerBuildDataBlock(u64 characterGuid, u32 visibleFlags, PlayerFieldDataCo
 {
     ZoneScopedNC("PlayerBuildUpdateData", tracy::Color::Yellow2)
 
-        std::shared_ptr<DataStore>
-            buffer = DataStore::Borrow<8192>();
+        std::shared_ptr<ByteBuffer>
+            buffer = ByteBuffer::Borrow<8192>();
     /*
             Buffer Structure
 
@@ -179,13 +179,13 @@ void PlayerBuildDataBlock(u64 characterGuid, u32 visibleFlags, PlayerFieldDataCo
             End Core Structure
             - BlockCount : u8 (Specifies the amount of update blocks in this update packet)
             - BlockMask : BlockCount x u32 (Specifies the update mask for the given block)
-            - FieldBuffer : DataStore (Specifies the updated EntityFields)
+            - FieldBuffer : ByteBuffer (Specifies the updated EntityFields)
         */
 
     buffer->PutU8(UPDATETYPE_VALUES);
     buffer->PutGuid(characterGuid);
 
-    std::shared_ptr<DataStore> fieldbuffer = DataStore::Borrow<5304>();
+    std::shared_ptr<ByteBuffer> fieldbuffer = ByteBuffer::Borrow<5304>();
     UpdateMask<1344> updateMask(PLAYER_END);
 
     u32* flags = UnitUpdateFieldFlags;
@@ -268,7 +268,7 @@ void Update(entt::registry& registry)
             u32 visibleFlags = (UPDATEFIELD_FLAG_PUBLIC | UPDATEFIELD_FLAG_SELF);
             u16 buildOpcode = 0;
 
-            std::shared_ptr<DataStore> update = PlayerBuildInitialData(playerInitializeComponent.characterGuid, updateType, updateFlags, visibleFlags, lifeTimeInMS, playerFieldData, playerPositionData, buildOpcode);
+            std::shared_ptr<ByteBuffer> update = PlayerBuildInitialData(playerInitializeComponent.characterGuid, updateType, updateFlags, visibleFlags, lifeTimeInMS, playerFieldData, playerPositionData, buildOpcode);
             playerInitializeComponent.socket->SendPacket(update.get(), buildOpcode);
 
             // Call OnPlayerLogin script hooks
@@ -387,7 +387,7 @@ void Update(entt::registry& registry)
 
                         PlayerPositionComponent& currentPositionData = registry.get<PlayerPositionComponent>(entity);
 
-                        std::shared_ptr<DataStore> update = PlayerBuildInitialData(currentConnection.characterGuid, updateType, updateFlags, visibleFlags, lifeTimeInMS, currentFieldData, currentPositionData, buildOpcode);
+                        std::shared_ptr<ByteBuffer> update = PlayerBuildInitialData(currentConnection.characterGuid, updateType, updateFlags, visibleFlags, lifeTimeInMS, currentFieldData, currentPositionData, buildOpcode);
                         playerConnection.socket->SendPacket(update.get(), buildOpcode);
                         playerUpdateData.visibleGuids.push_back(currentConnection.characterGuid);
                     }
@@ -397,7 +397,7 @@ void Update(entt::registry& registry)
             if (!playerFieldData.updateData.IsEmpty())
             {
                 u16 buildOpcode = 0;
-                std::shared_ptr<DataStore> update = DataStore::Borrow<8192>();
+                std::shared_ptr<ByteBuffer> update = ByteBuffer::Borrow<8192>();
                 {
                     ZoneScopedNC("BuildUpdateDataView::Build", tracy::Color::Yellow2)
                         playerFieldData.updateData.Build(update.get(), buildOpcode);

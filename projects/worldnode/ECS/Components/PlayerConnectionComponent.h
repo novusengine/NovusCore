@@ -23,7 +23,7 @@
 */
 #pragma once
 #include <NovusTypes.h>
-#include <Networking/DataStore.h>
+#include <Networking/ByteBuffer.h>
 #include "../../Utils/CharacterUtils.h"
 #include "../../Game/ObjectGuid/ObjectGuid.h"
 #include <vector>
@@ -32,7 +32,7 @@ struct NetPacket
 {
     u16 opcode;
     bool handled;
-    std::shared_ptr<DataStore> data;
+    std::shared_ptr<ByteBuffer> data;
 };
 
 class WorldConnection;
@@ -41,7 +41,7 @@ struct PlayerConnectionComponent
     template <typename... Args>
     void SendChatNotification(std::string message, Args... args)
     {
-        std::shared_ptr<DataStore> packet = CharacterUtils::BuildNotificationPacket(message, std::forward<Args>(args)...);
+        std::shared_ptr<ByteBuffer> packet = CharacterUtils::BuildNotificationPacket(message, std::forward<Args>(args)...);
         socket->SendPacket(packet.get(), Opcode::SMSG_MESSAGECHAT);
     }
     template <typename... Args>
@@ -50,7 +50,7 @@ struct PlayerConnectionComponent
         char str[256];
         StringUtils::FormatString(str, sizeof(str), message.c_str(), args...);
 
-        std::shared_ptr<DataStore> packet = DataStore::Borrow<256>();
+        std::shared_ptr<ByteBuffer> packet = ByteBuffer::Borrow<256>();
         packet->PutString(str);
         socket->SendPacket(packet.get(), Opcode::SMSG_NOTIFICATION);
     }

@@ -24,7 +24,7 @@ void WorldDatabaseCache::Load()
     {
         for (auto row : resultSet)
         {
-            DataStore* itemQuery = new DataStore(nullptr, 500);
+            ByteBuffer* itemQuery = new ByteBuffer(nullptr, 500);
 
             ItemTemplate itemTemplate(this);
             itemTemplate.entry = row[0].GetU32();
@@ -216,7 +216,7 @@ void WorldDatabaseCache::Load()
             itemQuery->PutU32(itemTemplate.itemLimitCategory);
             itemQuery->PutU32(itemTemplate.holidayId);
 
-            itemTemplate._packet = std::shared_ptr<DataStore>(itemQuery);
+            itemTemplate._packet = std::shared_ptr<ByteBuffer>(itemQuery);
             _itemTemplateCache[itemTemplate.entry] = itemTemplate;
         }
     }

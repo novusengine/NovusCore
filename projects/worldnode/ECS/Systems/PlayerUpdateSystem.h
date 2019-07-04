@@ -25,7 +25,7 @@
 #include <algorithm>
 #include <NovusTypes.h>
 #include <entt.hpp>
-#include <Networking/DataStore.h>
+#include <Networking/ByteBuffer.h>
 
 #include "../../NovusEnums.h"
 
@@ -54,7 +54,7 @@ void Update(entt::registry& registry)
                 movementPacket.opcode = positionData.opcode;
                 movementPacket.characterGuid = playerConnection.characterGuid;
 
-                movementPacket.data = DataStore::Borrow<38>();
+                movementPacket.data = ByteBuffer::Borrow<38>();
                 movementPacket.data->PutGuid(movementPacket.characterGuid);
                 movementPacket.data->PutU32(positionData.movementFlags);
                 movementPacket.data->PutU16(positionData.movementFlagsExtra);
@@ -104,7 +104,7 @@ void Update(entt::registry& registry)
             ZoneScopedNC("ChatUpdate", tracy::Color::Yellow2) for (ChatUpdateData chatData : playerUpdateData.chatUpdateData)
             {
                 ChatPacket chatPacket;
-                chatPacket.data = DataStore::Borrow<286>();
+                chatPacket.data = ByteBuffer::Borrow<286>();
 
                 chatPacket.data->PutU8(chatData.chatType);
                 chatPacket.data->PutI32(chatData.language);

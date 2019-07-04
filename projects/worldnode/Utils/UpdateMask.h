@@ -1,6 +1,6 @@
 #pragma once
 #include <NovusTypes.h>
-#include <Networking/DataStore.h>
+#include <Networking/ByteBuffer.h>
 #include <bitset>
 
 #define CLIENT_UPDATE_MASK_BITS 32
@@ -52,7 +52,7 @@ public:
         return _bits.any();
     }
 
-    void AddTo(DataStore* buffer)
+    void AddTo(ByteBuffer* buffer)
     {
         u32 maskPart = 0;
         u32 j = 0;

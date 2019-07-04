@@ -1,5 +1,5 @@
 #include "MapLoader.h"
-#include <Networking/DataStore.h>
+#include <Networking/ByteBuffer.h>
 #include <Utils/DebugHandler.h>
 #include <Utils/StringUtils.h>
 #include <filesystem>
@@ -78,7 +78,7 @@ bool MapLoader::Load(entt::registry& registry)
 
 bool MapLoader::ExtractAdtInfo(FileReader& reader, NovusAdt& adt)
 {
-    DataStore buffer(nullptr, reader.Length());
+    ByteBuffer buffer(nullptr, reader.Length());
     reader.Read(buffer, buffer.Size);
 
     buffer.Get<NovusAdtHeader>(adt.adtHeader);

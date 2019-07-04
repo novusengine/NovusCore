@@ -56,7 +56,7 @@ void Update(entt::registry& registry)
         playerFieldData.ResetFields();
 
         /* SMSG_LOGIN_VERIFY_WORLD */
-        std::shared_ptr<DataStore> initializeBuffer = DataStore::Borrow<1024>();
+        std::shared_ptr<ByteBuffer> initializeBuffer = ByteBuffer::Borrow<1024>();
         initializeBuffer->PutU32(playerPositionData.mapId);
         initializeBuffer->Put<Vector3>(playerPositionData.position);
         initializeBuffer->PutF32(playerPositionData.orientation);

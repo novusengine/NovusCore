@@ -1,6 +1,6 @@
 #pragma once
 #include <NovusTypes.h>
-#include <Networking/DataStore.h>
+#include <Networking/ByteBuffer.h>
 #include <Networking/Opcode/Opcode.h>
 #include <zlib.h>
 
@@ -9,7 +9,7 @@ class UpdateData
 public:
     UpdateData() : _blockCount(0)
     {
-        _data = DataStore::Borrow<8192>();
+        _data = ByteBuffer::Borrow<8192>();
     }
 
     void ResetBlocks()
@@ -20,7 +20,7 @@ public:
     void ResetInvalidGuids() { _invalidGuids.clear(); }
     bool IsEmpty() { return _data->IsEmpty() && _invalidGuids.empty(); }
 
-    void AddBlock(DataStore* block)
+    void AddBlock(ByteBuffer* block)
     {
         _data->PutBytes(block->GetInternalData(), block->WrittenData);
         _blockCount++;
@@ -30,12 +30,12 @@ public:
         _invalidGuids.push_back(guid);
     }
 
-    bool Build(DataStore* packet, u16& opcode)
+    bool Build(ByteBuffer* packet, u16& opcode)
     {
         if (_blockCount == 0 && _invalidGuids.size() == 0)
             return false;
 
-        std::shared_ptr<DataStore> buffer = DataStore::Borrow<8192>();
+        std::shared_ptr<ByteBuffer> buffer = ByteBuffer::Borrow<8192>();
         buffer->PutU32(_invalidGuids.empty() ? _blockCount : _blockCount + 1);
 
         if (!_invalidGuids.empty())
@@ -76,7 +76,7 @@ public:
 private:
     u32 _blockCount;
     std::vector<u64> _invalidGuids;
-    std::shared_ptr<DataStore> _data;
+    std::shared_ptr<ByteBuffer> _data;
 
     void Compress(void* dst, u32* dst_size, void* src, i32 src_size)
     {

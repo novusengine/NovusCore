@@ -23,7 +23,7 @@
 */
 
 #include "RealmConnection.h"
-#include <Networking/DataStore.h>
+#include <Networking/ByteBuffer.h>
 #include <Cryptography/HMAC.h>
 #include <Cryptography/BigNumber.h>
 #include <Database/DatabaseConnector.h>
@@ -118,7 +118,7 @@ struct sAuthChallenge
     u8 seed1[16];
     u8 seed2[16];
 
-    void AddTo(DataStore& buffer)
+    void AddTo(ByteBuffer& buffer)
     {
         buffer.PutBytes(reinterpret_cast<u8*>(this), sizeof(sAuthChallenge));
     }
@@ -132,7 +132,7 @@ struct sAuthChallenge
 
 bool RealmConnection::Start()
 {
-    DataStore authPacket;
+    ByteBuffer authPacket;
     BigNumber seed1, seed2;
     sAuthChallenge challenge;
     seed1.Rand(16 * 8);
@@ -146,7 +146,7 @@ bool RealmConnection::Start()
 
     if (_resumeConnection)
     {
-        DataStore resumeComms;
+        ByteBuffer resumeComms;
         SendPacket(resumeComms, Opcode::SMSG_RESUME_COMMS);
     }
     SendPacket(authPacket, Opcode::SMSG_AUTH_CHALLENGE);
@@ -157,7 +157,7 @@ bool RealmConnection::Start()
 
 void RealmConnection::HandleRead()
 {
-    DataStore& buffer = GetReceiveBuffer();
+    ByteBuffer& buffer = GetReceiveBuffer();
     while (buffer.GetActiveSize())
     {
         // Check if we should read header
@@ -239,7 +239,7 @@ bool RealmConnection::HandleNewPacket()
     {
     case Opcode::CMSG_PLAYER_LOGIN:
     {
-        DataStore redirectClient;
+        ByteBuffer redirectClient;
         i32 ip = 16777343;
         i16 port = 9000;
 
@@ -268,7 +268,7 @@ bool RealmConnection::HandleNewPacket()
             connector->Execute(stmt);
 
             /* I'm am not 100% sure where this fits into the picture yet, but I'm sure it has a purpose
-                DataStore suspendComms;
+                ByteBuffer suspendComms;
                 suspendComms.PutU32(1);
                 SendPacket(suspendComms, Opcode::SMSG_SUSPEND_COMMS);*/
         });
@@ -276,7 +276,7 @@ bool RealmConnection::HandleNewPacket()
     }
     case Opcode::CMSG_CONNECT_TO_FAILED:
     {
-        DataStore loginFailed;
+        ByteBuffer loginFailed;
         loginFailed.PutU8(ENTER_FAILED_WORLDSERVER_DOWN);
         SendPacket(loginFailed, Opcode::SMSG_CHARACTER_LOGIN_FAILED);
         break;
@@ -289,7 +289,7 @@ bool RealmConnection::HandleNewPacket()
     }
     case Opcode::CMSG_PING:
     {
-        DataStore pong;
+        ByteBuffer pong;
         pong.PutU32(0);
         SendPacket(pong, Opcode::SMSG_PONG);
         break;
@@ -311,7 +311,7 @@ bool RealmConnection::HandleNewPacket()
         // UInt8:   Unknown Byte Value
         // UInt32:  Mask for the account data fields
 
-        DataStore accountDataTimes(nullptr, 9 + (4 * 8));
+        ByteBuffer accountDataTimes(nullptr, 9 + (4 * 8));
 
         u32 mask = 0x15;
         accountDataTimes.PutU32(static_cast<u32>(time(nullptr)));
@@ -378,13 +378,13 @@ bool RealmConnection::HandleNewPacket()
                 break;
             }
 
-            DataStore DataInfo(nullptr, _packetBuffer.Size - _packetBuffer.ReadData);
+            ByteBuffer DataInfo(nullptr, _packetBuffer.Size - _packetBuffer.ReadData);
             DataInfo.PutBytes(_packetBuffer.GetInternalData() + _packetBuffer.ReadData, DataInfo.Size);
 
             uLongf uSize = decompressedSize;
             u32 pos = static_cast<u32>(DataInfo.ReadData);
 
-            DataStore dataInfo(nullptr, decompressedSize);
+            ByteBuffer dataInfo(nullptr, decompressedSize);
             if (uncompress(dataInfo.GetInternalData(), &uSize, DataInfo.GetInternalData() + pos, static_cast<uLong>(DataInfo.Size - pos)) != Z_OK)
             {
                 break;
@@ -415,7 +415,7 @@ bool RealmConnection::HandleNewPacket()
             }
         }
 
-        DataStore updateAccountDataComplete;
+        ByteBuffer updateAccountDataComplete;
         updateAccountDataComplete.PutU32(type);
         updateAccountDataComplete.PutU32(0);
 
@@ -428,7 +428,7 @@ bool RealmConnection::HandleNewPacket()
         u32 unk = 0;
         _packetBuffer.GetU32(unk);
 
-        DataStore realmSplit;
+        ByteBuffer realmSplit;
         realmSplit.PutU32(unk);
         realmSplit.PutU32(0x0); // split states: 0x0 realm normal, 0x1 realm split, 0x2 realm split pending
         realmSplit.PutString(split_date);
@@ -442,7 +442,7 @@ bool RealmConnection::HandleNewPacket()
         stmt.Bind(account);
         DatabaseConnector::QueryAsync(DATABASE_TYPE::CHARSERVER, stmt, [this](amy::result_set& results, DatabaseConnector& connector) {
             u8 characters = static_cast<u8>(results.affected_rows());
-            DataStore charEnum(nullptr, 1 + (characters * 285));
+            ByteBuffer charEnum(nullptr, 1 + (characters * 285));
 
             // Number of characters
             charEnum.PutU8(characters);
@@ -502,7 +502,7 @@ bool RealmConnection::HandleNewPacket()
         PreparedStatement stmt("SELECT name FROM characters WHERE name={s};");
         stmt.Bind(createData->charName);
         DatabaseConnector::QueryAsync(DATABASE_TYPE::CHARSERVER, stmt, [this, createData](amy::result_set& results, DatabaseConnector& connector) {
-            DataStore characterCreateResult;
+            ByteBuffer characterCreateResult;
 
             if (results.affected_rows() > 0)
             {
@@ -591,7 +591,7 @@ bool RealmConnection::HandleNewPacket()
         PreparedStatement stmt("SELECT account FROM characters WHERE guid={u};");
         stmt.Bind(guid);
         DatabaseConnector::QueryAsync(DATABASE_TYPE::CHARSERVER, stmt, [this, guid](amy::result_set& results, DatabaseConnector& connector) {
-            DataStore characterDeleteResult;
+            ByteBuffer characterDeleteResult;
 
             // Char doesn't exist
             if (results.affected_rows() == 0)
@@ -647,7 +647,7 @@ bool RealmConnection::HandleNewPacket()
     return true;
 }
 
-void RealmConnection::SendPacket(DataStore& packet, Opcode opcode)
+void RealmConnection::SendPacket(ByteBuffer& packet, Opcode opcode)
 {
     ServerPacketHeader header(packet.GetActiveSize() + 2, opcode);
     u8 headerSize = header.GetLength();
@@ -674,7 +674,7 @@ void RealmConnection::HandleAuthSession()
     /* Read AuthSession Data */
     sessionData.Read(_packetBuffer);
 
-    DataStore AddonInfo(nullptr, _packetBuffer.Size - _packetBuffer.ReadData);
+    ByteBuffer AddonInfo(nullptr, _packetBuffer.Size - _packetBuffer.ReadData);
     AddonInfo.PutBytes(_packetBuffer.GetInternalData() + _packetBuffer.ReadData, AddonInfo.Size);
 
     if (AddonInfo.ReadData + 4 <= AddonInfo.Size)
@@ -687,7 +687,7 @@ void RealmConnection::HandleAuthSession()
             uLongf uSize = size;
             u32 pos = static_cast<u32>(AddonInfo.ReadData);
 
-            DataStore addonInfo(nullptr, size);
+            ByteBuffer addonInfo(nullptr, size);
             if (uncompress(addonInfo.GetInternalData(), &uSize, AddonInfo.GetInternalData() + pos, static_cast<uLong>(AddonInfo.Size - pos)) == Z_OK)
             {
                 u32 addonsCount = 0;
@@ -756,7 +756,7 @@ void RealmConnection::HandleAuthSession()
     account = results[0][0].GetU32();
 
     /* SMSG_AUTH_RESPONSE */
-    DataStore authResponse;
+    ByteBuffer authResponse;
     authResponse.PutU8(AUTH_OK);
     authResponse.PutU32(0);
     authResponse.PutU8(0);
@@ -809,7 +809,7 @@ void RealmConnection::HandleAuthSession()
         0x0D, 0x36, 0xEA, 0x01, 0xE0, 0xAA, 0x91, 0x20, 0x54, 0xF0, 0x72, 0xD8, 0x1E, 0xC7, 0x89, 0xD2
     };*/
 
-    DataStore addonInfo;
+    ByteBuffer addonInfo;
     for (auto addon : addonMap)
     {
         addonInfo.PutU8(2); // State
@@ -834,12 +834,12 @@ void RealmConnection::HandleAuthSession()
     addonInfo.PutU32(0); // Size of banned addon list
     SendPacket(addonInfo, Opcode::SMSG_ADDON_INFO);
 
-    DataStore clientCache;
+    ByteBuffer clientCache;
     clientCache.PutU32(0);
     SendPacket(clientCache, Opcode::SMSG_CLIENTCACHE_VERSION);
 
     // Tutorial Flags : REQUIRED
-    DataStore tutorialFlags;
+    ByteBuffer tutorialFlags;
     for (i32 i = 0; i < 8; i++)
         tutorialFlags.PutU32(0xFF);
 
@@ -847,7 +847,7 @@ void RealmConnection::HandleAuthSession()
 
     if (_resumeConnection)
     {
-        DataStore logoutRequest;
+        ByteBuffer logoutRequest;
         SendPacket(logoutRequest, Opcode::SMSG_LOGOUT_COMPLETE);
 
         std::shared_ptr<DatabaseConnector> connector = nullptr;

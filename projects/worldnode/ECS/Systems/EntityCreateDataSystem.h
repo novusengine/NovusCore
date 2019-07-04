@@ -24,7 +24,7 @@
 #pragma once
 #include <NovusTypes.h>
 #include <entt.hpp>
-#include <Networking/DataStore.h>
+#include <Networking/ByteBuffer.h>
 
 #include "../../NovusEnums.h"
 #include "../../Utils/UpdateData.h"
@@ -41,9 +41,9 @@
 
 namespace EntityCreateDataSystem
 {
-std::shared_ptr<DataStore> BuildItemCreateData(u64 itemGuid, u8 updateType, u16 updateFlags, u32 visibleFlags, ItemFieldDataComponent& itemFieldData, u16& opcode)
+std::shared_ptr<ByteBuffer> BuildItemCreateData(u64 itemGuid, u8 updateType, u16 updateFlags, u32 visibleFlags, ItemFieldDataComponent& itemFieldData, u16& opcode)
 {
-    std::shared_ptr<DataStore> buffer = DataStore::Borrow<4096>();
+    std::shared_ptr<ByteBuffer> buffer = ByteBuffer::Borrow<4096>();
     buffer->PutU8(updateType);
     buffer->PutGuid(itemGuid);
     buffer->PutU8(1); // TYPEID_ITEM
@@ -56,7 +56,7 @@ std::shared_ptr<DataStore> BuildItemCreateData(u64 itemGuid, u8 updateType, u16 
         buffer->PutU32(1);
     }
 
-    std::shared_ptr<DataStore> fieldbuffer = DataStore::Borrow<256>();
+    std::shared_ptr<ByteBuffer> fieldbuffer = ByteBuffer::Borrow<256>();
     UpdateMask<64> updateMask(ITEM_END);
 
     u32* flags = ItemUpdateFieldFlags;
@@ -86,14 +86,14 @@ std::shared_ptr<DataStore> BuildItemCreateData(u64 itemGuid, u8 updateType, u16 
     UpdateData updateData;
     updateData.AddBlock(buffer.get());
 
-    std::shared_ptr<DataStore> tempBuffer = DataStore::Borrow<8192>();
+    std::shared_ptr<ByteBuffer> tempBuffer = ByteBuffer::Borrow<8192>();
     updateData.Build(tempBuffer.get(), opcode);
 
     return tempBuffer;
 }
-std::shared_ptr<DataStore> BuildUnitCreateData(ObjectGuid unitGuid, u8 updateType, u16 updateFlags, u32 visibleFlags, u32 lifeTimeInMS, UnitFieldDataComponent& unitFieldData, u16& opcode)
+std::shared_ptr<ByteBuffer> BuildUnitCreateData(ObjectGuid unitGuid, u8 updateType, u16 updateFlags, u32 visibleFlags, u32 lifeTimeInMS, UnitFieldDataComponent& unitFieldData, u16& opcode)
 {
-    std::shared_ptr<DataStore> buffer = DataStore::Borrow<4096>();
+    std::shared_ptr<ByteBuffer> buffer = ByteBuffer::Borrow<4096>();
     buffer->PutU8(updateType);
     buffer->PutGuid(unitGuid);
 
@@ -156,7 +156,7 @@ std::shared_ptr<DataStore> BuildUnitCreateData(ObjectGuid unitGuid, u8 updateTyp
         }
     }
 
-    std::shared_ptr<DataStore> fieldbuffer = DataStore::Borrow<640>();
+    std::shared_ptr<ByteBuffer> fieldbuffer = ByteBuffer::Borrow<640>();
     UpdateMask<160> updateMask(UNIT_END);
 
     u32* flags = UnitUpdateFieldFlags;
@@ -310,7 +310,7 @@ std::shared_ptr<DataStore> BuildUnitCreateData(ObjectGuid unitGuid, u8 updateTyp
     UpdateData updateData;
     updateData.AddBlock(buffer.get());
 
-    std::shared_ptr<DataStore> tempBuffer = DataStore::Borrow<8192>();
+    std::shared_ptr<ByteBuffer> tempBuffer = ByteBuffer::Borrow<8192>();
     updateData.Build(tempBuffer.get(), opcode);
 
     return tempBuffer;
@@ -332,11 +332,11 @@ void Update(entt::registry& registry)
             u32 selfVisibleFlags = (UPDATEFIELD_FLAG_PUBLIC | UPDATEFIELD_FLAG_ITEM_OWNER);
             u16 buildOpcode = 0;
 
-            std::shared_ptr<DataStore> selfItemUpdate = BuildItemCreateData(itemInitializeData.itemGuid, updateType, selfUpdateFlag, selfVisibleFlags, itemFieldData, buildOpcode);
+            std::shared_ptr<ByteBuffer> selfItemUpdate = BuildItemCreateData(itemInitializeData.itemGuid, updateType, selfUpdateFlag, selfVisibleFlags, itemFieldData, buildOpcode);
             PlayerConnectionComponent playerConnection = registry.get<PlayerConnectionComponent>(itemInitializeData.characterEntityId);
             playerConnection.socket->SendPacket(selfItemUpdate.get(), buildOpcode);
 
-            std::shared_ptr<DataStore> itemPushResult = DataStore::Borrow<41>();
+            std::shared_ptr<ByteBuffer> itemPushResult = ByteBuffer::Borrow<41>();
             itemPushResult->PutU64(itemInitializeData.characterGuid);
             itemPushResult->PutU32(0);                              // Received:     0 = Looted,   1 = By NPC
             itemPushResult->PutU32(0);                              // Created:      0 = Received, 1 = Created

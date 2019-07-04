@@ -47,7 +47,7 @@ struct cAuthSessionData
     u64 dosResponse;
     u8 digest[SHA_DIGEST_LENGTH];
 
-    void Read(DataStore& buffer)
+    void Read(ByteBuffer& buffer)
     {
         buffer.GetU32(build);
         buffer.GetU32(loginServerId);
@@ -76,7 +76,7 @@ public:
     bool Start() override;
     void Close(asio::error_code error) override;
     void HandleRead() override;
-    void SendPacket(DataStore* buffer, u16 opcode);
+    void SendPacket(ByteBuffer* buffer, u16 opcode);
 
     bool HandleNewHeader();
     bool HandleNewPacket();
@@ -102,8 +102,8 @@ public:
     BigNumber sessionKey, seed1, seed2;
 
 private:
-    DataStore _headerBuffer;
-    DataStore _packetBuffer;
+    ByteBuffer _headerBuffer;
+    ByteBuffer _packetBuffer;
 
     u32 _seed;
     StreamEncryption _streamEncryption;

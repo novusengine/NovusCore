@@ -118,7 +118,7 @@ struct sAuthChallenge
     u8 seed1[16];
     u8 seed2[16];
 
-    void AddTo(DataStore* buffer)
+    void AddTo(ByteBuffer* buffer)
     {
         buffer->PutBytes(reinterpret_cast<u8*>(this), sizeof(sAuthChallenge));
     }
@@ -132,7 +132,7 @@ struct sAuthChallenge
 
 bool WorldConnection::Start()
 {
-    std::shared_ptr<DataStore> authPacket = DataStore::Borrow<sizeof(sAuthChallenge)>();
+    std::shared_ptr<ByteBuffer> authPacket = ByteBuffer::Borrow<sizeof(sAuthChallenge)>();
     SendPacket(authPacket.get(), Opcode::SMSG_RESUME_COMMS);
 
     sAuthChallenge challenge;
@@ -161,7 +161,7 @@ void WorldConnection::Close(asio::error_code error)
 
 void WorldConnection::HandleRead()
 {
-    DataStore& buffer = GetReceiveBuffer();
+    ByteBuffer& buffer = GetReceiveBuffer();
     while (buffer.GetActiveSize())
     {
         // Check if we should read header
@@ -266,7 +266,7 @@ bool WorldConnection::HandleNewPacket()
     }
     case Opcode::CMSG_PING:
     {
-        std::shared_ptr<DataStore> pong = DataStore::Borrow<4>();
+        std::shared_ptr<ByteBuffer> pong = ByteBuffer::Borrow<4>();
         pong->PutU32(0);
         SendPacket(pong.get(), Opcode::SMSG_PONG);
         break;
@@ -288,7 +288,7 @@ bool WorldConnection::HandleNewPacket()
         packetMessage.opcode = opcode;
         packetMessage.account = account;
 
-        packetMessage.packet = DataStore::Borrow<4096>();
+        packetMessage.packet = ByteBuffer::Borrow<4096>();
         packetMessage.packet->Size = _packetBuffer.WrittenData;
         packetMessage.packet->WrittenData = _packetBuffer.WrittenData;
         packetMessage.packet->IsOwner = true;
@@ -307,7 +307,7 @@ bool WorldConnection::HandleNewPacket()
     return true;
 }
 
-void WorldConnection::SendPacket(DataStore* packet, u16 opcode)
+void WorldConnection::SendPacket(ByteBuffer* packet, u16 opcode)
 {
     ServerPacketHeader header(packet->GetActiveSize() + 2, opcode);
     u8 headerSize = header.GetLength();
@@ -335,7 +335,7 @@ void WorldConnection::HandleAuthSession()
     /* Read AuthSession Data */
     sessionData.Read(_packetBuffer);
 
-    DataStore AddonInfo(nullptr, _packetBuffer.Size - _packetBuffer.ReadData);
+    ByteBuffer AddonInfo(nullptr, _packetBuffer.Size - _packetBuffer.ReadData);
     AddonInfo.PutBytes(_packetBuffer.GetInternalData() + _packetBuffer.ReadData, AddonInfo.Size);
 
     if (AddonInfo.ReadData + 4 <= AddonInfo.Size)
@@ -348,7 +348,7 @@ void WorldConnection::HandleAuthSession()
             uLongf uSize = size;
             u32 pos = static_cast<u32>(AddonInfo.ReadData);
 
-            DataStore addonInfo(nullptr, size);
+            ByteBuffer addonInfo(nullptr, size);
             if (uncompress(addonInfo.GetInternalData(), &uSize, AddonInfo.GetInternalData() + pos, static_cast<uLong>(AddonInfo.Size - pos)) == Z_OK)
             {
                 u32 addonsCount = 0;
@@ -404,7 +404,7 @@ void WorldConnection::HandleAuthSession()
         account = results[0][0].GetU32();
 
         /* SMSG_AUTH_RESPONSE */
-        std::shared_ptr<DataStore> authResponse = DataStore::Borrow<128>();
+        std::shared_ptr<ByteBuffer> authResponse = ByteBuffer::Borrow<128>();
         authResponse->PutU8(AUTH_OK);
         authResponse->PutU32(0);
         authResponse->PutU8(0);
@@ -457,7 +457,7 @@ void WorldConnection::HandleAuthSession()
                 0x0D, 0x36, 0xEA, 0x01, 0xE0, 0xAA, 0x91, 0x20, 0x54, 0xF0, 0x72, 0xD8, 0x1E, 0xC7, 0x89, 0xD2
             };*/
 
-        std::shared_ptr<DataStore> addonInfo = DataStore::Borrow<512>();
+        std::shared_ptr<ByteBuffer> addonInfo = ByteBuffer::Borrow<512>();
         for (auto addon : addonMap)
         {
             addonInfo->PutU8(2); // State
@@ -482,12 +482,12 @@ void WorldConnection::HandleAuthSession()
         addonInfo->PutU32(0); // Size of banned addon list
         SendPacket(addonInfo.get(), Opcode::SMSG_ADDON_INFO);
 
-        std::shared_ptr<DataStore> clientCache = DataStore::Borrow<4>();
+        std::shared_ptr<ByteBuffer> clientCache = ByteBuffer::Borrow<4>();
         clientCache->PutU32(0);
         SendPacket(clientCache.get(), Opcode::SMSG_CLIENTCACHE_VERSION);
 
         // Tutorial Flags : REQUIRED
-        std::shared_ptr<DataStore> tutorialFlags = DataStore::Borrow<32>();
+        std::shared_ptr<ByteBuffer> tutorialFlags = ByteBuffer::Borrow<32>();
         for (i32 i = 0; i < 8; i++)
             tutorialFlags->PutU32(0xFF);
 
@@ -509,7 +509,7 @@ void WorldConnection::HandleAuthSession()
                 packetMessage.opcode = Opcode::CMSG_PLAYER_LOGIN;
                 packetMessage.account = account;
 
-                packetMessage.packet = DataStore::Borrow<8>();
+                packetMessage.packet = ByteBuffer::Borrow<8>();
                 packetMessage.packet->PutU64(characterGuid);
 
                 packetMessage.connection = this;

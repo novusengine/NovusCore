@@ -23,7 +23,7 @@
 */
 #pragma once
 #include <NovusTypes.h>
-#include <Networking/DataStore.h>
+#include <Networking/ByteBuffer.h>
 #include <Networking/Opcode/Opcode.h>
 #include <Utils/StringUtils.h>
 #include "../DatabaseCache/CharacterDatabaseCache.h"
@@ -247,10 +247,10 @@ inline u8 GetLastMovementTimeIndexFromOpcode(u16 opcode)
     return opcodeIndex;
 }
 
-inline void BuildSpeedChangePacket(u64 characterGuid, f32 speed, Opcode opcode, std::shared_ptr<DataStore> dataStore)
+inline void BuildSpeedChangePacket(u64 characterGuid, f32 speed, Opcode opcode, std::shared_ptr<ByteBuffer> buffer)
 {
-    dataStore->PutGuid(characterGuid);
-    dataStore->PutU32(0);
+    buffer->PutGuid(characterGuid);
+    buffer->PutU32(0);
 
     /* Convert speed to a multiplicative of base speed */
     if (opcode == Opcode::SMSG_FORCE_WALK_SPEED_CHANGE)
@@ -260,7 +260,7 @@ inline void BuildSpeedChangePacket(u64 characterGuid, f32 speed, Opcode opcode, 
     else if (opcode == Opcode::SMSG_FORCE_RUN_SPEED_CHANGE)
     {
         // Write extra bit added in 2.1.0
-        dataStore->PutU8(1);
+        buffer->PutU8(1);
         speed *= 7.1111f;
     }
     else if (opcode == Opcode::SMSG_FORCE_RUN_BACK_SPEED_CHANGE)
@@ -284,21 +284,21 @@ inline void BuildSpeedChangePacket(u64 characterGuid, f32 speed, Opcode opcode, 
         speed *= 4.5f;
     }
 
-    dataStore->PutF32(speed);
+    buffer->PutF32(speed);
 }
-inline void BuildFlyModePacket(u64 characterGuid, std::shared_ptr<DataStore> dataStore)
+inline void BuildFlyModePacket(u64 characterGuid, std::shared_ptr<ByteBuffer> buffer)
 {
-    dataStore->PutGuid(characterGuid);
-    dataStore->PutU32(0); // Unk
+    buffer->PutGuid(characterGuid);
+    buffer->PutU32(0); // Unk
 }
 
 template <typename... Args>
-inline std::shared_ptr<DataStore> BuildNotificationPacket(std::string message, Args... args)
+inline std::shared_ptr<ByteBuffer> BuildNotificationPacket(std::string message, Args... args)
 {
     char str[256];
     i32 length = StringUtils::FormatString(str, sizeof(str), message.c_str(), args...);
 
-    std::shared_ptr<DataStore> buffer = DataStore::Borrow<512>();
+    std::shared_ptr<ByteBuffer> buffer = ByteBuffer::Borrow<512>();
     buffer->PutU8(0x00);  // CHAT_MSG_SYSTEM
     buffer->PutI32(0x00); // LANG_UNIVERSAL
     buffer->PutU64(0);
@@ -321,7 +321,7 @@ inline void InvalidatePosition(entt::registry* registry, u32 entityId)
     PlayerConnectionComponent& playerConnection = registry->get<PlayerConnectionComponent>(entityId);
     PlayerPositionComponent& playerPositionData = registry->get<PlayerPositionComponent>(entityId);
 
-    std::shared_ptr<DataStore> buffer = DataStore::Borrow<42>();
+    std::shared_ptr<ByteBuffer> buffer = ByteBuffer::Borrow<42>();
     buffer->PutGuid(playerConnection.characterGuid);
     buffer->PutU32(0); // Teleport Count
 

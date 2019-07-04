@@ -25,7 +25,7 @@
 #include <NovusTypes.h>
 #include <entt.hpp>
 #include <vector>
-#include <Networking/DataStore.h>
+#include <Networking/ByteBuffer.h>
 #include "../../Message.h"
 
 #include "../Components/PlayerConnectionComponent.h"
@@ -43,7 +43,7 @@ void Update(entt::registry& registry)
     PlayerDeleteQueueSingleton& deletePlayerQueue = registry.ctx<PlayerDeleteQueueSingleton>();
     MapSingleton& mapSingleton = registry.ctx<MapSingleton>();
 
-    std::shared_ptr<DataStore> buildPacket = DataStore::Borrow<4096>();
+    std::shared_ptr<ByteBuffer> buildPacket = ByteBuffer::Borrow<4096>();
 
     ExpiredPlayerData expiredPlayerData;
     while (deletePlayerQueue.expiredEntityQueue->try_dequeue(expiredPlayerData))

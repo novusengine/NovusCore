@@ -23,7 +23,7 @@
 */
 #pragma once
 #include <NovusTypes.h>
-#include <Networking/DataStore.h>
+#include <Networking/ByteBuffer.h>
 
 #include "../../NovusEnums.h"
 #include "../../Utils/UpdateMask.h"
@@ -33,7 +33,7 @@ struct PlayerFieldDataComponent
 {
     PlayerFieldDataComponent() : changesMask(PLAYER_END)
     { 
-        playerFields = DataStore::Borrow<PLAYER_END * 4>();
+        playerFields = ByteBuffer::Borrow<PLAYER_END * 4>();
         std::memset(playerFields->GetInternalData(), 0, playerFields->Size);
     }
 
@@ -64,5 +64,5 @@ struct PlayerFieldDataComponent
 
     UpdateMask<1344> changesMask;
     UpdateData updateData;
-    std::shared_ptr<DataStore> playerFields;
+    std::shared_ptr<ByteBuffer> playerFields;
 };

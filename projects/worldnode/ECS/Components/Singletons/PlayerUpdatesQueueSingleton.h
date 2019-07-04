@@ -23,7 +23,7 @@
 */
 #pragma once
 #include <NovusTypes.h>
-#include <Networking/DataStore.h>
+#include <Networking/ByteBuffer.h>
 #include "../../../Game/ObjectGuid/ObjectGuid.h"
 #include <vector>
 
@@ -32,20 +32,20 @@ struct PlayerUpdatePacket
     u16 opcode;
     u64 characterGuid;
     u8 updateType;
-    std::shared_ptr<DataStore> data;
+    std::shared_ptr<ByteBuffer> data;
 };
 
 struct MovementPacket
 {
     u16 opcode;
     ObjectGuid characterGuid;
-    std::shared_ptr<DataStore> data;
+    std::shared_ptr<ByteBuffer> data;
 };
 
 struct ChatPacket
 {
     u32 characterGuid;
-    std::shared_ptr<DataStore> data;
+    std::shared_ptr<ByteBuffer> data;
 };
 
 struct PlayerUpdatesQueueSingleton

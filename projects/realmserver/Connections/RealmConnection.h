@@ -48,7 +48,7 @@ struct cAuthSessionData
     u64 dosResponse;
     u8 digest[SHA_DIGEST_LENGTH];
 
-    void Read(DataStore& buffer)
+    void Read(ByteBuffer& buffer)
     {
         buffer.GetU32(build);
         buffer.GetU32(loginServerId);
@@ -76,7 +76,7 @@ struct cCharacterCreateData
     u8 charFacialStyle;
     u8 charOutfitId;
 
-    void Read(DataStore& buffer)
+    void Read(ByteBuffer& buffer)
     {
         buffer.GetString(charName);
         buffer.GetU8(charRace);
@@ -104,7 +104,7 @@ public:
 
     bool Start() override;
     void HandleRead() override;
-    void SendPacket(DataStore& buffer, Opcode opcode);
+    void SendPacket(ByteBuffer& buffer, Opcode opcode);
 
     bool HandleNewHeader();
     bool HandleNewPacket();
@@ -129,8 +129,8 @@ public:
     BigNumber* sessionKey;
 
 private:
-    DataStore _headerBuffer;
-    DataStore _packetBuffer;
+    ByteBuffer _headerBuffer;
+    ByteBuffer _packetBuffer;
 
     bool _resumeConnection;
     u32 _seed;

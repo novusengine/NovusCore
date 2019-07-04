@@ -23,7 +23,7 @@
 */
 #pragma once
 #include <NovusTypes.h>
-#include <Networking/DataStore.h>
+#include <Networking/ByteBuffer.h>
 
 #include "../../NovusEnums.h"
 #include "../../Utils/UpdateMask.h"
@@ -32,7 +32,7 @@ struct ItemFieldDataComponent
 {
     ItemFieldDataComponent() : changesMask(ITEM_END)
     {
-        itemFields = DataStore::Borrow<ITEM_END * 4>();
+        itemFields = ByteBuffer::Borrow<ITEM_END * 4>();
         std::memset(itemFields->GetInternalData(), 0, itemFields->Size);
     }
 
@@ -60,5 +60,5 @@ struct ItemFieldDataComponent
     }
 
     UpdateMask<64> changesMask;
-    std::shared_ptr<DataStore> itemFields;
+    std::shared_ptr<ByteBuffer> itemFields;
 };

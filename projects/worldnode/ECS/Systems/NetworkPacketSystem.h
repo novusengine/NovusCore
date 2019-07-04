@@ -91,8 +91,8 @@ void Update(entt::registry& registry)
             {
                 ZoneScopedNC("Packet::SetActiveMover", tracy::Color::Orange2)
 
-                    std::shared_ptr<DataStore>
-                        timeSync = DataStore::Borrow<4>();
+                    std::shared_ptr<ByteBuffer>
+                        timeSync = ByteBuffer::Borrow<4>();
                 timeSync->PutU32(0);
 
                 playerConnection.socket->SendPacket(timeSync.get(), Opcode::SMSG_TIME_SYNC_REQ);
@@ -122,7 +122,7 @@ void Update(entt::registry& registry)
                 characterDatabase.cache->SaveAndUnloadCharacter(playerConnection.characterGuid);
 
                 // Here we need to Redirect the client back to Realmserver. The Realmserver will send SMSG_LOGOUT_COMPLETE
-                std::shared_ptr<DataStore> buffer = DataStore::Borrow<30>();
+                std::shared_ptr<ByteBuffer> buffer = ByteBuffer::Borrow<30>();
                 i32 ip = 16777343;
                 i16 port = 8001;
 
@@ -155,7 +155,7 @@ void Update(entt::registry& registry)
                 // UInt8:   Unknown Byte Value
                 // UInt32:  Mask for the account data fields
 
-                std::shared_ptr<DataStore> accountDataTimes = DataStore::Borrow<41>();
+                std::shared_ptr<ByteBuffer> accountDataTimes = ByteBuffer::Borrow<41>();
 
                 u32 mask = 0x15;
                 accountDataTimes->PutU32(static_cast<u32>(time(nullptr)));
@@ -222,14 +222,14 @@ void Update(entt::registry& registry)
                         break;
                     }
 
-                    std::shared_ptr<DataStore> DataInfo = DataStore::Borrow<1024>();
+                    std::shared_ptr<ByteBuffer> DataInfo = ByteBuffer::Borrow<1024>();
                     DataInfo->Size = packet.data->Size - packet.data->ReadData;
                     DataInfo->PutBytes(packet.data->GetInternalData() + packet.data->ReadData, DataInfo->Size);
 
                     uLongf uSize = decompressedSize;
                     u32 pos = static_cast<u32>(DataInfo->ReadData);
 
-                    std::shared_ptr<DataStore> dataInfo = DataStore::Borrow<8192>();
+                    std::shared_ptr<ByteBuffer> dataInfo = ByteBuffer::Borrow<8192>();
                     if (uncompress(dataInfo->GetInternalData(), &uSize, DataInfo->GetInternalData() + pos, static_cast<uLong>(DataInfo->Size - pos)) != Z_OK)
                     {
                         break;
@@ -250,7 +250,7 @@ void Update(entt::registry& registry)
                     }
                 }
 
-                std::shared_ptr<DataStore> updateAccountDataComplete = DataStore::Borrow<8>();
+                std::shared_ptr<ByteBuffer> updateAccountDataComplete = ByteBuffer::Borrow<8>();
                 updateAccountDataComplete->PutU32(type);
                 updateAccountDataComplete->PutU32(0);
 
@@ -262,7 +262,7 @@ void Update(entt::registry& registry)
                 f32 speed = 1;
                 packet.data->GetF32(speed);
 
-                std::shared_ptr<DataStore> speedChange = DataStore::Borrow<12>();
+                std::shared_ptr<ByteBuffer> speedChange = ByteBuffer::Borrow<12>();
 
                 CharacterUtils::BuildSpeedChangePacket(playerConnection.characterGuid, speed, Opcode::SMSG_FORCE_WALK_SPEED_CHANGE, speedChange);
                 playerConnection.socket->SendPacket(speedChange.get(), Opcode::SMSG_FORCE_WALK_SPEED_CHANGE);
@@ -297,7 +297,7 @@ void Update(entt::registry& registry)
             }
             case Opcode::CMSG_MOVE_START_SWIM_CHEAT:
             {
-                std::shared_ptr<DataStore> flyMode = DataStore::Borrow<12>();
+                std::shared_ptr<ByteBuffer> flyMode = ByteBuffer::Borrow<12>();
                 CharacterUtils::BuildFlyModePacket(playerConnection.characterGuid, flyMode);
 
                 playerConnection.socket->SendPacket(flyMode.get(), Opcode::SMSG_MOVE_SET_CAN_FLY);
@@ -307,7 +307,7 @@ void Update(entt::registry& registry)
             }
             case Opcode::CMSG_MOVE_STOP_SWIM_CHEAT:
             {
-                std::shared_ptr<DataStore> flyMode = DataStore::Borrow<12>();
+                std::shared_ptr<ByteBuffer> flyMode = ByteBuffer::Borrow<12>();
                 CharacterUtils::BuildFlyModePacket(playerConnection.characterGuid, flyMode);
 
                 playerConnection.socket->SendPacket(flyMode.get(), Opcode::SMSG_MOVE_UNSET_CAN_FLY);
@@ -318,7 +318,7 @@ void Update(entt::registry& registry)
             {
                 packet.handled = true;
 
-                std::shared_ptr<DataStore> objectPosition = DataStore::Borrow<12>();
+                std::shared_ptr<ByteBuffer> objectPosition = ByteBuffer::Borrow<12>();
                 objectPosition->Put<Vector3>(playerPositionData.position);
 
                 playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, objectPosition, Opcode::SMSG_QUERY_OBJECT_POSITION));
@@ -343,7 +343,7 @@ void Update(entt::registry& registry)
 
                 clientFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_1, static_cast<u8>(standState));
 
-                std::shared_ptr<DataStore> standStateChange = DataStore::Borrow<1>();
+                std::shared_ptr<ByteBuffer> standStateChange = ByteBuffer::Borrow<1>();
                 standStateChange->PutU8(static_cast<u8>(standState));
 
                 playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, standStateChange, Opcode::SMSG_STANDSTATE_UPDATE));
@@ -369,7 +369,7 @@ void Update(entt::registry& registry)
                     u64 guid;
                 packet.data->GetU64(guid);
 
-                std::shared_ptr<DataStore> nameQuery = DataStore::Borrow<30>();
+                std::shared_ptr<ByteBuffer> nameQuery = ByteBuffer::Borrow<30>();
                 nameQuery->PutGuid(guid);
 
                 CharacterInfo characterInfo;
@@ -401,12 +401,12 @@ void Update(entt::registry& registry)
             {
                 u32 itemEntry;
                 packet.data->GetU32(itemEntry);
-                std::shared_ptr<DataStore> itemQuery;
+                std::shared_ptr<ByteBuffer> itemQuery;
 
                 ItemTemplate itemTemplate;
                 if (!worldDatabase.cache->GetItemTemplate(itemEntry, itemTemplate))
                 {
-                    itemQuery = DataStore::Borrow<4>();
+                    itemQuery = ByteBuffer::Borrow<4>();
                     itemQuery->PutU32(itemEntry | 0x80000000);
                     playerConnection.socket->SendPacket(itemQuery.get(), Opcode::SMSG_ITEM_QUERY_SINGLE_RESPONSE);
                 }
@@ -570,7 +570,7 @@ void Update(entt::registry& registry)
                     u64 attackGuid;
                 packet.data->GetU64(attackGuid);
 
-                std::shared_ptr<DataStore> attackBuffer = DataStore::Borrow<50>();
+                std::shared_ptr<ByteBuffer> attackBuffer = ByteBuffer::Borrow<50>();
                 attackBuffer->PutU64(playerConnection.characterGuid);
                 attackBuffer->PutU64(attackGuid);
                 playerConnection.socket->SendPacket(attackBuffer.get(), Opcode::SMSG_ATTACKSTART);
@@ -602,7 +602,7 @@ void Update(entt::registry& registry)
 
                     u64 attackGuid = clientFieldData.GetFieldValue<u64>(UNIT_FIELD_TARGET);
 
-                std::shared_ptr<DataStore> attackStop = DataStore::Borrow<20>();
+                std::shared_ptr<ByteBuffer> attackStop = ByteBuffer::Borrow<20>();
                 attackStop->PutGuid(playerConnection.characterGuid);
                 attackStop->PutGuid(attackGuid);
                 attackStop->PutU32(0);
@@ -638,7 +638,7 @@ void Update(entt::registry& registry)
                 EmoteTextData emoteTextData;
                 if (dbcDatabase.cache->GetEmoteTextData(emoteTextId, emoteTextData))
                 {
-                    std::shared_ptr<DataStore> buffer = DataStore::Borrow<36>();
+                    std::shared_ptr<ByteBuffer> buffer = ByteBuffer::Borrow<36>();
                     /* Play animation packet. */
                     {
                         //The animation shouldn't play if the player is dead. In the future we should check for that.
@@ -691,7 +691,7 @@ void Update(entt::registry& registry)
                 packet.data->GetU32(targetFlags);
 
                 // As far as I can tell, the client expects SMSG_SPELL_START followed by SMSG_SPELL_GO.
-                std::shared_ptr<DataStore> buffer = DataStore::Borrow<512>();
+                std::shared_ptr<ByteBuffer> buffer = ByteBuffer::Borrow<512>();
 
                 // Handle blink!
                 if (spellId == 1953)
