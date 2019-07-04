@@ -39,94 +39,91 @@
 
 namespace PlayerUpdateSystem
 {
-    void Update(entt::registry& registry)
-    {
-        PlayerUpdatesQueueSingleton& playerUpdatesQueue = registry.ctx<PlayerUpdatesQueueSingleton>();
-        MapSingleton& mapSingleton = registry.ctx<MapSingleton>();
+void Update(entt::registry& registry)
+{
+    PlayerUpdatesQueueSingleton& playerUpdatesQueue = registry.ctx<PlayerUpdatesQueueSingleton>();
+    MapSingleton& mapSingleton = registry.ctx<MapSingleton>();
 
-        auto view = registry.view<PlayerConnectionComponent, PlayerPositionComponent, PlayerUpdateDataComponent>();
-        view.each([&playerUpdatesQueue, &mapSingleton](const auto, PlayerConnectionComponent& playerConnection, PlayerPositionComponent& playerPositionData, PlayerUpdateDataComponent& playerUpdateData)
+    auto view = registry.view<PlayerConnectionComponent, PlayerPositionComponent, PlayerUpdateDataComponent>();
+    view.each([&playerUpdatesQueue, &mapSingleton](const auto, PlayerConnectionComponent& playerConnection, PlayerPositionComponent& playerPositionData, PlayerUpdateDataComponent& playerUpdateData) {
+        if (playerUpdateData.positionUpdateData.size())
+        {
+            ZoneScopedNC("PositionUpdate", tracy::Color::Yellow2) for (PositionUpdateData positionData : playerUpdateData.positionUpdateData)
             {
-                if (playerUpdateData.positionUpdateData.size())
+                MovementPacket movementPacket;
+                movementPacket.opcode = positionData.opcode;
+                movementPacket.characterGuid = playerConnection.characterGuid;
+
+                movementPacket.data = DataStore::Borrow<38>();
+                movementPacket.data->PutGuid(movementPacket.characterGuid);
+                movementPacket.data->PutU32(positionData.movementFlags);
+                movementPacket.data->PutU16(positionData.movementFlagsExtra);
+                movementPacket.data->PutU32(positionData.gameTime);
+                movementPacket.data->Put<Vector3>(positionData.position);
+                movementPacket.data->PutF32(positionData.orientation);
+                movementPacket.data->PutU32(positionData.fallTime);
+
+                playerUpdatesQueue.playerMovementPacketQueue.push_back(movementPacket);
+            }
+
+            // Figure out what ADT the player is in
+            Vector2 position = Vector2(playerPositionData.position.x, playerPositionData.position.y);
+            u32 mapId = playerPositionData.mapId;
+
+            u16 adtId;
+            if (mapSingleton.maps[mapId].GetAdtIdFromWorldPosition(position, adtId))
+            {
+                // If the ADT doesnt match the previous known ADT we need to update it.
+                if (adtId != playerPositionData.adtId)
                 {
-                    ZoneScopedNC("PositionUpdate", tracy::Color::Yellow2)
-                        for (PositionUpdateData positionData : playerUpdateData.positionUpdateData)
-                        {
-                            MovementPacket movementPacket;
-                            movementPacket.opcode = positionData.opcode;
-                            movementPacket.characterGuid = playerConnection.characterGuid;
+                    u32 entityId = playerConnection.entityId;
 
-                            movementPacket.data = DataStore::Borrow<38>();
-                            movementPacket.data->PutGuid(movementPacket.characterGuid);
-                            movementPacket.data->PutU32(positionData.movementFlags);
-                            movementPacket.data->PutU16(positionData.movementFlagsExtra);
-                            movementPacket.data->PutU32(positionData.gameTime);
-                            movementPacket.data->Put<Vector3>(positionData.position);
-                            movementPacket.data->PutF32(positionData.orientation);
-                            movementPacket.data->PutU32(positionData.fallTime);
-
-                            playerUpdatesQueue.playerMovementPacketQueue.push_back(movementPacket);
-                        }
-
-                    // Figure out what ADT the player is in
-                    Vector2 position = Vector2(playerPositionData.position.x, playerPositionData.position.y);
-                    u32 mapId = playerPositionData.mapId;
-
-                    u16 adtId;
-                    if (mapSingleton.maps[mapId].GetAdtIdFromWorldPosition(position, adtId))
+                    std::vector<u32>& playerList = mapSingleton.maps[mapId].playersInAdts[playerPositionData.adtId];
+                    if (playerPositionData.adtId != INVALID_ADT)
                     {
-                        // If the ADT doesnt match the previous known ADT we need to update it.
-                        if (adtId != playerPositionData.adtId)
-                        {
-                            u32 entityId = playerConnection.entityId;
+                        auto iterator = std::find(playerList.begin(), playerList.end(), entityId);
+                        assert(iterator != playerList.end());
+                        playerList.erase(iterator);
 
-                            std::vector<u32>& playerList = mapSingleton.maps[mapId].playersInAdts[playerPositionData.adtId];
-                            if (playerPositionData.adtId != INVALID_ADT)
-                            {
-                                auto iterator = std::find(playerList.begin(), playerList.end(), entityId);
-                                assert(iterator != playerList.end());
-                                playerList.erase(iterator);
-
-                                playerConnection.SendChatNotification("[DEBUG] Old ADT: %u has %u players", playerPositionData.adtId, playerList.size());
-                            }
-
-                            playerPositionData.adtId = adtId;
-
-                            mapSingleton.maps[mapId].playersInAdts[adtId].push_back(entityId);
-                            playerConnection.SendChatNotification("[DEBUG] New ADT: %u has %u players", adtId, mapSingleton.maps[mapId].playersInAdts[adtId].size());
-                        }
+                        playerConnection.SendChatNotification("[DEBUG] Old ADT: %u has %u players", playerPositionData.adtId, playerList.size());
                     }
 
-                    // Clear Position Updates
-                    playerUpdateData.positionUpdateData.clear();
+                    playerPositionData.adtId = adtId;
+
+                    mapSingleton.maps[mapId].playersInAdts[adtId].push_back(entityId);
+                    playerConnection.SendChatNotification("[DEBUG] New ADT: %u has %u players", adtId, mapSingleton.maps[mapId].playersInAdts[adtId].size());
                 }
+            }
 
-                if (playerUpdateData.chatUpdateData.size() > 0)
-                {
-                    ZoneScopedNC("ChatUpdate", tracy::Color::Yellow2)
-                        for (ChatUpdateData chatData : playerUpdateData.chatUpdateData)
-                        {
-                            ChatPacket chatPacket;
-                            chatPacket.data = DataStore::Borrow<286>();
+            // Clear Position Updates
+            playerUpdateData.positionUpdateData.clear();
+        }
 
-                            chatPacket.data->PutU8(chatData.chatType);
-                            chatPacket.data->PutI32(chatData.language);
-                            chatPacket.data->PutU64(chatData.sender);
-                            chatPacket.data->PutU32(0); // Chat Flag (??)
+        if (playerUpdateData.chatUpdateData.size() > 0)
+        {
+            ZoneScopedNC("ChatUpdate", tracy::Color::Yellow2) for (ChatUpdateData chatData : playerUpdateData.chatUpdateData)
+            {
+                ChatPacket chatPacket;
+                chatPacket.data = DataStore::Borrow<286>();
 
-                            // This is based on chatType
-                            chatPacket.data->PutU64(0); // Receiver (0) for none
+                chatPacket.data->PutU8(chatData.chatType);
+                chatPacket.data->PutI32(chatData.language);
+                chatPacket.data->PutU64(chatData.sender);
+                chatPacket.data->PutU32(0); // Chat Flag (??)
 
-                            chatPacket.data->PutU32(static_cast<u32>(chatData.message.length()) + 1);
-                            chatPacket.data->PutString(chatData.message);
-                            chatPacket.data->PutU8(0); // Chat Tag
+                // This is based on chatType
+                chatPacket.data->PutU64(0); // Receiver (0) for none
 
-                            playerUpdatesQueue.playerChatPacketQueue.push_back(chatPacket);
-                        }
+                chatPacket.data->PutU32(static_cast<u32>(chatData.message.length()) + 1);
+                chatPacket.data->PutString(chatData.message);
+                chatPacket.data->PutU8(0); // Chat Tag
 
-                    // Clear Chat Updates
-                    playerUpdateData.chatUpdateData.clear();
-                }
-            });
-    }
+                playerUpdatesQueue.playerChatPacketQueue.push_back(chatPacket);
+            }
+
+            // Clear Chat Updates
+            playerUpdateData.chatUpdateData.clear();
+        }
+    });
 }
+} // namespace PlayerUpdateSystem

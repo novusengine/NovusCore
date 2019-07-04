@@ -28,9 +28,9 @@
 
 namespace ScriptTransactionSystem
 {
-    void Update(entt::registry &registry)
-    {
-		ScriptSingleton& singleton = registry.ctx<ScriptSingleton>();
-        singleton.ExecuteTransactions();
-    }
+void Update(entt::registry& registry)
+{
+    ScriptSingleton& singleton = registry.ctx<ScriptSingleton>();
+    singleton.ExecuteTransactions();
 }
+} // namespace ScriptTransactionSystem

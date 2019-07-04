@@ -36,50 +36,50 @@
 
 namespace PlayerDeleteSystem
 {
-    void Update(entt::registry &registry)
+void Update(entt::registry& registry)
+{
+    SingletonComponent& singleton = registry.ctx<SingletonComponent>();
+    GuidLookupSingleton& guidLookupSingleton = registry.ctx<GuidLookupSingleton>();
+    PlayerDeleteQueueSingleton& deletePlayerQueue = registry.ctx<PlayerDeleteQueueSingleton>();
+    MapSingleton& mapSingleton = registry.ctx<MapSingleton>();
+
+    std::shared_ptr<DataStore> buildPacket = DataStore::Borrow<4096>();
+
+    ExpiredPlayerData expiredPlayerData;
+    while (deletePlayerQueue.expiredEntityQueue->try_dequeue(expiredPlayerData))
     {
-		SingletonComponent& singleton = registry.ctx<SingletonComponent>();
-        GuidLookupSingleton& guidLookupSingleton = registry.ctx<GuidLookupSingleton>();
-        PlayerDeleteQueueSingleton& deletePlayerQueue = registry.ctx<PlayerDeleteQueueSingleton>();
-        MapSingleton& mapSingleton = registry.ctx<MapSingleton>();
+        u64 characterGuid = expiredPlayerData.characterGuid;
 
-        std::shared_ptr<DataStore> buildPacket = DataStore::Borrow<4096>();
+        PlayerPositionComponent& positionComponent = registry.get<PlayerPositionComponent>(expiredPlayerData.entityId);
+        u32 mapId = positionComponent.mapId;
+        u16 adtId = positionComponent.adtId;
 
-        ExpiredPlayerData expiredPlayerData;
-        while (deletePlayerQueue.expiredEntityQueue->try_dequeue(expiredPlayerData))
+        // Remove player from current ADT
+        if (adtId != INVALID_ADT)
         {
-            u64 characterGuid = expiredPlayerData.characterGuid;
+            std::vector<u32>& playerList = mapSingleton.maps[mapId].playersInAdts[adtId];
+            auto iterator = std::find(playerList.begin(), playerList.end(), expiredPlayerData.entityId);
+            assert(iterator != playerList.end());
+            playerList.erase(iterator);
 
-            PlayerPositionComponent& positionComponent = registry.get<PlayerPositionComponent>(expiredPlayerData.entityId);
-            u32 mapId = positionComponent.mapId;
-            u16 adtId = positionComponent.adtId;
-
-            // Remove player from current ADT
-            if (adtId != INVALID_ADT)
+            for (u32 entity : playerList)
             {
-                std::vector<u32>& playerList = mapSingleton.maps[mapId].playersInAdts[adtId];
-                auto iterator = std::find(playerList.begin(), playerList.end(), expiredPlayerData.entityId);
-                assert(iterator != playerList.end());
-                playerList.erase(iterator);
+                PlayerConnectionComponent& currentConnection = registry.get<PlayerConnectionComponent>(entity);
+                PlayerUpdateDataComponent& currentUpdateData = registry.get<PlayerUpdateDataComponent>(entity);
+                PlayerFieldDataComponent& currentFieldData = registry.get<PlayerFieldDataComponent>(entity);
 
-                for (u32 entity : playerList)
+                auto iterator = std::find(currentUpdateData.visibleGuids.begin(), currentUpdateData.visibleGuids.end(), characterGuid);
+                if (iterator != currentUpdateData.visibleGuids.end())
                 {
-                    PlayerConnectionComponent& currentConnection = registry.get<PlayerConnectionComponent>(entity);
-                    PlayerUpdateDataComponent& currentUpdateData = registry.get<PlayerUpdateDataComponent>(entity);
-                    PlayerFieldDataComponent& currentFieldData = registry.get<PlayerFieldDataComponent>(entity);
-
-                    auto iterator = std::find(currentUpdateData.visibleGuids.begin(), currentUpdateData.visibleGuids.end(), characterGuid);
-                    if (iterator != currentUpdateData.visibleGuids.end())
-                    {
-                        currentUpdateData.visibleGuids.erase(iterator);
-                        currentFieldData.updateData.AddInvalidGuid(characterGuid);
-                    }
+                    currentUpdateData.visibleGuids.erase(iterator);
+                    currentFieldData.updateData.AddInvalidGuid(characterGuid);
                 }
             }
-
-            singleton.accountToEntityMap.erase(expiredPlayerData.accountGuid);
-            guidLookupSingleton.playerToEntityMap.erase(expiredPlayerData.entityId);
-            registry.destroy(expiredPlayerData.entityId);
         }
+
+        singleton.accountToEntityMap.erase(expiredPlayerData.accountGuid);
+        guidLookupSingleton.playerToEntityMap.erase(expiredPlayerData.entityId);
+        registry.destroy(expiredPlayerData.entityId);
     }
 }
+} // namespace PlayerDeleteSystem

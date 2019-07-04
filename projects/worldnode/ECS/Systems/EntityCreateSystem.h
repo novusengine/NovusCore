@@ -40,39 +40,39 @@
 
 namespace EntityCreateSystem
 {
-    void Update(entt::registry &registry)
+void Update(entt::registry& registry)
+{
+    EntityCreateQueueSingleton& entityCreateQueue = registry.ctx<EntityCreateQueueSingleton>();
+
+    EntityCreationRequest entityCreationRequest;
+    while (entityCreateQueue.newEntityQueue->try_dequeue(entityCreationRequest))
     {
-        EntityCreateQueueSingleton& entityCreateQueue = registry.ctx<EntityCreateQueueSingleton>();
+        u32 entity = registry.create();
 
-        EntityCreationRequest entityCreationRequest;
-        while (entityCreateQueue.newEntityQueue->try_dequeue(entityCreationRequest))
+        if (entityCreationRequest.typeId == TYPEID_ITEM)
         {
-            u32 entity = registry.create();
+            ItemCreationInformation* itemCreationInformation = reinterpret_cast<ItemCreationInformation*>(entityCreationRequest.typeInformation);
 
-            if (entityCreationRequest.typeId == TYPEID_ITEM)
-            {
-                ItemCreationInformation* itemCreationInformation = reinterpret_cast<ItemCreationInformation*>(entityCreationRequest.typeInformation);
+            ObjectGuid itemGuid(HighGuid::Item, itemCreationInformation->entryId, itemCreationInformation->lowGuid);
+            registry.assign<ItemDataComponent>(entity, entity, itemGuid, itemCreationInformation->bagSlot, itemCreationInformation->bagPosition, itemCreationInformation->characterGuid);
+            registry.assign<ItemInitializeComponent>(entity, itemCreationInformation->characterEntityId, itemGuid, itemCreationInformation->bagSlot, itemCreationInformation->bagPosition, itemCreationInformation->characterGuid);
 
-                ObjectGuid itemGuid(HighGuid::Item, itemCreationInformation->entryId, itemCreationInformation->lowGuid);
-                registry.assign<ItemDataComponent>(entity, entity, itemGuid, itemCreationInformation->bagSlot, itemCreationInformation->bagPosition, itemCreationInformation->characterGuid);
-                registry.assign<ItemInitializeComponent>(entity, itemCreationInformation->characterEntityId, itemGuid, itemCreationInformation->bagSlot, itemCreationInformation->bagPosition, itemCreationInformation->characterGuid);
+            registry.assign<ItemFieldDataComponent>(entity);
 
-                registry.assign<ItemFieldDataComponent>(entity);
+            delete itemCreationInformation;
+        }
+        else if (entityCreationRequest.typeId == TYPEID_UNIT)
+        {
+            EntityCreationInformation* unitCreationInformation = entityCreationRequest.typeInformation;
 
-                delete itemCreationInformation;
-            }
-            else if (entityCreationRequest.typeId == TYPEID_UNIT)
-            {
-                EntityCreationInformation* unitCreationInformation = entityCreationRequest.typeInformation;
+            ObjectGuid unitGuid(HighGuid::Unit, unitCreationInformation->entryId, unitCreationInformation->lowGuid);
+            registry.assign<UnitDataComponent>(entity, entity, unitGuid);
+            registry.assign<UnitInitializeComponent>(entity, entity, unitGuid);
 
-                ObjectGuid unitGuid(HighGuid::Unit, unitCreationInformation->entryId, unitCreationInformation->lowGuid);
-                registry.assign<UnitDataComponent>(entity, entity, unitGuid);
-                registry.assign<UnitInitializeComponent>(entity, entity, unitGuid);
+            registry.assign<UnitFieldDataComponent>(entity);
 
-                registry.assign<UnitFieldDataComponent>(entity);
-
-                delete unitCreationInformation;
-            }
+            delete unitCreationInformation;
         }
     }
 }
+} // namespace EntityCreateSystem
