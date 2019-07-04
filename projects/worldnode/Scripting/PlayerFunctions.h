@@ -23,6 +23,10 @@ public:
     }
 
 public:
+    // Data storage
+    void GetData(std::string& key, void* ref, int typeId) const;
+    void SetData(std::string& key, void* ref, int typeId) const;
+
     // Position
     u32 GetMapId() const;
     u32 GetAdtId() const;
@@ -56,6 +60,9 @@ inline void RegisterPlayerFunctions(AB_NAMESPACE_QUALIFIER Engine* engine)
     engine->asEngine()->RegisterObjectType("Player", sizeof(AngelScriptPlayer), asOBJ_VALUE | asOBJ_POD | asGetTypeTraits<AngelScriptPlayer>());
 
     // Register functions for Player type
+    engine->asEngine()->RegisterObjectMethod("Player", "void GetData(string key, ?&out)", asMETHOD(AngelScriptPlayer, GetData), asCALL_THISCALL);
+    engine->asEngine()->RegisterObjectMethod("Player", "void SetData(string key, ?&in)", asMETHOD(AngelScriptPlayer, SetData), asCALL_THISCALL);
+
     engine->asEngine()->RegisterObjectMethod("Player", "uint32 GetMapId()", asMETHOD(AngelScriptPlayer, GetMapId), asCALL_THISCALL);
     engine->asEngine()->RegisterObjectMethod("Player", "uint32 GetAdtId()", asMETHOD(AngelScriptPlayer, GetAdtId), asCALL_THISCALL);
     engine->asEngine()->RegisterObjectMethod("Player", "Vector3 GetPosition()", asMETHOD(AngelScriptPlayer, GetPosition), asCALL_THISCALL);

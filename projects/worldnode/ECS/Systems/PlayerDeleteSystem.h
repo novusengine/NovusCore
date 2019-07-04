@@ -64,7 +64,6 @@ void Update(entt::registry& registry)
 
             for (u32 entity : playerList)
             {
-                PlayerConnectionComponent& currentConnection = registry.get<PlayerConnectionComponent>(entity);
                 PlayerUpdateDataComponent& currentUpdateData = registry.get<PlayerUpdateDataComponent>(entity);
                 PlayerFieldDataComponent& currentFieldData = registry.get<PlayerFieldDataComponent>(entity);
 

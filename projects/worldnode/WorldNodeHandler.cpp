@@ -129,7 +129,7 @@ void WorldNodeHandler::Run()
 
     Message setupCompleteMessage;
     setupCompleteMessage.code = MSG_OUT_SETUP_COMPLETE;
-    setupCompleteMessage;
+
     _outputQueue.enqueue(setupCompleteMessage);
 
     Timer timer;

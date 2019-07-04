@@ -317,9 +317,6 @@ std::shared_ptr<ByteBuffer> BuildUnitCreateData(ObjectGuid unitGuid, u8 updateTy
 
 void Update(entt::registry& registry)
 {
-    SingletonComponent& singleton = registry.ctx<SingletonComponent>();
-    u32 lifeTimeInMS = static_cast<u32>(singleton.lifeTimeInMS);
-
     auto itemView = registry.view<ItemInitializeComponent, ItemFieldDataComponent>();
     if (!itemView.empty())
     {
@@ -354,7 +351,7 @@ void Update(entt::registry& registry)
     auto unitView = registry.view<UnitInitializeComponent, UnitFieldDataComponent>();
     if (!unitView.empty())
     {
-        unitView.each([lifeTimeInMS](const auto, UnitInitializeComponent& unitInitializeData, UnitFieldDataComponent& unitFieldData) {
+        unitView.each([](const auto, UnitInitializeComponent& unitInitializeData, UnitFieldDataComponent& unitFieldData) {
             /* Build Self Packet for public */
             /*u8 updateType = UPDATETYPE_CREATE_OBJECT2;
             u16 publicUpdateFlag = (UPDATEFLAG_LIVING | UPDATEFLAG_STATIONARY_POSITION);
