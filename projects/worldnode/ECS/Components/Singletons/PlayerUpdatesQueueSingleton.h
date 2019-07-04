@@ -27,14 +27,6 @@
 #include "../../../Game/ObjectGuid/ObjectGuid.h"
 #include <vector>
 
-struct PlayerUpdatePacket
-{
-    u16 opcode;
-    u64 characterGuid;
-    u8 updateType;
-    std::shared_ptr<ByteBuffer> data;
-};
-
 struct MovementPacket
 {
     u16 opcode;
@@ -50,7 +42,6 @@ struct ChatPacket
 
 struct PlayerUpdatesQueueSingleton
 {
-    std::vector<PlayerUpdatePacket> playerUpdatePacketQueue;
     std::vector<MovementPacket> playerMovementPacketQueue;
     std::vector<ChatPacket> playerChatPacketQueue;
 };

@@ -358,7 +358,7 @@ void Update(entt::registry& registry)
     {
         unitView.each([&playerUpdatesQueue, lifeTimeInMS](const auto, UnitInitializeComponent& unitInitializeData, UnitFieldDataComponent& unitFieldData) {
             /* Build Self Packet for public */
-            u8 updateType = UPDATETYPE_CREATE_OBJECT2;
+            /*u8 updateType = UPDATETYPE_CREATE_OBJECT2;
             u16 publicUpdateFlag = (UPDATEFLAG_LIVING | UPDATEFLAG_STATIONARY_POSITION);
             u32 publicVisibleFlags = UPDATEFIELD_FLAG_PUBLIC;
             u16 buildOpcode = 0;
@@ -368,8 +368,10 @@ void Update(entt::registry& registry)
             playerUpdatePacket.updateType = updateType;
             playerUpdatePacket.data = BuildUnitCreateData(unitInitializeData.unitGuid, updateType, publicUpdateFlag, publicVisibleFlags, lifeTimeInMS, unitFieldData, buildOpcode);
             playerUpdatePacket.opcode = buildOpcode;
-            playerUpdatesQueue.playerUpdatePacketQueue.push_back(playerUpdatePacket);
+            playerUpdatesQueue.playerUpdatePacketQueue.push_back(playerUpdatePacket);*/
         });
+
+        registry.reset<UnitInitializeComponent>();
     }
 }
 } // namespace EntityCreateDataSystem
