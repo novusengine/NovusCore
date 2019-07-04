@@ -421,7 +421,7 @@ void Update(entt::registry& registry)
                 buffer->PutF32(positionData.orientation);
                 buffer->PutU32(positionData.fallTime);
 
-                CharacterUtils::SendPacketToGridPlayers(&registry, playerConnection.entityId, buffer, positionData.opcode);
+                CharacterUtils::SendPacketToGridPlayers(&registry, playerConnection.entityId, buffer, positionData.opcode, true);
             }
 
             // Clear Position Updates

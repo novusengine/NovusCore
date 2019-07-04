@@ -573,7 +573,7 @@ void Update(entt::registry& registry)
                 std::shared_ptr<ByteBuffer> attackBuffer = ByteBuffer::Borrow<50>();
                 attackBuffer->PutU64(playerConnection.characterGuid);
                 attackBuffer->PutU64(attackGuid);
-                playerConnection.socket->SendPacket(attackBuffer.get(), Opcode::SMSG_ATTACKSTART);
+                CharacterUtils::SendPacketToGridPlayers(&registry, playerConnection.entityId, attackBuffer, Opcode::SMSG_ATTACKSTART);
 
                 attackBuffer->Reset();
                 attackBuffer->PutU32(0);
@@ -590,8 +590,7 @@ void Update(entt::registry& registry)
                 attackBuffer->PutU8(0);
                 attackBuffer->PutU32(0);
                 attackBuffer->PutU32(0);
-
-                playerConnection.socket->SendPacket(attackBuffer.get(), Opcode::SMSG_ATTACKERSTATEUPDATE);
+                CharacterUtils::SendPacketToGridPlayers(&registry, playerConnection.entityId, attackBuffer, Opcode::SMSG_ATTACKERSTATEUPDATE);
 
                 packet.handled = true;
                 break;
@@ -606,8 +605,7 @@ void Update(entt::registry& registry)
                 attackStop->PutGuid(playerConnection.characterGuid);
                 attackStop->PutGuid(attackGuid);
                 attackStop->PutU32(0);
-
-                playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, attackStop, Opcode::SMSG_ATTACKSTOP));
+                CharacterUtils::SendPacketToGridPlayers(&registry, playerConnection.entityId, attackStop, Opcode::SMSG_ATTACKSTOP);
 
                 packet.handled = true;
                 break;
@@ -646,7 +644,7 @@ void Update(entt::registry& registry)
                         buffer->PutU32(emoteTextData.animationId);
                         buffer->PutU64(playerConnection.characterGuid);
 
-                        playerConnection.socket->SendPacket(buffer.get(), Opcode::SMSG_EMOTE);
+                        CharacterUtils::SendPacketToGridPlayers(&registry, playerConnection.entityId, buffer, Opcode::SMSG_EMOTE);
                     }
 
                     /* Emote Chat Message Packet. */
@@ -672,7 +670,7 @@ void Update(entt::registry& registry)
                             buffer->PutU8(0x00);
                         }
 
-                        playerConnection.socket->SendPacket(buffer.get(), Opcode::SMSG_TEXT_EMOTE);
+                        CharacterUtils::SendPacketToGridPlayers(&registry, playerConnection.entityId, buffer, Opcode::SMSG_TEXT_EMOTE);
                     }
                 }
                 packet.handled = true;
@@ -761,7 +759,7 @@ void Update(entt::registry& registry)
                 buffer->PutU32(0x00000002);
                 buffer->PutU32(0);
                 buffer->PutU32(0);
-                playerConnection.socket->SendPacket(buffer.get(), Opcode::SMSG_SPELL_START);
+                CharacterUtils::SendPacketToGridPlayers(&registry, playerConnection.entityId, buffer, Opcode::SMSG_SPELL_START);
 
                 buffer->Reset();
                 buffer->PutGuid(playerConnection.characterGuid);
@@ -782,7 +780,7 @@ void Update(entt::registry& registry)
                 buffer->PutU32(targetFlags); // Target Flags
                 buffer->PutU8(0);            // Target Flags
 
-                playerConnection.socket->SendPacket(buffer.get(), Opcode::SMSG_SPELL_GO);
+                CharacterUtils::SendPacketToGridPlayers(&registry, playerConnection.entityId, buffer, Opcode::SMSG_SPELL_GO);
                 break;
             }
             default:

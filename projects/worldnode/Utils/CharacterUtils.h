@@ -338,9 +338,9 @@ inline void InvalidatePosition(entt::registry* registry, u32 entityId)
     playerConnection.socket->SendPacket(buffer.get(), Opcode::MSG_MOVE_TELEPORT_ACK);
 }
 
-inline void SendPacketToGridPlayers(entt::registry* registry, u32 entityId, std::shared_ptr<ByteBuffer> buffer, u16 opcode)
+inline void SendPacketToGridPlayers(entt::registry* registry, u32 entityId, std::shared_ptr<ByteBuffer> buffer, u16 opcode, bool excludeSelf = false)
 {
     PlayerPositionComponent& playerPositionData = registry->get<PlayerPositionComponent>(entityId);
-    MapsUtils::SendPacketToGridPlayers(registry, playerPositionData.mapId, playerPositionData.adtId, buffer, opcode, entityId);
+    MapsUtils::SendPacketToGridPlayers(registry, playerPositionData.mapId, playerPositionData.adtId, buffer, opcode, excludeSelf ? entityId : 0);
 }
 } // namespace CharacterUtils
