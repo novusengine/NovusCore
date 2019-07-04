@@ -33,7 +33,6 @@
 #include "../Components/PlayerFieldDataComponent.h"
 #include "../Components/PlayerUpdateDataComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
-#include "../Components/Singletons/PlayerUpdatesQueueSingleton.h"
 
 #include <tracy/Tracy.hpp>
 
@@ -41,35 +40,12 @@ namespace PlayerUpdateSystem
 {
 void Update(entt::registry& registry)
 {
-    PlayerUpdatesQueueSingleton& playerUpdatesQueue = registry.ctx<PlayerUpdatesQueueSingleton>();
     PlayerPacketQueueSingleton& playerPacketQueue = registry.ctx<PlayerPacketQueueSingleton>();
-
-    auto view = registry.view<PlayerConnectionComponent, PlayerUpdateDataComponent>();
-    view.each([playerUpdatesQueue](const auto, PlayerConnectionComponent& playerConnection, PlayerUpdateDataComponent& playerUpdateData) {
-        for (MovementPacket movementPacket : playerUpdatesQueue.playerMovementPacketQueue)
-        {
-            if (playerConnection.characterGuid != movementPacket.characterGuid)
-            {
-                playerConnection.socket->SendPacket(movementPacket.data.get(), movementPacket.opcode);
-            }
-        }
-
-        for (ChatPacket chatPacket : playerUpdatesQueue.playerChatPacketQueue)
-        {
-            playerConnection.socket->SendPacket(chatPacket.data.get(), Opcode::SMSG_MESSAGECHAT);
-        }
-    });
 
     PacketQueueData packet;
     while (playerPacketQueue.packetQueue->try_dequeue(packet))
     {
         packet.connection->SendPacket(packet.data.get(), packet.opcode);
     }
-
-    if (!playerUpdatesQueue.playerMovementPacketQueue.empty())
-        playerUpdatesQueue.playerMovementPacketQueue.clear();
-
-    if (!playerUpdatesQueue.playerChatPacketQueue.empty())
-        playerUpdatesQueue.playerChatPacketQueue.clear();
 }
 } // namespace PlayerUpdateSystem

@@ -76,7 +76,7 @@ public:
     bool Start() override;
     void Close(asio::error_code error) override;
     void HandleRead() override;
-    void SendPacket(ByteBuffer* buffer, u16 opcode);
+    void SendPacket(ByteBuffer* packet, u16 opcode);
 
     bool HandleNewHeader();
     bool HandleNewPacket();

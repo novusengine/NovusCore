@@ -26,6 +26,7 @@
 #include <Networking/ByteBuffer.h>
 #include <Networking/Opcode/Opcode.h>
 #include <Utils/StringUtils.h>
+#include "MapUtils.h"
 #include "../DatabaseCache/CharacterDatabaseCache.h"
 #include "../Connections/WorldConnection.h"
 
@@ -335,5 +336,11 @@ inline void InvalidatePosition(entt::registry* registry, u32 entityId)
     buffer->PutU32(0);
 
     playerConnection.socket->SendPacket(buffer.get(), Opcode::MSG_MOVE_TELEPORT_ACK);
+}
+
+inline void SendPacketToGridPlayers(entt::registry* registry, u32 entityId, std::shared_ptr<ByteBuffer> buffer, u16 opcode)
+{
+    PlayerPositionComponent& playerPositionData = registry->get<PlayerPositionComponent>(entityId);
+    MapsUtils::SendPacketToGridPlayers(registry, playerPositionData.mapId, playerPositionData.adtId, buffer, opcode, entityId);
 }
 } // namespace CharacterUtils

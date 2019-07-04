@@ -24,7 +24,6 @@
 #include "ECS/Components/Singletons/CommandDataSingleton.h"
 #include "ECS/Components/Singletons/GuidLookupSingleton.h"
 #include "ECS/Components/Singletons/PlayerCreateQueueSingleton.h"
-#include "ECS/Components/Singletons/PlayerUpdatesQueueSingleton.h"
 #include "ECS/Components/Singletons/PlayerDeleteQueueSingleton.h"
 #include "ECS/Components/Singletons/PlayerPacketQueueSingleton.h"
 #include "ECS/Components/Singletons/EntityCreateQueueSingleton.h"
@@ -115,7 +114,6 @@ void WorldNodeHandler::Run()
     PlayerCreateQueueSingleton& playerCreateQueueComponent = _updateFramework.registry.set<PlayerCreateQueueSingleton>();
     playerCreateQueueComponent.newPlayerQueue = new moodycamel::ConcurrentQueue<Message>(256);
 
-    /*PlayerUpdatesQueueSingleton& playerUpdatesQueueSingleton =*/_updateFramework.registry.set<PlayerUpdatesQueueSingleton>();
     PlayerDeleteQueueSingleton& playerDeleteQueueSingleton = _updateFramework.registry.set<PlayerDeleteQueueSingleton>();
     playerDeleteQueueSingleton.expiredEntityQueue = new moodycamel::ConcurrentQueue<ExpiredPlayerData>(256);
 

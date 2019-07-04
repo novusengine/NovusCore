@@ -37,7 +37,6 @@
 #include "../Components/PlayerFieldDataComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
 #include "../Components/Singletons/MapSingleton.h"
-#include "../Components/Singletons/PlayerUpdatesQueueSingleton.h"
 #include "../Components/Singletons/EntityCreateQueueSingleton.h"
 #include "../Components/Singletons/CharacterDatabaseCacheSingleton.h"
 
@@ -254,7 +253,6 @@ void Update(entt::registry& registry)
 {
     SingletonComponent& singleton = registry.ctx<SingletonComponent>();
     MapSingleton& mapSingleton = registry.ctx<MapSingleton>();
-    PlayerUpdatesQueueSingleton& playerUpdatesQueue = registry.ctx<PlayerUpdatesQueueSingleton>();
     u32 lifeTimeInMS = static_cast<u32>(singleton.lifeTimeInMS);
 
     auto buildInitialDataView = registry.view<PlayerInitializeComponent, PlayerFieldDataComponent, PlayerPositionComponent>();
@@ -301,7 +299,7 @@ void Update(entt::registry& registry)
     }
 
     auto buildUpdateDataView = registry.view<PlayerConnectionComponent, PlayerFieldDataComponent, PlayerPositionComponent, PlayerUpdateDataComponent>();
-    buildUpdateDataView.each([&registry, &mapSingleton, &playerUpdatesQueue, lifeTimeInMS](const auto, PlayerConnectionComponent& playerConnection, PlayerFieldDataComponent& playerFieldData, PlayerPositionComponent& playerPositionData, PlayerUpdateDataComponent& playerUpdateData) {
+    buildUpdateDataView.each([&registry, &mapSingleton, lifeTimeInMS](const auto, PlayerConnectionComponent& playerConnection, PlayerFieldDataComponent& playerFieldData, PlayerPositionComponent& playerPositionData, PlayerUpdateDataComponent& playerUpdateData) {
         playerFieldData.updateData.ResetBlocks();
 
         Vector2 position = Vector2(playerPositionData.position.x, playerPositionData.position.y);
@@ -414,20 +412,16 @@ void Update(entt::registry& registry)
         {
             ZoneScopedNC("PositionUpdate", tracy::Color::Yellow2) for (PositionUpdateData positionData : playerUpdateData.positionUpdateData)
             {
-                MovementPacket movementPacket;
-                movementPacket.opcode = positionData.opcode;
-                movementPacket.characterGuid = playerConnection.characterGuid;
+                std::shared_ptr<ByteBuffer> buffer = ByteBuffer::Borrow<38>();
+                buffer->PutGuid(playerConnection.characterGuid);
+                buffer->PutU32(positionData.movementFlags);
+                buffer->PutU16(positionData.movementFlagsExtra);
+                buffer->PutU32(positionData.gameTime);
+                buffer->Put<Vector3>(positionData.position);
+                buffer->PutF32(positionData.orientation);
+                buffer->PutU32(positionData.fallTime);
 
-                movementPacket.data = ByteBuffer::Borrow<38>();
-                movementPacket.data->PutGuid(movementPacket.characterGuid);
-                movementPacket.data->PutU32(positionData.movementFlags);
-                movementPacket.data->PutU16(positionData.movementFlagsExtra);
-                movementPacket.data->PutU32(positionData.gameTime);
-                movementPacket.data->Put<Vector3>(positionData.position);
-                movementPacket.data->PutF32(positionData.orientation);
-                movementPacket.data->PutU32(positionData.fallTime);
-
-                playerUpdatesQueue.playerMovementPacketQueue.push_back(movementPacket);
+                CharacterUtils::SendPacketToGridPlayers(&registry, playerConnection.entityId, buffer, positionData.opcode);
             }
 
             // Clear Position Updates
@@ -438,22 +432,21 @@ void Update(entt::registry& registry)
         {
             ZoneScopedNC("ChatUpdate", tracy::Color::Yellow2) for (ChatUpdateData chatData : playerUpdateData.chatUpdateData)
             {
-                ChatPacket chatPacket;
-                chatPacket.data = ByteBuffer::Borrow<286>();
+                std::shared_ptr<ByteBuffer> buffer = ByteBuffer::Borrow<286>();
 
-                chatPacket.data->PutU8(chatData.chatType);
-                chatPacket.data->PutI32(chatData.language);
-                chatPacket.data->PutU64(chatData.sender);
-                chatPacket.data->PutU32(0); // Chat Flag (??)
+                buffer->PutU8(chatData.chatType);
+                buffer->PutI32(chatData.language);
+                buffer->PutU64(chatData.sender);
+                buffer->PutU32(0); // Chat Flag (??)
 
                 // This is based on chatType
-                chatPacket.data->PutU64(0); // Receiver (0) for none
+                buffer->PutU64(0); // Receiver (0) for none
 
-                chatPacket.data->PutU32(static_cast<u32>(chatData.message.length()) + 1);
-                chatPacket.data->PutString(chatData.message);
-                chatPacket.data->PutU8(0); // Chat Tag
+                buffer->PutU32(static_cast<u32>(chatData.message.length()) + 1);
+                buffer->PutString(chatData.message);
+                buffer->PutU8(0); // Chat Tag
 
-                playerUpdatesQueue.playerChatPacketQueue.push_back(chatPacket);
+                CharacterUtils::SendPacketToGridPlayers(&registry, playerConnection.entityId, buffer, Opcode::SMSG_MESSAGECHAT);
             }
 
             // Clear Chat Updates
