@@ -54,7 +54,7 @@
 
 #include <tracy/Tracy.hpp>
 
-namespace ConnectionSystem
+namespace NetworkPacketSystem
 {
 void Update(entt::registry& registry)
 {

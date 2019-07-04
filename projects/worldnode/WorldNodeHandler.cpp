@@ -266,9 +266,9 @@ void WorldNodeHandler::SetupUpdateFramework()
     entt::registry& registry = _updateFramework.registry;
 
     // ConnectionSystem
-    tf::Task connectionSystemTask = framework.emplace([&registry]() {
-        ZoneScopedNC("ConnectionSystem", tracy::Color::Orange2)
-            ConnectionSystem::Update(registry);
+    tf::Task networkPacketSystemTask = framework.emplace([&registry]() {
+        ZoneScopedNC("networkPacketSystem", tracy::Color::Orange2)
+            NetworkPacketSystem::Update(registry);
         registry.ctx<ScriptSingleton>().CompleteSystem();
     });
 
@@ -287,7 +287,7 @@ void WorldNodeHandler::SetupUpdateFramework()
             PlayerInitializeSystem::Update(registry);
         registry.ctx<ScriptSingleton>().CompleteSystem();
     });
-    playerInitializeSystemTask.gather(connectionSystemTask);
+    playerInitializeSystemTask.gather(networkPacketSystemTask);
 
     // EntityInitializeSystem
     tf::Task entityInitializeSystemTask = framework.emplace([&registry]() {
