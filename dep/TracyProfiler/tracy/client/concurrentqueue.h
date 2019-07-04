@@ -164,9 +164,9 @@ namespace moodycamel { namespace details {
 #endif
 #ifdef MOODYCAMEL_EXCEPTIONS_ENABLED
 #define MOODYCAMEL_TRY try
-#define MOODYCAMEL_CATCH(...) catch(__VA_ARGS__)
+#define MOODYCAMEL_CATCH(...) catch (__VA_ARGS__)
 #define MOODYCAMEL_RETHROW throw
-#define MOODYCAMEL_THROW(expr) throw (expr)
+#define MOODYCAMEL_THROW(expr) throw(expr)
 #else
 #define MOODYCAMEL_TRY if (true)
 #define MOODYCAMEL_CATCH(...) else if (false)
