@@ -32,8 +32,8 @@
 
 enum InputMessages
 {
-	MSG_IN_EXIT,
-	MSG_IN_PING,
+    MSG_IN_EXIT,
+    MSG_IN_PING,
     MSG_IN_RELOAD_SCRIPTS,
     MSG_IN_NET_PACKET,
     MSG_IN_PLAYER_CONNECTED,
@@ -42,14 +42,14 @@ enum InputMessages
 
 enum OutputMessages
 {
-	MSG_OUT_EXIT_CONFIRM,
-	MSG_OUT_PRINT,
+    MSG_OUT_EXIT_CONFIRM,
+    MSG_OUT_PRINT,
     MSG_OUT_SETUP_COMPLETE
 };
 
 namespace tf
 {
-	class Framework;
+class Framework;
 }
 
 struct FrameworkRegistryPair
@@ -63,14 +63,14 @@ class NovusConnection;
 class WorldNodeHandler
 {
 public:
-	WorldNodeHandler(f32 targetTickRate);
-	~WorldNodeHandler();
+    WorldNodeHandler(f32 targetTickRate);
+    ~WorldNodeHandler();
 
-	void Start();
-	void Stop();
+    void Start();
+    void Stop();
 
-	void PassMessage(Message& message);
-	bool TryGetMessage(Message& message);
+    void PassMessage(Message& message);
+    bool TryGetMessage(Message& message);
 
     template <typename... Args>
     void PrintMessage(std::string message, Args... args)
@@ -83,19 +83,20 @@ public:
         printMessage.message = new std::string(str);
         _outputQueue.enqueue(printMessage);
     }
-private:
-	void Run();
-	bool Update();
-	void UpdateSystems();
-
-	void SetupUpdateFramework();
 
 private:
-	bool _isRunning;
+    void Run();
+    bool Update();
+    void UpdateSystems();
+
+    void SetupUpdateFramework();
+
+private:
+    bool _isRunning;
     f32 _targetTickRate;
 
-	moodycamel::ConcurrentQueue<Message> _inputQueue;
-	moodycamel::ConcurrentQueue<Message> _outputQueue;
-	FrameworkRegistryPair _updateFramework;
+    moodycamel::ConcurrentQueue<Message> _inputQueue;
+    moodycamel::ConcurrentQueue<Message> _outputQueue;
+    FrameworkRegistryPair _updateFramework;
     MapLoader _mapLoader;
 };

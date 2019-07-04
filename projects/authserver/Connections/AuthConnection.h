@@ -23,13 +23,13 @@
 */
 #pragma once
 
-#include <asio/ip/tcp.hpp>
-#include <Networking/BaseSocket.h>
 #include <Cryptography/BigNumber.h>
 #include <Cryptography/SHA1.h>
 #include <Database/DatabaseConnector.h>
-#include <robin_hood.h>
+#include <Networking/BaseSocket.h>
 #include <NovusTypes.h>
+#include <asio/ip/tcp.hpp>
+#include <robin_hood.h>
 
 enum AuthCommand
 {
@@ -39,12 +39,12 @@ enum AuthCommand
     AUTH_RECONNECT_PROOF = 0x03,
     AUTH_REALMSERVER_LIST = 0x10,
     /*
-    TRANSFER_INITIATE           = 0x30,
-    TRANSFER_DATA               = 0x31,
-    TRANSFER_ACCEPT             = 0x32,
-    TRANSFER_RESUME             = 0x33,
-    TRANSFER_CANCEL             = 0x34
-    */
+  TRANSFER_INITIATE           = 0x30,
+  TRANSFER_DATA               = 0x31,
+  TRANSFER_ACCEPT             = 0x32,
+  TRANSFER_RESUME             = 0x33,
+  TRANSFER_CANCEL             = 0x34
+  */
 };
 enum AuthStatus
 {
@@ -114,16 +114,18 @@ struct AuthMessageHandler
     AuthStatus status;
     size_t packetSize;
     u8 maxPacketsPerRead;
-    bool (AuthConnection::* handler)();
+    bool (AuthConnection::*handler)();
 };
 #pragma pack(pop)
 
 class AuthConnection : public BaseSocket
 {
 public:
-    static robin_hood::unordered_map<u8, AuthMessageHandler> InitMessageHandlers();
+    static robin_hood::unordered_map<u8, AuthMessageHandler>
+    InitMessageHandlers();
 
-    AuthConnection(asio::ip::tcp::socket* socket) : BaseSocket(socket), _status(STATUS_CHALLENGE), username()
+    AuthConnection(asio::ip::tcp::socket* socket)
+        : BaseSocket(socket), _status(STATUS_CHALLENGE), username()
     {
         N.Hex2BN("894B645E89E1535BBDAD5B8B290650530801B18EBFBF5E8FAB3C82872A3E9BB7");
         g.SetUInt32(7);

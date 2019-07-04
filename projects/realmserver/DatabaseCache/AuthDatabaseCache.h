@@ -7,7 +7,7 @@ class AuthDatabaseCache;
 // account_data table in DB
 struct AccountData
 {
-    AccountData() { }
+    AccountData() {}
     AccountData(AuthDatabaseCache* cache) { _cache = cache; }
     AccountData(const AccountData& inData)
     {
@@ -26,6 +26,7 @@ struct AccountData
 
     bool loaded = false;
     void UpdateCache();
+
 private:
     AuthDatabaseCache* _cache;
 };

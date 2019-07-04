@@ -8,11 +8,15 @@ class UpdateData
 {
 public:
     UpdateData() : _blockCount(0)
-    { 
+    {
         _data = DataStore::Borrow<8192>();
     }
 
-    void ResetBlocks() { _data->Reset(); _blockCount = 0; }
+    void ResetBlocks()
+    {
+        _data->Reset();
+        _blockCount = 0;
+    }
     void ResetInvalidGuids() { _invalidGuids.clear(); }
     bool IsEmpty() { return _data->IsEmpty() && _invalidGuids.empty(); }
 
@@ -74,7 +78,7 @@ private:
     std::vector<u64> _invalidGuids;
     std::shared_ptr<DataStore> _data;
 
-    void Compress(void* dst, u32 *dst_size, void* src, i32 src_size)
+    void Compress(void* dst, u32* dst_size, void* src, i32 src_size)
     {
         z_stream c_stream;
 

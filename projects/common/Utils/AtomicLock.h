@@ -3,28 +3,28 @@
 #include <cassert>
 
 #ifndef NDEBUG
-template<typename T>
-struct TypeLock 
+template <typename T>
+struct TypeLock
 {
     std::atomic<i32> lock;
 };
-template<typename T>
+template <typename T>
 std::atomic<i32>& GetWriters()
 {
     static TypeLock<T> typelock;
     return typelock.lock;
 }
-template<typename T>
+template <typename T>
 std::atomic<i32>& GetReaders()
 {
     static TypeLock<T> typelock;
     return typelock.lock;
 }
 
-template<typename T>
-struct WriteLock 
+template <typename T>
+struct WriteLock
 {
-    WriteLock() 
+    WriteLock()
     {
         auto writercount = GetWriters<T>().fetch_add(1);
         auto readercount = GetReaders<T>().load();
@@ -32,33 +32,33 @@ struct WriteLock
         assert(writercount == 0);
         assert(readercount == 0);
     }
-    ~WriteLock() 
+    ~WriteLock()
     {
         GetWriters<T>()--;
     }
 };
 
-template<typename T>
-struct ReadLock 
+template <typename T>
+struct ReadLock
 {
-    ReadLock() 
+    ReadLock()
     {
         auto writercount = GetWriters<T>().load();
         GetReaders<T>()++;
 
         assert(writercount == 0);
     }
-    ~ReadLock() 
+    ~ReadLock()
     {
         GetReaders<T>()--;
     }
 };
 
-#define TOKENPASTE(x, y) x ## y
+#define TOKENPASTE(x, y) x##y
 #define TOKENPASTE2(x, y) TOKENPASTE(x, y)
 
-#define LockWrite(comp) auto  TOKENPASTE2(wmutex, __LINE__) = WriteLock<comp>{};
-#define LockRead(comp) auto  TOKENPASTE2(rmutex, __LINE__) = ReadLock<comp>{};
+#define LockWrite(comp) auto TOKENPASTE2(wmutex, __LINE__) = WriteLock<comp>{};
+#define LockRead(comp) auto TOKENPASTE2(rmutex, __LINE__) = ReadLock<comp>{};
 
 #else
 #define LockWrite(comp) ((void)0)

@@ -46,7 +46,7 @@ struct cAuthSessionData
     u32 battlegroupId;
     u32 realmId;
     u64 dosResponse;
-    u8  digest[SHA_DIGEST_LENGTH];
+    u8 digest[SHA_DIGEST_LENGTH];
 
     void Read(DataStore& buffer)
     {
@@ -110,16 +110,16 @@ public:
     bool HandleNewPacket();
     void HandleAuthSession();
 
-    template<size_t T>
-    inline void convert(char *val)
+    template <size_t T>
+    inline void convert(char* val)
     {
         std::swap(*val, *(val + T - 1));
         convert<T - 2>(val + 1);
     }
 
-    inline void apply(u16 *val)
+    inline void apply(u16* val)
     {
-        convert<sizeof(u16)>(reinterpret_cast<char *>(val));
+        convert<sizeof(u16)>(reinterpret_cast<char*>(val));
     }
     inline void EndianConvertReverse(u16& val) { apply(&val); }
 
@@ -140,5 +140,7 @@ private:
     CharacterDatabaseCache& _charCache;
 };
 
-template<> inline void RealmConnection::convert<0>(char *) { }
-template<> inline void RealmConnection::convert<1>(char *) { } // ignore central byte
+template <>
+inline void RealmConnection::convert<0>(char*) {}
+template <>
+inline void RealmConnection::convert<1>(char*) {} // ignore central byte

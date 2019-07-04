@@ -36,7 +36,7 @@
 
 namespace Commands_Character
 {
-    /*static robin_hood::unordered_map<u32, CommandEntry> characterCommandMap;
+/*static robin_hood::unordered_map<u32, CommandEntry> characterCommandMap;
     static entt::registry* _registry = nullptr;
 
     bool _Level(std::vector<std::string> commandStrings, PlayerConnectionComponent& clientConnection)

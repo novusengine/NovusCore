@@ -28,11 +28,11 @@
 
 void ReloadCommand(WorldNodeHandler& worldNodeHandler, std::vector<std::string> subCommands)
 {
-	u32 hashedSubCommand = StringUtils::fnv1a_32(subCommands[0].c_str(), subCommands[0].size());
-	if (hashedSubCommand == "script"_h || hashedSubCommand == "scripts"_h)
-	{
-		Message reloadMessage;
-		reloadMessage.code = MSG_IN_RELOAD_SCRIPTS;
+    u32 hashedSubCommand = StringUtils::fnv1a_32(subCommands[0].c_str(), subCommands[0].size());
+    if (hashedSubCommand == "script"_h || hashedSubCommand == "scripts"_h)
+    {
+        Message reloadMessage;
+        reloadMessage.code = MSG_IN_RELOAD_SCRIPTS;
         worldNodeHandler.PassMessage(reloadMessage);
-	}
+    }
 }

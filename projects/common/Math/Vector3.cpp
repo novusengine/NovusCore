@@ -13,7 +13,7 @@ Vector3 Vector3::Down(0, 0, -1);
 
 Vector3::Vector3(const Vector2& v2)
 {
-	x = v2.x;
-	y = v2.y;
-	z = 0;
+    x = v2.x;
+    y = v2.y;
+    z = 0;
 }

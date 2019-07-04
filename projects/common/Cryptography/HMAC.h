@@ -43,6 +43,7 @@ public:
     u8* CalculateHash(BigNumber* bigNumber);
     u8* GetData() { return _data; }
     i32 GetLength() const { return SHA_DIGEST_LENGTH; }
+
 private:
     HMAC_CTX* _HMAC_CONTEXT;
     u8 _data[SHA_DIGEST_LENGTH];

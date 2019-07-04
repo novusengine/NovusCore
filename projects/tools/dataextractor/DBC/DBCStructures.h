@@ -27,13 +27,13 @@
 
 struct DBCMap
 {
-	u32 Id;
-	std::string InternalName;
-	u32 InstanceType;
-	u32 Flags;
-	std::string Name;
-	u32 Expansion;
-	u32 MaxPlayers;
+    u32 Id;
+    std::string InternalName;
+    u32 InstanceType;
+    u32 Flags;
+    std::string Name;
+    u32 Expansion;
+    u32 MaxPlayers;
 };
 
 struct DBCEmotesText

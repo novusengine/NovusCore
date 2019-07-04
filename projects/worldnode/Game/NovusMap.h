@@ -33,122 +33,122 @@
 const u32 blockStride = 64;
 const u16 INVALID_ADT = std::numeric_limits<u16>().max();
 
-#define ADT_CELLS_PER_GRID    16
-#define ADT_CELL_SIZE         8
-#define ADT_GRID_SIZE         (ADT_CELLS_PER_GRID*ADT_CELL_SIZE)
+#define ADT_CELLS_PER_GRID 16
+#define ADT_CELL_SIZE 8
+#define ADT_GRID_SIZE (ADT_CELLS_PER_GRID * ADT_CELL_SIZE)
 
 #pragma pack(push, 1)
 struct NovusHoleHeader
 {
-	NovusHoleHeader() : hasHoleData(0) { }
+    NovusHoleHeader() : hasHoleData(0) {}
 
-	u8 hasHoleData;
+    u8 hasHoleData;
 };
 
 struct NovusLiquidHeader
 {
-	NovusLiquidHeader() : hasLiquidData(0), hasMultipleLiquidTypes(0), offsetX(0), offsetY(0), width(0), height(0), level(0) { }
+    NovusLiquidHeader() : hasLiquidData(0), hasMultipleLiquidTypes(0), offsetX(0), offsetY(0), width(0), height(0), level(0) {}
 
-	u8 hasLiquidData;
-	u8 hasMultipleLiquidTypes;
-	u8 offsetX;
-	u8 offsetY;
-	u8 width;
-	u8 height;
-	u8 liquidFlags;
-	u16 liquidEntry;
-	f32 level;
+    u8 hasLiquidData;
+    u8 hasMultipleLiquidTypes;
+    u8 offsetX;
+    u8 offsetY;
+    u8 width;
+    u8 height;
+    u8 liquidFlags;
+    u16 liquidEntry;
+    f32 level;
 };
 
 struct NovusHeightHeader
 {
-	NovusHeightHeader() : hasHeightBox(0), gridHeight(0), gridMaxHeight(0) { }
+    NovusHeightHeader() : hasHeightBox(0), gridHeight(0), gridMaxHeight(0) {}
 
-	u8 hasHeightBox;
-	f32 gridHeight;
-	f32 gridMaxHeight;
+    u8 hasHeightBox;
+    f32 gridHeight;
+    f32 gridMaxHeight;
 
-	f32 heightData[ADT_CELLS_PER_GRID * ADT_CELLS_PER_GRID][(ADT_CELL_SIZE + 1) * (ADT_CELL_SIZE + 1) + ADT_CELL_SIZE * ADT_CELL_SIZE];
+    f32 heightData[ADT_CELLS_PER_GRID * ADT_CELLS_PER_GRID][(ADT_CELL_SIZE + 1) * (ADT_CELL_SIZE + 1) + ADT_CELL_SIZE * ADT_CELL_SIZE];
 };
 
 struct NovusAreaHeader
 {
-	NovusAreaHeader() : hasSubArea(0), areaId(0) { }
+    NovusAreaHeader() : hasSubArea(0), areaId(0) {}
 
-	u8 hasSubArea;
-	u16 areaId;
+    u8 hasSubArea;
+    u16 areaId;
 };
 
 struct NovusAdtHeader
 {
-	NovusAdtHeader() : token(0), version(0) { }
+    NovusAdtHeader() : token(0), version(0) {}
 
-	u32 token;
-	u32 version;
+    u32 token;
+    u32 version;
 };
 
 struct NovusAdtAreaIds
 {
-	NovusAdtAreaIds() : ids() { }
+    NovusAdtAreaIds() : ids() {}
 
-	u16 ids[ADT_CELLS_PER_GRID][ADT_CELLS_PER_GRID];
+    u16 ids[ADT_CELLS_PER_GRID][ADT_CELLS_PER_GRID];
 };
 
 struct NovusAdtHeightLimit
 {
-	NovusAdtHeightLimit() : limitBoxMax(), limitBoxMin() { }
+    NovusAdtHeightLimit() : limitBoxMax(), limitBoxMin() {}
 
-	i16 limitBoxMax[3][3];
-	i16 limitBoxMin[3][3];
+    i16 limitBoxMax[3][3];
+    i16 limitBoxMin[3][3];
 };
 
 struct NovusAdtLiquidData
 {
-	NovusAdtLiquidData() : liquidEntry(), liquidFlags() { }
+    NovusAdtLiquidData() : liquidEntry(), liquidFlags() {}
 
-	u16 liquidEntry[ADT_CELLS_PER_GRID][ADT_CELLS_PER_GRID];
-	u8  liquidFlags[ADT_CELLS_PER_GRID][ADT_CELLS_PER_GRID];
+    u16 liquidEntry[ADT_CELLS_PER_GRID][ADT_CELLS_PER_GRID];
+    u8 liquidFlags[ADT_CELLS_PER_GRID][ADT_CELLS_PER_GRID];
 };
 
 struct NovusAdtLiquidHeight
 {
-	NovusAdtLiquidHeight() : liquidHeight() { }
+    NovusAdtLiquidHeight() : liquidHeight() {}
 
-	f32 liquidHeight[ADT_GRID_SIZE + 1][ADT_GRID_SIZE + 1];
+    f32 liquidHeight[ADT_GRID_SIZE + 1][ADT_GRID_SIZE + 1];
 };
 
 struct NovusAdtHolesData
 {
-	NovusAdtHolesData() : holes() { }
+    NovusAdtHolesData() : holes() {}
 
-	u16 holes[ADT_CELLS_PER_GRID][ADT_CELLS_PER_GRID];
+    u16 holes[ADT_CELLS_PER_GRID][ADT_CELLS_PER_GRID];
 };
 struct NovusAdt
 {
-	NovusAdt() {};
-	NovusAdtHeader adtHeader;
-	NovusAreaHeader areaHeader;
-	NovusHeightHeader heightHeader;
-	NovusLiquidHeader liquidHeader;
-	NovusHoleHeader holeHeader;
+    NovusAdt(){};
+    NovusAdtHeader adtHeader;
+    NovusAreaHeader areaHeader;
+    NovusHeightHeader heightHeader;
+    NovusLiquidHeader liquidHeader;
+    NovusHoleHeader holeHeader;
 
-	NovusAdtAreaIds areaIds;
-	NovusAdtHeightLimit heightLimit;
-	NovusAdtLiquidData liquidData;
-	NovusAdtLiquidHeight liquidHeight;
-	NovusAdtHolesData holesData;
+    NovusAdtAreaIds areaIds;
+    NovusAdtHeightLimit heightLimit;
+    NovusAdtLiquidData liquidData;
+    NovusAdtLiquidHeight liquidHeight;
+    NovusAdtHolesData holesData;
 };
 #pragma pack(pop)
 
 struct NovusMap
 {
-	NovusMap(){}
-	u16 id;
-	std::string mapName;
-	robin_hood::unordered_map<u16, NovusAdt> adts;
+    NovusMap() {}
+    u16 id;
+    std::string mapName;
+    robin_hood::unordered_map<u16, NovusAdt> adts;
     robin_hood::unordered_map<u16, std::vector<u32>> playersInAdts;
 
-	f32 GetHeight(Vector2& pos);
+    f32 GetHeight(Vector2& pos);
     bool GetAdtIdFromWorldPosition(Vector2& pos, u16& adtId);
     void GetChunkPositionFromAdtId(u16 adtId, u16& x, u16& y);
     bool GetAdtIdFromChunkPosition(u16 x, u16 y, u16& adtId);

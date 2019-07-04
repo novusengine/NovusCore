@@ -55,7 +55,7 @@ public:
     void AddTo(DataStore* buffer)
     {
         u32 maskPart = 0;
-		u32 j = 0;
+        u32 j = 0;
         for (u32 i = 0; i < GetBlocks() * 32; i++)
         {
             if (IsSet(i))
@@ -65,7 +65,7 @@ public:
             {
                 buffer->PutU32(maskPart);
                 maskPart = 0;
-				j = 0;
+                j = 0;
             }
         }
     }

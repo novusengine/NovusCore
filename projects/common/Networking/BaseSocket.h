@@ -37,7 +37,11 @@ class BaseSocket : public std::enable_shared_from_this<BaseSocket>
 {
 public:
     virtual bool Start() = 0;
-    virtual void Close(asio::error_code error) { _socket->close(); _isClosed = true; }
+    virtual void Close(asio::error_code error)
+    {
+        _socket->close();
+        _isClosed = true;
+    }
     virtual void HandleRead() = 0;
 
     asio::ip::tcp::socket* socket()
@@ -50,12 +54,13 @@ public:
         if (!dataStore.IsEmpty() || dataStore.IsFull())
         {
             _socket->async_write_some(asio::buffer(dataStore.GetInternalData(), dataStore.WrittenData),
-                std::bind(&BaseSocket::HandleInternalWrite, this, std::placeholders::_1, std::placeholders::_2));
+                                      std::bind(&BaseSocket::HandleInternalWrite, this, std::placeholders::_1, std::placeholders::_2));
         }
     }
     bool IsClosed() { return _isClosed; }
+
 protected:
-    BaseSocket(asio::ip::tcp::socket* socket) : _receiveBuffer(nullptr, 4096), _sendBuffer(nullptr, 4096), _isClosed(false), _socket(socket) { }
+    BaseSocket(asio::ip::tcp::socket* socket) : _receiveBuffer(nullptr, 4096), _sendBuffer(nullptr, 4096), _isClosed(false), _socket(socket) {}
 
     void AsyncRead()
     {
@@ -64,7 +69,7 @@ protected:
 
         _receiveBuffer.Reset();
         _socket->async_read_some(asio::buffer(_receiveBuffer.GetWritePointer(), _receiveBuffer.GetRemainingSpace()),
-            std::bind(&BaseSocket::HandleInternalRead, this, std::placeholders::_1, std::placeholders::_2));
+                                 std::bind(&BaseSocket::HandleInternalRead, this, std::placeholders::_1, std::placeholders::_2));
     }
     void HandleInternalRead(asio::error_code error, size_t bytes)
     {

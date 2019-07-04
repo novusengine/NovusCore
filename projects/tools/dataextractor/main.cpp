@@ -38,14 +38,14 @@
 
 i32 main()
 {
-	/* Set up console window title */
-#ifdef _WIN32  //Windows
-	SetConsoleTitle(WINDOWNAME);
+    /* Set up console window title */
+#ifdef _WIN32 //Windows
+    SetConsoleTitle(WINDOWNAME);
 #endif
 
-	MPQHandler mpqHandler;
-	if (mpqHandler.Load())
-	{
+    MPQHandler mpqHandler;
+    if (mpqHandler.Load())
+    {
         std::filesystem::path basePath = std::filesystem::current_path();
         std::filesystem::path outputPath(basePath.string() + "/NovusExtractor");
         if (!std::filesystem::exists(outputPath))
@@ -53,29 +53,29 @@ i32 main()
             std::filesystem::create_directory(outputPath);
         }
 
-		std::string sqlOutput = "";
+        std::string sqlOutput = "";
 
-		std::vector<std::string> adtLocations;
-		if (DBCLoader::LoadMap(mpqHandler, sqlOutput, adtLocations))
-		{
-			MapLoader::LoadMaps(mpqHandler, adtLocations);
-		}
+        std::vector<std::string> adtLocations;
+        if (DBCLoader::LoadMap(mpqHandler, sqlOutput, adtLocations))
+        {
+            MapLoader::LoadMaps(mpqHandler, adtLocations);
+        }
 
         DBCLoader::LoadEmotesText(mpqHandler, sqlOutput);
 
-		NC_LOG_MESSAGE("Building sql...");
-		std::ofstream output(outputPath.string() + "/DBCImportData.sql", std::ofstream::out);
-		output << sqlOutput;
-		output.close();
+        NC_LOG_MESSAGE("Building sql...");
+        std::ofstream output(outputPath.string() + "/DBCImportData.sql", std::ofstream::out);
+        output << sqlOutput;
+        output.close();
 
-		mpqHandler.CloseAll();
-		NC_LOG_SUCCESS("Finished extracting all data");
-	}
-	else
-	{
-		NC_LOG_ERROR("Failed to load any MPQs");
-	}
+        mpqHandler.CloseAll();
+        NC_LOG_SUCCESS("Finished extracting all data");
+    }
+    else
+    {
+        NC_LOG_ERROR("Failed to load any MPQs");
+    }
 
-	system("pause");
-	return 0;
+    system("pause");
+    return 0;
 }
