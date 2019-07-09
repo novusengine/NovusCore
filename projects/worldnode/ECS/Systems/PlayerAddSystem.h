@@ -70,8 +70,10 @@ void Update(entt::registry& registry)
             registry.assign<PlayerFieldDataComponent>(entityId);
             registry.assign<PlayerUpdateDataComponent>(entityId);
 
-            PlayerPositionComponent& playerPositionComponent = registry.assign<PlayerPositionComponent>(entityId, characterInfo.mapId, characterInfo.position, characterInfo.orientation);
-            Vector2 position = Vector2(playerPositionComponent.position.x, playerPositionComponent.position.y);
+            PlayerPositionComponent& playerPositionComponent = registry.assign<PlayerPositionComponent>(entityId, characterInfo.mapId);
+            playerPositionComponent.movementData.position = characterInfo.position;
+            playerPositionComponent.movementData.orientation = characterInfo.orientation;
+            Vector2 position = Vector2(playerPositionComponent.movementData.position.x, playerPositionComponent.movementData.position.y);
 
             u16 adtId = 0;
             if (mapSingleton.maps[playerPositionComponent.mapId].GetAdtIdFromWorldPosition(position, adtId))

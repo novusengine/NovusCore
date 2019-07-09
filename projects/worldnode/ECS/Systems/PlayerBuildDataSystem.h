@@ -44,7 +44,7 @@
 
 namespace PlayerBuildDataSystem
 {
-std::shared_ptr<ByteBuffer> PlayerBuildInitialData(u64 characterGuid, u8 updateType, u16 updateFlags, u32 visibleFlags, u32 lifeTimeInMS, PlayerFieldDataComponent& playerFieldData, PlayerPositionComponent position, u16& opcode)
+std::shared_ptr<ByteBuffer> PlayerBuildInitialData(u64 characterGuid, u8 updateType, u16 updateFlags, u32 visibleFlags, u32 lifeTimeInMS, PlayerFieldDataComponent& playerFieldData, PlayerPositionComponent playerPositionData, u16& opcode)
 {
     ZoneScopedNC("PlayerBuildInitialData", tracy::Color::Yellow2)
 
@@ -77,27 +77,7 @@ std::shared_ptr<ByteBuffer> PlayerBuildInitialData(u64 characterGuid, u8 updateT
     buffer->PutGuid(characterGuid);
 
     buffer->PutU8(TYPEID_PLAYER);
-
-    buffer->PutU16(updateFlags);
-    buffer->PutU32(0x00);         // MovementFlags
-    buffer->PutU16(0x00);         // Extra MovementFlags
-    buffer->PutU32(lifeTimeInMS); // Game Time
-    buffer->Put<Vector3>(position.position);
-    buffer->PutF32(position.orientation);
-
-    // FallTime
-    buffer->PutU32(0);
-
-    // Movement Speeds
-    buffer->PutF32(2.5f);      // MOVE_WALK
-    buffer->PutF32(7.0f);      // MOVE_RUN
-    buffer->PutF32(4.5f);      // MOVE_RUN_BACK
-    buffer->PutF32(4.722222f); // MOVE_SWIM
-    buffer->PutF32(2.5f);      // MOVE_SWIM_BACK
-    buffer->PutF32(7.0f);      // MOVE_FLIGHT
-    buffer->PutF32(4.5f);      // MOVE_FLIGHT_BACK
-    buffer->PutF32(3.141593f); // MOVE_TURN_RATE
-    buffer->PutF32(3.141593f); // MOVE_PITCH_RATE
+    playerPositionData.WriteInitialMovementData(buffer, updateFlags, lifeTimeInMS);
 
     std::shared_ptr<ByteBuffer> fieldbuffer = ByteBuffer::Borrow<5304>();
     UpdateMask<1344> updateMask(PLAYER_END);
@@ -302,7 +282,7 @@ void Update(entt::registry& registry)
     buildUpdateDataView.each([&registry, &mapSingleton, lifeTimeInMS](const auto, PlayerConnectionComponent& playerConnection, PlayerFieldDataComponent& playerFieldData, PlayerPositionComponent& playerPositionData, PlayerUpdateDataComponent& playerUpdateData) {
         playerFieldData.updateData.ResetBlocks();
 
-        Vector2 position = Vector2(playerPositionData.position.x, playerPositionData.position.y);
+        Vector2 position = Vector2(playerPositionData.movementData.position.x, playerPositionData.movementData.position.y);
         u32 mapId = playerPositionData.mapId;
 
         u16 adtId;

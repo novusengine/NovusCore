@@ -1,4 +1,4 @@
-/*
+﻿/*
     MIT License
 
     Copyright (c) 2018-2019 NovusCore
@@ -102,25 +102,6 @@ void Update(entt::registry& registry)
             case Opcode::CMSG_LOGOUT_REQUEST:
             {
                 ZoneScopedNC("Packet::LogoutRequest", tracy::Color::Orange2)
-
-                    ExpiredPlayerData expiredPlayerData;
-                expiredPlayerData.entityId = playerConnection.entityId;
-                expiredPlayerData.accountGuid = playerConnection.accountGuid;
-                expiredPlayerData.characterGuid = playerConnection.characterGuid;
-                playerDeleteQueue.expiredEntityQueue->enqueue(expiredPlayerData);
-
-                CharacterInfo characterInfo;
-                characterDatabase.cache->GetCharacterInfo(playerConnection.characterGuid, characterInfo);
-
-                characterInfo.level = clientFieldData.GetFieldValue<u32>(UNIT_FIELD_LEVEL);
-                characterInfo.mapId = playerPositionData.mapId;
-                characterInfo.position = playerPositionData.position;
-                characterInfo.orientation = playerPositionData.orientation;
-                characterInfo.online = 0;
-                characterInfo.UpdateCache(playerConnection.characterGuid);
-
-                characterDatabase.cache->SaveAndUnloadCharacter(playerConnection.characterGuid);
-
                 // Here we need to Redirect the client back to Realmserver. The Realmserver will send SMSG_LOGOUT_COMPLETE
                 std::shared_ptr<ByteBuffer> buffer = ByteBuffer::Borrow<30>();
                 i32 ip = 16777343;
@@ -265,31 +246,31 @@ void Update(entt::registry& registry)
                 std::shared_ptr<ByteBuffer> speedChange = ByteBuffer::Borrow<12>();
 
                 CharacterUtils::BuildSpeedChangePacket(playerConnection.characterGuid, speed, Opcode::SMSG_FORCE_WALK_SPEED_CHANGE, speedChange);
-                playerConnection.socket->SendPacket(speedChange.get(), Opcode::SMSG_FORCE_WALK_SPEED_CHANGE);
+                CharacterUtils::SendPacketToGridPlayers(&registry, playerConnection.entityId, speedChange, Opcode::SMSG_FORCE_WALK_SPEED_CHANGE);
                 speedChange->Reset();
 
                 CharacterUtils::BuildSpeedChangePacket(playerConnection.characterGuid, speed, Opcode::SMSG_FORCE_RUN_SPEED_CHANGE, speedChange);
-                playerConnection.socket->SendPacket(speedChange.get(), Opcode::SMSG_FORCE_RUN_SPEED_CHANGE);
+                CharacterUtils::SendPacketToGridPlayers(&registry, playerConnection.entityId, speedChange, Opcode::SMSG_FORCE_RUN_SPEED_CHANGE);
                 speedChange->Reset();
 
                 CharacterUtils::BuildSpeedChangePacket(playerConnection.characterGuid, speed, Opcode::SMSG_FORCE_RUN_BACK_SPEED_CHANGE, speedChange);
-                playerConnection.socket->SendPacket(speedChange.get(), Opcode::SMSG_FORCE_RUN_BACK_SPEED_CHANGE);
+                CharacterUtils::SendPacketToGridPlayers(&registry, playerConnection.entityId, speedChange, Opcode::SMSG_FORCE_RUN_BACK_SPEED_CHANGE);
                 speedChange->Reset();
 
                 CharacterUtils::BuildSpeedChangePacket(playerConnection.characterGuid, speed, Opcode::SMSG_FORCE_SWIM_SPEED_CHANGE, speedChange);
-                playerConnection.socket->SendPacket(speedChange.get(), Opcode::SMSG_FORCE_SWIM_SPEED_CHANGE);
+                CharacterUtils::SendPacketToGridPlayers(&registry, playerConnection.entityId, speedChange, Opcode::SMSG_FORCE_SWIM_SPEED_CHANGE);
                 speedChange->Reset();
 
                 CharacterUtils::BuildSpeedChangePacket(playerConnection.characterGuid, speed, Opcode::SMSG_FORCE_SWIM_BACK_SPEED_CHANGE, speedChange);
-                playerConnection.socket->SendPacket(speedChange.get(), Opcode::SMSG_FORCE_SWIM_BACK_SPEED_CHANGE);
+                CharacterUtils::SendPacketToGridPlayers(&registry, playerConnection.entityId, speedChange, Opcode::SMSG_FORCE_SWIM_BACK_SPEED_CHANGE);
                 speedChange->Reset();
 
                 CharacterUtils::BuildSpeedChangePacket(playerConnection.characterGuid, speed, Opcode::SMSG_FORCE_FLIGHT_SPEED_CHANGE, speedChange);
-                playerConnection.socket->SendPacket(speedChange.get(), Opcode::SMSG_FORCE_FLIGHT_SPEED_CHANGE);
+                CharacterUtils::SendPacketToGridPlayers(&registry, playerConnection.entityId, speedChange, Opcode::SMSG_FORCE_FLIGHT_SPEED_CHANGE);
                 speedChange->Reset();
 
                 CharacterUtils::BuildSpeedChangePacket(playerConnection.characterGuid, speed, Opcode::SMSG_FORCE_FLIGHT_BACK_SPEED_CHANGE, speedChange);
-                playerConnection.socket->SendPacket(speedChange.get(), Opcode::SMSG_FORCE_FLIGHT_BACK_SPEED_CHANGE);
+                CharacterUtils::SendPacketToGridPlayers(&registry, playerConnection.entityId, speedChange, Opcode::SMSG_FORCE_FLIGHT_BACK_SPEED_CHANGE);
 
                 playerConnection.SendChatNotification("Speed Updated: %f", speed);
                 packet.handled = true;
@@ -299,8 +280,12 @@ void Update(entt::registry& registry)
             {
                 std::shared_ptr<ByteBuffer> flyMode = ByteBuffer::Borrow<12>();
                 CharacterUtils::BuildFlyModePacket(playerConnection.characterGuid, flyMode);
-
                 playerConnection.socket->SendPacket(flyMode.get(), Opcode::SMSG_MOVE_SET_CAN_FLY);
+
+                std::shared_ptr<ByteBuffer> movementBuffer = ByteBuffer::Borrow<97>();
+                movementBuffer->PutGuid(playerConnection.characterGuid);
+                playerPositionData.WriteMovementData(movementBuffer, singleton.lifeTimeInMS);
+                CharacterUtils::SendPacketToGridPlayers(&registry, playerConnection.entityId, movementBuffer, Opcode::MSG_MOVE_UPDATE_CAN_FLY, true);
 
                 packet.handled = true;
                 break;
@@ -309,8 +294,13 @@ void Update(entt::registry& registry)
             {
                 std::shared_ptr<ByteBuffer> flyMode = ByteBuffer::Borrow<12>();
                 CharacterUtils::BuildFlyModePacket(playerConnection.characterGuid, flyMode);
-
                 playerConnection.socket->SendPacket(flyMode.get(), Opcode::SMSG_MOVE_UNSET_CAN_FLY);
+
+                std::shared_ptr<ByteBuffer> movementBuffer = ByteBuffer::Borrow<97>();
+                movementBuffer->PutGuid(playerConnection.characterGuid);
+                playerPositionData.WriteMovementData(movementBuffer, singleton.lifeTimeInMS);
+                CharacterUtils::SendPacketToGridPlayers(&registry, playerConnection.entityId, movementBuffer, Opcode::MSG_MOVE_UPDATE_CAN_FLY, true);
+
                 packet.handled = true;
                 break;
             }
@@ -319,7 +309,7 @@ void Update(entt::registry& registry)
                 packet.handled = true;
 
                 std::shared_ptr<ByteBuffer> objectPosition = ByteBuffer::Borrow<12>();
-                objectPosition->Put<Vector3>(playerPositionData.position);
+                objectPosition->Put<Vector3>(playerPositionData.movementData.position);
 
                 playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, objectPosition, Opcode::SMSG_QUERY_OBJECT_POSITION));
                 break;
@@ -346,7 +336,7 @@ void Update(entt::registry& registry)
                 std::shared_ptr<ByteBuffer> standStateChange = ByteBuffer::Borrow<1>();
                 standStateChange->PutU8(static_cast<u8>(standState));
 
-                playerPacketQueue.packetQueue->enqueue(PacketQueueData(playerConnection.socket, standStateChange, Opcode::SMSG_STANDSTATE_UPDATE));
+                playerConnection.socket->SendPacket(standStateChange.get(), Opcode::SMSG_STANDSTATE_UPDATE);
 
                 packet.handled = true;
                 break;
@@ -449,47 +439,36 @@ void Update(entt::registry& registry)
             {
                 ZoneScopedNC("Packet::Passthrough", tracy::Color::Orange2)
 
-                    u64 guid = 0;
-                u32 movementFlags = 0;
-                u16 movementFlagsExtra = 0;
-                u32 gameTime = 0;
-                Vector3 position = Vector3::Zero;
-                f32 orientation = 0;
-                u32 fallTime = 0;
-
                 u8 opcodeIndex = CharacterUtils::GetLastMovementTimeIndexFromOpcode(opcode);
                 u32 opcodeTime = playerPositionData.lastMovementOpcodeTime[opcodeIndex];
 
+                u64 guid = 0;
+                MovementData movementData;
                 packet.data->GetGuid(guid);
-                packet.data->GetU32(movementFlags);
-                packet.data->GetU16(movementFlagsExtra);
-                packet.data->GetU32(gameTime);
-                packet.data->Get<Vector3>(position);
-                packet.data->GetF32(orientation);
-                packet.data->GetU32(fallTime);
+                playerPositionData.ReadMovementData(packet.data, movementData);
 
                 // Find time offset
                 if (playerPositionData.timeOffsetToServer == INVALID_TIME_OFFSET)
                 {
-                    playerPositionData.timeOffsetToServer = singleton.lifeTimeInMS - gameTime;
+                    playerPositionData.timeOffsetToServer = static_cast<i32>(singleton.lifeTimeInMS - movementData.gameTime);
                 }
 
-                if (gameTime > opcodeTime)
+                if (movementData.gameTime > opcodeTime)
                 {
-                    playerPositionData.lastMovementOpcodeTime[opcodeIndex] = gameTime;
+                    playerPositionData.lastMovementOpcodeTime[opcodeIndex] = movementData.gameTime;
 
                     PositionUpdateData positionUpdateData;
                     positionUpdateData.opcode = opcode;
-                    positionUpdateData.movementFlags = movementFlags;
-                    positionUpdateData.movementFlagsExtra = movementFlagsExtra;
+                    positionUpdateData.movementFlags = movementData.movementFlags;
+                    positionUpdateData.movementFlagsExtra = movementData.movementFlagsExtra;
                     positionUpdateData.gameTime = static_cast<u32>(singleton.lifeTimeInMS);
-                    positionUpdateData.fallTime = fallTime;
+                    positionUpdateData.fallTime = movementData.fallTime;
 
-                    playerPositionData.position = position;
-                    playerPositionData.orientation = orientation;
-                    positionUpdateData.position = position;
+                    playerPositionData.movementData.position = movementData.position;
+                    playerPositionData.movementData.orientation = movementData.orientation;
+                    positionUpdateData.position = movementData.position;
 
-                    positionUpdateData.orientation = orientation;
+                    positionUpdateData.orientation = movementData.orientation;
 
                     playerUpdateData.positionUpdateData.push_back(positionUpdateData);
                 }
@@ -694,13 +673,13 @@ void Update(entt::registry& registry)
                 // Handle blink!
                 if (spellId == 1953)
                 {
-                    f32 tempHeight = playerPositionData.position.z;
+                    f32 tempHeight = playerPositionData.movementData.position.z;
                     u32 dest = 20;
 
                     for (u32 i = 0; i < 20; i++)
                     {
-                        f32 newPositionX = playerPositionData.position.x + i * Math::Cos(playerPositionData.orientation);
-                        f32 newPositionY = playerPositionData.position.y + i * Math::Sin(playerPositionData.orientation);
+                        f32 newPositionX = playerPositionData.movementData.position.x + i * Math::Cos(playerPositionData.movementData.orientation);
+                        f32 newPositionY = playerPositionData.movementData.position.y + i * Math::Sin(playerPositionData.movementData.orientation);
                         Vector2 newPos(newPositionX, newPositionY);
                         f32 height = mapSingleton.maps[playerPositionData.mapId].GetHeight(newPos);
                         f32 deltaHeight = Math::Abs(tempHeight - height);
@@ -723,8 +702,8 @@ void Update(entt::registry& registry)
                         break;
                     }
 
-                    f32 newPositionX = playerPositionData.position.x + dest * Math::Cos(playerPositionData.orientation);
-                    f32 newPositionY = playerPositionData.position.y + dest * Math::Sin(playerPositionData.orientation);
+                    f32 newPositionX = playerPositionData.movementData.position.x + dest * Math::Cos(playerPositionData.movementData.orientation);
+                    f32 newPositionY = playerPositionData.movementData.position.y + dest * Math::Sin(playerPositionData.movementData.orientation);
 
                     /*
                                     Adding 2.0f to the final height will solve 90%+ of issues where we fall through the terrain, remove this to fully test blink's capabilities.
@@ -744,7 +723,7 @@ void Update(entt::registry& registry)
                     buffer->PutF32(newPositionX);
                     buffer->PutF32(newPositionY);
                     buffer->PutF32(height);
-                    buffer->PutF32(playerPositionData.orientation);
+                    buffer->PutF32(playerPositionData.movementData.orientation);
 
                     buffer->PutU32(targetFlags);
 

@@ -100,7 +100,7 @@ u32 AngelScriptPlayer::GetAdtId() const
 Vector3 AngelScriptPlayer::GetPosition() const
 {
     PlayerPositionComponent& positionComponent = _registry->get<PlayerPositionComponent>(_entityId);
-    return Vector3(positionComponent.position.x, positionComponent.position.y, positionComponent.position.z);
+    return Vector3(positionComponent.movementData.position.x, positionComponent.movementData.position.y, positionComponent.movementData.position.z);
 }
 
 void AngelScriptPlayer::SetPosition(Vector3 pos, bool immediate)
@@ -109,9 +109,9 @@ void AngelScriptPlayer::SetPosition(Vector3 pos, bool immediate)
 
     if (immediate)
     {
-        positionComponent.position.x = pos.x;
-        positionComponent.position.y = pos.y;
-        positionComponent.position.z = pos.z;
+        positionComponent.movementData.position.x = pos.x;
+        positionComponent.movementData.position.y = pos.y;
+        positionComponent.movementData.position.z = pos.z;
         CharacterUtils::InvalidatePosition(_registry, _entityId);
     }
     else
@@ -120,9 +120,9 @@ void AngelScriptPlayer::SetPosition(Vector3 pos, bool immediate)
         u32 entityId = _entityId;
 
         _registry->ctx<ScriptSingleton>().AddTransaction([&positionComponent, registry, pos, entityId]() {
-            positionComponent.position.x = pos.x;
-            positionComponent.position.y = pos.y;
-            positionComponent.position.z = pos.z;
+            positionComponent.movementData.position.x = pos.x;
+            positionComponent.movementData.position.y = pos.y;
+            positionComponent.movementData.position.z = pos.z;
             CharacterUtils::InvalidatePosition(registry, entityId);
         });
     }
@@ -130,7 +130,7 @@ void AngelScriptPlayer::SetPosition(Vector3 pos, bool immediate)
 
 f32 AngelScriptPlayer::GetOrientation() const
 {
-    return _registry->get<PlayerPositionComponent>(_entityId).orientation;
+    return _registry->get<PlayerPositionComponent>(_entityId).movementData.orientation;
 }
 
 void AngelScriptPlayer::SetOrientation(f32 orientation, bool immediate)
@@ -139,12 +139,12 @@ void AngelScriptPlayer::SetOrientation(f32 orientation, bool immediate)
 
     if (immediate)
     {
-        positionComponent.orientation = orientation;
+        positionComponent.movementData.orientation = orientation;
     }
     else
     {
         _registry->ctx<ScriptSingleton>().AddTransaction([&positionComponent, orientation]() {
-            positionComponent.orientation = orientation;
+            positionComponent.movementData.orientation = orientation;
         });
     }
 }

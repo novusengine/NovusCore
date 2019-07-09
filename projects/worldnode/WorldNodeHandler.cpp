@@ -221,11 +221,12 @@ bool WorldNodeHandler::Update()
                     playerDeleteQueue.expiredEntityQueue->enqueue(expiredPlayerData);
 
                     CharacterInfo characterInfo;
-                    characterDatabase.cache->GetCharacterInfo(playerConnection.characterGuid, characterInfo);
+                    if (!characterDatabase.cache->GetCharacterInfo(playerConnection.characterGuid, characterInfo))
+                        continue;
 
                     characterInfo.mapId = playerPositionData.mapId;
-                    characterInfo.position = playerPositionData.position;
-                    characterInfo.orientation = playerPositionData.orientation;
+                    characterInfo.position = playerPositionData.movementData.position;
+                    characterInfo.orientation = playerPositionData.movementData.orientation;
                     characterInfo.online = 0;
                     characterInfo.UpdateCache(playerConnection.characterGuid);
 

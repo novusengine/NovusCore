@@ -23,20 +23,204 @@
     SOFTWARE.
 */
 #include <NovusTypes.h>
+#include <Networking/ByteBuffer.h>
 #include <Math/Vector3.h>
 #include <vector>
 
 #define MAX_MOVEMENT_OPCODES 27
 #define INVALID_TIME_OFFSET std::numeric_limits<i32>().min()
+struct MovementData
+{
+    Vector3 position;
+    u32 movementFlags = MOVEFLAG_NONE;
+    u16 movementFlagsExtra = MOVEFLAG_EXTRA_NONE;
+    u32 gameTime = 0;
+    f32 orientation = 0;
+    f32 pitch = 0;
+    u32 fallTime = 0;
+
+    // Transport Information
+    Vector3 transportPosition;
+    u64 transportGuid = 0;
+    f32 transportOrientation = 0;
+    u32 transportGameTime = 0;
+    u32 transportInterpolatedGameTime = 0;
+    u8 transportSeat = 0;
+
+    // Falling / Knockback Information
+    f32 ZSpeed = 0;
+    f32 SinusAngle = 0;
+    f32 CosinusAngle = 0;
+    f32 XYSpeed = 0;
+
+    // Spline Information
+    f32 splineElevation = 0;
+};
+
 struct PlayerPositionComponent
 {
-	u32 mapId;
-    Vector3 position;
-    f32 orientation;
+    u32 mapId;
+    MovementData movementData;
 
     u32 adtId = std::numeric_limits<u16>().max(); // Invalid ADT
 
     i32 timeOffsetToServer = INVALID_TIME_OFFSET;
     u32 lastMovementOpcodeTime[MAX_MOVEMENT_OPCODES];
     std::vector<PositionUpdateData> positionUpdateData;
+
+    void WriteMovementData(std::shared_ptr<ByteBuffer> buffer, u32 gameTime)
+    {
+        // CDataStore *__cdecl CMovementStatus::Write(CDataStore *a1, int a2)
+
+        buffer->PutU32(movementData.movementFlags);
+        buffer->PutU16(movementData.movementFlagsExtra);
+        buffer->PutU32(gameTime);
+        buffer->Put<Vector3>(movementData.position);
+        buffer->PutF32(movementData.orientation);
+
+        if (movementData.movementFlags & MOVEFLAG_TRANSPORT)
+        {
+            buffer->PutGuid(movementData.transportGuid);
+            buffer->Put<Vector3>(movementData.transportPosition);
+            buffer->PutF32(movementData.transportOrientation);
+            buffer->PutU32(movementData.transportGameTime);
+            buffer->PutU8(movementData.transportSeat);
+
+            if (movementData.movementFlagsExtra & MOVEFLAG_EXTRA_INTERPOLATED_MOVEMENT)
+            {
+                buffer->PutU32(movementData.transportInterpolatedGameTime);
+            }
+        }
+
+        if (movementData.movementFlags & MOVEFLAG_MASK_PITCH || movementData.movementFlagsExtra & MOVEFLAG_EXTRA_ALWAYS_ALLOW_PITCHING)
+        {
+            buffer->PutF32(movementData.pitch);
+        }
+
+        buffer->PutU32(movementData.fallTime);
+
+        if (movementData.movementFlags & MOVEFLAG_FALLING)
+        {
+            buffer->PutF32(movementData.ZSpeed);
+            buffer->PutF32(movementData.SinusAngle);
+            buffer->PutF32(movementData.CosinusAngle);
+            buffer->PutF32(movementData.XYSpeed);
+        }
+
+        if (movementData.movementFlags & MOVEFLAG_SPLINE_ELEVATION)
+        {
+            buffer->PutF32(movementData.splineElevation);
+        }
+    }
+    void WriteInitialMovementData(std::shared_ptr<ByteBuffer> buffer, u16 updateFlags, u32 gameTime)
+    {
+        buffer->PutU16(updateFlags);
+        if (updateFlags & UPDATEFLAG_LIVING)
+        {
+            WriteMovementData(buffer, gameTime);
+
+            // Movement Speeds
+            buffer->PutF32(2.5f);      // MOVE_WALK
+            buffer->PutF32(7.0f);      // MOVE_RUN
+            buffer->PutF32(4.5f);      // MOVE_RUN_BACK
+            buffer->PutF32(4.722222f); // MOVE_SWIM
+            buffer->PutF32(2.5f);      // MOVE_SWIM_BACK
+            buffer->PutF32(7.0f);      // MOVE_FLIGHT
+            buffer->PutF32(4.5f);      // MOVE_FLIGHT_BACK
+            buffer->PutF32(3.141593f); // MOVE_TURN_RATE
+            buffer->PutF32(3.141593f); // MOVE_PITCH_RATE
+
+            if (movementData.movementFlags & MOVEFLAG_SPLINE_ENABLED)
+            {
+                // We should write spline data here
+            }
+        }
+        else
+        {
+            if (updateFlags & UPDATEFLAG_POSITION)
+            {
+            }
+            else
+            {
+                if (updateFlags & UPDATEFLAG_STATIONARY_POSITION)
+                {
+                }
+            }
+        }
+
+        if (updateFlags & UPDATEFLAG_UNK4)
+        {
+            buffer->PutU32(0);
+        }
+
+        if (updateFlags & UPDATEFLAG_LOWGUID)
+        {
+        }
+
+        if (updateFlags & UPDATEFLAG_HAS_TARGET)
+        {
+        }
+
+        if (updateFlags & UPDATEFLAG_TRANSPORT)
+        {
+        }
+
+        if (updateFlags & UPDATEFLAG_VEHICLE)
+        {
+        }
+
+        if (updateFlags & UPDATEFLAG_ROTATION)
+        {
+        
+        }
+    }
+    void ReadMovementData(std::shared_ptr<ByteBuffer> buffer, MovementData& moveData)
+    {
+        // CDataStore *__cdecl CMovementStatus::Read(CDataStore *this, int arg4)
+
+        buffer->GetU32(moveData.movementFlags);
+        buffer->GetU16(moveData.movementFlagsExtra);
+        buffer->GetU32(moveData.gameTime);
+        buffer->Get<Vector3>(moveData.position);
+        buffer->GetF32(moveData.orientation);
+
+        if (moveData.movementFlags & MOVEFLAG_TRANSPORT)
+        {
+            buffer->GetGuid(moveData.transportGuid);
+            buffer->Get<Vector3>(moveData.transportPosition);
+            buffer->GetF32(moveData.transportOrientation);
+            buffer->GetU32(moveData.transportGameTime);
+            buffer->GetU8(moveData.transportSeat);
+
+            if (moveData.movementFlagsExtra & MOVEFLAG_EXTRA_INTERPOLATED_MOVEMENT)
+            {
+                moveData.movementFlagsExtra &= 0xFBFFu;
+                buffer->GetU32(moveData.transportInterpolatedGameTime);
+            }
+            else
+            {
+                moveData.transportInterpolatedGameTime = moveData.transportGameTime;
+            }
+        }
+
+        if (moveData.movementFlags & MOVEFLAG_MASK_PITCH || moveData.movementFlagsExtra & MOVEFLAG_EXTRA_ALWAYS_ALLOW_PITCHING)
+        {
+            buffer->GetF32(moveData.pitch);
+        }
+
+        buffer->GetU32(moveData.fallTime);
+
+        if (moveData.movementFlags & MOVEFLAG_FALLING)
+        {
+            buffer->GetF32(moveData.ZSpeed);
+            buffer->GetF32(moveData.SinusAngle);
+            buffer->GetF32(moveData.CosinusAngle);
+            buffer->GetF32(moveData.XYSpeed);
+        }
+
+        if (moveData.movementFlags & MOVEFLAG_SPLINE_ELEVATION)
+        {
+            buffer->GetF32(moveData.splineElevation);
+        }
+    }
 };

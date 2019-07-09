@@ -58,8 +58,8 @@ void Update(entt::registry& registry)
         /* SMSG_LOGIN_VERIFY_WORLD */
         std::shared_ptr<ByteBuffer> initializeBuffer = ByteBuffer::Borrow<1024>();
         initializeBuffer->PutU32(playerPositionData.mapId);
-        initializeBuffer->Put<Vector3>(playerPositionData.position);
-        initializeBuffer->PutF32(playerPositionData.orientation);
+        initializeBuffer->Put<Vector3>(playerPositionData.movementData.position);
+        initializeBuffer->PutF32(playerPositionData.movementData.orientation);
         playerInitializeData.socket->SendPacket(initializeBuffer.get(), Opcode::SMSG_LOGIN_VERIFY_WORLD);
 
         /* SMSG_ACCOUNT_DATA_TIMES */

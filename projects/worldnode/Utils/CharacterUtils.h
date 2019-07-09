@@ -322,19 +322,11 @@ inline void InvalidatePosition(entt::registry* registry, u32 entityId)
     PlayerConnectionComponent& playerConnection = registry->get<PlayerConnectionComponent>(entityId);
     PlayerPositionComponent& playerPositionData = registry->get<PlayerPositionComponent>(entityId);
 
-    std::shared_ptr<ByteBuffer> buffer = ByteBuffer::Borrow<42>();
+    std::shared_ptr<ByteBuffer> buffer = ByteBuffer::Borrow<101>();
     buffer->PutGuid(playerConnection.characterGuid);
     buffer->PutU32(0); // Teleport Count
 
-    // Movement
-    buffer->PutU32(0);
-    buffer->PutU16(0);
-    buffer->PutU32(static_cast<u32>(singletonData.lifeTimeInMS));
-
-    buffer->Put<Vector3>(playerPositionData.position);
-    buffer->PutF32(playerPositionData.orientation);
-    buffer->PutU32(0);
-
+    playerPositionData.WriteMovementData(buffer, static_cast<u32>(singletonData.lifeTimeInMS));
     playerConnection.socket->SendPacket(buffer.get(), Opcode::MSG_MOVE_TELEPORT_ACK);
 }
 
