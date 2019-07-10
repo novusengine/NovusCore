@@ -25,14 +25,15 @@ project(dataextractor VERSION 1.0.0 DESCRIPTION "Data Extractor for NovusCore")
 file(GLOB_RECURSE DATAEXTRACTOR_FILES "*.cpp" "*.h")
 
 add_executable(dataextractor ${DATAEXTRACTOR_FILES})
+
 find_assign_files(${DATAEXTRACTOR_FILES})
 
 set_property(TARGET dataextractor PROPERTY CXX_STANDARD 17)
 
 if(APPLE)
-    target_link_libraries(dataextractor c++fs)
+    target_link_libraries(dataextractor PRIVATE c++fs)
 elseif (UNIX)
-    target_link_libraries(dataextractor stdc++fs)
+    target_link_libraries(dataextractor PRIVATE stdc++fs)
 endif()
 
 # Set VERSION & FOLDER Property
@@ -40,7 +41,10 @@ set_target_properties(dataextractor PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(dataextractor PROPERTIES FOLDER "tools")
 
 add_compile_definitions(NOMINMAX _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
-target_link_libraries(dataextractor common mpq)
-target_include_directories(dataextractor PRIVATE ${DATAEXTRACTOR_DEPENDENCIES})
-include_directories(dataextractor "${common_SOURCE_DIR}")
+
+target_link_libraries(dataextractor PRIVATE
+	common::common
+	mpq::mpq
+)
+
 install(TARGETS dataextractor DESTINATION bin)

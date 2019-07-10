@@ -34,5 +34,7 @@ target_include_directories(mpq PUBLIC
     ${CMAKE_SOURCE_DIR}/dep/zlib
     )
 
-target_link_libraries(mpq PUBLIC zlib BZip2::BZip2)
+target_link_libraries(mpq PUBLIC zlib::zlib BZip2::BZip2)
 set_target_properties(mpq PROPERTIES FOLDER "dep")
+
+add_library(mpq::mpq ALIAS mpq)
