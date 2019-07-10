@@ -51,7 +51,8 @@ struct UnitFieldDataComponent
     template <typename T>
     T GetFieldValue(u16 index, u8 offset = 0)
     {
-        return unitFields->ReadAt<T>((index * 4) + offset);
+        T fieldValue;
+        return unitFields->Get<T>(fieldValue, (index * 4) + offset);
     }
     void ResetFields()
     {

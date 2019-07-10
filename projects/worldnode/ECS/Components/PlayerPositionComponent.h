@@ -27,6 +27,9 @@
 #include <Math/Vector3.h>
 #include <vector>
 
+#include "../Components/PlayerUpdateDataComponent.h"
+#include "../../NovusEnums.h"
+
 #define MAX_MOVEMENT_OPCODES 27
 #define INVALID_TIME_OFFSET std::numeric_limits<i32>().min()
 struct MovementData
@@ -171,7 +174,7 @@ struct PlayerPositionComponent
 
         if (updateFlags & UPDATEFLAG_ROTATION)
         {
-        
+
         }
     }
     void ReadMovementData(std::shared_ptr<ByteBuffer> buffer, MovementData& moveData)

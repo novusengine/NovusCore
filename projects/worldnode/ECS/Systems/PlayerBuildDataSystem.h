@@ -24,7 +24,7 @@
 #pragma once
 #include <NovusTypes.h>
 #include <entt.hpp>
-#include <tracy\Tracy.hpp>
+#include <tracy/Tracy.hpp>
 #include <Networking/ByteBuffer.h>
 
 #include "../../NovusEnums.h"

@@ -26,13 +26,28 @@
 #include <Networking/ByteBuffer.h>
 #include <Networking/Opcode/Opcode.h>
 #include <Utils/StringUtils.h>
+
+// Forward declarations to avoid circular includes
+struct CharacterInfo;
+
+namespace CharacterUtils
+{
+    void GetDisplayIdFromRace(const CharacterInfo characterData, u32& displayId);
+    u8 GetLastMovementTimeIndexFromOpcode(u16 opcode);
+    void BuildSpeedChangePacket(u64 characterGuid, f32 speed, Opcode opcode, std::shared_ptr<ByteBuffer> buffer);
+    void BuildFlyModePacket(u64 characterGuid, std::shared_ptr<ByteBuffer> buffer);
+    template <typename... Args>
+        std::shared_ptr<ByteBuffer> BuildNotificationPacket(std::string message, Args... args);
+    void InvalidatePosition(entt::registry* registry, u32 entityId);
+    void SendPacketToGridPlayers(entt::registry* registry, u32 entityId, std::shared_ptr<ByteBuffer> buffer, u16 opcode, bool excludeSelf = false);
+}
+
 #include "MapUtils.h"
 #include "../DatabaseCache/CharacterDatabaseCache.h"
 #include "../Connections/WorldConnection.h"
 
 #include "../ECS/Components/Singletons/SingletonComponent.h"
 #include "../ECS/Components/PlayerConnectionComponent.h"
-#include "../ECS/Components/PlayerUpdateDataComponent.h"
 #include "../ECS/Components/PlayerPositionComponent.h"
 
 namespace CharacterUtils
@@ -330,7 +345,7 @@ inline void InvalidatePosition(entt::registry* registry, u32 entityId)
     playerConnection.socket->SendPacket(buffer.get(), Opcode::MSG_MOVE_TELEPORT_ACK);
 }
 
-inline void SendPacketToGridPlayers(entt::registry* registry, u32 entityId, std::shared_ptr<ByteBuffer> buffer, u16 opcode, bool excludeSelf = false)
+inline void SendPacketToGridPlayers(entt::registry* registry, u32 entityId, std::shared_ptr<ByteBuffer> buffer, u16 opcode, bool excludeSelf)
 {
     PlayerPositionComponent& playerPositionData = registry->get<PlayerPositionComponent>(entityId);
     MapsUtils::SendPacketToGridPlayers(registry, playerPositionData.mapId, playerPositionData.adtId, buffer, opcode, excludeSelf ? entityId : 0);
