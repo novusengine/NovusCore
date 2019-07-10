@@ -1,6 +1,6 @@
 # MIT License
 
-# Copyright (c) 2018 NovusCore
+# Copyright (c) 2019 NovusCore
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,30 +20,23 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-project(tracy VERSION 1.0.0)
+project(worldnode_deps VERSION 1.0.0)
 
-set(ENABLE_TRACY_PROFILER false CACHE BOOL "Enables Tracy profiling")
+## Entt
+
+add_library(Entt INTERFACE)
+add_library(Entt::Entt ALIAS Entt)
+
+target_include_directories(Entt INTERFACE
+    "${CMAKE_CURRENT_LIST_DIR}/Entt"
+)
+
+## worldnode_deps
 
 add_library(${PROJECT_NAME} INTERFACE)
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+add_library(worldnode::dependencies ALIAS ${PROJECT_NAME})
 
-set(TRACY_SOURCE
-    "${CMAKE_CURRENT_LIST_DIR}/tracy/TracyClient.cpp"
+target_link_libraries(${PROJECT_NAME} INTERFACE
+    Entt::Entt
 )
-
-target_include_directories(${PROJECT_NAME} INTERFACE
-	"${CMAKE_CURRENT_LIST_DIR}"
-)
-
-source_group(TracyProfiler ${TRACY_SOURCE})
-
-target_sources(${PROJECT_NAME} INTERFACE
-    ${TRACY_SOURCE}
-)
-
-if (ENABLE_TRACY_PROFILER)
-    target_compile_definitions(${PROJECT_NAME} INTERFACE
-        TRACY_ENABLE
-        TRACY_ON_DEMAND
-    )
-endif()

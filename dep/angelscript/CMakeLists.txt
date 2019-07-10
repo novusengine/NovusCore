@@ -115,7 +115,7 @@ if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "^arm")
 endif()
 
 if(MSVC)
-    set(CMAKE_DEBUG_POSTFIX "d")  
+    set(CMAKE_DEBUG_POSTFIX "d")
 endif()
 
 if(NOT BUILD_FRAMEWORK)
@@ -128,10 +128,10 @@ set(ANGELSCRIPT_LIBRARY_NAME ${ANGELSCRIPT_LIBRARY_NAME} CACHE STRING "" FORCE)
 
 add_library(${ANGELSCRIPT_LIBRARY_NAME} ${ANGELSCRIPT_SOURCE} ${ANGELSCRIPT_HEADERS})
 
-#target_include_directories(${ANGELSCRIPT_LIBRARY_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../include)
+target_include_directories(${ANGELSCRIPT_LIBRARY_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>)
 
 if(MSVC)
-    target_compile_definitions(${ANGELSCRIPT_LIBRARY_NAME} PRIVATE -D_CRT_SECURE_NO_WARNINGS)    
+    target_compile_definitions(${ANGELSCRIPT_LIBRARY_NAME} PRIVATE -D_CRT_SECURE_NO_WARNINGS)
 endif()
 
 target_compile_definitions(${ANGELSCRIPT_LIBRARY_NAME} PRIVATE -DANGELSCRIPT_EXPORT -D_LIB)
@@ -147,7 +147,7 @@ endif()
 
 # Don't override the default library output path to avoid conflicts when building for multiple target platforms
 #set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/../../lib)
-target_link_libraries(${ANGELSCRIPT_LIBRARY_NAME} Threads::Threads)
+target_link_libraries(${ANGELSCRIPT_LIBRARY_NAME} "${CMAKE_THREAD_LIBS_INIT}")
 
 set_target_properties(${ANGELSCRIPT_LIBRARY_NAME} PROPERTIES VERSION ${PROJECT_VERSION})
 
@@ -225,3 +225,5 @@ install(
 set_target_properties(angelscript PROPERTIES FOLDER "dep")
 set_target_properties(angelscript PROPERTIES LINK_FLAGS "/ignore:4221")
 set_property(TARGET angelscript PROPERTY CXX_STANDARD 17)
+
+add_library(angelscript::angelscript ALIAS ${ANGELSCRIPT_LIBRARY_NAME})

@@ -31,7 +31,7 @@ add_library(common::common ALIAS common)
 
 find_assign_files(${COMMON_FILES})
 
-target_include_directories(common PRIVATE ${COMMON_DEPENDENCIES})
+target_include_directories(common PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(common PUBLIC
     tracy::tracy
     common::dependencies

@@ -23,15 +23,9 @@
 project(realmserver VERSION 1.0.0 DESCRIPTION "Realmserver for NovusCore")
 
 file(GLOB_RECURSE REALMSERVER_FILES "*.cpp" "*.h")
-set(REALMSERVER_DEPENDENCIES
-    "../common/Dependencies/amy"
-    "../common/Dependencies/json"
-    "../common/Dependencies/robin-hood-hashing"
-    "${ZLIB_INCLUDE_DIRS}"
-    "${CMAKE_SOURCE_DIR}/dep/asio"
-)
 
 add_executable(realmserver ${REALMSERVER_FILES})
+
 find_assign_files(${REALMSERVER_FILES})
 
 # Set VERSION & FOLDER Property
@@ -40,7 +34,10 @@ set_target_properties(realmserver PROPERTIES FOLDER "server")
 
 add_compile_definitions(NOMINMAX _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
 
-target_link_libraries(realmserver common)
-target_include_directories(realmserver PRIVATE ${REALMSERVER_DEPENDENCIES})
-include_directories(realmserver "${common_SOURCE_DIR}")
+target_link_libraries(realmserver PRIVATE
+	common::common
+	zlib::zlib
+	asio::asio
+)
+
 install(TARGETS realmserver DESTINATION bin)
