@@ -84,7 +84,7 @@ void WorldNodeHandler::Run()
 
     json networkJson = ConfigHandler::GetJsonObjectByKey("network");
     std::string realmserverIp = networkJson["realmserver"]["ip"];
-    i16 realmserverPort = networkJson["realmserver"]["port"];
+    realmserverPort = networkJson["realmserver"]["port"];
     realmserverAddress = inet_addr(realmserverIp.c_str());
     realmserverPort += 1;
 
