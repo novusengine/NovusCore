@@ -95,7 +95,7 @@ struct cCharacterCreateData
 class RealmConnection : public BaseSocket
 {
 public:
-    RealmConnection(asio::ip::tcp::socket* socket, AuthDatabaseCache& authCache, CharacterDatabaseCache& charCache, bool resumeConnection) : BaseSocket(socket), account(0), _headerBuffer(nullptr, sizeof(ClientPacketHeader)), _packetBuffer(nullptr, 4096), _authCache(authCache), _charCache(charCache)
+    RealmConnection(asio::ip::tcp::socket* socket, AuthDatabaseCache& authCache, CharacterDatabaseCache& charCache, bool resumeConnection) : BaseSocket(socket), account(0), characterGuid(0), enteringWorld(false), _headerBuffer(nullptr, sizeof(ClientPacketHeader)), _packetBuffer(nullptr, 4096), _authCache(authCache), _charCache(charCache)
     {
         _resumeConnection = resumeConnection;
         _seed = static_cast<u32>(rand());
@@ -125,6 +125,7 @@ public:
 
     u32 account;
     u64 characterGuid;
+    bool enteringWorld;
     cAuthSessionData sessionData;
     BigNumber* sessionKey;
 

@@ -32,7 +32,7 @@ find_assign_files(${REALMSERVER_FILES})
 set_target_properties(realmserver PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(realmserver PROPERTIES FOLDER "server")
 
-add_compile_definitions(NOMINMAX _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
+add_compile_definitions(NOMINMAX _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS _WINSOCK_DEPRECATED_NO_WARNINGS)
 
 target_link_libraries(realmserver PRIVATE
 	common::common

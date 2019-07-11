@@ -2071,7 +2071,7 @@ enum MoveFlagsExtra
     MOVEFLAG_EXTRA_ALWAYS_ALLOW_PITCHING = 0x20,
     MOVEFLAG_EXTRA_UNK7 = 0x40, // Possibly has to do with Transports (Packet_Group_24)
     MOVEFLAG_EXTRA_UNK8 = 0x80, // Possibly has to do with Knock backs CMovement::OnMonsterMoveFlag_0x800
-    MOVEFLAG_EXTRA_UNK9 = 0x100, // POssibly has to do with Transports
+    MOVEFLAG_EXTRA_UNK9 = 0x100, // Possibly has to do with Transports
     MOVEFLAG_EXTRA_UNK10 = 0x200,
     MOVEFLAG_EXTRA_INTERPOLATED_MOVEMENT = 0x400,
     MOVEFLAG_EXTRA_INTERPOLATED_TURNING = 0x800,

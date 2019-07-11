@@ -102,13 +102,12 @@ void Update(entt::registry& registry)
             case Opcode::CMSG_LOGOUT_REQUEST:
             {
                 ZoneScopedNC("Packet::LogoutRequest", tracy::Color::Orange2)
-                // Here we need to Redirect the client back to Realmserver. The Realmserver will send SMSG_LOGOUT_COMPLETE
-                std::shared_ptr<ByteBuffer> buffer = ByteBuffer::Borrow<30>();
-                i32 ip = 16777343;
-                i16 port = 8001;
+                    // Here we need to Redirect the client back to Realmserver. The Realmserver will send SMSG_LOGOUT_COMPLETE
 
-                // 127.0.0.1/1.0.0.127
-                // 2130706433/16777343(https://www.browserling.com/tools/ip-to-dec)
+                    i32 ip = worldNodeHandler.realmserverAddress;
+                i16 port = worldNodeHandler.realmserverPort;
+
+                std::shared_ptr<ByteBuffer> buffer = ByteBuffer::Borrow<30>();
                 buffer->PutI32(ip);
                 buffer->PutI16(port);
                 buffer->PutI32(0); // unk
@@ -121,10 +120,6 @@ void Update(entt::registry& registry)
                 buffer->PutBytes(hmac.GetData(), 20);
 #pragma warning(pop)
                 playerConnection.socket->SendPacket(buffer.get(), Opcode::SMSG_REDIRECT_CLIENT);
-
-                buffer->Reset();
-                buffer->PutU32(1);
-                playerConnection.socket->SendPacket(buffer.get(), Opcode::SMSG_SUSPEND_COMMS);
 
                 packet.handled = true;
                 break;
@@ -439,7 +434,7 @@ void Update(entt::registry& registry)
             {
                 ZoneScopedNC("Packet::Passthrough", tracy::Color::Orange2)
 
-                u8 opcodeIndex = CharacterUtils::GetLastMovementTimeIndexFromOpcode(opcode);
+                    u8 opcodeIndex = CharacterUtils::GetLastMovementTimeIndexFromOpcode(opcode);
                 u32 opcodeTime = playerPositionData.lastMovementOpcodeTime[opcodeIndex];
 
                 u64 guid = 0;
@@ -788,4 +783,4 @@ void Update(entt::registry& registry)
         }
     });
 }
-} // namespace ConnectionSystem
+} // namespace NetworkPacketSystem

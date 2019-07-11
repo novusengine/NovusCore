@@ -41,7 +41,7 @@ endif()
 set_target_properties(worldnode PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(worldnode PROPERTIES FOLDER "server")
 
-add_compile_definitions(NOMINMAX _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
+add_compile_definitions(NOMINMAX _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS _WINSOCK_DEPRECATED_NO_WARNINGS)
 
 target_link_libraries(worldnode PRIVATE
     worldnode::dependencies

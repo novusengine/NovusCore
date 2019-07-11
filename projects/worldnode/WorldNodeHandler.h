@@ -84,6 +84,9 @@ public:
         _outputQueue.enqueue(printMessage);
     }
 
+    i32 realmserverAddress;
+    i16 realmserverPort;
+
 private:
     void Run();
     bool Update();

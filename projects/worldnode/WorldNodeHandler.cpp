@@ -82,6 +82,11 @@ void WorldNodeHandler::Run()
     SetupUpdateFramework();
     _updateFramework.registry.create();
 
+    json networkJson = ConfigHandler::GetJsonObjectByKey("network");
+    std::string realmserverIp = networkJson["realmserver"]["ip"];
+    realmserverAddress = inet_addr(realmserverIp.c_str());
+    realmserverPort = networkJson["realmserver"]["port"] + 1;
+
     std::string scriptDirectory = ConfigHandler::GetOption<std::string>("path", "scripts");
     ScriptHandler::SetRegistry(&_updateFramework.registry);
     ScriptHandler::LoadScriptDirectory(scriptDirectory);

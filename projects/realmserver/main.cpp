@@ -26,6 +26,7 @@
 #include <Database/DatabaseConnector.h>
 #include <Utils/DebugHandler.h>
 
+#include "RealmHandler.h"
 #include "DatabaseCache/AuthDatabaseCache.h"
 #include "DatabaseCache/CharacterDatabaseCache.h"
 #include "ConnectionHandlers/RealmConnectionHandler.h"
@@ -35,6 +36,7 @@
 #include <Windows.h>
 #endif
 
+RealmHandler* RealmHandler::_instance = nullptr;
 RealmConnectionHandler* RealmConnectionHandler::_instance = nullptr;
 RealmSecondConnectionHandler* RealmSecondConnectionHandler::_instance = nullptr;
 
@@ -70,6 +72,12 @@ i32 main()
         std::getchar();
         return 0;
     }
+
+    RealmHandler* realmhandler = RealmHandler::Instance();
+    json networkJson = ConfigHandler::GetJsonObjectByKey("network");
+    std::string worldNodeIp = networkJson["worldnode"]["ip"];
+    realmhandler->worldNodeAddress = inet_addr(worldNodeIp.c_str());
+    realmhandler->worldNodePort = networkJson["worldnode"]["port"];
 
     AuthDatabaseCache authDatabaseCache;
     CharacterDatabaseCache characterDatabaseCache;

@@ -28,6 +28,7 @@
 #include <Cryptography/BigNumber.h>
 #include <Database/DatabaseConnector.h>
 
+#include "../RealmHandler.h"
 #include "../Utils/CharacterUtils.h"
 #include "../DatabaseCache/AuthDatabaseCache.h"
 
@@ -239,12 +240,16 @@ bool RealmConnection::HandleNewPacket()
     {
     case Opcode::CMSG_PLAYER_LOGIN:
     {
-        ByteBuffer redirectClient;
-        i32 ip = 16777343;
-        i16 port = 9000;
+        if (enteringWorld)
+            return false;
 
-        // 127.0.0.1/1.0.0.127
-        // 2130706433/16777343(https://www.browserling.com/tools/ip-to-dec)
+        enteringWorld = true;
+
+        RealmHandler* realmHandler = RealmHandler::Instance();
+        i32 ip = realmHandler->worldNodeAddress;
+        i16 port = realmHandler->worldNodePort;
+
+        ByteBuffer redirectClient;
         redirectClient.PutI32(ip);
         redirectClient.PutI16(port);
         redirectClient.PutI32(0); // unk
@@ -258,27 +263,34 @@ bool RealmConnection::HandleNewPacket()
 #pragma warning(pop)
         SendPacket(redirectClient, Opcode::SMSG_REDIRECT_CLIENT);
 
-        u64 characterGuid = 0;
         _packetBuffer.GetU64(characterGuid);
 
-        DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, [&, characterGuid](std::shared_ptr<DatabaseConnector>& connector) {
+        DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, [&](std::shared_ptr<DatabaseConnector>& connector) {
             PreparedStatement stmt("UPDATE characters SET online=1, lastLogin={u} WHERE guid={u};");
             stmt.Bind(static_cast<u32>(time(nullptr)));
             stmt.Bind(characterGuid);
             connector->Execute(stmt);
-
-            /* I'm am not 100% sure where this fits into the picture yet, but I'm sure it has a purpose
-                ByteBuffer suspendComms;
-                suspendComms.PutU32(1);
-                SendPacket(suspendComms, Opcode::SMSG_SUSPEND_COMMS);*/
         });
         break;
     }
     case Opcode::CMSG_CONNECT_TO_FAILED:
     {
+        std::shared_ptr<DatabaseConnector> connector = nullptr;
+        if (!DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, connector))
+        {
+            Close(asio::error::interrupted);
+            return false;
+        }
+
+        PreparedStatement stmt("UPDATE characters SET online=0 WHERE guid={u};");
+        stmt.Bind(characterGuid);
+        connector->Execute(stmt);
+
         ByteBuffer loginFailed;
         loginFailed.PutU8(ENTER_FAILED_WORLDSERVER_DOWN);
         SendPacket(loginFailed, Opcode::SMSG_CHARACTER_LOGIN_FAILED);
+
+        enteringWorld = false;
         break;
     }
     case Opcode::CMSG_SUSPEND_COMMS_ACK:
@@ -542,7 +554,7 @@ bool RealmConnection::HandleNewPacket()
             // This needs to be non-async as we rely on LAST_INSERT_ID() to retrieve the character's guid
             amy::result_set guidResult;
             connector.Query("SELECT LAST_INSERT_ID();", guidResult);
-            u64 characterGuid = guidResult[0][0].as<amy::sql_bigint_unsigned>();
+            characterGuid = guidResult[0][0].as<amy::sql_bigint_unsigned>();
 
             PreparedStatement characterVisualData("INSERT INTO character_visual_data(guid, skin, face, facial_style, hair_style, hair_color) VALUES({u}, {u}, {u}, {u}, {u}, {u});");
             characterVisualData.Bind(characterGuid);

@@ -51,10 +51,10 @@ struct MovementData
     u8 transportSeat = 0;
 
     // Falling / Knockback Information
-    f32 ZSpeed = 0;
-    f32 SinusAngle = 0;
-    f32 CosinusAngle = 0;
-    f32 XYSpeed = 0;
+    f32 zSpeed = 0;
+    f32 sinusAngle = 0;
+    f32 cosinusAngle = 0;
+    f32 xySpeed = 0;
 
     // Spline Information
     f32 splineElevation = 0;
@@ -104,10 +104,10 @@ struct PlayerPositionComponent
 
         if (movementData.movementFlags & MOVEFLAG_FALLING)
         {
-            buffer->PutF32(movementData.ZSpeed);
-            buffer->PutF32(movementData.SinusAngle);
-            buffer->PutF32(movementData.CosinusAngle);
-            buffer->PutF32(movementData.XYSpeed);
+            buffer->PutF32(movementData.zSpeed);
+            buffer->PutF32(movementData.sinusAngle);
+            buffer->PutF32(movementData.cosinusAngle);
+            buffer->PutF32(movementData.xySpeed);
         }
 
         if (movementData.movementFlags & MOVEFLAG_SPLINE_ELEVATION)
@@ -215,10 +215,10 @@ struct PlayerPositionComponent
 
         if (moveData.movementFlags & MOVEFLAG_FALLING)
         {
-            buffer->GetF32(moveData.ZSpeed);
-            buffer->GetF32(moveData.SinusAngle);
-            buffer->GetF32(moveData.CosinusAngle);
-            buffer->GetF32(moveData.XYSpeed);
+            buffer->GetF32(moveData.zSpeed);
+            buffer->GetF32(moveData.sinusAngle);
+            buffer->GetF32(moveData.cosinusAngle);
+            buffer->GetF32(moveData.xySpeed);
         }
 
         if (moveData.movementFlags & MOVEFLAG_SPLINE_ELEVATION)
