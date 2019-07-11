@@ -279,7 +279,7 @@ void Update(entt::registry& registry)
 
                 std::shared_ptr<ByteBuffer> movementBuffer = ByteBuffer::Borrow<97>();
                 movementBuffer->PutGuid(playerConnection.characterGuid);
-                playerPositionData.WriteMovementData(movementBuffer, singleton.lifeTimeInMS);
+                playerPositionData.WriteMovementData(movementBuffer, static_cast<u32>(singleton.lifeTimeInMS));
                 CharacterUtils::SendPacketToGridPlayers(&registry, playerConnection.entityId, movementBuffer, Opcode::MSG_MOVE_UPDATE_CAN_FLY, true);
 
                 packet.handled = true;
@@ -293,7 +293,7 @@ void Update(entt::registry& registry)
 
                 std::shared_ptr<ByteBuffer> movementBuffer = ByteBuffer::Borrow<97>();
                 movementBuffer->PutGuid(playerConnection.characterGuid);
-                playerPositionData.WriteMovementData(movementBuffer, singleton.lifeTimeInMS);
+                playerPositionData.WriteMovementData(movementBuffer, static_cast<u32>(singleton.lifeTimeInMS));
                 CharacterUtils::SendPacketToGridPlayers(&registry, playerConnection.entityId, movementBuffer, Opcode::MSG_MOVE_UPDATE_CAN_FLY, true);
 
                 packet.handled = true;
