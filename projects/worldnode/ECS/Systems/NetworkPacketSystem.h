@@ -38,6 +38,7 @@
 #include "../../DatabaseCache/DBCDatabaseCache.h"
 #include "../../WorldNodeHandler.h"
 #include "../../Scripting/PlayerFunctions.h"
+#include "../../Scripting/SpellFunctions.h"
 
 #include "../Components/PlayerConnectionComponent.h"
 #include "../Components/PlayerFieldDataComponent.h"
@@ -59,7 +60,6 @@ namespace NetworkPacketSystem
 void Update(entt::registry& registry)
 {
     SingletonComponent& singleton = registry.ctx<SingletonComponent>();
-    PlayerDeleteQueueSingleton& playerDeleteQueue = registry.ctx<PlayerDeleteQueueSingleton>();
     CharacterDatabaseCacheSingleton& characterDatabase = registry.ctx<CharacterDatabaseCacheSingleton>();
     WorldDatabaseCacheSingleton& worldDatabase = registry.ctx<WorldDatabaseCacheSingleton>();
     DBCDatabaseCacheSingleton& dbcDatabase = registry.ctx<DBCDatabaseCacheSingleton>();
@@ -77,10 +77,10 @@ void Update(entt::registry& registry)
     LockWrite(PlayerPositionComponent);
 
     auto view = registry.view<PlayerConnectionComponent, PlayerFieldDataComponent, PlayerUpdateDataComponent, PlayerPositionComponent>();
-    view.each([&registry, &singleton, &playerDeleteQueue, &characterDatabase, &worldDatabase, &dbcDatabase, &playerPacketQueue, &worldNodeHandler, &mapSingleton](const auto, PlayerConnectionComponent& playerConnection, PlayerFieldDataComponent& clientFieldData, PlayerUpdateDataComponent& playerUpdateData, PlayerPositionComponent& playerPositionData) {
+    view.each([&registry, &singleton, &characterDatabase, &worldDatabase, &dbcDatabase, &playerPacketQueue, &worldNodeHandler, &mapSingleton](const auto, PlayerConnectionComponent& playerConnection, PlayerFieldDataComponent& clientFieldData, PlayerUpdateDataComponent& playerUpdateData, PlayerPositionComponent& playerPositionData) {
         ZoneScopedNC("Connection", tracy::Color::Orange2)
 
-            for (NetPacket& packet : playerConnection.packets)
+        for (NetPacket& packet : playerConnection.packets)
         {
             ZoneScopedNC("Packet", tracy::Color::Orange2)
 
@@ -665,11 +665,16 @@ void Update(entt::registry& registry)
 
                 packet.data->GetU8(castCount);
                 packet.data->GetU32(spellId);
-                packet.data->GetU8(castFlags);
+                packet.data->GetU8(castFlags);          
                 packet.data->GetU32(targetFlags);
 
                 // As far as I can tell, the client expects SMSG_SPELL_START followed by SMSG_SPELL_GO.
                 std::shared_ptr<ByteBuffer> buffer = ByteBuffer::Borrow<512>();
+
+                // Call OnSpellCast script hooks
+                AngelScriptSpell asSpell;
+                AngelScriptPlayer asPlayer(playerConnection.entityId, &registry);
+                SpellHooks::CallHook(SpellHooks::Hooks::HOOK_ONSPELLCAST, &asPlayer, &asSpell);
 
                 // Handle blink!
                 if (spellId == 1953)

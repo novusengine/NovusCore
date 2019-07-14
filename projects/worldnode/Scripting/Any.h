@@ -2,6 +2,7 @@
 #include <NovusTypes.h>
 
 class AngelScriptPlayer;
+class AngelScriptSpell;
 
 // WARNING: Please consult with Pursche before using this, it's ugly and only used in scripts for unrolling a variadic template argument list
 class any
@@ -22,9 +23,10 @@ public:
         F32,
         F64,
         String = 0x400000D,
-        Player = 0x4000010
+        Player = 0x4000010,
+        Spell = 0x4000014
     }; // The order of types matches the order found in AngelScripts asETypeIdFlags
-    static const size_t TYPECOUNT = 15;
+    static const size_t TYPECOUNT = 16;
 
     static constexpr const char* GetTypeName(Type type)
     {
@@ -72,7 +74,11 @@ public:
         case Player:
             return "AngelScriptPlayer";
             break;
+        case Spell:
+            return "AngelScriptSpell";
+            break;
         }
+        
         return "UNKNOWN";
     }
     static constexpr const char* GetTypeName(size_t type)
@@ -145,21 +151,27 @@ public:
         _player = e;
         _type = Player;
     }
+    any(AngelScriptSpell* e)
+    {
+        _spell = e;
+        _type = Spell;
+    }
 
-    Type get_type() const { return _type; }
-    u8 get_u8() const { return _data.U8; }
-    u16 get_u16() const { return _data.U16; }
-    u32 get_u32() const { return _data.U32; }
-    u64 get_u64() const { return _data.U64; }
-    i8 get_i8() const { return _data.I8; }
-    i16 get_i16() const { return _data.I16; }
-    i32 get_i32() const { return _data.I32; }
-    i64 get_i64() const { return _data.I64; }
-    f32 get_f32() const { return _data.F32; }
-    f64 get_f64() const { return _data.F64; }
-    bool get_bool() const { return _data.BOOL; }
-    std::string& get_string() { return _string; }
-    AngelScriptPlayer* get_player() { return _player; }
+    Type GetType() const { return _type; }
+    u8 GetU8() const { return _data.U8; }
+    u16 GetU16() const { return _data.U16; }
+    u32 GetU32() const { return _data.U32; }
+    u64 GetU64() const { return _data.U64; }
+    i8 GetI8() const { return _data.I8; }
+    i16 GetI16() const { return _data.I16; }
+    i32 GetI32() const { return _data.I32; }
+    i64 GetI64() const { return _data.I64; }
+    f32 GetF32() const { return _data.F32; }
+    f64 GetF64() const { return _data.F64; }
+    bool GetBool() const { return _data.BOOL; }
+    std::string& GetString() { return _string; }
+    AngelScriptPlayer* GetPlayer() { return _player; }
+    AngelScriptSpell* GetSpell() { return _spell; }
 
 private:
     Type _type;
@@ -178,4 +190,5 @@ private:
     } _data;
     std::string _string;
     AngelScriptPlayer* _player;
+    AngelScriptSpell* _spell;
 };

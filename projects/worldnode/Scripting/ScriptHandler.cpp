@@ -16,6 +16,7 @@
 #include "GlobalFunctions.h"
 #include "MathFunctions.h"
 #include "PlayerFunctions.h"
+#include "SpellFunctions.h"
 #include "PacketFunctions.h"
 
 // NovusCore hooks
@@ -160,5 +161,6 @@ void ScriptHandler::RegisterFunctions(AB_NAMESPACE_QUALIFIER Engine* engine)
     RegisterMathTypes(engine);
     RegisterGlobalFunctions(engine);
     RegisterPlayerFunctions(engine);
+    RegisterSpellFunctions(engine);
     RegisterPacketFunctions(engine);
 }

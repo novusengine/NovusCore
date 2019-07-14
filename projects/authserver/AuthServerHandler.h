@@ -24,6 +24,7 @@
 #pragma once
 #include <NovusTypes.h>
 #include <Utils/ConcurrentQueue.h>
+#include <Utils/StringUtils.h>
 #include <Utils/Timer.h>
 #include "Message.h"
 
