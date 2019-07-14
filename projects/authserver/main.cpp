@@ -108,7 +108,5 @@ i32 main()
 
     authConnectionHandler.Stop();
     DatabaseConnector::Stop();
-
-    Sleep(1000);
     return 0;
 }

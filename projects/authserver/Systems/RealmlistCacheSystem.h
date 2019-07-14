@@ -24,7 +24,7 @@
 #pragma once
 #include <NovusTypes.h>
 #include <Database/DatabaseConnector.h>
-#include <Dependencies\robin-hood-hashing\robin_hood.h>
+#include <robin_hood.h>
 #include "../Connections/AuthConnection.h"
 
 namespace RealmlistCacheSystem
