@@ -49,26 +49,30 @@ public:
         return _socket;
     }
 
-    void Send(ByteBuffer& buffer)
+    void Send(ByteBuffer* buffer)
     {
-        if (!buffer.IsEmpty() || buffer.IsFull())
+        if (!buffer->IsEmpty() || buffer->IsFull())
         {
-            _socket->async_write_some(asio::buffer(buffer.GetInternalData(), buffer.WrittenData),
+            _socket->async_write_some(asio::buffer(buffer->GetInternalData(), buffer->WrittenData),
                                       std::bind(&BaseSocket::HandleInternalWrite, this, std::placeholders::_1, std::placeholders::_2));
         }
     }
     bool IsClosed() { return _isClosed; }
 
 protected:
-    BaseSocket(asio::ip::tcp::socket* socket) : _receiveBuffer(nullptr, 4096), _sendBuffer(nullptr, 4096), _isClosed(false), _socket(socket) {}
+    BaseSocket(asio::ip::tcp::socket* socket) : _isClosed(false), _socket(socket) 
+    {
+        _receiveBuffer = ByteBuffer::Borrow<4096>();
+        _sendBuffer = ByteBuffer::Borrow<4096>();
+    }
 
     void AsyncRead()
     {
         if (!_socket->is_open())
             return;
 
-        _receiveBuffer.Reset();
-        _socket->async_read_some(asio::buffer(_receiveBuffer.GetWritePointer(), _receiveBuffer.GetRemainingSpace()),
+        _receiveBuffer->Reset();
+        _socket->async_read_some(asio::buffer(_receiveBuffer->GetWritePointer(), _receiveBuffer->GetRemainingSpace()),
                                  std::bind(&BaseSocket::HandleInternalRead, this, std::placeholders::_1, std::placeholders::_2));
     }
     void HandleInternalRead(asio::error_code error, size_t bytes)
@@ -79,7 +83,7 @@ protected:
             return;
         }
 
-        _receiveBuffer.WrittenData += bytes;
+        _receiveBuffer->WrittenData += bytes;
         HandleRead();
     }
     void HandleInternalWrite(asio::error_code error, std::size_t transferedBytes)
@@ -90,9 +94,9 @@ protected:
         }
     }
 
-    ByteBuffer& GetReceiveBuffer() { return _receiveBuffer; }
-    ByteBuffer _receiveBuffer;
-    ByteBuffer _sendBuffer;
+    std::shared_ptr<ByteBuffer> GetReceiveBuffer() { return _receiveBuffer; }
+    std::shared_ptr<ByteBuffer> _receiveBuffer;
+    std::shared_ptr<ByteBuffer> _sendBuffer;
 
     bool _isClosed = false;
     asio::ip::tcp::socket* _socket;

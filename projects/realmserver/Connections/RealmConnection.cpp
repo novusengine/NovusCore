@@ -158,14 +158,14 @@ bool RealmConnection::Start()
 
 void RealmConnection::HandleRead()
 {
-    ByteBuffer& buffer = GetReceiveBuffer();
-    while (buffer.GetActiveSize())
+    std::shared_ptr<ByteBuffer> buffer = GetReceiveBuffer();
+    while (buffer->GetActiveSize())
     {
         // Check if we should read header
         if (!_headerBuffer.IsFull())
         {
-            size_t headerSize = std::min(buffer.GetActiveSize(), _headerBuffer.GetRemainingSpace());
-            _headerBuffer.PutBytes(buffer.GetReadPointer(), headerSize);
+            size_t headerSize = std::min(buffer->GetActiveSize(), _headerBuffer.GetRemainingSpace());
+            _headerBuffer.PutBytes(buffer->GetReadPointer(), headerSize);
 
             // Wait for full header
             if (!_headerBuffer.IsFull())
@@ -178,18 +178,18 @@ void RealmConnection::HandleRead()
                 return;
             }
 
-            buffer.ReadData += headerSize;
+            buffer->ReadData += headerSize;
         }
 
         if (!_packetBuffer.IsFull() || _packetBuffer.Size == 0)
         {
             if (_packetBuffer.Size != 0)
             {
-                u32 packetSize = std::min(buffer.GetActiveSize(), _packetBuffer.GetRemainingSpace());
+                u32 packetSize = std::min(buffer->GetActiveSize(), _packetBuffer.GetRemainingSpace());
                 if (packetSize != 0)
                 {
-                    _packetBuffer.PutBytes(buffer.GetReadPointer(), packetSize);
-                    buffer.ReadData += packetSize;
+                    _packetBuffer.PutBytes(buffer->GetReadPointer(), packetSize);
+                    buffer->ReadData += packetSize;
                 }
             }
 
@@ -330,14 +330,18 @@ bool RealmConnection::HandleNewPacket()
         accountDataTimes.PutU8(1); // bitmask blocks count
         accountDataTimes.PutU32(mask);
 
+        AccountData accountData;
         for (u32 i = 0; i < 8; ++i)
         {
             if (mask & (1 << i))
             {
-                AccountData accountData;
                 if (_authCache.GetAccountData(account, i, accountData))
                 {
                     accountDataTimes.PutU32(accountData.timestamp);
+                }
+                else
+                {
+                    accountDataTimes.PutU32(0);
                 }
             }
         }
@@ -401,9 +405,10 @@ bool RealmConnection::HandleNewPacket()
             {
                 break;
             }
+            dataInfo.WrittenData = static_cast<size_t>(decompressedSize);
 
             std::string finalData = "";
-            dataInfo.GetString(finalData);
+            dataInfo.GetString(finalData, static_cast<i32>(decompressedSize));
 
             if (accountDataUpdate)
             {
@@ -432,6 +437,10 @@ bool RealmConnection::HandleNewPacket()
         updateAccountDataComplete.PutU32(0);
 
         SendPacket(updateAccountDataComplete, Opcode::SMSG_UPDATE_ACCOUNT_DATA_COMPLETE);
+        break;
+    }
+    case Opcode::CMSG_REQUEST_ACCOUNT_DATA:
+    {
         break;
     }
     case Opcode::CMSG_REALM_SPLIT:
@@ -666,19 +675,19 @@ void RealmConnection::SendPacket(ByteBuffer& packet, Opcode opcode)
     i32 packetSize = packet.GetActiveSize() + headerSize;
 
     _streamEncryption.Encrypt(header.data, headerSize);
-    _sendBuffer.Size = packetSize;
+    _sendBuffer->Size = packetSize;
 
-    if (!_sendBuffer.PutBytes(header.data, headerSize))
+    if (!_sendBuffer->PutBytes(header.data, headerSize))
         return;
 
-    if (!_sendBuffer.IsFull())
+    if (!_sendBuffer->IsFull())
     {
-        if (!_sendBuffer.PutBytes(packet.GetInternalData(), packet.WrittenData))
+        if (!_sendBuffer->PutBytes(packet.GetInternalData(), packet.WrittenData))
             return;
     }
 
-    Send(_sendBuffer);
-    _sendBuffer.Reset();
+    Send(_sendBuffer.get());
+    _sendBuffer->Reset();
 }
 
 void RealmConnection::HandleAuthSession()

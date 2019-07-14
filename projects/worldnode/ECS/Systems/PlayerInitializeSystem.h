@@ -70,10 +70,20 @@ void Update(entt::registry& registry)
         initializeBuffer->PutU8(1);                                // bitmask blocks count
         initializeBuffer->PutU32(mask);                            // PER_CHARACTER_CACHE_MASK
 
+        CharacterData characterData;
         for (u32 i = 0; i < 8; ++i)
         {
             if (mask & (1 << i))
-                initializeBuffer->PutU32(0);
+            {
+                if (characterDatabase.cache->GetCharacterData(playerInitializeData.characterGuid, i, characterData))
+                {
+                    initializeBuffer->PutU32(characterData.timestamp);
+                }
+                else
+                {
+                    initializeBuffer->PutU32(0);
+                }
+            }
         }
 
         playerInitializeData.socket->SendPacket(initializeBuffer.get(), Opcode::SMSG_ACCOUNT_DATA_TIMES);

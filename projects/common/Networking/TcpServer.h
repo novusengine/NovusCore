@@ -48,7 +48,7 @@ static void WorkerThreadMain(WorkerThread* thread)
 
         // Remove closed sessions
         thread->_mutex.lock();
-        if (thread->_connections->size() > 0)
+        if (thread->_connections->size())
         {
             thread->_connections->erase(
                 std::remove_if(thread->_connections->begin(), thread->_connections->end(), [](BaseSocket* connection) {

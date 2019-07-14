@@ -69,12 +69,12 @@ bool AuthConnection::Start()
 
 void AuthConnection::HandleRead()
 {
-    ByteBuffer& buffer = GetReceiveBuffer();
+    std::shared_ptr<ByteBuffer> buffer = GetReceiveBuffer();
     ResetPacketsReadOfType();
 
-    while (u32 activeSize = buffer.GetActiveSize())
+    while (u32 activeSize = buffer->GetActiveSize())
     {
-        u8 command = buffer.GetInternalData()[0];
+        u8 command = buffer->GetInternalData()[0];
 
         auto itr = messageHandlers.find(command);
         if (itr == messageHandlers.end() || _status != itr->second.status)
@@ -95,7 +95,7 @@ void AuthConnection::HandleRead()
 
         if (command == AUTH_CHALLENGE || command == AUTH_RECONNECT_CHALLENGE)
         {
-            ClientLogonChallenge* logonChallenge = reinterpret_cast<ClientLogonChallenge*>(buffer.GetReadPointer());
+            ClientLogonChallenge* logonChallenge = reinterpret_cast<ClientLogonChallenge*>(buffer->GetReadPointer());
             size += logonChallenge->size;
             if (size > (sizeof(ClientLogonChallenge) + 16))
             {
@@ -113,7 +113,7 @@ void AuthConnection::HandleRead()
             return;
         }
 
-        buffer.ReadData += size;
+        buffer->ReadData += size;
     }
 
     AsyncRead();
@@ -123,7 +123,7 @@ bool AuthConnection::HandleCommandChallenge()
 {
     _status = STATUS_CLOSED;
 
-    ClientLogonChallenge* logonChallenge = reinterpret_cast<ClientLogonChallenge*>(GetReceiveBuffer().GetReadPointer());
+    ClientLogonChallenge* logonChallenge = reinterpret_cast<ClientLogonChallenge*>(GetReceiveBuffer()->GetReadPointer());
     std::string login(reinterpret_cast<char const*>(logonChallenge->usernamePointer), logonChallenge->usernameLength);
     username = login;
 
@@ -147,15 +147,15 @@ void AuthConnection::HandleCommandChallengeCallback(amy::result_set& results)
      - Type: u8,      Name: Result Code
      - Type:  ?,      Name: Logon Challenge Data (See below for structure)
     */
-    ByteBuffer buffer;
-    buffer.PutU8(AUTH_CHALLENGE);
-    buffer.PutU8(0);
+    std::shared_ptr<ByteBuffer> buffer = ByteBuffer::Borrow<512>();
+    buffer->PutU8(AUTH_CHALLENGE);
+    buffer->PutU8(0);
 
     // Make sure the account exist.
     if (results.affected_rows() != 1)
     {
-        buffer.PutU8(AUTH_FAIL_UNKNOWN_ACCOUNT);
-        Send(buffer);
+        buffer->PutU8(AUTH_FAIL_UNKNOWN_ACCOUNT);
+        Send(buffer.get());
         return;
     }
 
@@ -178,7 +178,7 @@ void AuthConnection::HandleCommandChallengeCallback(amy::result_set& results)
     }
 
     _status = STATUS_PROOF;
-    buffer.PutU8(AUTH_SUCCESS);
+    buffer->PutU8(AUTH_SUCCESS);
 
     /* Logon Challenge Data Structure
 
@@ -192,26 +192,26 @@ void AuthConnection::HandleCommandChallengeCallback(amy::result_set& results)
      - Type: u8,      Name: Security Flag
      https://en.wikipedia.org/wiki/Secure_Remote_Password_protocol
     */
-    buffer.PutBytes(ephemeralKeyB.BN2BinArray(32).get(), 32);
-    buffer.PutU8(1);
-    buffer.PutU8(generator.BN2BinArray(1).get()[0]);
-    buffer.PutU8(32);
-    buffer.PutBytes(nPrime.BN2BinArray(32).get(), 32);
-    buffer.PutBytes(smallSalt.BN2BinArray(32).get(), 32);
-    buffer.PutBytes(versionChallenge.data(), versionChallenge.size());
-    buffer.PutU8(0);
+    buffer->PutBytes(ephemeralKeyB.BN2BinArray(32).get(), 32);
+    buffer->PutU8(1);
+    buffer->PutU8(generator.BN2BinArray(1).get()[0]);
+    buffer->PutU8(32);
+    buffer->PutBytes(nPrime.BN2BinArray(32).get(), 32);
+    buffer->PutBytes(smallSalt.BN2BinArray(32).get(), 32);
+    buffer->PutBytes(versionChallenge.data(), versionChallenge.size());
+    buffer->PutU8(0);
 
     /*
       We should check here if we need to handle security flags
     */
 
-    Send(buffer);
+    Send(buffer.get());
 }
 
 bool AuthConnection::HandleCommandProof()
 {
     _status = STATUS_CLOSED;
-    ClientLogonProof* logonProof = reinterpret_cast<ClientLogonProof*>(GetReceiveBuffer().GetReadPointer());
+    ClientLogonProof* logonProof = reinterpret_cast<ClientLogonProof*>(GetReceiveBuffer()->GetReadPointer());
 
     BigNumber ephemeralKeyA;
     ephemeralKeyA.Bin2BN(logonProof->ephemeralKey, 32);
@@ -313,16 +313,16 @@ bool AuthConnection::HandleCommandProof()
 
                 https://en.wikipedia.org/wiki/Secure_Remote_Password_protocol
                 */
-                ByteBuffer buffer;
-                buffer.PutU8(AUTH_PROOF);
-                buffer.PutU8(0);
-                buffer.PutBytes(
+                std::shared_ptr<ByteBuffer> buffer = ByteBuffer::Borrow<32>();
+                buffer->PutU8(AUTH_PROOF);
+                buffer->PutU8(0);
+                buffer->PutBytes(
                     const_cast<u8*>(reinterpret_cast<const u8*>(proofM2)), 20);
-                buffer.PutU32(0);
-                buffer.PutU32(0);
-                buffer.PutU16(0);
+                buffer->PutU32(0);
+                buffer->PutU32(0);
+                buffer->PutU16(0);
 
-                Send(buffer);
+                Send(buffer.get());
                 _status = STATUS_AUTHED;
             });
     }
@@ -334,12 +334,12 @@ bool AuthConnection::HandleCommandProof()
         - Type: u8,      Name: Error Code
         - Type: u16,     Name: Login Flags
         */
-        ByteBuffer buffer;
-        buffer.PutU8(AUTH_PROOF);
-        buffer.PutU8(AUTH_FAIL_UNKNOWN_ACCOUNT);
-        buffer.PutU16(0);
+        std::shared_ptr<ByteBuffer> buffer = ByteBuffer::Borrow<4>();
+        buffer->PutU8(AUTH_PROOF);
+        buffer->PutU8(AUTH_FAIL_UNKNOWN_ACCOUNT);
+        buffer->PutU16(0);
 
-        Send(buffer);
+        Send(buffer.get());
     }
 
     return true;
@@ -349,7 +349,7 @@ bool AuthConnection::HandleCommandReconnectChallenge()
 {
     _status = STATUS_CLOSED;
 
-    ClientLogonChallenge* logonChallenge = reinterpret_cast<ClientLogonChallenge*>(GetReceiveBuffer().GetReadPointer());
+    ClientLogonChallenge* logonChallenge = reinterpret_cast<ClientLogonChallenge*>(GetReceiveBuffer()->GetReadPointer());
     if (logonChallenge->size - (sizeof(ClientLogonChallenge) - 4 - 1) != logonChallenge->usernameLength)
         return false;
 
@@ -378,14 +378,14 @@ void AuthConnection::HandleCommandReconnectChallengeCallback(amy::result_set& re
 
      https://en.wikipedia.org/wiki/Secure_Remote_Password_protocol
     */
-    ByteBuffer buffer;
-    buffer.PutU8(AUTH_RECONNECT_CHALLENGE);
+    std::shared_ptr<ByteBuffer> buffer = ByteBuffer::Borrow<34>();
+    buffer->PutU8(AUTH_RECONNECT_CHALLENGE);
 
     // Make sure the account exist.
     if (results.affected_rows() != 1)
     {
-        buffer.PutU8(AUTH_FAIL_UNKNOWN_ACCOUNT);
-        Send(buffer);
+        buffer->PutU8(AUTH_FAIL_UNKNOWN_ACCOUNT);
+        Send(buffer.get());
         return;
     }
 
@@ -394,17 +394,17 @@ void AuthConnection::HandleCommandReconnectChallengeCallback(amy::result_set& re
     sessionKey.Hex2BN(resultRow[1].GetString().c_str());
 
     _reconnectSeed.Rand(16 * 8);
-    buffer.PutU8(0);
-    buffer.PutBytes(_reconnectSeed.BN2BinArray(16).get(), 16);
-    buffer.PutBytes(versionChallenge.data(), versionChallenge.size());
+    buffer->PutU8(0);
+    buffer->PutBytes(_reconnectSeed.BN2BinArray(16).get(), 16);
+    buffer->PutBytes(versionChallenge.data(), versionChallenge.size());
 
-    Send(buffer);
+    Send(buffer.get());
     _status = STATUS_RECONNECT_PROOF;
 }
 bool AuthConnection::HandleCommandReconnectProof()
 {
     _status = STATUS_CLOSED;
-    ClientReconnectProof* reconnectLogonProof = reinterpret_cast<ClientReconnectProof*>(GetReceiveBuffer().GetReadPointer());
+    ClientReconnectProof* reconnectLogonProof = reinterpret_cast<ClientReconnectProof*>(GetReceiveBuffer()->GetReadPointer());
     if (username.length() == 0 || !_reconnectSeed.GetBytes() || !sessionKey.GetBytes())
         return false;
 
@@ -425,12 +425,12 @@ bool AuthConnection::HandleCommandReconnectProof()
        - Type: u8,      Name: Error Code
        - Type: u16,     Name: Login Flags
     */
-        ByteBuffer buffer;
-        buffer.PutU8(AUTH_RECONNECT_PROOF);
-        buffer.PutU8(0);
-        buffer.PutU16(0);
+        std::shared_ptr<ByteBuffer> buffer = ByteBuffer::Borrow<4>();
+        buffer->PutU8(AUTH_RECONNECT_PROOF);
+        buffer->PutU8(0);
+        buffer->PutU16(0);
 
-        Send(buffer);
+        Send(buffer.get());
         _status = STATUS_AUTHED;
         return true;
     }
@@ -469,19 +469,19 @@ bool AuthConnection::HandleCommandRealmserverList()
             - Type: u8,      Name: Unknown (This value depends on game version)
             - Type: u8,      Name: Unknown (This value depends on game version)
             */
-            ByteBuffer buffer(nullptr, 32768);
-            buffer.PutU8(AUTH_REALMSERVER_LIST);
+            std::shared_ptr<ByteBuffer> buffer = ByteBuffer::Borrow<32768>();
+            buffer->PutU8(AUTH_REALMSERVER_LIST);
 
             // Calculate expected payload size. Realm Strings are accounted for
             // later.
             size_t dataStoreSize = 6 + (realmServerList.size() * 10) + 2;
 
             // Store WritePos to later write Payload Size. Reserve 2 bytes.
-            size_t dataStoreSizeWrittenPos = buffer.WrittenData;
-            buffer.PutU16(0);
+            size_t dataStoreSizeWrittenPos = buffer->WrittenData;
+            buffer->PutU16(0);
 
-            buffer.PutU32(0);
-            buffer.PutU16(static_cast<u16>(realmServerList.size()));
+            buffer->PutU32(0);
+            buffer->PutU16(static_cast<u16>(realmServerList.size()));
 
             for (auto realmItr : realmServerList)
             {
@@ -497,15 +497,15 @@ bool AuthConnection::HandleCommandRealmserverList()
                 - Type: u8,      Name: Realm Id
                 */
                 RealmServerData realmData = realmItr.second;
-                buffer.PutU8(realmData.type);
-                buffer.PutU8(0);
-                buffer.PutU8(realmData.flags);
-                size_t realmNameSize = buffer.PutString(realmData.realmName);
-                size_t realmAddressSize = buffer.PutString(realmData.realmAddress);
-                buffer.PutF32(realmData.population);
-                buffer.PutU8(realmCharacterData[realmItr.first]);
-                buffer.PutU8(realmData.timeZone);
-                buffer.PutU8(realmItr.first);
+                buffer->PutU8(realmData.type);
+                buffer->PutU8(0);
+                buffer->PutU8(realmData.flags);
+                size_t realmNameSize = buffer->PutString(realmData.realmName);
+                size_t realmAddressSize = buffer->PutString(realmData.realmAddress);
+                buffer->PutF32(realmData.population);
+                buffer->PutU8(realmCharacterData[realmItr.first]);
+                buffer->PutU8(realmData.timeZone);
+                buffer->PutU8(realmItr.first);
 
                 // Add Realm String Sizes to Payload Size
                 dataStoreSize += realmNameSize + realmAddressSize;
@@ -513,16 +513,16 @@ bool AuthConnection::HandleCommandRealmserverList()
             realmServerListMutex.unlock();
 
             // (Only needed for clients TBC+)
-            buffer.PutU8(0x10); // Unk1
-            buffer.PutU8(0x00); // Unk2
+            buffer->PutU8(0x10); // Unk1
+            buffer->PutU8(0x00); // Unk2
 
             // Store WritePos. Write Payload Size. Restore WritePos
-            size_t dataStoreFinalWritePos = buffer.WrittenData;
-            buffer.WrittenData = dataStoreSizeWrittenPos;
-            buffer.PutU16(static_cast<u16>(dataStoreSize));
-            buffer.WrittenData = dataStoreFinalWritePos;
+            size_t dataStoreFinalWritePos = buffer->WrittenData;
+            buffer->WrittenData = dataStoreSizeWrittenPos;
+            buffer->PutU16(static_cast<u16>(dataStoreSize));
+            buffer->WrittenData = dataStoreFinalWritePos;
 
-            Send(buffer);
+            Send(buffer.get());
             _status = STATUS_AUTHED;
         });
 

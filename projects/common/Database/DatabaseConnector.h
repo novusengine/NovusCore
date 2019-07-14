@@ -113,6 +113,11 @@ public:
     inline void QueryAsync(std::string sql, std::function<void(amy::result_set& results, DatabaseConnector& connector)> const& func) { QueryAsync(_type, sql, func); }
     inline void QueryAsync(PreparedStatement statement, std::function<void(amy::result_set& results, DatabaseConnector& connector)> const& func) { QueryAsync(_type, statement.Get(), func); }
 
+    amy::detail::mysql_handle GetMysqlHandle()
+    {
+        return _connector->native();
+    }
+
     ~DatabaseConnector();
 
 private:

@@ -161,14 +161,14 @@ void WorldConnection::Close(asio::error_code error)
 
 void WorldConnection::HandleRead()
 {
-    ByteBuffer& buffer = GetReceiveBuffer();
-    while (buffer.GetActiveSize())
+    std::shared_ptr<ByteBuffer> buffer = GetReceiveBuffer();
+    while (buffer->GetActiveSize())
     {
         // Check if we should read header
         if (!_headerBuffer.IsFull())
         {
-            size_t headerSize = std::min(buffer.GetActiveSize(), _headerBuffer.GetRemainingSpace());
-            _headerBuffer.PutBytes(buffer.GetReadPointer(), headerSize);
+            size_t headerSize = std::min(buffer->GetActiveSize(), _headerBuffer.GetRemainingSpace());
+            _headerBuffer.PutBytes(buffer->GetReadPointer(), headerSize);
 
             // Wait for full header
             if (!_headerBuffer.IsFull())
@@ -181,18 +181,18 @@ void WorldConnection::HandleRead()
                 return;
             }
 
-            buffer.ReadData += headerSize;
+            buffer->ReadData += headerSize;
         }
 
         if (!_packetBuffer.IsFull() || _packetBuffer.Size == 0)
         {
             if (_packetBuffer.Size != 0)
             {
-                u32 packetSize = std::min(buffer.GetActiveSize(), _packetBuffer.GetRemainingSpace());
+                u32 packetSize = std::min(buffer->GetActiveSize(), _packetBuffer.GetRemainingSpace());
                 if (packetSize != 0)
                 {
-                    _packetBuffer.PutBytes(buffer.GetReadPointer(), packetSize);
-                    buffer.ReadData += packetSize;
+                    _packetBuffer.PutBytes(buffer->GetReadPointer(), packetSize);
+                    buffer->ReadData += packetSize;
                 }
             }
 
@@ -314,20 +314,20 @@ void WorldConnection::SendPacket(ByteBuffer* packet, u16 opcode)
     i32 packetSize = packet->GetActiveSize() + headerSize;
 
     _streamEncryption.Encrypt(header.data, headerSize);
-    _sendBuffer.Size = packetSize;
+    _sendBuffer->Size = packetSize;
 
-    if (!_sendBuffer.IsFull())
+    if (!_sendBuffer->IsFull())
     {
-        if (!_sendBuffer.PutBytes(header.data, headerSize))
+        if (!_sendBuffer->PutBytes(header.data, headerSize))
             return;
 
-        if (!_sendBuffer.PutBytes(packet->GetInternalData(), packet->WrittenData))
+        if (!_sendBuffer->PutBytes(packet->GetInternalData(), packet->WrittenData))
             return;
     }
 
     NC_LOG_SUCCESS("Sent Opcode: %u", opcode);
-    Send(_sendBuffer);
-    _sendBuffer.Reset();
+    Send(_sendBuffer.get());
+    _sendBuffer->Reset();
 }
 
 void WorldConnection::HandleAuthSession()

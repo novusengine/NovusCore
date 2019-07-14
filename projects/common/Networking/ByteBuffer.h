@@ -239,6 +239,16 @@ public:
             val += c;
         }
     }
+    void GetString(std::string& val, i32 size)
+    {
+        assert(_data != nullptr);
+        val.clear();
+
+        for (i32 i = 0; i < size; i++)
+        {
+            val += _data[ReadData++];
+        }
+    }
     bool GetGuid(u64& val)
     {
         val = 0;
@@ -475,7 +485,7 @@ public:
     template <size_t size>
     static std::shared_ptr<ByteBuffer> Borrow()
     {
-        static_assert(size <= 8192);
+        static_assert(size <= 32768);
 
         if constexpr (size <= 128)
         {
@@ -547,6 +557,34 @@ public:
 
             return buffer;
         }
+        else if constexpr (size <= 16384)
+        {
+            if (_byteBuffer16384.empty())
+            {
+                ByteBuffer* newDataStore = new ByteBuffer(nullptr, 16384);
+                _byteBuffer16384.add(std::unique_ptr<ByteBuffer>(newDataStore));
+            }
+
+            std::shared_ptr<ByteBuffer> buffer = _byteBuffer16384.acquire();
+            buffer->Size = size;
+            buffer->Reset();
+
+            return buffer;
+        }
+        else if constexpr (size <= 32768)
+        {
+            if (_byteBuffer32768.empty())
+            {
+                ByteBuffer* newDataStore = new ByteBuffer(nullptr, 32768);
+                _byteBuffer32768.add(std::unique_ptr<ByteBuffer>(newDataStore));
+            }
+
+            std::shared_ptr<ByteBuffer> buffer = _byteBuffer32768.acquire();
+            buffer->Size = size;
+            buffer->Reset();
+
+            return buffer;
+        }
     }
 
 private:
@@ -557,4 +595,6 @@ private:
     static SharedPool<ByteBuffer> _byteBuffer1024;
     static SharedPool<ByteBuffer> _byteBuffer4096;
     static SharedPool<ByteBuffer> _byteBuffer8192;
+    static SharedPool<ByteBuffer> _byteBuffer16384;
+    static SharedPool<ByteBuffer> _byteBuffer32768;
 };

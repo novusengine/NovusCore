@@ -3,6 +3,7 @@
 #include <stack>
 #include <mutex>
 #include <memory>
+#include <cassert>
 
 template <class T>
 class SharedPool

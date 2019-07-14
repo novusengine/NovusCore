@@ -210,9 +210,10 @@ void Update(entt::registry& registry)
                     {
                         break;
                     }
+                    dataInfo->WrittenData = static_cast<size_t>(decompressedSize);
 
                     std::string finalData = "";
-                    dataInfo->GetString(finalData);
+                    dataInfo->GetString(finalData, static_cast<i32>(decompressedSize));
 
                     if (characterDataUpdate)
                     {
@@ -231,6 +232,11 @@ void Update(entt::registry& registry)
                 updateAccountDataComplete->PutU32(0);
 
                 playerConnection.socket->SendPacket(updateAccountDataComplete.get(), Opcode::SMSG_UPDATE_ACCOUNT_DATA_COMPLETE);
+                break;
+            }
+            case Opcode::CMSG_REQUEST_ACCOUNT_DATA:
+            {
+                packet.handled = true;
                 break;
             }
             case Opcode::MSG_MOVE_SET_ALL_SPEED_CHEAT:
