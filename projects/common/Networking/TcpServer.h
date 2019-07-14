@@ -24,6 +24,7 @@
 #pragma once
 
 #include <asio.hpp>
+#include <Utils/Timer.h>
 #include "BaseSocket.h"
 
 namespace Common
@@ -33,27 +34,40 @@ struct WorkerThread
     std::thread _thread;
     std::mutex _mutex;
     std::vector<BaseSocket*>* _connections;
+    bool _running;
 };
 
 static void WorkerThreadMain(WorkerThread* thread)
 {
-    while (true)
+    Timer timer;
+    f32 targetDelta = 1.0f / 0.2f;
+    while (thread->_running)
     {
+        f32 deltaTime = timer.GetDeltaTime();
+        timer.Tick();
+
         // Remove closed sessions
         thread->_mutex.lock();
         if (thread->_connections->size() > 0)
         {
-            thread->_connections->erase(std::remove_if(thread->_connections->begin(), thread->_connections->end(), [](BaseSocket* connection) {
-                                            if (!connection)
-                                                return false;
+            thread->_connections->erase(
+                std::remove_if(thread->_connections->begin(), thread->_connections->end(), [](BaseSocket* connection) {
+                    if (!connection)
+                        return false;
 
-                                            return connection->IsClosed();
-                                        }),
-                                        thread->_connections->end());
+                    return connection->IsClosed();
+                }),
+                thread->_connections->end());
         }
-
         thread->_mutex.unlock();
-        std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+
+        for (deltaTime = timer.GetDeltaTime(); deltaTime < targetDelta; deltaTime = timer.GetDeltaTime())
+        {
+            if (!thread->_running)
+                break;
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
     }
 }
 
@@ -66,12 +80,19 @@ public:
 
         _workerThread = new WorkerThread();
         _workerThread->_connections = &_connections;
+        _workerThread->_running = true;
         _workerThread->_thread = std::thread(WorkerThreadMain, _workerThread);
+        _workerThread->_thread.detach();
     }
 
     void Start()
     {
         StartListening();
+    }
+    void Stop()
+    {
+        _workerThread->_running = false;
+        _acceptor.close();
     }
     u16 GetPort()
     {

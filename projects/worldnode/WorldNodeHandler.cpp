@@ -48,16 +48,6 @@ WorldNodeHandler::~WorldNodeHandler()
 {
 }
 
-void WorldNodeHandler::PassMessage(Message& message)
-{
-    _inputQueue.enqueue(message);
-}
-
-bool WorldNodeHandler::TryGetMessage(Message& message)
-{
-    return _outputQueue.try_dequeue(message);
-}
-
 void WorldNodeHandler::Start()
 {
     if (_isRunning)
@@ -77,8 +67,20 @@ void WorldNodeHandler::Stop()
     PassMessage(message);
 }
 
+void WorldNodeHandler::PassMessage(Message& message)
+{
+    _inputQueue.enqueue(message);
+}
+
+bool WorldNodeHandler::TryGetMessage(Message& message)
+{
+    return _outputQueue.try_dequeue(message);
+}
+
 void WorldNodeHandler::Run()
 {
+    _isRunning = true;
+
     SetupUpdateFramework();
     _updateFramework.registry.create();
 
@@ -135,10 +137,10 @@ void WorldNodeHandler::Run()
 
     Message setupCompleteMessage;
     setupCompleteMessage.code = MSG_OUT_SETUP_COMPLETE;
-
     _outputQueue.enqueue(setupCompleteMessage);
 
     Timer timer;
+    f32 targetDelta = 1.0f / _targetTickRate;
     while (true)
     {
         f32 deltaTime = timer.GetDeltaTime();
@@ -154,8 +156,7 @@ void WorldNodeHandler::Run()
         {
             ZoneScopedNC("WaitForTickRate", tracy::Color::AntiqueWhite1)
 
-                // Wait for tick rate, this might be an overkill implementation but it has the even tickrate I've seen - MPursche
-                f32 targetDelta = 1.0f / _targetTickRate;
+            // Wait for tick rate, this might be an overkill implementation but it has the even tickrate I've seen - MPursche
             {
                 ZoneScopedNC("Sleep", tracy::Color::AntiqueWhite1) for (deltaTime = timer.GetDeltaTime(); deltaTime < targetDelta - 0.0025f; deltaTime = timer.GetDeltaTime())
                 {

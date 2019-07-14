@@ -16,7 +16,7 @@ bool ConfigHandler::Load(std::string configFileName)
     }
     catch (nlohmann::detail::exception e)
     {
-        NC_LOG_FATAL("Could not find '" + configFileName + "' in directory. Press a key to exit.");
+        NC_LOG_FATAL("Could not find '%s' in directory. Press a key to exit.", configFileName.c_str());
         return false;
     }
 
@@ -26,7 +26,7 @@ bool ConfigHandler::Load(std::string configFileName)
         return false;
     }
 
-    NC_LOG_SUCCESS("Loaded config file: '" + configFileName);
+    NC_LOG_SUCCESS("Loaded config file: '%s'", configFileName.c_str());
     return true;
 }
 

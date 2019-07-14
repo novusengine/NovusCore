@@ -1,4 +1,3 @@
-#include <iostream>
 #include <chrono>
 #include <future>
 #include <algorithm>
@@ -6,6 +5,7 @@
 #include <Config/ConfigHandler.h>
 #include <Database/DatabaseConnector.h>
 #include <Utils/DebugHandler.h>
+#include <Utils/StringUtils.h>
 
 #include "ConnectionHandlers/WorldConnectionHandler.h"
 
@@ -17,13 +17,6 @@
 #ifdef _WIN32
 #include <Windows.h>
 #endif
-
-std::string GetLineFromCin()
-{
-    std::string line;
-    std::getline(std::cin, line);
-    return line;
-}
 
 WorldConnectionHandler* WorldConnectionHandler::_instance = nullptr;
 //The name of the console window.
@@ -69,7 +62,7 @@ i32 main()
     std::thread* run_thread;
 
     ConsoleCommandHandler consoleCommandHandler;
-    auto future = std::async(std::launch::async, GetLineFromCin);
+    auto future = std::async(std::launch::async, StringUtils::GetLineFromCin);
     while (true)
     {
         Message message;
@@ -84,7 +77,6 @@ i32 main()
             else if (message.code == MSG_OUT_PRINT)
             {
                 NC_LOG_MESSAGE(*message.message);
-                //std::cout <<  << std::endl;
                 delete message.message;
             }
             else if (message.code == MSG_OUT_SETUP_COMPLETE)
@@ -108,7 +100,7 @@ i32 main()
             std::transform(command.begin(), command.end(), command.begin(), ::tolower); // Convert command to lowercase
 
             consoleCommandHandler.HandleCommand(worldNodeHandler, command);
-            future = std::async(std::launch::async, GetLineFromCin);
+            future = std::async(std::launch::async, StringUtils::GetLineFromCin);
         }
     }
 
@@ -126,5 +118,10 @@ i32 main()
     {
         std::this_thread::yield();
     }
+
+    WorldConnectionHandler.Stop();
+    DatabaseConnector::Stop();
+
+    Sleep(1000);
     return 0;
 }

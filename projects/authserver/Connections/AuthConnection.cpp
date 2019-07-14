@@ -1,96 +1,65 @@
-/*
-# MIT License
-
-# Copyright(c) 2018-2019 NovusCore
-
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files(the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions :
-
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-*/
-
 #include "AuthConnection.h"
 #include <Networking/ByteBuffer.h>
+#include <Cryptography/SHA1.h>
 
 #pragma pack(push, 1)
-struct cAuthLogonChallenge
+struct ClientLogonChallenge
 {
     u8 command;
     u8 error;
     u16 size;
-    u8 gamename[4];
-    u8 version1;
-    u8 version2;
-    u8 version3;
-    u16 build;
-    u8 platform[4];
-    u8 os[4];
-    u8 country[4];
-    u32 timezone_bias;
-    u32 ip;
-    u8 username_length;
-    u8 username_pointer[1];
+    u8 gameName[4];
+    u8 gameVersion1;
+    u8 gameVersion2;
+    u8 gameVersion3;
+    u16 gameBuild;
+    u8 clientPlatform[4];
+    u8 clientOS[4];
+    u8 clientCountry[4];
+    u32 timezoneBias;
+    u32 clientIP;
+    u8 usernameLength;
+    u8 usernamePointer[1];
 };
 
-struct cAuthLogonProof
+struct ClientLogonProof
 {
     u8 command;
-    u8 A[32];
-    u8 M1[20];
-    u8 crc_hash[20];
-    u8 number_of_keys;
+    u8 ephemeralKey[32];
+    u8 m1[20];
+    u8 crcHash[20];
+    u8 numberOfKeys;
     u8 securityFlags;
 };
 
-struct cAuthReconnectProof
+struct ClientReconnectProof
 {
     u8 cmd;
-    u8 R1[16];
-    u8 R2[20];
-    u8 R3[20];
-    u8 number_of_keys;
+    u8 r1[16];
+    u8 r2[20];
+    u8 r3[20];
+    u8 numberOfKeys;
 };
 #pragma pack(pop)
 
-std::array<u8, 16> VersionChallenge = {{0xBA, 0xA3, 0x1E, 0x99, 0xA0, 0x0B,
-                                        0x21, 0x57, 0xFC, 0x37, 0x3F, 0xB3,
-                                        0x69, 0xCD, 0xD2, 0xF1}};
+std::array<u8, 16> versionChallenge = {{0xBA, 0xA3, 0x1E, 0x99, 0xA0, 0x0B, 0x21, 0x57, 0xFC, 0x37, 0x3F, 0xB3, 0x69, 0xCD, 0xD2, 0xF1}};
 #define MAX_REALM_COUNT 256
 
-robin_hood::unordered_map<u8, AuthMessageHandler>
-AuthConnection::InitMessageHandlers()
+robin_hood::unordered_map<u8, AuthMessageHandler> AuthConnection::InitMessageHandlers()
 {
     robin_hood::unordered_map<u8, AuthMessageHandler> messageHandlers;
 
-    messageHandlers[AUTH_CHALLENGE] = {STATUS_CHALLENGE, 4, 1,
-                                       &AuthConnection::HandleCommandChallenge};
-    messageHandlers[AUTH_PROOF] = {STATUS_PROOF, sizeof(cAuthLogonProof), 1,
-                                   &AuthConnection::HandleCommandProof};
-    messageHandlers[AUTH_RECONNECT_CHALLENGE] = {
-        STATUS_CHALLENGE, 4, 1, &AuthConnection::HandleCommandReconnectChallenge};
-    messageHandlers[AUTH_RECONNECT_PROOF] = {
-        STATUS_RECONNECT_PROOF, sizeof(cAuthReconnectProof), 1,
-        &AuthConnection::HandleCommandReconnectProof};
-    messageHandlers[AUTH_REALMSERVER_LIST] = {
-        STATUS_AUTHED, 5, 3, &AuthConnection::HandleCommandRealmserverList};
+    messageHandlers[AUTH_CHALLENGE] = {STATUS_CHALLENGE, 4, 1, &AuthConnection::HandleCommandChallenge};
+    messageHandlers[AUTH_PROOF] = {STATUS_PROOF, sizeof(ClientLogonProof), 1, &AuthConnection::HandleCommandProof};
+    messageHandlers[AUTH_RECONNECT_CHALLENGE] = {STATUS_CHALLENGE, 4, 1, &AuthConnection::HandleCommandReconnectChallenge};
+    messageHandlers[AUTH_RECONNECT_PROOF] = {STATUS_RECONNECT_PROOF, sizeof(ClientReconnectProof), 1, &AuthConnection::HandleCommandReconnectProof};
+    messageHandlers[AUTH_REALMSERVER_LIST] = {STATUS_AUTHED, 5, 3, &AuthConnection::HandleCommandRealmserverList};
 
     return messageHandlers;
 }
-robin_hood::unordered_map<u8, AuthMessageHandler> const MessageHandlers =
-    AuthConnection::InitMessageHandlers();
+robin_hood::unordered_map<u8, AuthMessageHandler> const messageHandlers = AuthConnection::InitMessageHandlers();
+robin_hood::unordered_map<u8, RealmServerData> AuthConnection::realmServerList;
+std::mutex AuthConnection::realmServerListMutex;
 
 bool AuthConnection::Start()
 {
@@ -101,30 +70,20 @@ bool AuthConnection::Start()
 void AuthConnection::HandleRead()
 {
     ByteBuffer& buffer = GetReceiveBuffer();
-    ResetPacketsReadThisRead();
+    ResetPacketsReadOfType();
 
     while (u32 activeSize = buffer.GetActiveSize())
     {
         u8 command = buffer.GetInternalData()[0];
 
-        auto itr = MessageHandlers.find(command);
-        // Client sent wrong command
-        if (itr == MessageHandlers.end() || _status != itr->second.status)
+        auto itr = messageHandlers.find(command);
+        if (itr == messageHandlers.end() || _status != itr->second.status)
         {
             _socket->close();
             return;
         }
 
-        if (command < AUTH_REALMSERVER_LIST)
-        {
-            packetsReadOfType = packetsReadThisRead[command]++;
-        }
-        else if (command == AUTH_REALMSERVER_LIST)
-        {
-            packetsReadOfType = packetsReadThisRead[4]++;
-        }
-
-        if (packetsReadOfType == itr->second.maxPacketsPerRead)
+        if (++packetsReadOfType[command] > itr->second.maxPacketsPerRead)
         {
             _socket->close();
             return;
@@ -136,10 +95,9 @@ void AuthConnection::HandleRead()
 
         if (command == AUTH_CHALLENGE || command == AUTH_RECONNECT_CHALLENGE)
         {
-            cAuthLogonChallenge* logonChallenge =
-                reinterpret_cast<cAuthLogonChallenge*>(buffer.GetReadPointer());
+            ClientLogonChallenge* logonChallenge = reinterpret_cast<ClientLogonChallenge*>(buffer.GetReadPointer());
             size += logonChallenge->size;
-            if (size > (sizeof(cAuthLogonChallenge) + 16))
+            if (size > (sizeof(ClientLogonChallenge) + 16))
             {
                 _socket->close();
                 return;
@@ -165,16 +123,13 @@ bool AuthConnection::HandleCommandChallenge()
 {
     _status = STATUS_CLOSED;
 
-    cAuthLogonChallenge* logonChallenge = reinterpret_cast<cAuthLogonChallenge*>(
-        GetReceiveBuffer().GetReadPointer());
-    std::string login(
-        reinterpret_cast<char const*>(logonChallenge->username_pointer),
-        logonChallenge->username_length);
+    ClientLogonChallenge* logonChallenge = reinterpret_cast<ClientLogonChallenge*>(GetReceiveBuffer().GetReadPointer());
+    std::string login(reinterpret_cast<char const*>(logonChallenge->usernamePointer), logonChallenge->usernameLength);
     username = login;
 
-    PreparedStatement stmt(
-        "SELECT guid, salt, verifier FROM accounts WHERE username={s};");
+    PreparedStatement stmt("SELECT guid, salt, verifier FROM accounts WHERE username={s};");
     stmt.Bind(username);
+
     DatabaseConnector::QueryAsync(
         DATABASE_TYPE::AUTHSERVER, stmt,
         [this](amy::result_set& results, DatabaseConnector& connector) {
@@ -191,7 +146,7 @@ void AuthConnection::HandleCommandChallengeCallback(amy::result_set& results)
      - Type: u8,      Name: Error Code
      - Type: u8,      Name: Result Code
      - Type:  ?,      Name: Logon Challenge Data (See below for structure)
-  */
+    */
     ByteBuffer buffer;
     buffer.PutU8(AUTH_CHALLENGE);
     buffer.PutU8(0);
@@ -209,12 +164,12 @@ void AuthConnection::HandleCommandChallengeCallback(amy::result_set& results)
     std::string dbSalt = resultRow[1].GetString();
     std::string dbVerifier = resultRow[2].GetString();
 
-    s.Hex2BN(dbSalt.c_str());
-    v.Hex2BN(dbVerifier.c_str());
+    smallSalt.Hex2BN(dbSalt.c_str());
+    clientVerifier.Hex2BN(dbVerifier.c_str());
 
-    b.Rand(19 * 8);
-    BigNumber gen = g.ModExponential(b, N);
-    B = ((v * 3) + gen) % N;
+    random.Rand(19 * 8);
+    BigNumber gen = generator.ModExponential(random, nPrime);
+    ephemeralKeyB = ((clientVerifier * 3) + gen) % nPrime;
 
     assert(gen.GetBytes() <= 32);
 
@@ -236,19 +191,19 @@ void AuthConnection::HandleCommandChallengeCallback(amy::result_set& results)
      - Type: u8[16],  Name: Version Challenge
      - Type: u8,      Name: Security Flag
      https://en.wikipedia.org/wiki/Secure_Remote_Password_protocol
-  */
-    buffer.PutBytes(B.BN2BinArray(32).get(), 32);
+    */
+    buffer.PutBytes(ephemeralKeyB.BN2BinArray(32).get(), 32);
     buffer.PutU8(1);
-    buffer.PutU8(g.BN2BinArray(1).get()[0]);
+    buffer.PutU8(generator.BN2BinArray(1).get()[0]);
     buffer.PutU8(32);
-    buffer.PutBytes(N.BN2BinArray(32).get(), 32);
-    buffer.PutBytes(s.BN2BinArray(32).get(), 32);
-    buffer.PutBytes(VersionChallenge.data(), VersionChallenge.size());
+    buffer.PutBytes(nPrime.BN2BinArray(32).get(), 32);
+    buffer.PutBytes(smallSalt.BN2BinArray(32).get(), 32);
+    buffer.PutBytes(versionChallenge.data(), versionChallenge.size());
     buffer.PutU8(0);
 
     /*
       We should check here if we need to handle security flags
-  */
+    */
 
     Send(buffer);
 }
@@ -256,27 +211,25 @@ void AuthConnection::HandleCommandChallengeCallback(amy::result_set& results)
 bool AuthConnection::HandleCommandProof()
 {
     _status = STATUS_CLOSED;
-    cAuthLogonProof* logonProof =
-        reinterpret_cast<cAuthLogonProof*>(GetReceiveBuffer().GetReadPointer());
+    ClientLogonProof* logonProof = reinterpret_cast<ClientLogonProof*>(GetReceiveBuffer().GetReadPointer());
 
-    BigNumber A;
-    A.Bin2BN(logonProof->A, 32);
+    BigNumber ephemeralKeyA;
+    ephemeralKeyA.Bin2BN(logonProof->ephemeralKey, 32);
 
-    // SRP safeguard: abort if A == 0
-    if ((A % N).IsZero())
+    if ((ephemeralKeyA % nPrime).IsZero())
         return false;
 
     SHA1Hasher sha;
-    sha.UpdateHashForBn(2, &A, &B);
+    sha.UpdateHashForBn(2, &ephemeralKeyA, &ephemeralKeyB);
     sha.Finish();
 
     BigNumber u;
     u.Bin2BN(sha.GetData(), 20);
-    BigNumber S = (A * (v.ModExponential(u, N))).ModExponential(b, N);
+    BigNumber s = (ephemeralKeyA * (clientVerifier.ModExponential(u, nPrime))).ModExponential(random, nPrime);
 
     u8 t[32];
     u8 t1[16];
-    memcpy(t, S.BN2BinArray(32).get(), 32);
+    memcpy(t, s.BN2BinArray(32).get(), 32);
 
     for (i32 i = 0; i < 16; ++i)
         t1[i] = t[i * 2];
@@ -298,16 +251,16 @@ bool AuthConnection::HandleCommandProof()
 
     for (i32 i = 0; i < 20; ++i)
         vK[i * 2 + 1] = sha.GetData()[i];
-    K.Bin2BN(vK, 40);
+    sessionKey.Bin2BN(vK, 40);
 
     sha.Init();
-    sha.UpdateHashForBn(1, &N);
+    sha.UpdateHashForBn(1, &nPrime);
     sha.Finish();
 
     u8 hash[20];
     memcpy(hash, sha.GetData(), 20);
     sha.Init();
-    sha.UpdateHashForBn(1, &g);
+    sha.UpdateHashForBn(1, &generator);
     sha.Finish();
 
     for (i32 i = 0; i < 20; ++i)
@@ -325,41 +278,41 @@ bool AuthConnection::HandleCommandProof()
     sha.Init();
     sha.UpdateHashForBn(1, &t3);
     sha.UpdateHash(t4, SHA_DIGEST_LENGTH);
-    sha.UpdateHashForBn(4, &s, &A, &B, &K);
+    sha.UpdateHashForBn(4, &smallSalt, &ephemeralKeyA, &ephemeralKeyB, &sessionKey);
     sha.Finish();
 
-    BigNumber M;
-    M.Bin2BN(sha.GetData(), sha.GetLength());
-    if (!memcmp(M.BN2BinArray(sha.GetLength()).get(), logonProof->M1, 20))
+    BigNumber m;
+    m.Bin2BN(sha.GetData(), sha.GetLength());
+    if (!memcmp(m.BN2BinArray(sha.GetLength()).get(), logonProof->m1, 20))
     {
         // Finish SRP6 and send the final result to the client
         sha.Init();
-        sha.UpdateHashForBn(3, &A, &M, &K);
+        sha.UpdateHashForBn(3, &ephemeralKeyA, &m, &sessionKey);
         sha.Finish();
 
         u8 proofM2[20];
         memcpy(proofM2, sha.GetData(), 20);
 
         // Update Database with SessionKey
-        PreparedStatement stmt(
-            "UPDATE accounts SET sessionkey={s} WHERE username={s};");
-        stmt.Bind(K.BN2Hex());
+        PreparedStatement stmt("UPDATE accounts SET sessionkey={s} WHERE username={s};");
+        stmt.Bind(sessionKey.BN2Hex());
         stmt.Bind(username);
+
         DatabaseConnector::QueryAsync(
             DATABASE_TYPE::AUTHSERVER, stmt,
             [this, proofM2](amy::result_set& results,
                             DatabaseConnector& connector) {
                 /* Logon Proof Data Structure
 
-             - Type: u8,      Name: Packet Command
-             - Type: u8,      Name: Error Code
-             - Type: u8[20],  Name: SRP6 Hash Proof
-             - Type: u32,     Name: Account Flags
-             - Type: u32,     Name: SurveyId
-             - Type: u16,     Name: Login Flags
+                - Type: u8,      Name: Packet Command
+                - Type: u8,      Name: Error Code
+                - Type: u8[20],  Name: SRP6 Hash Proof
+                - Type: u32,     Name: Account Flags
+                - Type: u32,     Name: SurveyId
+                - Type: u16,     Name: Login Flags
 
-             https://en.wikipedia.org/wiki/Secure_Remote_Password_protocol
-          */
+                https://en.wikipedia.org/wiki/Secure_Remote_Password_protocol
+                */
                 ByteBuffer buffer;
                 buffer.PutU8(AUTH_PROOF);
                 buffer.PutU8(0);
@@ -377,10 +330,10 @@ bool AuthConnection::HandleCommandProof()
     {
         /* Logon Proof Data Structure
 
-       - Type: u8,      Name: Packet Command
-       - Type: u8,      Name: Error Code
-       - Type: u16,     Name: Login Flags
-    */
+        - Type: u8,      Name: Packet Command
+        - Type: u8,      Name: Error Code
+        - Type: u16,     Name: Login Flags
+        */
         ByteBuffer buffer;
         buffer.PutU8(AUTH_PROOF);
         buffer.PutU8(AUTH_FAIL_UNKNOWN_ACCOUNT);
@@ -396,20 +349,16 @@ bool AuthConnection::HandleCommandReconnectChallenge()
 {
     _status = STATUS_CLOSED;
 
-    cAuthLogonChallenge* logonChallenge = reinterpret_cast<cAuthLogonChallenge*>(
-        GetReceiveBuffer().GetReadPointer());
-    if (logonChallenge->size - (sizeof(cAuthLogonChallenge) - 4 - 1) !=
-        logonChallenge->username_length)
+    ClientLogonChallenge* logonChallenge = reinterpret_cast<ClientLogonChallenge*>(GetReceiveBuffer().GetReadPointer());
+    if (logonChallenge->size - (sizeof(ClientLogonChallenge) - 4 - 1) != logonChallenge->usernameLength)
         return false;
 
-    std::string login(
-        reinterpret_cast<char const*>(logonChallenge->username_pointer),
-        logonChallenge->username_length);
+    std::string login(reinterpret_cast<char const*>(logonChallenge->usernamePointer), logonChallenge->usernameLength);
     username = login;
 
-    PreparedStatement stmt(
-        "SELECT guid, sessionKey FROM accounts WHERE username={s};");
+    PreparedStatement stmt("SELECT guid, sessionKey FROM accounts WHERE username={s};");
     stmt.Bind(username);
+
     DatabaseConnector::QueryAsync(
         DATABASE_TYPE::AUTHSERVER, stmt,
         [this](amy::result_set& results, DatabaseConnector& connector) {
@@ -418,8 +367,7 @@ bool AuthConnection::HandleCommandReconnectChallenge()
 
     return true;
 }
-void AuthConnection::HandleCommandReconnectChallengeCallback(
-    amy::result_set& results)
+void AuthConnection::HandleCommandReconnectChallengeCallback(amy::result_set& results)
 {
     /* Logon Proof Data Structure
 
@@ -429,7 +377,7 @@ void AuthConnection::HandleCommandReconnectChallengeCallback(
      - Type: u8[20],  Name: Version Challenge
 
      https://en.wikipedia.org/wiki/Secure_Remote_Password_protocol
-  */
+    */
     ByteBuffer buffer;
     buffer.PutU8(AUTH_RECONNECT_CHALLENGE);
 
@@ -443,12 +391,12 @@ void AuthConnection::HandleCommandReconnectChallengeCallback(
 
     amy::row resultRow = results[0];
     accountGuid = resultRow[0].GetU32();
-    K.Hex2BN(resultRow[1].GetString().c_str());
+    sessionKey.Hex2BN(resultRow[1].GetString().c_str());
 
     _reconnectSeed.Rand(16 * 8);
     buffer.PutU8(0);
     buffer.PutBytes(_reconnectSeed.BN2BinArray(16).get(), 16);
-    buffer.PutBytes(VersionChallenge.data(), VersionChallenge.size());
+    buffer.PutBytes(versionChallenge.data(), versionChallenge.size());
 
     Send(buffer);
     _status = STATUS_RECONNECT_PROOF;
@@ -456,22 +404,20 @@ void AuthConnection::HandleCommandReconnectChallengeCallback(
 bool AuthConnection::HandleCommandReconnectProof()
 {
     _status = STATUS_CLOSED;
-    cAuthReconnectProof* reconnectLogonProof =
-        reinterpret_cast<cAuthReconnectProof*>(
-            GetReceiveBuffer().GetReadPointer());
-    if (username.length() == 0 || !_reconnectSeed.GetBytes() || !K.GetBytes())
+    ClientReconnectProof* reconnectLogonProof = reinterpret_cast<ClientReconnectProof*>(GetReceiveBuffer().GetReadPointer());
+    if (username.length() == 0 || !_reconnectSeed.GetBytes() || !sessionKey.GetBytes())
         return false;
 
     BigNumber t1;
-    t1.Bin2BN(reconnectLogonProof->R1, 16);
+    t1.Bin2BN(reconnectLogonProof->r1, 16);
 
     SHA1Hasher sha;
     sha.Init();
     sha.UpdateHash(username);
-    sha.UpdateHashForBn(3, &t1, &_reconnectSeed, &K);
+    sha.UpdateHashForBn(3, &t1, &_reconnectSeed, &sessionKey);
     sha.Finish();
 
-    if (!memcmp(sha.GetData(), reconnectLogonProof->R2, SHA_DIGEST_LENGTH))
+    if (!memcmp(sha.GetData(), reconnectLogonProof->r2, SHA_DIGEST_LENGTH))
     {
         /* Logon Proof Data Structure
 
@@ -496,9 +442,9 @@ bool AuthConnection::HandleCommandRealmserverList()
 {
     _status = STATUS_WAITING_FOR_REALMSERVER_LIST;
 
-    PreparedStatement realmCharacterCount(
-        "SELECT realmId, characters FROM realm_characters WHERE account={u};");
+    PreparedStatement realmCharacterCount("SELECT realmId, characters FROM realm_characters WHERE account={u};");
     realmCharacterCount.Bind(accountGuid);
+
     DatabaseConnector::QueryAsync(
         DATABASE_TYPE::AUTHSERVER, realmCharacterCount,
         [this](amy::result_set& result, DatabaseConnector& connector) {
@@ -510,71 +456,61 @@ bool AuthConnection::HandleCommandRealmserverList()
                 realmCharacterData[row[0].GetU8()] = row[1].GetU8();
             }
 
-            amy::result_set realmserverListResultData;
-            if (!connector.Query("SELECT id, name, address, type, flags, timezone, "
-                                 "population FROM realms;",
-                                 realmserverListResultData))
-                return;
-
+            realmServerListMutex.lock();
             /* Logon Proof Data Structure
 
-           - Type: u8,      Name: Packet Command
-           - Type: u16,     Name: Packet Payload Size (Excluding command + self)
-           - Type: u32,     Name: Unknown (I've been unable to figure out what
-           this does so far)
-           - Type: u16,     Name: Count of available realms
+            - Type: u8,      Name: Packet Command
+            - Type: u16,     Name: Packet Payload Size (Excluding command + self)
+            - Type: u32,     Name: Unknown (I've been unable to figure out what this does so far)
+            - Type: u16,     Name: Count of available realms
 
-           - Type: ?,       Name: Realm Data (See Below for structure
-           information)
+            - Type: ?,       Name: Realm Data (See Below for structure information)
 
-           - Type: u8,      Name: Unknown (This value depends on game version)
-           - Type: u8,      Name: Unknown (This value depends on game version)
-
-        */
+            - Type: u8,      Name: Unknown (This value depends on game version)
+            - Type: u8,      Name: Unknown (This value depends on game version)
+            */
             ByteBuffer buffer(nullptr, 32768);
             buffer.PutU8(AUTH_REALMSERVER_LIST);
 
             // Calculate expected payload size. Realm Strings are accounted for
             // later.
-            size_t dataStoreSize =
-                6 + (realmserverListResultData.affected_rows() * 10) + 2;
+            size_t dataStoreSize = 6 + (realmServerList.size() * 10) + 2;
 
             // Store WritePos to later write Payload Size. Reserve 2 bytes.
             size_t dataStoreSizeWrittenPos = buffer.WrittenData;
             buffer.PutU16(0);
 
             buffer.PutU32(0);
-            buffer.PutU16(
-                static_cast<u16>(realmserverListResultData.affected_rows()));
+            buffer.PutU16(static_cast<u16>(realmServerList.size()));
 
-            for (auto row : realmserverListResultData)
+            for (auto realmItr : realmServerList)
             {
                 /*
-             - Type: u8,      Name: Realm Type
-             - Type: u8,      Name: Is Realm Locked
-             - Type: u8,      Name: Realm Flags
-             - Type: string,  Name: Realm Name
-             - Type: string,  Name: Realm Address
-             - Type: f32,     Name: Realm Population (Valid values are 0, 1, 2)
-             - Type: u8,      Name: Count of characters for the player on the
-             given realm
-             - Type: u8,      Name: Realm Timezone
-             - Type: u8,      Name: Realm Id
-          */
-                u8 realmId = row[0].GetU8();
-                buffer.PutU8(row[3].GetU8());
+                - Type: u8,      Name: Realm Type
+                - Type: u8,      Name: Is Realm Locked
+                - Type: u8,      Name: Realm Flags
+                - Type: string,  Name: Realm Name
+                - Type: string,  Name: Realm Address
+                - Type: f32,     Name: Realm Population (Valid values are 0, 1, 2)
+                - Type: u8,      Name: Count of characters for the player on the given realm
+                - Type: u8,      Name: Realm Timezone
+                - Type: u8,      Name: Realm Id
+                */
+                RealmServerData realmData = realmItr.second;
+                buffer.PutU8(realmData.type);
                 buffer.PutU8(0);
-                buffer.PutU8(row[4].GetU8());
-                size_t realmNameSize = buffer.PutString(row[1].GetString());
-                size_t realmAddressSize = buffer.PutString(row[2].GetString());
-                buffer.PutF32(row[6].GetF32());
-                buffer.PutU8(realmCharacterData[realmId]);
-                buffer.PutU8(row[5].GetU8());
-                buffer.PutU8(realmId);
+                buffer.PutU8(realmData.flags);
+                size_t realmNameSize = buffer.PutString(realmData.realmName);
+                size_t realmAddressSize = buffer.PutString(realmData.realmAddress);
+                buffer.PutF32(realmData.population);
+                buffer.PutU8(realmCharacterData[realmItr.first]);
+                buffer.PutU8(realmData.timeZone);
+                buffer.PutU8(realmItr.first);
 
                 // Add Realm String Sizes to Payload Size
                 dataStoreSize += realmNameSize + realmAddressSize;
             }
+            realmServerListMutex.unlock();
 
             // (Only needed for clients TBC+)
             buffer.PutU8(0x10); // Unk1

@@ -24,7 +24,7 @@
 #pragma once
 #include <NovusTypes.h>
 #include <Utils/StringUtils.h>
-#include "Utils/ConcurrentQueue.h"
+#include <Utils/ConcurrentQueue.h>
 #include "Utils/MapLoader.h"
 #include "Message.h"
 #include <entt.hpp>

@@ -22,10 +22,13 @@
     SOFTWARE.
 */
 #pragma once
-#include "../WorldNodeHandler.h"
+#include <vector>
+#include "../AuthServerHandler.h"
 #include "../Message.h"
 
-void QuitCommand(WorldNodeHandler& worldNodeHandler, std::vector<std::string> subCommands)
+void PingCommand(AuthServerHandler& authServerHandler, std::vector<std::string> subCommands)
 {
-    worldNodeHandler.Stop();
+    Message pingMessage;
+    pingMessage.code = MSG_IN_PING;
+    authServerHandler.PassMessage(pingMessage);
 }

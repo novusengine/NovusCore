@@ -22,10 +22,17 @@
     SOFTWARE.
 */
 #pragma once
-#include "../WorldNodeHandler.h"
-#include "../Message.h"
+#include <NovusTypes.h>
+#include <string>
 
-void QuitCommand(WorldNodeHandler& worldNodeHandler, std::vector<std::string> subCommands)
+struct Message
 {
-    worldNodeHandler.Stop();
-}
+    Message()
+    {
+        code = -1;
+        message = nullptr;
+    }
+
+    i32 code;
+    std::string* message;
+};

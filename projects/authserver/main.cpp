@@ -1,32 +1,13 @@
-/*
-# MIT License
-
-# Copyright(c) 2018-2019 NovusCore
-
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files(the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions :
-
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-*/
-
+#include <Utils/DebugHandler.h>
+#include <Utils/StringUtils.h>
 #include <Config/ConfigHandler.h>
 #include <Database/DatabaseConnector.h>
-#include <Utils/DebugHandler.h>
 
 #include "ConnectionHandlers/AuthConnectionHandler.h"
+
+#include "AuthServerHandler.h"
+#include "ConsoleCommands.h"
+#include "Message.h"
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -42,10 +23,10 @@ i32 main()
     SetConsoleTitle(WINDOWNAME);
 #endif
 
-    /* Load Database Config Handler for server */
+    /* Load Database Config Handler */
     if (!ConfigHandler::Load("database.json"))
     {
-        std::getchar();
+        std::cin.ignore();
         return 0;
     }
 
@@ -53,27 +34,81 @@ i32 main()
     DatabaseConnectionDetails dbConnections[DATABASE_TYPE::COUNT];
     dbConnections[DATABASE_TYPE::AUTHSERVER] = DatabaseConnectionDetails(ConfigHandler::GetJsonObjectByKey("auth_database"));
 
-    /* Pass Database Information to Setup */
+    /* Pass DatabaseConnectionDetails to 'Setup' */
     DatabaseConnector::Setup(dbConnections);
 
-    /* Load Config Handler for server */
+    /* Load Config Handler */
     if (!ConfigHandler::Load("authserver.json"))
     {
-        std::getchar();
+        std::cin.ignore();
         return 0;
     }
 
-    asio::io_service io_service(2);
-    AuthConnectionHandler authConnectionHandler(io_service, ConfigHandler::GetOption<u16>("port", 3724));
+    asio::io_service ioService(2);
+    AuthConnectionHandler authConnectionHandler(ioService, ConfigHandler::GetOption<u16>("port", 3724));
     authConnectionHandler.Start();
 
-    srand(static_cast<u32>(time(NULL)));
+    AuthServerHandler authServerHandler;
+    authServerHandler.Start();
+
+    srand(static_cast<u32>(time(nullptr)));
     std::thread run_thread([&] {
-        io_service.run();
+        ioService.run();
     });
+
+    ConsoleCommandHandler consoleCommandHandler;
+    auto future = std::async(std::launch::async, StringUtils::GetLineFromCin);
+    while (true)
+    {
+        Message message;
+        bool shouldExit = false;
+        while (authServerHandler.TryGetMessage(message))
+        {
+            if (message.code == MSG_OUT_EXIT_CONFIRM)
+            {
+                shouldExit = true;
+                break;
+            }
+            else if (message.code == MSG_OUT_PRINT)
+            {
+                NC_LOG_MESSAGE(*message.message);
+                delete message.message;
+            }
+        }
+
+        if (shouldExit)
+            break;
+
+        if (future.wait_for(std::chrono::milliseconds(50)) == std::future_status::ready)
+        {
+            std::string command = future.get();
+            std::transform(command.begin(), command.end(), command.begin(), ::tolower); // Convert command to lowercase
+
+            consoleCommandHandler.HandleCommand(authServerHandler, command);
+            future = std::async(std::launch::async, StringUtils::GetLineFromCin);
+        }
+    }
 
     NC_LOG_SUCCESS("Authserver running on port: %u", authConnectionHandler.GetPort());
 
-    std::getchar();
+    std::string message = "--- Thank you for flying with NovusCore, press enter to exit --- ";
+    for (i32 i = 0; i < message.size() - 1; i++)
+        std::cout << "-";
+    std::cout << std::endl
+              << message << std::endl;
+    for (i32 i = 0; i < message.size() - 1; i++)
+        std::cout << "-";
+    std::cout << std::endl;
+
+    ioService.stop();
+    while (!ioService.stopped())
+    {
+        std::this_thread::yield();
+    }
+
+    authConnectionHandler.Stop();
+    DatabaseConnector::Stop();
+
+    Sleep(1000);
     return 0;
 }

@@ -86,6 +86,7 @@ class DatabaseConnector
 public:
     // Initialization
     static void Setup(DatabaseConnectionDetails connections[]);
+    static void Stop();
 
     // Static Connector creation
     static bool Create(DATABASE_TYPE type, std::unique_ptr<DatabaseConnector>& out);
@@ -123,6 +124,7 @@ private:
 
     static DatabaseConnectionDetails _connections[DATABASE_TYPE::COUNT];
     static bool _initialized;
+    static bool _running;
 
     static SharedPool<DatabaseConnector> _connectorPools[DATABASE_TYPE::COUNT];
     static std::thread* _asyncThread;

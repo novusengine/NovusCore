@@ -22,10 +22,11 @@
     SOFTWARE.
 */
 #pragma once
-#include "../WorldNodeHandler.h"
+#include <vector>
+#include "../AuthServerHandler.h"
 #include "../Message.h"
 
-void QuitCommand(WorldNodeHandler& worldNodeHandler, std::vector<std::string> subCommands)
+void QuitCommand(AuthServerHandler& authServerHandler, std::vector<std::string> subCommands)
 {
-    worldNodeHandler.Stop();
+    authServerHandler.Stop();
 }

@@ -99,6 +99,9 @@ i32 main()
 
     NC_LOG_SUCCESS("Realmserver running on port: (%u, %u)", realmConnectionHandler.GetPort(), realmSecondConnectionHandler.GetPort());
 
-    std::getchar();
+    std::cin.ignore();
+    realmConnectionHandler.Stop();
+    realmSecondConnectionHandler.Stop();
+    DatabaseConnector::Stop();
     return 0;
 }

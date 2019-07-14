@@ -5,6 +5,7 @@
 
 DatabaseConnectionDetails DatabaseConnector::_connections[];
 bool DatabaseConnector::_initialized = false;
+bool DatabaseConnector::_running = false;
 SharedPool<DatabaseConnector> DatabaseConnector::_connectorPools[];
 moodycamel::ConcurrentQueue<AsyncSQLJob> DatabaseConnector::_asyncJobQueue(1024);
 
@@ -15,11 +16,18 @@ void DatabaseConnector::Setup(DatabaseConnectionDetails connections[])
         if (connections[i].isUsed)
             _connections[i] = connections[i];
     }
+
     _initialized = true;
+    _running = true;
 
     // Create Async SQL thread
     std::thread asyncThread(AsyncSQLThreadMain);
     asyncThread.detach();
+}
+
+void DatabaseConnector::Stop()
+{
+    _running = false;
 }
 
 // Static Connector creation
@@ -123,7 +131,7 @@ void DatabaseConnector::AsyncSQLThreadMain()
     // When the queue is empty, it will first retry immediately 10 times, after that it will retry 10 times a second for 9 seconds, and after that it will decrease to 2 checks a second
     // When the thread finds something in the queue, this behavior is reset.
     // This behavior should give us a good mix between short wait times and not consuming 100% of a CPU core.
-    while (true)
+    while (_running)
     {
         if (_asyncJobQueue.try_dequeue(job))
         {

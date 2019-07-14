@@ -7,11 +7,19 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <iostream>
 #include <iterator>
 #include "../NovusTypes.h"
 
 namespace StringUtils
 {
+inline std::string GetLineFromCin()
+{
+    std::string line;
+    std::getline(std::cin, line);
+    return line;
+}
+
 inline std::vector<std::string> SplitString(std::string string, char delim = ' ')
 {
     std::vector<std::string> results;
