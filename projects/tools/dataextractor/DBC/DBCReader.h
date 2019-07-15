@@ -64,9 +64,19 @@ public:
             return *reinterpret_cast<u32*>(offset + field * 4);
         }
 
-        int32_t GetInt32(u32 field) const
+        u64 GetUInt64(u32 field) const
         {
-            return *reinterpret_cast<int32_t*>(offset + field * 4);
+            return *reinterpret_cast<u64*>(offset + field * 4);
+        }
+
+        i32 GetInt32(u32 field) const
+        {
+            return *reinterpret_cast<i32*>(offset + field * 4);
+        }
+
+        i64 GetInt64(u32 field) const
+        {
+            return *reinterpret_cast<i64*>(offset + field * 4);
         }
 
         std::string GetString(u32 stringOffset) const

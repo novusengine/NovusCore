@@ -63,6 +63,8 @@ i32 main()
 
         DBCLoader::LoadEmotesText(mpqHandler, sqlOutput);
 
+        DBCLoader::LoadSpell(mpqHandler, sqlOutput);
+
         NC_LOG_MESSAGE("Building sql...");
         std::ofstream output(outputPath.string() + "/DBCImportData.sql", std::ofstream::out);
         output << sqlOutput;
