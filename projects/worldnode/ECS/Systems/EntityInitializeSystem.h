@@ -1,11 +1,11 @@
 #include "NetworkPacketSystem.h"
 #include <NovusTypes.h>
 #include <Networking/Opcode/Opcode.h>
+#include <Database/Cache/CharacterDatabaseCache.h>
 
 #include "../../NovusEnums.h"
 #include "../../Utils/CharacterUtils.h"
 
-#include "../../DatabaseCache/CharacterDatabaseCache.h"
 
 #include "../Components/ItemFieldDataComponent.h"
 #include "../Components/ItemInitializeComponent.h"

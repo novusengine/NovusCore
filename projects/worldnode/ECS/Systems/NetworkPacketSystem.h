@@ -30,12 +30,12 @@
 #include <Math/Math.h>
 #include <Math/Vector2.h>
 #include <Cryptography/HMAC.h>
+#include <Database/Cache/CharacterDatabaseCache.h>
+#include <Database/Cache/DBCDatabaseCache.h>
 #include <zlib.h>
 
 #include "../../NovusEnums.h"
 #include "../../Utils/CharacterUtils.h"
-#include "../../DatabaseCache/CharacterDatabaseCache.h"
-#include "../../DatabaseCache/DBCDatabaseCache.h"
 #include "../../WorldNodeHandler.h"
 #include "../../Scripting/PlayerFunctions.h"
 #include "../../Scripting/SpellFunctions.h"

@@ -24,9 +24,9 @@
 #pragma once
 #include <NovusTypes.h>
 #include <entt.hpp>
+#include <Database/Cache/CharacterDatabaseCache.h>
 
 #include "../../Message.h"
-#include "../../DatabaseCache/CharacterDatabaseCache.h"
 
 #include "../Components/PlayerConnectionComponent.h"
 #include "../Components/PlayerFieldDataComponent.h"

@@ -62,8 +62,8 @@ bool LoadMap(MPQHandler& handler, std::string& sqlOutput, std::vector<std::strin
                     map.Expansion = row.GetUInt32(63);
                     map.MaxPlayers = row.GetUInt32(65);
 
-                    // MapFlag 2 & 16, seem to be exclusive to Test / Development Maps
-                    if ((map.Flags & 2) == 0 && (map.Flags & 16) == 0)
+                    // MapFlag 2, seem to be exclusive to Test / Development Maps
+                    if ((map.Flags & 2) == 0)
                         adtLocationOutput.push_back(row.GetString(row.GetUInt32(1)));
 
                     if (i != 0)

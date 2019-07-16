@@ -122,6 +122,61 @@ void CharacterDatabaseCache::Load()
             _accessMutex.unlock();
         }
     }
+
+    connector->Query("SELECT raceMask, classMask, spell FROM default_spells;", resultSet);
+    if (resultSet.affected_rows() > 0)
+    {
+        for (auto row : resultSet)
+        {
+            DefaultSpellStorage newDefaultSpellStorage(this);
+            newDefaultSpellStorage.raceMask = row[0].as<amy::sql_smallint>();
+            newDefaultSpellStorage.classMask = row[1].as<amy::sql_smallint>();
+            newDefaultSpellStorage.id = row[2].as<amy::sql_int_unsigned>();
+
+            _accessMutex.lock();
+            _defaultSpellStorageCache.push_back(newDefaultSpellStorage);
+            _accessMutex.unlock();
+        }
+    }
+
+    connector->Query("SELECT raceMask, classMask, skill, value, default_skills.maxValue FROM default_skills;", resultSet);
+    if (resultSet.affected_rows() > 0)
+    {
+        for (auto row : resultSet)
+        {
+            DefaultSkillStorage newDefaultSkillStorage(this);
+            newDefaultSkillStorage.raceMask = row[0].as<amy::sql_smallint>();
+            newDefaultSkillStorage.classMask = row[1].as<amy::sql_smallint>();
+            newDefaultSkillStorage.id = row[2].as<amy::sql_smallint_unsigned>();
+            newDefaultSkillStorage.value = row[3].as<amy::sql_smallint_unsigned>();
+            newDefaultSkillStorage.maxValue = row[4].as<amy::sql_smallint_unsigned>();
+
+            _accessMutex.lock();
+            _defaultSkillStorageCache.push_back(newDefaultSkillStorage);
+            _accessMutex.unlock();
+        }
+    }
+
+    connector->Query("SELECT raceMask, classMask, mapId, zoneId, coordinate_x, coordinate_y, coordinate_z, orientation FROM default_spawns;", resultSet);
+    if (resultSet.affected_rows() > 0)
+    {
+        for (auto row : resultSet)
+        {
+            DefaultSpawnStorage newDefaultSpawnStorage(this);
+            newDefaultSpawnStorage.raceMask = row[0].as<amy::sql_smallint>();
+            newDefaultSpawnStorage.classMask = row[1].as<amy::sql_smallint>();
+            newDefaultSpawnStorage.mapId = row[2].as<amy::sql_smallint_unsigned>();
+            newDefaultSpawnStorage.zoneId = row[3].as<amy::sql_smallint_unsigned>();
+            newDefaultSpawnStorage.coordinate_x = row[4].as<amy::sql_float>();
+            newDefaultSpawnStorage.coordinate_y = row[5].as<amy::sql_float>();
+            newDefaultSpawnStorage.coordinate_z = row[6].as<amy::sql_float>();
+            newDefaultSpawnStorage.orientation = row[7].as<amy::sql_float>();
+
+            _accessMutex.lock();
+            _defaultSpawnStorageCache.push_back(newDefaultSpawnStorage);
+            _accessMutex.unlock();
+        }
+    }
 }
 void CharacterDatabaseCache::LoadAsync()
 {
@@ -651,6 +706,19 @@ bool CharacterDatabaseCache::GetCharacterItemData(u64 characterGuid, robin_hood:
         output = _characteritemDataCache[characterGuid];
         return true;
     }
+}
+
+const std::vector<DefaultSpellStorage> CharacterDatabaseCache::GetDefaultSpellStorageData()
+{
+    return _defaultSpellStorageCache;
+}
+const std::vector<DefaultSkillStorage> CharacterDatabaseCache::GetDefaultSkillStorageData()
+{
+    return _defaultSkillStorageCache;
+}
+const std::vector<DefaultSpawnStorage> CharacterDatabaseCache::GetDefaultSpawnStorageData()
+{
+    return _defaultSpawnStorageCache;
 }
 
 void CharacterInfo::UpdateCache(u64 characterGuid)

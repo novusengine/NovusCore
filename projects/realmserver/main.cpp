@@ -27,8 +27,8 @@
 #include <Utils/DebugHandler.h>
 
 #include "RealmHandler.h"
-#include "DatabaseCache/AuthDatabaseCache.h"
-#include "DatabaseCache/CharacterDatabaseCache.h"
+#include <Database/Cache/AuthDatabaseCache.h>
+#include <Database/Cache/CharacterDatabaseCache.h>
 #include "ConnectionHandlers/RealmConnectionHandler.h"
 #include "ConnectionHandlers/RealmSecondConnectionHandler.h"
 

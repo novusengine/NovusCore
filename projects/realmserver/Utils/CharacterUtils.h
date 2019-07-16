@@ -3,7 +3,7 @@
 #include <vector>
 #include <string>
 
-#include "../DatabaseCache/CharacterDatabaseCache.h"
+#include  <Database/Cache/CharacterDatabaseCache.h>
 
 namespace CharacterUtils
 {

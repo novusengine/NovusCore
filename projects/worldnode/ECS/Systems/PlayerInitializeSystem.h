@@ -1,11 +1,10 @@
 #include "NetworkPacketSystem.h"
 #include <NovusTypes.h>
 #include <Networking/Opcode/Opcode.h>
+#include <Database/Cache/CharacterDatabaseCache.h>
 
 #include "../../NovusEnums.h"
 #include "../../Utils/CharacterUtils.h"
-
-#include "../../DatabaseCache/CharacterDatabaseCache.h"
 
 #include "../Components/PlayerFieldDataComponent.h"
 #include "../Components/PlayerSpellStorageComponent.h"

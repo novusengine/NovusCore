@@ -43,7 +43,7 @@ namespace CharacterUtils
 }
 
 #include "MapUtils.h"
-#include "../DatabaseCache/CharacterDatabaseCache.h"
+#include <Database/Cache/CharacterDatabaseCache.h>
 #include "../Connections/WorldConnection.h"
 
 #include "../ECS/Components/Singletons/SingletonComponent.h"

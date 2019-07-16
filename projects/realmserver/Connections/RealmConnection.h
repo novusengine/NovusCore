@@ -31,8 +31,8 @@
 #include <Cryptography/SHA1.h>
 #include <random>
 
-#include "../DatabaseCache/AuthDatabaseCache.h"
-#include "../DatabaseCache/CharacterDatabaseCache.h"
+#include  <Database/Cache/AuthDatabaseCache.h>
+#include  <Database/Cache/CharacterDatabaseCache.h>
 
 #pragma pack(push, 1)
 struct cAuthSessionData

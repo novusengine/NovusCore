@@ -27,10 +27,10 @@
 #include <Cryptography/HMAC.h>
 #include <Cryptography/BigNumber.h>
 #include <Database/DatabaseConnector.h>
+#include <Database/Cache/AuthDatabaseCache.h>
 
 #include "../RealmHandler.h"
 #include "../Utils/CharacterUtils.h"
-#include "../DatabaseCache/AuthDatabaseCache.h"
 
 #include <zlib.h>
 #include <map>

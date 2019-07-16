@@ -22,7 +22,7 @@
     SOFTWARE.
 */
 #pragma once
-#include "../../DatabaseCache/DBCDatabaseCache.h"
+#include <Database/Cache/DBCDatabaseCache.h>
 
 struct DBCDatabaseCacheSingleton
 {
