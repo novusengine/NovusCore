@@ -34,10 +34,7 @@ class MPQArchive
 {
 public:
     MPQArchive() {}
-    MPQArchive(std::string path)
-    {
-        _path = path;
-    }
+    MPQArchive(std::string path, std::string archiveName) : name(archiveName), _path(path) {}
 
     bool Open()
     {
@@ -143,6 +140,7 @@ public:
         return true;
     }
 
+    std::string name;
 private:
     mpq_archive_s* _archive = nullptr;
     std::string _path = "";

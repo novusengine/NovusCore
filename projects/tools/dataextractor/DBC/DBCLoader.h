@@ -134,16 +134,16 @@ bool LoadEmotesText(MPQHandler& handler, std::string& sqlOutput)
     return true;
 }
 
-std::string GetNameFromUnknownLocale(DBCReader::DBCRow& row, u32 index, u32 num)
+std::string GetNameFromUnknownLocale(DBCReader::DBCRow& row, u32 index, i32 num)
 {
-    for (int i = 0; i < num; i++)
+    for (i32 i = 0; i < num; i++)
     {
         u32 rowIndex = index + i;
         u32 nameIndex = row.GetUInt32(rowIndex);
 
         if (nameIndex != 0)
         {
-            return row.GetString(nameIndex);
+            return StringUtils::EscapeString(row.GetString(nameIndex));
         }
     }
 
@@ -167,7 +167,7 @@ bool LoadSpell(MPQHandler& handler, std::string& sqlOutput)
 
                 std::stringstream ss;
                 ss << "DELETE FROM spells;" << std::endl
-                   << "INSERT INTO spells(id, spellCategory, dispelType, mechanic, attributes, attributesExA, attributesExB, attributesExC, attributesExD, attributesExE, attributesExF, attributesExG, stances, excludedStances, targets,"
+                   << "INSERT INTO spells(id, spellCategory, dispelType, mechanic, attributes, attributesExA, attributesExB, attributesExC, attributesExD, attributesExE, attributesExF, attributesExG, stanceMask, stanceExcludeMask, targets,"
                       "targetCreatureType, spellFocusObject, facingCasterFlags, casterAuraState, targetAuraState, casterAuraStateNot, targetAuraStateNot, casterAuraSpell, targetAuraSpell, excludeCasterAuraSpell, excludeTargetAuraSpell,"
                       "castingTimeIndex, recoveryTime, categoryRecoveryTime, interruptFlags, auraInterruptFlags, channelInterruptFlags, procFlags, procChance, procCharges, maxLevel, baseLevel, spellLevel, durationIndex, powerType, manaCost,"
                       "manaCostPerlevel, manaPerSecond, manaPerSecondPerLevel, rangeIndex, speed, modalNextSpell, stackAmount, totem1, totem2, reagent1, reagent2, reagent3, reagent4, reagent5, reagent6, reagent7, reagent8, reagentCount1,"
@@ -179,13 +179,14 @@ bool LoadSpell(MPQHandler& handler, std::string& sqlOutput)
                       "effectMiscValueB1, effectMiscValueB2, effectMiscValueB3, effectTriggerSpell1, effectTriggerSpell2, effectTriggerSpell3, effectPointsPerComboPoint1, effectPointsPerComboPoint2, effectPointsPerComboPoint3,"
                       "effectSpellClassMaskA1, effectSpellClassMaskA2, effectSpellClassMaskA3, effectSpellClassMaskB1, effectSpellClassMaskB2, effectSpellClassMaskB3, effectSpellClassMaskC1, effectSpellClassMaskC2, effectSpellClassMaskC3,"
                       "spellVisual1, spellVisual2, spellIconID, activeIconID, spellPriority, spellName, spellSubText, manaCostPercentage, startRecoveryCategory, startRecoveryTime, maxTargetLevel, spellClassSet,"
-                      "spellClassMask1, spellClassMask2, spellClassMask3, maxTargets, defenseType, preventionType, stanceBarOrder, effectChainAmplitude0, effectChainAmplitude1, effectChainAmplitude2, minFactionId, minReputation, requiredAuraVision,"
+                      "spellClassMask1, spellClassMask2, spellClassMask3, maxTargets, defenseType, preventionType, stanceBarOrder, effectChainAmplitude1, effectChainAmplitude2, effectChainAmplitude3, minFactionId, minReputation, requiredAuraVision,"
                       "totemCategory1, totemCategory2, requiredAreaId, schoolMask, runeCostID, spellMissileID, powerDisplayID, effectBonusMultiplier1, effectBonusMultiplier2, effectBonusMultiplier3, spellDescriptionVariableID, spellDifficultyID"
                       ") VALUES";
 
                 DBCSpell spell;
                 for (u32 i = 0; i < rows; i++)
                 {
+                    u32 fields = dbcReader->GetNumFields();
                     auto row = dbcReader->GetRow(i);
                     spell.Id = row.GetUInt32(0);
                     spell.SpellCategory = row.GetUInt32(1);
@@ -199,8 +200,8 @@ bool LoadSpell(MPQHandler& handler, std::string& sqlOutput)
                     spell.AttributesExE = row.GetUInt32(9);
                     spell.AttributesExF = row.GetUInt32(10);
                     spell.AttributesExG = row.GetUInt32(11);
-                    spell.Stances = row.GetUInt64(12);         // This is 8 bytes wide, so skip 13
-                    spell.ExcludedStances = row.GetUInt64(14); // This is 8 bytes wide, so skip 15
+                    spell.StanceMask = row.GetUInt64(12);         // This is 8 bytes wide, so skip 13
+                    spell.StanceExcludeMask = row.GetUInt64(14); // This is 8 bytes wide, so skip 15
                     spell.Targets = row.GetUInt32(16);
                     spell.TargetCreatureType = row.GetUInt32(17);
                     spell.SpellFocusObject = row.GetUInt32(18);
@@ -359,7 +360,7 @@ bool LoadSpell(MPQHandler& handler, std::string& sqlOutput)
                         ss << ", ";
 
                      ss << "(" << spell.Id << ", " << spell.SpellCategory << ", " << spell.DispelType << ", " << spell.Mechanic << ", " << spell.Attributes << ", " << spell.AttributesExA << ", " << spell.AttributesExB
-                       << ", " << spell.AttributesExC << ", " << spell.AttributesExD << ", " << spell.AttributesExE << ", " << spell.AttributesExF << ", " << spell.AttributesExG << ", " << spell.Stances << ", " << spell.ExcludedStances
+                       << ", " << spell.AttributesExC << ", " << spell.AttributesExD << ", " << spell.AttributesExE << ", " << spell.AttributesExF << ", " << spell.AttributesExG << ", " << spell.StanceMask << ", " << spell.StanceExcludeMask
                        << ", " << spell.Targets << ", " << spell.TargetCreatureType << ", " << spell.SpellFocusObject << ", " << spell.FacingCasterFlags << ", " << spell.CasterAuraState << ", " << spell.TargetAuraState
                        << ", " << spell.CasterAuraStateNot << ", " << spell.TargetAuraStateNot << ", " << spell.CasterAuraSpell << ", " << spell.TargetAuraSpell << ", " << spell.ExcludeCasterAuraSpell << ", " << spell.ExcludeTargetAuraSpell
                        << ", " << spell.CastingTimeIndex << ", " << spell.RecoveryTime << ", " << spell.CategoryRecoveryTime << ", " << spell.InterruptFlags << ", " << spell.AuraInterruptFlags << ", " << spell.ChannelInterruptFlags

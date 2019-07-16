@@ -30,45 +30,56 @@
 #include "MPQArchive.h"
 #include "MPQFile.h"
 
-const char* _wantedMPQs[] = {"patch.MPQ", "patch-2.MPQ", "patch-3.MPQ", "patch-enUS.MPQ", "patch-enUS-2.MPQ", "patch-enUS-3.MPQ", "patch-enGB.MPQ", "patch-enGB-2.MPQ", "patch-enGB-3.MPQ"};
-const i32 _wantedMPQsSize = sizeof(_wantedMPQs) / sizeof(char*);
-
+const std::vector<std::string> MPQArchives = {"patch.MPQ", "patch-2.MPQ", "patch-3.MPQ", "patch-enUS.MPQ", "patch-enUS-2.MPQ", "patch-enUS-3.MPQ", "patch-enGB.MPQ", "patch-enGB-2.MPQ", "patch-enGB-3.MPQ"};
 class MPQHandler
 {
 public:
     MPQHandler() : Archives() {}
 
-    bool IsWantedMPQ(std::string fileName)
+    bool IsMPQWanted(std::string fileName)
     {
-        for (u32 i = 0; i < _wantedMPQsSize; i++)
+        for (i32 i = 0; i < static_cast<i32>(MPQArchives.size()); i++)
         {
-            if (fileName == _wantedMPQs[i])
+            if (fileName == MPQArchives[i])
                 return true;
         }
 
         return false;
+    }
+    i32 GetMPQIndex(std::string fileName)
+    {
+        for (i32 i = 0; i < static_cast<i32>(MPQArchives.size()); i++)
+        {
+            if (fileName == MPQArchives[i])
+                return i;
+        }
+
+        return -1;
     }
 
     bool Load()
     {
         u32 counter = 0;
         std::filesystem::path basePath = std::filesystem::current_path();
+
+        std::vector<MPQArchive> tempList;
         for (const auto& entry : std::filesystem::recursive_directory_iterator(basePath))
         {
             if (entry.is_regular_file())
             {
-                auto file = std::filesystem::path(entry.path());
-                if (IsWantedMPQ(file.filename().string()))
+                std::filesystem::path file = std::filesystem::path(entry.path());
+                std::string fileName = file.filename().string();
+                if (IsMPQWanted(fileName))
                 {
                     try
                     {
                         std::string mpqPath = file.lexically_relative(basePath).string();
 
-                        MPQArchive archive(mpqPath);
+                        MPQArchive archive(mpqPath, fileName);
                         if (archive.Open())
                         {
                             counter++;
-                            Archives.push_back(archive);
+                            tempList.push_back(archive);
                         }
                     }
                     catch (std::exception e)
@@ -77,6 +88,16 @@ public:
                     }
                 }
             }
+        }
+
+        Archives.resize(counter);
+        for (MPQArchive archive : tempList)
+        {
+            i32 mpqIndex = GetMPQIndex(archive.name);
+            if (mpqIndex == -1)
+                continue;
+
+            Archives[mpqIndex] = archive;
         }
 
         return counter != 0;

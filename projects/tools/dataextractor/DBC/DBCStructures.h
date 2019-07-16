@@ -57,8 +57,8 @@ struct DBCSpell
     u32 AttributesExE;
     u32 AttributesExF;
     u32 AttributesExG;
-    u64 Stances;
-    u64 ExcludedStances;
+    u64 StanceMask;
+    u64 StanceExcludeMask;
     u32 Targets;
     u32 TargetCreatureType;
     u32 SpellFocusObject;
