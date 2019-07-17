@@ -80,7 +80,7 @@ void Update(entt::registry& registry)
     view.each([&registry, &singleton, &characterDatabase, &worldDatabase, &dbcDatabase, &playerPacketQueue, &worldNodeHandler, &mapSingleton](const auto, PlayerConnectionComponent& playerConnection, PlayerFieldDataComponent& clientFieldData, PlayerUpdateDataComponent& playerUpdateData, PlayerPositionComponent& playerPositionData) {
         ZoneScopedNC("Connection", tracy::Color::Orange2)
 
-        for (NetPacket& packet : playerConnection.packets)
+            for (NetPacket& packet : playerConnection.packets)
         {
             ZoneScopedNC("Packet", tracy::Color::Orange2)
 
@@ -665,8 +665,12 @@ void Update(entt::registry& registry)
 
                 packet.data->GetU8(castCount);
                 packet.data->GetU32(spellId);
-                packet.data->GetU8(castFlags);          
+                packet.data->GetU8(castFlags);
                 packet.data->GetU32(targetFlags);
+
+                SpellData spellData;
+                if (!dbcDatabase.cache->GetSpellData(spellId, spellData))
+                    continue;
 
                 // As far as I can tell, the client expects SMSG_SPELL_START followed by SMSG_SPELL_GO.
                 std::shared_ptr<ByteBuffer> buffer = ByteBuffer::Borrow<512>();
@@ -676,64 +680,69 @@ void Update(entt::registry& registry)
                 AngelScriptPlayer asPlayer(playerConnection.entityId, &registry);
                 SpellHooks::CallHook(SpellHooks::Hooks::HOOK_ONSPELLCAST, &asPlayer, &asSpell);
 
-                // Handle blink!
-                if (spellId == 1953)
+                for (i32 i = 0; i < SPELL_EFFECTS_COUNT; i++)
                 {
-                    f32 tempHeight = playerPositionData.movementData.position.z;
-                    u32 dest = 20;
-
-                    for (u32 i = 0; i < 20; i++)
+                    if (spellData.Effect[i] == SPELL_EFFECT_LEAP)
                     {
-                        f32 newPositionX = playerPositionData.movementData.position.x + i * Math::Cos(playerPositionData.movementData.orientation);
-                        f32 newPositionY = playerPositionData.movementData.position.y + i * Math::Sin(playerPositionData.movementData.orientation);
-                        Vector2 newPos(newPositionX, newPositionY);
-                        f32 height = mapSingleton.maps[playerPositionData.mapId].GetHeight(newPos);
-                        f32 deltaHeight = Math::Abs(tempHeight - height);
+                        if (spellData.EffectImplicitTargetA[i] != 1 && spellData.EffectImplicitTargetB[i] != 55)
+                            continue;
 
-                        if (deltaHeight <= 2.0f || (i == 0 && deltaHeight <= 20))
+                        f32 tempHeight = playerPositionData.movementData.position.z;
+                        u32 dest = 20;
+
+                        for (u32 i = 0; i < 20; i++)
                         {
-                            dest = i;
-                            tempHeight = height;
+                            f32 newPositionX = playerPositionData.movementData.position.x + i * Math::Cos(playerPositionData.movementData.orientation);
+                            f32 newPositionY = playerPositionData.movementData.position.y + i * Math::Sin(playerPositionData.movementData.orientation);
+                            Vector2 newPos(newPositionX, newPositionY);
+                            f32 height = mapSingleton.maps[playerPositionData.mapId].GetHeight(newPos);
+                            f32 deltaHeight = Math::Abs(tempHeight - height);
+
+                            if (deltaHeight <= 2.0f || (i == 0 && deltaHeight <= 20))
+                            {
+                                dest = i;
+                                tempHeight = height;
+                            }
                         }
-                    }
 
-                    if (dest == 20)
-                    {
-                        buffer->Reset();
-                        buffer->PutU8(castCount);
-                        buffer->PutU32(spellId);
-                        buffer->PutU8(173); // SPELL_FAILED_TRY_AGAIN
+                        if (dest == 20)
+                        {
+                            buffer->Reset();
+                            buffer->PutU8(castCount);
+                            buffer->PutU32(spellId);
+                            buffer->PutU8(173); // SPELL_FAILED_TRY_AGAIN
 
-                        playerConnection.socket->SendPacket(buffer.get(), Opcode::SMSG_CAST_FAILED);
-                        break;
-                    }
+                            playerConnection.socket->SendPacket(buffer.get(), Opcode::SMSG_CAST_FAILED);
+                            break;
+                        }
 
-                    f32 newPositionX = playerPositionData.movementData.position.x + dest * Math::Cos(playerPositionData.movementData.orientation);
-                    f32 newPositionY = playerPositionData.movementData.position.y + dest * Math::Sin(playerPositionData.movementData.orientation);
+                        f32 newPositionX = playerPositionData.movementData.position.x + dest * Math::Cos(playerPositionData.movementData.orientation);
+                        f32 newPositionY = playerPositionData.movementData.position.y + dest * Math::Sin(playerPositionData.movementData.orientation);
 
-                    /*
+                        /*
                                     Adding 2.0f to the final height will solve 90%+ of issues where we fall through the terrain, remove this to fully test blink's capabilities.
                                     This also introduce the bug where after a blink, you might appear a bit over the ground and fall down.
                                 */
-                    Vector2 newPos(newPositionX, newPositionY);
-                    f32 height = mapSingleton.maps[playerPositionData.mapId].GetHeight(newPos);
+                        Vector2 newPos(newPositionX, newPositionY);
+                        f32 height = mapSingleton.maps[playerPositionData.mapId].GetHeight(newPos);
 
-                    buffer->PutGuid(playerConnection.characterGuid);
-                    buffer->PutU32(0); // Teleport Count
+                        buffer->PutGuid(playerConnection.characterGuid);
+                        buffer->PutU32(0); // Teleport Count
 
-                    /* Movement */
-                    buffer->PutU32(0);
-                    buffer->PutU16(0);
-                    buffer->PutU32(static_cast<u32>(singleton.lifeTimeInMS));
+                        /* Movement */
+                        buffer->PutU32(0);
+                        buffer->PutU16(0);
+                        buffer->PutU32(static_cast<u32>(singleton.lifeTimeInMS));
 
-                    buffer->PutF32(newPositionX);
-                    buffer->PutF32(newPositionY);
-                    buffer->PutF32(height);
-                    buffer->PutF32(playerPositionData.movementData.orientation);
+                        buffer->PutF32(newPositionX);
+                        buffer->PutF32(newPositionY);
+                        buffer->PutF32(height);
+                        buffer->PutF32(playerPositionData.movementData.orientation);
 
-                    buffer->PutU32(targetFlags);
+                        buffer->PutU32(targetFlags);
 
-                    playerConnection.socket->SendPacket(buffer.get(), Opcode::MSG_MOVE_TELEPORT_ACK);
+                        playerConnection.socket->SendPacket(buffer.get(), Opcode::MSG_MOVE_TELEPORT_ACK);
+                    }
                 }
 
                 buffer->Reset();

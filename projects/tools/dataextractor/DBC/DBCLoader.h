@@ -52,7 +52,7 @@ bool LoadMap(MPQHandler& handler, std::string& sqlOutput, std::vector<std::strin
                 for (u32 i = 0; i < rows; i++)
                 {
                     auto row = dbcReader->GetRow(i);
-                    //u32 fieldCount = dbcReader->GetNumFields();
+
                     DBCMap map;
                     map.Id = row.GetUInt32(0);
                     map.InternalName = StringUtils::EscapeString(row.GetString(row.GetUInt32(1)));
@@ -186,8 +186,8 @@ bool LoadSpell(MPQHandler& handler, std::string& sqlOutput)
                 DBCSpell spell;
                 for (u32 i = 0; i < rows; i++)
                 {
-                    u32 fields = dbcReader->GetNumFields();
                     auto row = dbcReader->GetRow(i);
+
                     spell.Id = row.GetUInt32(0);
                     spell.SpellCategory = row.GetUInt32(1);
                     spell.DispelType = row.GetUInt32(2);
