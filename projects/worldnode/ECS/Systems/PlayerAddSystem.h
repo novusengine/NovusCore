@@ -35,6 +35,7 @@
 #include "../Components/PlayerSpellStorageComponent.h"
 #include "../Components/PlayerSkillStorageComponent.h"
 #include "../Components/PlayerInitializeComponent.h"
+#include "../Components/AuraListComponent.h"
 #include "../Components/ScriptDataStorageComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
 #include "../Components/Singletons/GuidLookupSingleton.h"
@@ -86,6 +87,7 @@ void Update(entt::registry& registry)
             registry.assign<PlayerSkillStorageComponent>(entityId);
 
             registry.assign<ScriptDataStorageComponent>(entityId);
+            registry.assign<AuraListComponent>(entityId, characterGuid);
 
             singleton.accountToEntityMap[static_cast<u32>(message.account)] = entityId;
             guidLookupSingleton.playerToEntityMap[characterGuid] = entityId;

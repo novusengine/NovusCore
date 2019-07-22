@@ -32,15 +32,15 @@ struct CharacterInfo;
 
 namespace CharacterUtils
 {
-    void GetDisplayIdFromRace(const CharacterInfo characterData, u32& displayId);
-    u8 GetLastMovementTimeIndexFromOpcode(u16 opcode);
-    void BuildSpeedChangePacket(u64 characterGuid, f32 speed, Opcode opcode, std::shared_ptr<ByteBuffer> buffer);
-    void BuildFlyModePacket(u64 characterGuid, std::shared_ptr<ByteBuffer> buffer);
-    template <typename... Args>
-        std::shared_ptr<ByteBuffer> BuildNotificationPacket(std::string message, Args... args);
-    void InvalidatePosition(entt::registry* registry, u32 entityId);
-    void SendPacketToGridPlayers(entt::registry* registry, u32 entityId, std::shared_ptr<ByteBuffer> buffer, u16 opcode, bool excludeSelf = false);
-}
+void GetDisplayIdFromRace(const CharacterInfo characterData, u32& displayId);
+u8 GetLastMovementTimeIndexFromOpcode(u16 opcode);
+void BuildSpeedChangePacket(u64 characterGuid, f32 speed, Opcode opcode, std::shared_ptr<ByteBuffer> buffer);
+void BuildFlyModePacket(u64 characterGuid, std::shared_ptr<ByteBuffer> buffer);
+template <typename... Args>
+std::shared_ptr<ByteBuffer> BuildNotificationPacket(std::string message, Args... args);
+void InvalidatePosition(entt::registry* registry, u32 entityId);
+void SendPacketToGridPlayers(entt::registry* registry, u32 entityId, std::shared_ptr<ByteBuffer> buffer, u16 opcode, bool excludeSelf = false);
+} // namespace CharacterUtils
 
 #include "MapUtils.h"
 #include <Database/Cache/CharacterDatabaseCache.h>
@@ -331,18 +331,30 @@ inline std::shared_ptr<ByteBuffer> BuildNotificationPacket(std::string message, 
 }
 
 // This function will force the clients position to match what we have in our PlayerPositionComponent, use this after serverside movement
-inline void InvalidatePosition(entt::registry* registry, u32 entityId)
+inline void InvalidatePosition(SingletonComponent& singleton, PlayerConnectionComponent& playerConnection, PlayerPositionComponent& playerPositionData)
 {
-    SingletonComponent& singletonData = registry->ctx<SingletonComponent>();
-    PlayerConnectionComponent& playerConnection = registry->get<PlayerConnectionComponent>(entityId);
-    PlayerPositionComponent& playerPositionData = registry->get<PlayerPositionComponent>(entityId);
-
     std::shared_ptr<ByteBuffer> buffer = ByteBuffer::Borrow<101>();
     buffer->PutGuid(playerConnection.characterGuid);
     buffer->PutU32(0); // Teleport Count
 
-    playerPositionData.WriteMovementData(buffer, static_cast<u32>(singletonData.lifeTimeInMS));
+    u32 serverTime = static_cast<u32>(singleton.lifeTimeInMS);
+    playerPositionData.WriteMovementData(buffer, serverTime);
+
+    u32 clientTime = static_cast<u32>(serverTime + playerPositionData.timeOffsetToServer);
+    for (i32 i = 0; i < MAX_MOVEMENT_OPCODES; i++)
+    {
+        playerPositionData.lastMovementOpcodeTime[i] = clientTime;
+    }
+
     playerConnection.socket->SendPacket(buffer.get(), Opcode::MSG_MOVE_TELEPORT_ACK);
+}
+inline void InvalidatePosition(entt::registry* registry, u32 entityId)
+{
+    SingletonComponent& singleton = registry->ctx<SingletonComponent>();
+    PlayerConnectionComponent& playerConnection = registry->get<PlayerConnectionComponent>(entityId);
+    PlayerPositionComponent& playerPositionData = registry->get<PlayerPositionComponent>(entityId);
+
+    InvalidatePosition(singleton, playerConnection, playerPositionData);
 }
 
 inline void SendPacketToGridPlayers(entt::registry* registry, u32 entityId, std::shared_ptr<ByteBuffer> buffer, u16 opcode, bool excludeSelf)

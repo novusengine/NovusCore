@@ -44,6 +44,7 @@
 #include "../Components/PlayerFieldDataComponent.h"
 #include "../Components/PlayerUpdateDataComponent.h"
 #include "../Components/PlayerPositionComponent.h"
+#include "../Components/AuraListComponent.h"
 
 #include "../Components/Singletons/SingletonComponent.h"
 #include "../Components/Singletons/PlayerDeleteQueueSingleton.h"
@@ -451,7 +452,7 @@ void Update(entt::registry& registry)
                 // Find time offset
                 if (playerPositionData.timeOffsetToServer == INVALID_TIME_OFFSET)
                 {
-                    playerPositionData.timeOffsetToServer = static_cast<i32>(singleton.lifeTimeInMS - movementData.gameTime);
+                    playerPositionData.timeOffsetToServer = static_cast<i32>(movementData.gameTime - singleton.lifeTimeInMS);
                 }
 
                 if (movementData.gameTime > opcodeTime)
@@ -680,6 +681,7 @@ void Update(entt::registry& registry)
                 AngelScriptPlayer asPlayer(playerConnection.entityId, &registry);
                 SpellHooks::CallHook(SpellHooks::Hooks::HOOK_ONSPELLCAST, &asPlayer, &asSpell);
 
+                AuraListComponent& auraList = registry.get<AuraListComponent>(playerConnection.entityId);
                 for (i32 i = 0; i < SPELL_EFFECTS_COUNT; i++)
                 {
                     if (spellData.Effect[i] == SPELL_EFFECT_LEAP)
@@ -716,32 +718,23 @@ void Update(entt::registry& registry)
                             break;
                         }
 
+                        /*
+                            Adding 2.0f to the final height will solve 90%+ of issues where we fall through the terrain, remove this to fully test blink's capabilities.
+                            This also introduce the bug where after a blink, you might appear a bit over the ground and fall down.
+                        */
                         f32 newPositionX = playerPositionData.movementData.position.x + dest * Math::Cos(playerPositionData.movementData.orientation);
                         f32 newPositionY = playerPositionData.movementData.position.y + dest * Math::Sin(playerPositionData.movementData.orientation);
-
-                        /*
-                                    Adding 2.0f to the final height will solve 90%+ of issues where we fall through the terrain, remove this to fully test blink's capabilities.
-                                    This also introduce the bug where after a blink, you might appear a bit over the ground and fall down.
-                                */
                         Vector2 newPos(newPositionX, newPositionY);
                         f32 height = mapSingleton.maps[playerPositionData.mapId].GetHeight(newPos);
 
-                        buffer->PutGuid(playerConnection.characterGuid);
-                        buffer->PutU32(0); // Teleport Count
-
-                        /* Movement */
-                        buffer->PutU32(0);
-                        buffer->PutU16(0);
-                        buffer->PutU32(static_cast<u32>(singleton.lifeTimeInMS));
-
-                        buffer->PutF32(newPositionX);
-                        buffer->PutF32(newPositionY);
-                        buffer->PutF32(height);
-                        buffer->PutF32(playerPositionData.movementData.orientation);
-
-                        buffer->PutU32(targetFlags);
-
-                        playerConnection.socket->SendPacket(buffer.get(), Opcode::MSG_MOVE_TELEPORT_ACK);
+                        playerPositionData.movementData.position.x = newPositionX;
+                        playerPositionData.movementData.position.y = newPositionY;
+                        playerPositionData.movementData.position.z = height;
+                        CharacterUtils::InvalidatePosition(singleton, playerConnection, playerPositionData);
+                    }
+                    else if (spellData.Effect[i] == SPELL_EFFECT_APPLY_AURA)
+                    {
+                        auraList.ApplyAura(playerConnection.characterGuid, spellData, i);
                     }
                 }
 
@@ -772,9 +765,51 @@ void Update(entt::registry& registry)
                     targetFlags = 0x02; // UNIT
                 }
                 buffer->PutU32(targetFlags); // Target Flags
-                buffer->PutU8(0);            // Target Flags
-
+                buffer->PutU8(0);
                 CharacterUtils::SendPacketToGridPlayers(&registry, playerConnection.entityId, buffer, Opcode::SMSG_SPELL_GO);
+
+                buffer->Reset();
+                buffer->PutGuid(playerConnection.characterGuid);
+                buffer->PutU8(0); // CastCount
+                buffer->PutU32(spellId);
+                buffer->PutU8(0); // Result
+                CharacterUtils::SendPacketToGridPlayers(&registry, playerConnection.entityId, buffer, Opcode::SMSG_SPELL_FAILURE);
+                CharacterUtils::SendPacketToGridPlayers(&registry, playerConnection.entityId, buffer, Opcode::SMSG_SPELL_FAILED_OTHER);
+                break;
+            }
+            case Opcode::CMSG_CANCEL_AURA:
+            {
+                packet.handled = true;
+
+                u32 spellId = 0;
+                packet.data->GetU32(spellId);
+
+                AuraListComponent& auraList = registry.get<AuraListComponent>(playerConnection.entityId);
+                auraList.RemoveAurasFromSpell(spellId);
+            }
+            case Opcode::CMSG_CONTACT_LIST:
+            {
+                packet.handled = true;
+
+                /*
+                std::shared_ptr<ByteBuffer> friendBuffer = ByteBuffer::Borrow<34>();
+                friendBuffer->PutU32(0x1); // UpdateFlag
+                friendBuffer->PutU32(1); // Total new contacts
+
+                // Loop here for each new contact
+                friendBuffer->PutU64(6); // Contact guid
+                friendBuffer->PutU32(0x1); // Contact social flag (friend, ignore, mute)
+                friendBuffer->PutU8(0); // Contact social note
+
+                friendBuffer->PutU8(1); // Online Status
+
+                // If online
+                friendBuffer->PutU32(3526); // Contact Area Id
+                friendBuffer->PutU32(80); // Contact Level
+                friendBuffer->PutU32(1); // Show Class
+
+                playerConnection.socket->SendPacket(friendBuffer.get(), Opcode::SMSG_CONTACT_LIST);
+                */
                 break;
             }
             default:

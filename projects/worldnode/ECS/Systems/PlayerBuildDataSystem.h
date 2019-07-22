@@ -278,8 +278,8 @@ void Update(entt::registry& registry)
         registry.reset<PlayerInitializeComponent>();
     }
 
-    auto buildUpdateDataView = registry.view<PlayerConnectionComponent, PlayerFieldDataComponent, PlayerPositionComponent, PlayerUpdateDataComponent>();
-    buildUpdateDataView.each([&registry, &mapSingleton, lifeTimeInMS](const auto, PlayerConnectionComponent& playerConnection, PlayerFieldDataComponent& playerFieldData, PlayerPositionComponent& playerPositionData, PlayerUpdateDataComponent& playerUpdateData) {
+    auto buildUpdateDataView = registry.view<PlayerConnectionComponent, PlayerFieldDataComponent, PlayerPositionComponent, PlayerUpdateDataComponent, AuraListComponent>();
+    buildUpdateDataView.each([&registry, &mapSingleton, lifeTimeInMS](const auto, PlayerConnectionComponent& playerConnection, PlayerFieldDataComponent& playerFieldData, PlayerPositionComponent& playerPositionData, PlayerUpdateDataComponent& playerUpdateData, AuraListComponent& playerAuraList) {
         playerFieldData.updateData.ResetBlocks();
 
         Vector2 position = Vector2(playerPositionData.movementData.position.x, playerPositionData.movementData.position.y);
@@ -386,6 +386,22 @@ void Update(entt::registry& registry)
 
                 playerConnection.socket->SendPacket(update.get(), buildOpcode);
             }
+        }
+
+        std::shared_ptr<ByteBuffer> auraBuffer = ByteBuffer::Borrow<32768>();
+        for (i32 i = 0; i < AURALIST_MAX; i++)
+        {
+            AuraData& auraData = playerAuraList.auras[i];
+            if (auraData.IsApplied())
+                auraData.Tick();
+
+            if (!auraData.NeedUpdate())
+                continue;
+
+            auraData.CreateAuraUpdate(auraBuffer, true);
+
+            CharacterUtils::SendPacketToGridPlayers(&registry, playerConnection.entityId, auraBuffer, Opcode::SMSG_AURA_UPDATE);
+            auraBuffer->Reset();
         }
 
         if (!playerUpdateData.positionUpdateData.empty())
