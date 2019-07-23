@@ -5,11 +5,12 @@
 #include "../ECS/Components/ScriptDataStorageComponent.h"
 
 #include <Utils/StringUtils.h>
+#include "../Utils/ServiceLocator.h"
 
 void AngelScriptPlayer::GetData(std::string& key, void* ref, int typeId) const
 {
     u32 keyHash = StringUtils::fnv1a_32(key.c_str(), key.size());
-    ScriptDataStorageComponent& dataStorageComponent = _registry->get<ScriptDataStorageComponent>(_entityId);
+    ScriptDataStorageComponent& dataStorageComponent = ServiceLocator::GetMainRegistry()->get<ScriptDataStorageComponent>(_entityId);
 
     size_t size = 0;
     switch (typeId)
@@ -48,7 +49,7 @@ void AngelScriptPlayer::GetData(std::string& key, void* ref, int typeId) const
 void AngelScriptPlayer::SetData(std::string& key, void* ref, int typeId) const
 {
     u32 keyHash = StringUtils::fnv1a_32(key.c_str(), key.size());
-    ScriptDataStorageComponent& dataStorageComponent = _registry->get<ScriptDataStorageComponent>(_entityId);
+    ScriptDataStorageComponent& dataStorageComponent = ServiceLocator::GetMainRegistry()->get<ScriptDataStorageComponent>(_entityId);
 
     u64 value;
 
@@ -89,37 +90,37 @@ void AngelScriptPlayer::SetData(std::string& key, void* ref, int typeId) const
 
 u32 AngelScriptPlayer::GetMapId() const
 {
-    return _registry->get<PlayerPositionComponent>(_entityId).mapId;
+    return ServiceLocator::GetMainRegistry()->get<PlayerPositionComponent>(_entityId).mapId;
 }
 
 u32 AngelScriptPlayer::GetAdtId() const
 {
-    return _registry->get<PlayerPositionComponent>(_entityId).adtId;
+    return ServiceLocator::GetMainRegistry()->get<PlayerPositionComponent>(_entityId).adtId;
 }
 
 Vector3 AngelScriptPlayer::GetPosition() const
 {
-    PlayerPositionComponent& positionComponent = _registry->get<PlayerPositionComponent>(_entityId);
+    PlayerPositionComponent& positionComponent = ServiceLocator::GetMainRegistry()->get<PlayerPositionComponent>(_entityId);
     return Vector3(positionComponent.movementData.position.x, positionComponent.movementData.position.y, positionComponent.movementData.position.z);
 }
 
 void AngelScriptPlayer::SetPosition(Vector3 pos, bool immediate)
 {
-    PlayerPositionComponent& positionComponent = _registry->get<PlayerPositionComponent>(_entityId);
+    entt::registry* registry = ServiceLocator::GetMainRegistry();
+    PlayerPositionComponent& positionComponent = registry->get<PlayerPositionComponent>(_entityId);
 
     if (immediate)
     {
         positionComponent.movementData.position.x = pos.x;
         positionComponent.movementData.position.y = pos.y;
         positionComponent.movementData.position.z = pos.z;
-        CharacterUtils::InvalidatePosition(_registry, _entityId);
+        CharacterUtils::InvalidatePosition(registry, _entityId);
     }
     else
     {
-        entt::registry* registry = _registry;
         u32 entityId = _entityId;
 
-        _registry->ctx<ScriptSingleton>().AddTransaction([&positionComponent, registry, pos, entityId]() {
+        registry->ctx<ScriptSingleton>().AddTransaction([&positionComponent, registry, pos, entityId]() {
             positionComponent.movementData.position.x = pos.x;
             positionComponent.movementData.position.y = pos.y;
             positionComponent.movementData.position.z = pos.z;
@@ -130,12 +131,13 @@ void AngelScriptPlayer::SetPosition(Vector3 pos, bool immediate)
 
 f32 AngelScriptPlayer::GetOrientation() const
 {
-    return _registry->get<PlayerPositionComponent>(_entityId).movementData.orientation;
+    return ServiceLocator::GetMainRegistry()->get<PlayerPositionComponent>(_entityId).movementData.orientation;
 }
 
 void AngelScriptPlayer::SetOrientation(f32 orientation, bool immediate)
 {
-    PlayerPositionComponent& positionComponent = _registry->get<PlayerPositionComponent>(_entityId);
+    entt::registry* registry = ServiceLocator::GetMainRegistry();
+    PlayerPositionComponent& positionComponent = registry->get<PlayerPositionComponent>(_entityId);
 
     if (immediate)
     {
@@ -143,7 +145,7 @@ void AngelScriptPlayer::SetOrientation(f32 orientation, bool immediate)
     }
     else
     {
-        _registry->ctx<ScriptSingleton>().AddTransaction([&positionComponent, orientation]() {
+        registry->ctx<ScriptSingleton>().AddTransaction([&positionComponent, orientation]() {
             positionComponent.movementData.orientation = orientation;
         });
     }
@@ -151,9 +153,10 @@ void AngelScriptPlayer::SetOrientation(f32 orientation, bool immediate)
 
 void AngelScriptPlayer::SendChatMessage(std::string msg)
 {
-    PlayerConnectionComponent& connectionComponent = _registry->get<PlayerConnectionComponent>(_entityId);
+    entt::registry* registry = ServiceLocator::GetMainRegistry();
+    PlayerConnectionComponent& connectionComponent = registry->get<PlayerConnectionComponent>(_entityId);
 
-    _registry->ctx<ScriptSingleton>().AddTransaction([&connectionComponent, msg]() {
+    registry->ctx<ScriptSingleton>().AddTransaction([&connectionComponent, msg]() {
         connectionComponent.SendChatNotification(msg);
     });
 }

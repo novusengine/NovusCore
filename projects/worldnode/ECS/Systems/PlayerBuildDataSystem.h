@@ -241,7 +241,7 @@ void Update(entt::registry& registry)
         EntityCreateQueueSingleton& entityCreateQueue = registry.ctx<EntityCreateQueueSingleton>();
         CharacterDatabaseCacheSingleton& characterDatabase = registry.ctx<CharacterDatabaseCacheSingleton>();
 
-        buildInitialDataView.each([&registry, &entityCreateQueue, &characterDatabase, lifeTimeInMS](const auto, PlayerInitializeComponent& playerInitializeComponent, PlayerFieldDataComponent& playerFieldData, PlayerPositionComponent& playerPositionData) {
+        buildInitialDataView.each([&entityCreateQueue, &characterDatabase, lifeTimeInMS](const auto, PlayerInitializeComponent& playerInitializeComponent, PlayerFieldDataComponent& playerFieldData, PlayerPositionComponent& playerPositionData) {
             /* Build Self Packet, must be sent immediately */
             u8 updateType = UPDATETYPE_CREATE_OBJECT2;
             u16 updateFlags = (UPDATEFLAG_SELF | UPDATEFLAG_LIVING | UPDATEFLAG_STATIONARY_POSITION);
@@ -252,7 +252,7 @@ void Update(entt::registry& registry)
             playerInitializeComponent.socket->SendPacket(update.get(), buildOpcode);
 
             // Call OnPlayerLogin script hooks
-            AngelScriptPlayer asPlayer(playerInitializeComponent.entityId, &registry);
+            AngelScriptPlayer asPlayer(playerInitializeComponent.entityId);
             PlayerHooks::CallHook(PlayerHooks::Hooks::HOOK_ONPLAYERLOGIN, &asPlayer);
 
             robin_hood::unordered_map<u32, CharacterItemData> characterItemData;
@@ -391,14 +391,14 @@ void Update(entt::registry& registry)
         std::shared_ptr<ByteBuffer> auraBuffer = ByteBuffer::Borrow<32768>();
         for (i32 i = 0; i < AURALIST_MAX; i++)
         {
-            AuraData& auraData = playerAuraList.auras[i];
-            if (auraData.IsApplied())
-                auraData.Tick();
+            Aura& aura = playerAuraList.auras[i];
+            if (aura.IsApplied())
+                aura.Tick();
 
-            if (!auraData.NeedUpdate())
+            if (!aura.NeedUpdate())
                 continue;
 
-            auraData.CreateAuraUpdate(auraBuffer, true);
+            aura.CreateAuraUpdate(auraBuffer, true);
 
             CharacterUtils::SendPacketToGridPlayers(&registry, playerConnection.entityId, auraBuffer, Opcode::SMSG_AURA_UPDATE);
             auraBuffer->Reset();

@@ -87,7 +87,7 @@ void Update(entt::registry& registry)
             registry.assign<PlayerSkillStorageComponent>(entityId);
 
             registry.assign<ScriptDataStorageComponent>(entityId);
-            registry.assign<AuraListComponent>(entityId, characterGuid);
+            registry.assign<AuraListComponent>(entityId, entityId, characterGuid);
 
             singleton.accountToEntityMap[static_cast<u32>(message.account)] = entityId;
             guidLookupSingleton.playerToEntityMap[characterGuid] = entityId;

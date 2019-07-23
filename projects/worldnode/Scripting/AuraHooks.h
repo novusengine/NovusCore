@@ -29,13 +29,12 @@
 #include <array>
 #include <memory>
 
-class PlayerHooks
+class AuraHooks
 {
 public:
     enum Hooks
     {
-        HOOK_ONPLAYERLOGIN,
-        HOOK_ONPLAYERCHAT,
+        HOOK_ON_AURA_APPLIED,
 
         COUNT
     };

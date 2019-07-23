@@ -6,6 +6,7 @@
 #include <Networking/Opcode/Opcode.h>
 #include <tracy/Tracy.hpp>
 #include <Config/ConfigHandler.h>
+#include "Utils/ServiceLocator.h"
 
 // Systems
 #include "ECS/Systems/NetworkPacketSystem.h"
@@ -269,6 +270,8 @@ void WorldNodeHandler::SetupUpdateFramework()
 {
     tf::Framework& framework = _updateFramework.framework;
     entt::registry& registry = _updateFramework.registry;
+
+    ServiceLocator::SetMainRegistry(&registry);
 
     // ConnectionSystem
     tf::Task networkPacketSystemTask = framework.emplace([&registry]() {

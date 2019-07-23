@@ -540,7 +540,7 @@ void Update(entt::registry& registry)
                 playerUpdateData.chatUpdateData.push_back(chatUpdateData);
 
                 // Call OnPlayerChat script hooks
-                AngelScriptPlayer asPlayer(playerConnection.entityId, &registry);
+                AngelScriptPlayer asPlayer(playerConnection.entityId);
                 PlayerHooks::CallHook(PlayerHooks::Hooks::HOOK_ONPLAYERCHAT, &asPlayer, msgOutput);
                 break;
             }
@@ -678,7 +678,7 @@ void Update(entt::registry& registry)
 
                 // Call OnSpellCast script hooks
                 AngelScriptSpell asSpell;
-                AngelScriptPlayer asPlayer(playerConnection.entityId, &registry);
+                AngelScriptPlayer asPlayer(playerConnection.entityId);
                 SpellHooks::CallHook(SpellHooks::Hooks::HOOK_ONSPELLCAST, &asPlayer, &asSpell);
 
                 AuraListComponent& auraList = registry.get<AuraListComponent>(playerConnection.entityId);

@@ -26,6 +26,7 @@
 #include <Networking/ByteBuffer.h>
 #include <Networking/Opcode/Opcode.h>
 #include <Utils/StringUtils.h>
+#include <entt.hpp>
 
 // Forward declarations to avoid circular includes
 struct CharacterInfo;

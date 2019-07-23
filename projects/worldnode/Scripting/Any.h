@@ -3,6 +3,7 @@
 
 class AngelScriptPlayer;
 class AngelScriptSpell;
+class AngelScriptAura;
 
 // WARNING: Please consult with Pursche before using this, it's ugly and only used in scripts for unrolling a variadic template argument list
 class any
@@ -24,7 +25,8 @@ public:
         F64,
         String = 0x400000D,
         Player = 0x4000010,
-        Spell = 0x4000014
+        Spell = 0x4000014,
+        Aura = 0x4000016
     }; // The order of types matches the order found in AngelScripts asETypeIdFlags
     static const size_t TYPECOUNT = 16;
 
@@ -76,6 +78,9 @@ public:
             break;
         case Spell:
             return "AngelScriptSpell";
+            break;
+        case Aura:
+            return "AngelScriptAura";
             break;
         }
         
@@ -156,6 +161,11 @@ public:
         _spell = e;
         _type = Spell;
     }
+    any(AngelScriptAura* e)
+    {
+        _aura = e;
+        _type = Aura;
+    }
 
     Type GetType() const { return _type; }
     u8 GetU8() const { return _data.U8; }
@@ -172,6 +182,7 @@ public:
     std::string& GetString() { return _string; }
     AngelScriptPlayer* GetPlayer() { return _player; }
     AngelScriptSpell* GetSpell() { return _spell; }
+    AngelScriptAura* GetAura() { return _aura; }
 
 private:
     Type _type;
@@ -191,4 +202,5 @@ private:
     std::string _string;
     AngelScriptPlayer* _player;
     AngelScriptSpell* _spell;
+    AngelScriptAura* _aura;
 };

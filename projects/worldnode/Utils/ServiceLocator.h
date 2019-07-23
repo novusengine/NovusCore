@@ -22,52 +22,18 @@
     SOFTWARE.
 */
 #pragma once
-#include <Utils/DebugHandler.h>
-#include "Any.h"
-#include "ScriptEngine.h"
-#include "AngelBinder.h"
-#include <array>
-#include <memory>
+#include <entt.hpp>
 
-class PlayerHooks
+class ServiceLocator
 {
 public:
-    enum Hooks
+    static entt::registry* GetMainRegistry() { return _mainRegistry; }
+    static void SetMainRegistry(entt::registry* registry)
     {
-        HOOK_ONPLAYERLOGIN,
-        HOOK_ONPLAYERCHAT,
-
-        COUNT
-    };
-
-    inline static void Register(Hooks id, asIScriptFunction* func)
-    {
-        _hooks[id].push_back(func);
-    }
-
-    inline static std::vector<asIScriptFunction*>& GetHooks(Hooks id)
-    {
-        return _hooks[id];
-    }
-
-    template <typename... Args>
-    inline static void CallHook(Hooks id, Args... args)
-    {
-        ScriptEngine::CallHook(_hooks, id, args...);
-    }
-
-    inline static void ClearHooks()
-    {
-        for (size_t i = 0; i < Hooks::COUNT; i++)
-        {
-            for (auto function : _hooks[i])
-            {
-                function->Release();
-            }
-            _hooks[i].clear();
-        }
+        assert(_mainRegistry == nullptr);
+        _mainRegistry = registry;
     }
 
 private:
-    static std::array<std::vector<asIScriptFunction*>, Hooks::COUNT> _hooks;
+    static entt::registry* _mainRegistry;
 };

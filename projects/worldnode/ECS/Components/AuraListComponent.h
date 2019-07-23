@@ -28,154 +28,7 @@
 
 #include "../../NovusEnums.h"
 
-enum AuraDataFlags
-{
-    AURADATA_FLAG_NONE = 0x00,
-    AURADATA_FLAG_IS_APPLIED = 0x01,
-    AURADATA_FLAG_IS_SERVERSIDE = 0x02,
-    AURADATA_FLAG_NEED_UPDATE = 0x04
-};
-struct AuraData
-{
-    AuraData() : unitGuid(0), spellData(), effectIndex(0), auraDataFlags(AURADATA_FLAG_NONE), slot(0), flags(AURAFLAG_NONE), casterLevel(0), casterGuid(0), maxDuration(0), duration(0) {}
-
-    // Information for the server
-    u64 unitGuid;
-    SpellData spellData;
-    u8 effectIndex;
-    u8 auraDataFlags;
-
-    // Information for the client
-    u8 slot;
-    u8 flags;
-    u8 casterLevel;
-    u64 casterGuid;
-    i32 maxDuration;
-    i32 duration;
-
-    bool IsApplied()
-    {
-        return (auraDataFlags & AURADATA_FLAG_IS_APPLIED);
-    }
-    bool IsServerside()
-    {
-        return (auraDataFlags & AURADATA_FLAG_IS_SERVERSIDE);
-    }
-    bool NeedUpdate()
-    {
-        return (auraDataFlags & AURADATA_FLAG_NEED_UPDATE);
-    }
-    void SetApplied(bool state)
-    {
-        if (state)
-        {
-            auraDataFlags |= AURADATA_FLAG_IS_APPLIED;
-
-            if (spellData.EffectApplyAuraName[effectIndex] == SPELL_AURA_FLY)
-            {
-                
-            }
-        }
-        else
-        {
-            auraDataFlags &= ~AURADATA_FLAG_IS_APPLIED;
-
-            if (spellData.EffectApplyAuraName[effectIndex] == SPELL_AURA_FLY)
-            {
-
-            }
-        }
-    }
-    void SetUpdate(bool state)
-    {
-        assert(!IsServerside());
-
-        if (state)
-        {
-            auraDataFlags |= AURADATA_FLAG_NEED_UPDATE;
-        }
-        else
-        {
-            auraDataFlags &= ~AURADATA_FLAG_NEED_UPDATE;
-        }
-    }
-
-    bool IsEffect_1()
-    {
-        return (flags & AURAFLAG_EFFECT_INDEX_1);
-    }
-    bool IsEffect_2()
-    {
-        return (flags & AURAFLAG_EFFECT_INDEX_2);
-    }
-    bool IsEffect_3()
-    {
-        return (flags & AURAFLAG_EFFECT_INDEX_3);
-    }
-    bool IsSelfCast()
-    {
-        return (flags & AURAFLAG_IS_CASTER);
-    }
-    bool IsPositive()
-    {
-        return (flags & AURAFLAG_IS_POSITIVE);
-    }
-    bool HasDuration()
-    {
-        return (flags & AURAFLAG_HAS_DURATION);
-    }
-    bool IsNegative()
-    {
-        return (flags & AURAFLAG_IS_NEGATIVE);
-    }
-
-    void UnApply()
-    {
-        assert(IsApplied());
-
-        SetApplied(false);
-
-        if (!IsServerside())
-            SetUpdate(true);
-    }
-    void CreateAuraUpdate(std::shared_ptr<ByteBuffer> auraBuffer, bool includeGuid = false)
-    {
-        assert(NeedUpdate());
-
-        if (includeGuid)
-        {
-            auraBuffer->PutGuid(unitGuid);
-        }
-
-        auraBuffer->PutU8(slot);
-        if (IsApplied())
-        {
-            auraBuffer->PutU32(spellData.Id);
-            auraBuffer->PutU8(flags);
-            auraBuffer->PutU8(casterLevel);
-            auraBuffer->PutU8(spellData.StackAmount);
-
-            if (!IsSelfCast())
-            {
-                auraBuffer->PutGuid(casterGuid);
-            }
-
-            if (HasDuration())
-            {
-                auraBuffer->PutI32(maxDuration);
-                auraBuffer->PutI32(duration);
-            }
-        }
-        else
-        {
-            auraBuffer->PutU32(0);
-        }
-
-        auraDataFlags &= ~AURADATA_FLAG_NEED_UPDATE;
-    }
-
-    void Tick() {}
-};
+#include "../../Game/Aura.h"
 
 #define AURALIST_MAX 255
 struct AuraListComponent
@@ -186,40 +39,41 @@ struct AuraListComponent
         if (availableSlot == -1)
             return false;
 
-        AuraData& auraData = auras[availableSlot];
-        auraData.unitGuid = unitGuid;
-        auraData.spellData = spellData;
-        auraData.effectIndex = effectIndex;
-        auraData.auraDataFlags = AURADATA_FLAG_NONE;
+        Aura& aura = auras[availableSlot];
+        aura.entityId = entityId;
+        aura.unitGuid = unitGuid;
+        aura.spellData = spellData;
+        aura.effectIndex = effectIndex;
+        aura.serverFlags = AURA_SERVER_FLAG_NONE;
 
         if (spellData.Attributes & 0x40) // 0x40 is the flag for passive auras
-            auraData.auraDataFlags |= AURADATA_FLAG_IS_SERVERSIDE;
+            aura.serverFlags |= AURA_SERVER_FLAG_IS_SERVERSIDE;
 
-        auraData.slot = availableSlot;
-        auraData.flags = AURAFLAG_NONE;
+        aura.slot = availableSlot;
+        aura.clientFlags = AURA_CLIENT_FLAG_NONE;
 
         if (unitGuid == casterGuid)
-            auraData.flags |= AURAFLAG_IS_CASTER;
+            aura.clientFlags |= AURA_CLIENT_FLAG_IS_CASTER;
 
         if (effectIndex == 0)
-            auraData.flags |= AURAFLAG_EFFECT_INDEX_1;
+            aura.clientFlags |= AURA_CLIENT_FLAG_EFFECT_INDEX_1;
         else if (effectIndex == 1)
-            auraData.flags |= AURAFLAG_EFFECT_INDEX_2;
+            aura.clientFlags |= AURA_CLIENT_FLAG_EFFECT_INDEX_2;
         else if (effectIndex == 2)
-            auraData.flags |= AURAFLAG_EFFECT_INDEX_3;
+            aura.clientFlags |= AURA_CLIENT_FLAG_EFFECT_INDEX_3;
 
         // We need a way to identify if a spell effect is positive or negative.
-        auraData.flags |= AURAFLAG_IS_POSITIVE;
+        aura.clientFlags |= AURA_CLIENT_FLAG_IS_POSITIVE;
 
-        auraData.casterLevel = spellData.SpellLevel;
-        auraData.casterGuid = casterGuid;
-        auraData.maxDuration = 0; // This should be set to the actual duration ID, and not the duration Index. spellData.DurationIndex;
-        auraData.duration = 0;
+        aura.casterLevel = spellData.SpellLevel;
+        aura.casterGuid = casterGuid;
+        aura.maxDuration = 0; // This should be set to the actual duration ID, and not the duration Index. spellData.DurationIndex;
+        aura.duration = 0;
 
-        auraData.SetApplied(true);
+        aura.SetApplied(true);
 
-        if (!auraData.IsServerside())
-            auraData.SetUpdate(true);
+        if (!aura.IsServerside())
+            aura.SetUpdate(true);
         return true;
     }
     bool ApplyAurasFromSpell(u64 casterGuid, SpellData spellData)
@@ -243,16 +97,16 @@ struct AuraListComponent
     {
         for (i32 i = 0; i < AURALIST_MAX; i++)
         {
-            AuraData& auraData = auras[i];
-            if (!auraData.IsApplied())
+            Aura& aura = auras[i];
+            if (!aura.IsApplied())
                 continue;
 
-            if (auraData.spellData.Id == spellId && auraData.effectIndex == effectIndex)
+            if (aura.spellData.Id == spellId && aura.effectIndex == effectIndex)
             {
-                auraData.SetApplied(false);
+                aura.SetApplied(false);
 
-                if (!auraData.IsServerside())
-                    auraData.SetUpdate(true);
+                if (!aura.IsServerside())
+                    aura.SetUpdate(true);
 
                 return true;
             }
@@ -265,16 +119,16 @@ struct AuraListComponent
         bool unApplied = false;
         for (i32 i = 0; i < AURALIST_MAX; i++)
         {
-            AuraData& auraData = auras[i];
-            if (!auraData.IsApplied())
+            Aura& aura = auras[i];
+            if (!aura.IsApplied())
                 continue;
 
-            if (auraData.spellData.Id == spellId)
+            if (aura.spellData.Id == spellId)
             {
-                auraData.SetApplied(false);
+                aura.SetApplied(false);
 
-                if (!auraData.IsServerside())
-                    auraData.SetUpdate(true);
+                if (!aura.IsServerside())
+                    aura.SetUpdate(true);
 
                 unApplied = true;
             }
@@ -287,8 +141,8 @@ struct AuraListComponent
     {
         for (i32 i = 0; i < AURALIST_MAX; i++)
         {
-            AuraData& auraData = auras[i];
-            if (!auraData.IsApplied())
+            Aura& aura = auras[i];
+            if (!aura.IsApplied())
                 return i;
         }
 
@@ -299,11 +153,11 @@ struct AuraListComponent
         i32 auraIndex = -1;
         for (i32 i = 0; i < AURALIST_MAX; i++)
         {
-            AuraData& auraData = auras[i];
-            if (!auraData.IsApplied())
+            Aura& aura = auras[i];
+            if (!aura.IsApplied())
                 continue;
 
-            if (auraData.spellData.Id == spellId && auraData.effectIndex == effectIndex)
+            if (aura.spellData.Id == spellId && aura.effectIndex == effectIndex)
             {
                 auraIndex = i;
                 break;
@@ -321,27 +175,27 @@ struct AuraListComponent
     {
         for (i32 i = 0; i < AURALIST_MAX; i++)
         {
-            AuraData& auraData = auras[i];
-            if (!auraData.IsApplied())
+            Aura& aura = auras[i];
+            if (!aura.IsApplied())
                 continue;
 
-            if (auraData.spellData.Id == spellId)
+            if (aura.spellData.Id == spellId)
                 return true;
         }
 
         return false;
     }
-    bool GetAuraBySpellId(u32 spellId, AuraData& outAuraData)
+    bool GetAuraBySpellId(u32 spellId, Aura& outAura)
     {
         for (i32 i = 0; i < AURALIST_MAX; i++)
         {
-            AuraData& auraData = auras[i];
-            if (!auraData.IsApplied())
+            Aura& aura = auras[i];
+            if (!aura.IsApplied())
                 continue;
 
-            if (auraData.spellData.Id == spellId)
+            if (aura.spellData.Id == spellId)
             {
-                outAuraData = auraData;
+                outAura = aura;
                 return true;
             }
         }
@@ -353,8 +207,8 @@ struct AuraListComponent
     {
         for (i32 i = 0; i < AURALIST_MAX; i++)
         {
-            AuraData& auraData = auras[i];
-            if (auraData.NeedUpdate())
+            Aura& aura = auras[i];
+            if (aura.NeedUpdate())
                 return true;
         }
 
@@ -367,17 +221,18 @@ struct AuraListComponent
         buffer->PutGuid(unitGuid);
         for (i32 i = 0; i < AURALIST_MAX; i++)
         {
-            AuraData& auraData = auras[i];
-            if (!auraData.NeedUpdate())
+            Aura& aura = auras[i];
+            if (!aura.NeedUpdate())
                 continue;
 
-            auraData.CreateAuraUpdate(buffer);
+            aura.CreateAuraUpdate(buffer);
             writtenAuras++;
         }
 
         return writtenAuras != 0;
     }
 
+    u64 entityId;
     u64 unitGuid;
-    AuraData auras[AURALIST_MAX];
+    Aura auras[AURALIST_MAX];
 };
