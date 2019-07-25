@@ -232,7 +232,7 @@ struct AuraListComponent
         return writtenAuras != 0;
     }
 
-    u64 entityId;
+    u32 entityId;
     u64 unitGuid;
     Aura auras[AURALIST_MAX];
 };

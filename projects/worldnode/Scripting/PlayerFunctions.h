@@ -67,16 +67,17 @@ private:
 
 namespace GlobalFunctions
 {
-    inline void RegisterPlayerCallback(u32 callbackId, asIScriptFunction* callback)
-    {
-        PlayerHooks::Register(static_cast<PlayerHooks::Hooks>(callbackId), callback);
-    }
+inline void RegisterPlayerCallback(u32 callbackId, asIScriptFunction* callback)
+{
+    PlayerHooks::Register(static_cast<PlayerHooks::Hooks>(callbackId), callback);
+}
 } // namespace GlobalFunctions
 
 inline void RegisterPlayerFunctions(AB_NAMESPACE_QUALIFIER Engine* engine)
 {
     // Register Player type
     engine->asEngine()->RegisterObjectType("Player", sizeof(AngelScriptPlayer), asOBJ_VALUE | asOBJ_POD | asGetTypeTraits<AngelScriptPlayer>());
+    engine->RegisterObjectHash<AngelScriptPlayer*>("Player"_h);
 
     // Register functions for Player type
     engine->asEngine()->RegisterObjectMethod("Player", "void GetData(string key, ?&out)", asMETHOD(AngelScriptPlayer, GetData), asCALL_THISCALL);

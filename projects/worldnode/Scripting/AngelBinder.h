@@ -408,6 +408,9 @@ private:
     /// Modules
     std::unordered_map<std::string, Module*> _modules;
 
+    // Type Hashes
+    std::unordered_map<u32, size_t> _typeHashes;
+
     /// Stores the context pool
     ContextPool _pool;
 
@@ -460,6 +463,19 @@ public:
     ///
     Context* getContext();
     Context* getContext(int function);
+
+    template <typename T>
+    void RegisterObjectHash(u32 nameHash)
+    {
+        _typeHashes[nameHash] = typeid(T).hash_code();
+    }
+
+    size_t GetTypeHash(u32 nameHash)
+    {
+        assert(_typeHashes.find(nameHash) != _typeHashes.end());
+
+        return _typeHashes[nameHash];
+    }
 };
 
 ///

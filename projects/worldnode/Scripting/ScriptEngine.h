@@ -28,6 +28,7 @@
 #include <Utils/SharedPool.h>
 #include "AngelBinder.h"
 #include <asio.hpp>
+#include <any>
 
 typedef void(func_t)(AB_NAMESPACE_QUALIFIER Engine*);
 
@@ -48,7 +49,7 @@ public:
     template <typename Hooks, typename... Args>
     inline static void CallHook(std::array<std::vector<asIScriptFunction*>, Hooks::COUNT>& hooks, Hooks id, Args... args)
     {
-        std::vector<any> arguments = {args...};
+        std::vector<std::any> arguments = {args...};
 
         for (auto function : hooks[id])
         {
@@ -64,68 +65,67 @@ public:
                 {
                     int paramTypeId;
                     function->GetParam(i++, &paramTypeId);
-                    size_t argTypeId = argument.GetType();
 
-                    if (paramTypeId != argTypeId)
+                    const char* paramName = ScriptEngine::GetScriptEngine()->asEngine()->GetTypeInfoById(paramTypeId)->GetName();
+
+                    std::string paramNameStr = {paramName};
+                    size_t paramTypeHash = ScriptEngine::GetScriptEngine()->GetTypeHash(StringUtils::fnv1a_32(paramNameStr.c_str(), paramNameStr.length()));
+
+                    size_t argTypeHash = argument.type().hash_code();
+
+                    /*if (argTypeId == 4943240964316174447u) // AngelScriptPlayer
+                        argTypeId = 67108880;
+                    else if (argTypeId == 10283618467285603348u) // std::string
+                        argTypeId = 67108877;*/
+
+                    if (paramTypeHash != argTypeHash)
                     {
-                        NC_LOG_FATAL("When trying to call function '%s', argument %u expects type %s but gets type %s", function->GetName(), i, any::GetTypeName(paramTypeId), any::GetTypeName(argTypeId));
+                        std::string argName = argument.type().name();
+                        NC_LOG_FATAL("When trying to call function '%s', argument %u expects type %s but gets type %s", function->GetName(), i, paramNameStr.c_str(), argName.c_str());
                     }
 
-                    #ifdef NC_Debug
-                    volatile std::string paramName = any::GetTypeName(paramTypeId);
-                    volatile std::string argName = any::GetTypeName(argTypeId);
-                    #endif
+#ifdef NC_Debug
+                    //volatile std::string paramName = any::GetTypeName(paramTypeId);
+                    //volatile std::string argName = any::GetTypeName(argTypeId);
+#endif
 
-                    assert(paramTypeId == argTypeId);
+                    assert(paramTypeHash == argTypeHash);
 
-                    switch (argTypeId)
+                    if (!argument.has_value())
+                        continue;
+
+                    if (argTypeHash == typeid(u8).hash_code())
+                        context->setByte(std::any_cast<u8>(argument));
+                    else if (argTypeHash == typeid(u16).hash_code())
+                        context->setWord(std::any_cast<u16>(argument));
+                    else if (argTypeHash == typeid(u32).hash_code())
+                        context->setWord(std::any_cast<u32>(argument));
+                    else if (argTypeHash == typeid(u64).hash_code())
+                        context->setWord(std::any_cast<u64>(argument));
+                    else if (argTypeHash == typeid(i8).hash_code())
+                        context->setWord(std::any_cast<i8>(argument));
+                    else if (argTypeHash == typeid(i16).hash_code())
+                        context->setWord(std::any_cast<i16>(argument));
+                    else if (argTypeHash == typeid(i32).hash_code())
+                        context->setWord(std::any_cast<i32>(argument));
+                    else if (argTypeHash == typeid(i64).hash_code())
+                        context->setWord(std::any_cast<i64>(argument));
+                    else if (argTypeHash == typeid(bool).hash_code())
+                        context->setWord(std::any_cast<bool>(argument));
+                    else if (argTypeHash == typeid(std::string).hash_code())
                     {
-                    case any::U8:
-                        context->setByte(argument.GetU8());
-                        break;
-                    case any::U16:
-                        context->setWord(argument.GetU16());
-                        break;
-                    case any::U32:
-                        context->setDWord(argument.GetU32());
-                        break;
-                    case any::U64:
-                        context->setQWord(argument.GetU64());
-                        break;
-                    case any::I8:
-                        context->setByte(argument.GetI8());
-                        break;
-                    case any::I16:
-                        context->setWord(argument.GetI16());
-                        break;
-                    case any::I32:
-                        context->setDWord(argument.GetI32());
-                        break;
-                    case any::I64:
-                        context->setQWord(argument.GetI64());
-                        break;
-                    case any::F32:
-                        context->setFloat(argument.GetF32());
-                        break;
-                    case any::F64:
-                        context->setDouble(argument.GetF64());
-                        break;
-                    case any::Bool:
-                        context->setBool(argument.GetBool());
-                        break;
-                    case any::String:
-                        context->setObject(&argument.GetString());
-                        break;
-                    case any::Player:
-                        context->setObject(argument.GetPlayer());
-                        break;
-                    case any::Spell:
-                        context->setObject(argument.GetSpell());
-                        break;
-                    case any::Aura:
-                        context->setObject(argument.GetAura());
+                        std::string string = std::any_cast<std::string>(argument);
+                        context->setObject(&string);
                         break;
                     }
+                    else if (argTypeHash == typeid(AngelScriptPlayer).hash_code())
+                        context->setObject(std::any_cast<AngelScriptPlayer*>(argument));
+                    else if (argTypeHash == typeid(AngelScriptSpell).hash_code())
+                        context->setObject(std::any_cast<AngelScriptSpell*>(argument));
+                    else if (argTypeHash == typeid(AngelScriptAura).hash_code())
+                        context->setObject(std::any_cast<AngelScriptAura*>(argument));
+                    else
+                        assert(false);
                 }
 
                 context->execute();
