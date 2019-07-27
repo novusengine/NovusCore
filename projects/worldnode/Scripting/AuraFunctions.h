@@ -55,7 +55,7 @@ inline void RegisterAuraCallback(u32 callbackId, asIScriptFunction* callback)
     AuraHooks::Register(static_cast<AuraHooks::Hooks>(callbackId), callback);
 }
 } // namespace GlobalFunctions
-
+    
 inline void RegisterAuraFunctions(AB_NAMESPACE_QUALIFIER Engine* engine)
 {
     // Register Aura types

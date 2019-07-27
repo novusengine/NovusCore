@@ -23,6 +23,7 @@
 */
 #pragma once
 #include <Utils/DebugHandler.h>
+#include "../Utils/SpellLoader.h"
 #include "ScriptEngine.h"
 #include "AngelBinder.h"
 #include <array>

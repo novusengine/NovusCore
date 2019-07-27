@@ -4741,7 +4741,7 @@ int asCScriptEngine::GetTypeIdFromDataType(const asCDataType& dtIn) const
 
     if (dtIn.GetHash() != 0)
     {
-        return dtIn.GetHash();
+        return (int)dtIn.GetHash();
     }
 
     int typeId = -1;

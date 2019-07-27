@@ -91,10 +91,6 @@ void WorldNodeHandler::Run()
     realmserverAddress = inet_addr(realmserverIp.c_str());
     realmserverPort += 1;
 
-    std::string scriptDirectory = ConfigHandler::GetOption<std::string>("path", "scripts");
-    ScriptHandler::SetRegistry(&_updateFramework.registry);
-    ScriptHandler::LoadScriptDirectory(scriptDirectory);
-
     CharacterDatabaseCacheSingleton& characterDatabaseCacheSingleton = _updateFramework.registry.set<CharacterDatabaseCacheSingleton>();
     characterDatabaseCacheSingleton.cache = new CharacterDatabaseCache();
     characterDatabaseCacheSingleton.cache->Load();
@@ -114,6 +110,15 @@ void WorldNodeHandler::Run()
         _outputQueue.enqueue(exitMessage);
         return;*/
     }
+
+    if (!_spellLoader.Load(_updateFramework.registry))
+    {
+        
+    }
+
+    std::string scriptDirectory = ConfigHandler::GetOption<std::string>("path", "scripts");
+    ScriptHandler::SetRegistry(&_updateFramework.registry);
+    ScriptHandler::LoadScriptDirectory(scriptDirectory);
 
     SingletonComponent& singletonComponent = _updateFramework.registry.set<SingletonComponent>();
     singletonComponent.worldNodeHandler = this;

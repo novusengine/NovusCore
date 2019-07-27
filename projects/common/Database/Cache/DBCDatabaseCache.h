@@ -355,6 +355,7 @@ public:
 
     // Spell Data cache
     bool GetSpellData(u32 spellId, SpellData& output);
+    robin_hood::unordered_map<u32, SpellData>& GetSpellDatas() { return _spellDataCache; }
 
 private:
     robin_hood::unordered_map<u32, MapData> _mapDataCache;
