@@ -71,8 +71,10 @@ namespace GlobalFunctions
 inline void RegisterSpellFunctions(AB_NAMESPACE_QUALIFIER Engine* engine)
 {
     // Register Spell types
-    engine->asEngine()->RegisterObjectType("SpellTemplate", sizeof(AngelScriptSpell), asOBJ_VALUE | asOBJ_POD | asGetTypeTraits<AngelScriptSpellTemplate>());
+    engine->asEngine()->RegisterObjectType("SpellTemplate", sizeof(AngelScriptSpellTemplate), asOBJ_VALUE | asOBJ_POD | asGetTypeTraits<AngelScriptSpellTemplate>());
+    engine->RegisterObjectHash<AngelScriptSpellTemplate*>("SpellTemplate"_h);
     engine->asEngine()->RegisterObjectType("Spell", sizeof(AngelScriptSpell), asOBJ_VALUE | asOBJ_POD | asGetTypeTraits<AngelScriptSpell>());
+    engine->RegisterObjectHash<AngelScriptSpell*>("Spell"_h);
 
     // Register functions for Player type
     engine->asEngine()->RegisterObjectMethod("Spell", "void GetData(string key, ?&out)", asMETHOD(AngelScriptSpell, GetData), asCALL_THISCALL);

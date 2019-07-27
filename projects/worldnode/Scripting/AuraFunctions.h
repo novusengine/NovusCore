@@ -60,6 +60,7 @@ inline void RegisterAuraFunctions(AB_NAMESPACE_QUALIFIER Engine* engine)
 {
     // Register Aura types
     engine->asEngine()->RegisterObjectType("Aura", sizeof(AngelScriptAura), asOBJ_VALUE | asOBJ_POD | asGetTypeTraits<AngelScriptAura>());
+    engine->RegisterObjectHash<AngelScriptAura*>("Aura"_h);
 
     // Register functions for Aura type
     engine->asEngine()->RegisterObjectMethod("Aura", "void GetData(string key, ?&out)", asMETHOD(AngelScriptAura, GetData), asCALL_THISCALL);

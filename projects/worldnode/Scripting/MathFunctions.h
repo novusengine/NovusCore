@@ -75,11 +75,31 @@ static void Vector3InitConstructor(Vector3* self, float x, float y, float z)
 
 void RegisterMathTypes(AB_NAMESPACE_QUALIFIER Engine* engine)
 {
+    // Register object hashes for primitives
+    engine->RegisterObjectHash<i8>("int8"_h);
+    engine->RegisterObjectHash<i16>("int16"_h);
+    engine->RegisterObjectHash<i32>("int"_h);
+    engine->RegisterObjectHash<i32>("int32"_h);
+    engine->RegisterObjectHash<i64>("int64"_h);
+
+    engine->RegisterObjectHash<u8>("uint8"_h);
+    engine->RegisterObjectHash<u16>("uint16"_h);
+    engine->RegisterObjectHash<u32>("uint"_h);
+    engine->RegisterObjectHash<u32>("uint32"_h);
+    engine->RegisterObjectHash<u64>("uint64"_h);
+
+    engine->RegisterObjectHash<f32>("float"_h);
+    engine->RegisterObjectHash<f64>("double"_h);
+
+    engine->RegisterObjectHash<bool>("bool"_h);
+    engine->RegisterObjectHash<std::string>("string"_h);
+
     int r;
 
     /// Vector2
     r = engine->asEngine()->RegisterObjectType("Vector2", sizeof(Vector2), asOBJ_VALUE | asOBJ_POD | asGetTypeTraits<Vector2>());
     assert(r >= 0);
+    engine->RegisterObjectHash<Vector2*>("Vector2"_h);
 
     // variables
     r = engine->asEngine()->RegisterObjectProperty("Vector2", "float x", asOFFSET(Vector2, x));
@@ -140,6 +160,7 @@ void RegisterMathTypes(AB_NAMESPACE_QUALIFIER Engine* engine)
     /// Vector3
     r = engine->asEngine()->RegisterObjectType("Vector3", sizeof(Vector3), asOBJ_VALUE | asOBJ_POD | asOBJ_APP_CLASS_CAK | asOBJ_APP_CLASS_ALLFLOATS /*asGetTypeTraits<Vector3>()*/);
     assert(r >= 0);
+    engine->RegisterObjectHash<Vector3*>("Vector3"_h);
 
     // variables
     r = engine->asEngine()->RegisterObjectProperty("Vector3", "float x", asOFFSET(Vector3, x));

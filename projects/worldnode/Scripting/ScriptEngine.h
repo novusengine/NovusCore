@@ -36,7 +36,11 @@ class NovusConnection;
 class ScriptEngine
 {
 public:
-    static func_t* GetRegisterFunction() { return _registerFunction; }
+
+    static func_t* GetRegisterFunction()
+    {
+        return _registerFunction;
+    }
     static void SetRegisterFunction(func_t* func) { _registerFunction = func; }
 
     static AB_NAMESPACE_QUALIFIER Engine* GetScriptEngine();
@@ -118,11 +122,11 @@ public:
                         context->setObject(&string);
                         break;
                     }
-                    else if (argTypeHash == typeid(AngelScriptPlayer).hash_code())
+                    else if (argTypeHash == typeid(AngelScriptPlayer*).hash_code())
                         context->setObject(std::any_cast<AngelScriptPlayer*>(argument));
-                    else if (argTypeHash == typeid(AngelScriptSpell).hash_code())
+                    else if (argTypeHash == typeid(AngelScriptSpell*).hash_code())
                         context->setObject(std::any_cast<AngelScriptSpell*>(argument));
-                    else if (argTypeHash == typeid(AngelScriptAura).hash_code())
+                    else if (argTypeHash == typeid(AngelScriptAura*).hash_code())
                         context->setObject(std::any_cast<AngelScriptAura*>(argument));
                     else
                         assert(false);
