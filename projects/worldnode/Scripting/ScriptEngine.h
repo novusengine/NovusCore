@@ -33,6 +33,7 @@
 typedef void(func_t)(AB_NAMESPACE_QUALIFIER Engine*);
 
 class NovusConnection;
+class AngelScriptSpell;
 class ScriptEngine
 {
 public:
@@ -76,11 +77,6 @@ public:
                     size_t paramTypeHash = ScriptEngine::GetScriptEngine()->GetTypeHash(StringUtils::fnv1a_32(paramNameStr.c_str(), paramNameStr.length()));
 
                     size_t argTypeHash = argument.type().hash_code();
-
-                    /*if (argTypeId == 4943240964316174447u) // AngelScriptPlayer
-                        argTypeId = 67108880;
-                    else if (argTypeId == 10283618467285603348u) // std::string
-                        argTypeId = 67108877;*/
 
                     if (paramTypeHash != argTypeHash)
                     {

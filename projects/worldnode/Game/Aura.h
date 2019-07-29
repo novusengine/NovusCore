@@ -29,6 +29,7 @@
 #include "../NovusEnums.h"
 
 #include "../Scripting/AuraFunctions.h"
+#include "../Scripting/PlayerFunctions.h"
 
 enum AuraServerFlags
 {
@@ -70,22 +71,23 @@ struct Aura
     }
     void SetApplied(bool state)
     {
+        assert(entityId != 0);
+        AngelScriptPlayer asPlayer(entityId);
+        AngelScriptAura asAura(this);
+
         if (state)
         {
             serverFlags |= AURA_SERVER_FLAG_IS_APPLIED;
 
-            assert(entityId != 0);
-            AngelScriptPlayer asPlayer(entityId);
-            AngelScriptAura asAura(this);
+            AuraEffectHooks::CallHook(AuraEffectHooks::Hooks::HOOK_ON_AURA_EFFECT_APPLIED, spellData.EffectApplyAuraName[effectIndex], &asPlayer, &asAura);
             AuraHooks::CallHook(AuraHooks::Hooks::HOOK_ON_AURA_APPLIED, &asPlayer, &asAura);
         }
         else
         {
             serverFlags &= ~AURA_SERVER_FLAG_IS_APPLIED;
 
-            if (spellData.EffectApplyAuraName[effectIndex] == SPELL_AURA_FLY)
-            {
-            }
+            AuraEffectHooks::CallHook(AuraEffectHooks::Hooks::HOOK_ON_AURA_EFFECT_REMOVED, spellData.EffectApplyAuraName[effectIndex], &asPlayer, &asAura);
+            AuraHooks::CallHook(AuraHooks::Hooks::HOOK_ON_AURA_REMOVED, &asPlayer, &asAura);
         }
     }
     void SetUpdate(bool state)

@@ -3,6 +3,7 @@
 #include "../Utils/CharacterUtils.h"
 #include "../ECS/Components/Singletons/ScriptSingleton.h"
 #include "../ECS/Components/ScriptDataStorageComponent.h"
+#include "../ECS/Components/PlayerFieldDataComponent.h"
 
 #include <Utils/StringUtils.h>
 #include "../Utils/ServiceLocator.h"
@@ -103,7 +104,6 @@ Vector3 AngelScriptPlayer::GetPosition() const
     PlayerPositionComponent& positionComponent = ServiceLocator::GetMainRegistry()->get<PlayerPositionComponent>(_entityId);
     return Vector3(positionComponent.movementData.position.x, positionComponent.movementData.position.y, positionComponent.movementData.position.z);
 }
-
 void AngelScriptPlayer::SetPosition(Vector3 pos, bool immediate)
 {
     entt::registry* registry = ServiceLocator::GetMainRegistry();
@@ -133,7 +133,6 @@ f32 AngelScriptPlayer::GetOrientation() const
 {
     return ServiceLocator::GetMainRegistry()->get<PlayerPositionComponent>(_entityId).movementData.orientation;
 }
-
 void AngelScriptPlayer::SetOrientation(f32 orientation, bool immediate)
 {
     entt::registry* registry = ServiceLocator::GetMainRegistry();
@@ -147,6 +146,168 @@ void AngelScriptPlayer::SetOrientation(f32 orientation, bool immediate)
     {
         registry->ctx<ScriptSingleton>().AddTransaction([&positionComponent, orientation]() {
             positionComponent.movementData.orientation = orientation;
+        });
+    }
+}
+
+i32 AngelScriptPlayer::GetDisplayId() const
+{
+    return ServiceLocator::GetMainRegistry()->get<PlayerFieldDataComponent>(_entityId).GetFieldValue<i32>(UNIT_FIELD_DISPLAYID);
+}
+void AngelScriptPlayer::SetDisplayId(i32 displayId, bool immediate)
+{
+    entt::registry* registry = ServiceLocator::GetMainRegistry();
+    PlayerFieldDataComponent& playerFieldData = registry->get<PlayerFieldDataComponent>(_entityId);
+
+    if (immediate)
+    {
+        playerFieldData.SetFieldValue<i32>(UNIT_FIELD_DISPLAYID, displayId);
+    }
+    else
+    {
+        registry->ctx<ScriptSingleton>().AddTransaction([&playerFieldData, displayId]() {
+            playerFieldData.SetFieldValue<i32>(UNIT_FIELD_DISPLAYID, displayId);
+        });
+    }
+}
+i32 AngelScriptPlayer::GetNativeDisplayId() const
+{
+    return ServiceLocator::GetMainRegistry()->get<PlayerFieldDataComponent>(_entityId).GetFieldValue<i32>(UNIT_FIELD_NATIVEDISPLAYID);
+}
+void AngelScriptPlayer::SetNativeDisplayId(i32 displayId, bool immediate)
+{
+    entt::registry* registry = ServiceLocator::GetMainRegistry();
+    PlayerFieldDataComponent& playerFieldData = registry->get<PlayerFieldDataComponent>(_entityId);
+
+    if (immediate)
+    {
+        playerFieldData.SetFieldValue<i32>(UNIT_FIELD_NATIVEDISPLAYID, displayId);
+    }
+    else
+    {
+        registry->ctx<ScriptSingleton>().AddTransaction([&playerFieldData, displayId]() {
+            playerFieldData.SetFieldValue<i32>(UNIT_FIELD_NATIVEDISPLAYID, displayId);
+        });
+    }
+}
+i32 AngelScriptPlayer::GetMountDisplayId() const
+{
+    return ServiceLocator::GetMainRegistry()->get<PlayerFieldDataComponent>(_entityId).GetFieldValue<i32>(UNIT_FIELD_MOUNTDISPLAYID);
+}
+void AngelScriptPlayer::SetMountDisplayId(i32 displayId, bool immediate)
+{
+    entt::registry* registry = ServiceLocator::GetMainRegistry();
+    PlayerFieldDataComponent& playerFieldData = registry->get<PlayerFieldDataComponent>(_entityId);
+
+    if (immediate)
+    {
+        playerFieldData.SetFieldValue<i32>(UNIT_FIELD_MOUNTDISPLAYID, displayId);
+    }
+    else
+    {
+        registry->ctx<ScriptSingleton>().AddTransaction([&playerFieldData, displayId]() {
+            playerFieldData.SetFieldValue<i32>(UNIT_FIELD_MOUNTDISPLAYID, displayId);
+        });
+    }
+}
+
+void AngelScriptPlayer::SetFlyMode(bool state, bool immediate)
+{
+    entt::registry* registry = ServiceLocator::GetMainRegistry();
+    SingletonComponent& singleton = registry->ctx<SingletonComponent>();
+    PlayerConnectionComponent& playerConnection = registry->get<PlayerConnectionComponent>(_entityId);
+
+    if (immediate)
+    {
+        std::shared_ptr<ByteBuffer> flyMode = ByteBuffer::Borrow<12>();
+        CharacterUtils::BuildFlyModePacket(playerConnection.characterGuid, flyMode);
+        playerConnection.socket->SendPacket(flyMode.get(), state ? Opcode::SMSG_MOVE_SET_CAN_FLY : Opcode::SMSG_MOVE_UNSET_CAN_FLY);
+    }
+    else
+    {
+        registry->ctx<ScriptSingleton>().AddTransaction([&singleton, &playerConnection, state]() {
+            std::shared_ptr<ByteBuffer> flyMode = ByteBuffer::Borrow<12>();
+            CharacterUtils::BuildFlyModePacket(playerConnection.characterGuid, flyMode);
+            playerConnection.socket->SendPacket(flyMode.get(), state ? Opcode::SMSG_MOVE_SET_CAN_FLY : Opcode::SMSG_MOVE_UNSET_CAN_FLY);
+        });
+    }
+}
+void AngelScriptPlayer::SetSpeed(f32 speed, bool immediate)
+{
+    entt::registry* registry = ServiceLocator::GetMainRegistry();
+    PlayerConnectionComponent& playerConnection = registry->get<PlayerConnectionComponent>(_entityId);
+
+    if (speed <= 0)
+    {
+        speed = 0;
+    }
+    else
+    {
+        speed /= 100;
+    }
+
+    if (immediate)
+    {
+        std::shared_ptr<ByteBuffer> speedChange = ByteBuffer::Borrow<12>();
+
+        CharacterUtils::BuildSpeedChangePacket(playerConnection.characterGuid, speed, Opcode::SMSG_FORCE_WALK_SPEED_CHANGE, speedChange);
+        CharacterUtils::SendPacketToGridPlayers(registry, playerConnection.entityId, speedChange, Opcode::SMSG_FORCE_WALK_SPEED_CHANGE);
+        speedChange->Reset();
+
+        CharacterUtils::BuildSpeedChangePacket(playerConnection.characterGuid, speed, Opcode::SMSG_FORCE_RUN_SPEED_CHANGE, speedChange);
+        CharacterUtils::SendPacketToGridPlayers(registry, playerConnection.entityId, speedChange, Opcode::SMSG_FORCE_RUN_SPEED_CHANGE);
+        speedChange->Reset();
+
+        CharacterUtils::BuildSpeedChangePacket(playerConnection.characterGuid, speed, Opcode::SMSG_FORCE_RUN_BACK_SPEED_CHANGE, speedChange);
+        CharacterUtils::SendPacketToGridPlayers(registry, playerConnection.entityId, speedChange, Opcode::SMSG_FORCE_RUN_BACK_SPEED_CHANGE);
+        speedChange->Reset();
+
+        CharacterUtils::BuildSpeedChangePacket(playerConnection.characterGuid, speed, Opcode::SMSG_FORCE_SWIM_SPEED_CHANGE, speedChange);
+        CharacterUtils::SendPacketToGridPlayers(registry, playerConnection.entityId, speedChange, Opcode::SMSG_FORCE_SWIM_SPEED_CHANGE);
+        speedChange->Reset();
+
+        CharacterUtils::BuildSpeedChangePacket(playerConnection.characterGuid, speed, Opcode::SMSG_FORCE_SWIM_BACK_SPEED_CHANGE, speedChange);
+        CharacterUtils::SendPacketToGridPlayers(registry, playerConnection.entityId, speedChange, Opcode::SMSG_FORCE_SWIM_BACK_SPEED_CHANGE);
+        speedChange->Reset();
+
+        CharacterUtils::BuildSpeedChangePacket(playerConnection.characterGuid, speed, Opcode::SMSG_FORCE_FLIGHT_SPEED_CHANGE, speedChange);
+        CharacterUtils::SendPacketToGridPlayers(registry, playerConnection.entityId, speedChange, Opcode::SMSG_FORCE_FLIGHT_SPEED_CHANGE);
+        speedChange->Reset();
+
+        CharacterUtils::BuildSpeedChangePacket(playerConnection.characterGuid, speed, Opcode::SMSG_FORCE_FLIGHT_BACK_SPEED_CHANGE, speedChange);
+        CharacterUtils::SendPacketToGridPlayers(registry, playerConnection.entityId, speedChange, Opcode::SMSG_FORCE_FLIGHT_BACK_SPEED_CHANGE);
+    }
+    else
+    {
+        registry->ctx<ScriptSingleton>().AddTransaction([registry, &playerConnection, speed]() {
+            std::shared_ptr<ByteBuffer> speedChange = ByteBuffer::Borrow<12>();
+
+            CharacterUtils::BuildSpeedChangePacket(playerConnection.characterGuid, speed, Opcode::SMSG_FORCE_WALK_SPEED_CHANGE, speedChange);
+            CharacterUtils::SendPacketToGridPlayers(registry, playerConnection.entityId, speedChange, Opcode::SMSG_FORCE_WALK_SPEED_CHANGE);
+            speedChange->Reset();
+
+            CharacterUtils::BuildSpeedChangePacket(playerConnection.characterGuid, speed, Opcode::SMSG_FORCE_RUN_SPEED_CHANGE, speedChange);
+            CharacterUtils::SendPacketToGridPlayers(registry, playerConnection.entityId, speedChange, Opcode::SMSG_FORCE_RUN_SPEED_CHANGE);
+            speedChange->Reset();
+
+            CharacterUtils::BuildSpeedChangePacket(playerConnection.characterGuid, speed, Opcode::SMSG_FORCE_RUN_BACK_SPEED_CHANGE, speedChange);
+            CharacterUtils::SendPacketToGridPlayers(registry, playerConnection.entityId, speedChange, Opcode::SMSG_FORCE_RUN_BACK_SPEED_CHANGE);
+            speedChange->Reset();
+
+            CharacterUtils::BuildSpeedChangePacket(playerConnection.characterGuid, speed, Opcode::SMSG_FORCE_SWIM_SPEED_CHANGE, speedChange);
+            CharacterUtils::SendPacketToGridPlayers(registry, playerConnection.entityId, speedChange, Opcode::SMSG_FORCE_SWIM_SPEED_CHANGE);
+            speedChange->Reset();
+
+            CharacterUtils::BuildSpeedChangePacket(playerConnection.characterGuid, speed, Opcode::SMSG_FORCE_SWIM_BACK_SPEED_CHANGE, speedChange);
+            CharacterUtils::SendPacketToGridPlayers(registry, playerConnection.entityId, speedChange, Opcode::SMSG_FORCE_SWIM_BACK_SPEED_CHANGE);
+            speedChange->Reset();
+
+            CharacterUtils::BuildSpeedChangePacket(playerConnection.characterGuid, speed, Opcode::SMSG_FORCE_FLIGHT_SPEED_CHANGE, speedChange);
+            CharacterUtils::SendPacketToGridPlayers(registry, playerConnection.entityId, speedChange, Opcode::SMSG_FORCE_FLIGHT_SPEED_CHANGE);
+            speedChange->Reset();
+
+            CharacterUtils::BuildSpeedChangePacket(playerConnection.characterGuid, speed, Opcode::SMSG_FORCE_FLIGHT_BACK_SPEED_CHANGE, speedChange);
+            CharacterUtils::SendPacketToGridPlayers(registry, playerConnection.entityId, speedChange, Opcode::SMSG_FORCE_FLIGHT_BACK_SPEED_CHANGE);
         });
     }
 }

@@ -33,6 +33,9 @@ void ScriptHandler::ReloadScripts()
 {
     NC_LOG_MESSAGE("Reloading scripts...");
     PlayerHooks::ClearHooks();
+    SpellHooks::ClearHooks();
+    AuraHooks::ClearHooks();
+    AuraEffectHooks::ClearHooks();
 
     if (_path != "")
     {

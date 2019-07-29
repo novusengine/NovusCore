@@ -74,6 +74,7 @@ struct AuraListComponent
 
         if (!aura.IsServerside())
             aura.SetUpdate(true);
+
         return true;
     }
     bool ApplyAurasFromSpell(u64 casterGuid, SpellData spellData)

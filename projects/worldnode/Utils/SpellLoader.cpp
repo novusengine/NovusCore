@@ -5,6 +5,7 @@
 #include <filesystem>
 
 #include "../ECS/Components/Singletons/DBCDatabaseCacheSingleton.h"
+#include "../Scripting/AuraHooks.h"
 
 SpellLoader* SpellLoader::spellLoader = nullptr;
 
@@ -12,16 +13,23 @@ bool SpellLoader::Load(entt::registry& registry)
 {
     DBCDatabaseCacheSingleton& dbcCache = registry.ctx<DBCDatabaseCacheSingleton>();
     auto& spellDatas = dbcCache.cache->GetSpellDatas();
+    auto& effectMap = AuraEffectHooks::GetEffectMap();
 
     u32 biggestEffectId = 0;
     for (auto& spellData : spellDatas)
     {
-        if (spellData.second.EffectApplyAuraName[0] > biggestEffectId)
-            biggestEffectId = spellData.second.EffectApplyAuraName[0];
-        if (spellData.second.EffectApplyAuraName[1] > biggestEffectId)
-            biggestEffectId = spellData.second.EffectApplyAuraName[1];
-        if (spellData.second.EffectApplyAuraName[2] > biggestEffectId)
-            biggestEffectId = spellData.second.EffectApplyAuraName[2];
+        for (i32 i = 0; i < 3; i++)
+        {
+            u32 auraApplyName = spellData.second.EffectApplyAuraName[i];
+            if (auraApplyName > biggestEffectId)
+                biggestEffectId = auraApplyName;
+
+            auto itr = effectMap.find(auraApplyName);
+            if (itr != effectMap.end())
+                continue;
+
+            effectMap[auraApplyName] = std::array<std::vector<asIScriptFunction*>, AuraEffectHooks::Hooks::COUNT>();
+        }
     }
     _auraEffectCount = biggestEffectId;
 

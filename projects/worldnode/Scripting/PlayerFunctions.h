@@ -58,6 +58,16 @@ public:
     f32 GetOrientation() const;
     void SetOrientation(f32 orientation, bool immediate);
 
+    i32 GetDisplayId() const;
+    void SetDisplayId(i32 displayId, bool immediate);
+    i32 GetNativeDisplayId() const;
+    void SetNativeDisplayId(i32 displayId, bool immediate);
+    i32 GetMountDisplayId() const;
+    void SetMountDisplayId(i32 displayId, bool immediate);
+
+    void SetFlyMode(bool state, bool immediate);
+    void SetSpeed(f32 state, bool immediate);
+
     // Chat
     void SendChatMessage(std::string msg);
 
@@ -89,6 +99,14 @@ inline void RegisterPlayerFunctions(AB_NAMESPACE_QUALIFIER Engine* engine)
     engine->asEngine()->RegisterObjectMethod("Player", "void SetPosition(Vector3, bool = false)", asMETHOD(AngelScriptPlayer, SetPosition), asCALL_THISCALL);
     engine->asEngine()->RegisterObjectMethod("Player", "float GetOrientation()", asMETHOD(AngelScriptPlayer, GetOrientation), asCALL_THISCALL);
     engine->asEngine()->RegisterObjectMethod("Player", "void SetOrientation(float, bool = false)", asMETHOD(AngelScriptPlayer, SetOrientation), asCALL_THISCALL);
+    engine->asEngine()->RegisterObjectMethod("Player", "int32 GetDisplayId()", asMETHOD(AngelScriptPlayer, GetDisplayId), asCALL_THISCALL);
+    engine->asEngine()->RegisterObjectMethod("Player", "void SetDisplayId(int32, bool = false)", asMETHOD(AngelScriptPlayer, SetDisplayId), asCALL_THISCALL);
+    engine->asEngine()->RegisterObjectMethod("Player", "int32 GetNativeDisplayId()", asMETHOD(AngelScriptPlayer, GetNativeDisplayId), asCALL_THISCALL);
+    engine->asEngine()->RegisterObjectMethod("Player", "void SetNativeDisplayId(int32, bool = false)", asMETHOD(AngelScriptPlayer, SetNativeDisplayId), asCALL_THISCALL);
+    engine->asEngine()->RegisterObjectMethod("Player", "int32 GetMountDisplayId()", asMETHOD(AngelScriptPlayer, GetMountDisplayId), asCALL_THISCALL);
+    engine->asEngine()->RegisterObjectMethod("Player", "void SetMountDisplayId(int32, bool = false)", asMETHOD(AngelScriptPlayer, SetMountDisplayId), asCALL_THISCALL);
+    engine->asEngine()->RegisterObjectMethod("Player", "void SetFlyMode(bool, bool = false)", asMETHOD(AngelScriptPlayer, SetFlyMode), asCALL_THISCALL);
+    engine->asEngine()->RegisterObjectMethod("Player", "void SetSpeed(float, bool = false)", asMETHOD(AngelScriptPlayer, SetSpeed), asCALL_THISCALL);
 
     engine->asEngine()->RegisterObjectMethod("Player", "void SendChatMessage(string)", asMETHOD(AngelScriptPlayer, SendChatMessage), asCALL_THISCALL);
 

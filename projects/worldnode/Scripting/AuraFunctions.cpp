@@ -1,4 +1,5 @@
 #include "AuraFunctions.h"
+#include "../Game/Aura.h"
 
 void AngelScriptAura::GetData(std::string& /*key*/, void* /*ref*/, int /*typeId*/) const
 {
@@ -79,4 +80,20 @@ void AngelScriptAura::SetData(std::string& /*key*/, void* /*ref*/, int /*typeId*
         assert(false); // Unsupported datatype
         break;
     }*/
+}
+
+i32 AngelScriptAura::GetMiscValueA() const
+{
+    Aura* aura = GetAura();
+    return aura->spellData.EffectMiscValueA[aura->effectIndex];
+}
+i32 AngelScriptAura::GetValue() const
+{
+    Aura* aura = GetAura();
+    return aura->spellData.EffectBasePoints[aura->effectIndex];
+}
+u32 AngelScriptAura::GetSpellId() const
+{
+    Aura* aura = GetAura();
+    return aura->spellData.Id;
 }

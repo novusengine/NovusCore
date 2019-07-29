@@ -23,11 +23,11 @@
 */
 #pragma once
 #include <Utils/DebugHandler.h>
-#include "../Utils/SpellLoader.h"
 #include "ScriptEngine.h"
 #include "AngelBinder.h"
 #include <array>
 #include <memory>
+#include <robin_hood.h>
 
 class AuraHooks
 {
@@ -35,24 +35,25 @@ public:
     enum Hooks
     {
         HOOK_ON_AURA_APPLIED,
+        HOOK_ON_AURA_REMOVED,
 
         COUNT
     };
 
-    inline static void Register(Hooks id, asIScriptFunction* func)
+    inline static void Register(Hooks hook, asIScriptFunction* func)
     {
-        _hooks[id].push_back(func);
+        _hooks[hook].push_back(func);
     }
 
-    inline static std::vector<asIScriptFunction*>& GetHooks(Hooks id)
+    inline static std::vector<asIScriptFunction*>& GetHooks(Hooks hook)
     {
-        return _hooks[id];
+        return _hooks[hook];
     }
 
     template <typename... Args>
-    inline static void CallHook(Hooks id, Args... args)
+    inline static void CallHook(Hooks hook, Args... args)
     {
-        ScriptEngine::CallHook(_hooks, id, args...);
+        ScriptEngine::CallHook<Hooks>(_hooks, hook, args...);
     }
 
     inline static void ClearHooks()
@@ -69,4 +70,78 @@ public:
 
 private:
     static std::array<std::vector<asIScriptFunction*>, Hooks::COUNT> _hooks;
+};
+
+class AuraEffectHooks
+{
+public:
+    enum Hooks
+    {
+        HOOK_ON_AURA_EFFECT_APPLIED,
+        HOOK_ON_AURA_EFFECT_REMOVED,
+
+        COUNT
+    };
+
+    inline static void Register(Hooks hook, u32 effectId, asIScriptFunction* func)
+    {
+#ifdef NC_Debug
+        auto itr = _hooks.find(effectId);
+        if (itr == _hooks.end())
+        {
+            NC_LOG_FATAL("Attempted to register EffectHook (%u), for non-existant EffectID (%u)", hook, effectId);
+        }
+#endif
+
+        _hooks[effectId][hook].push_back(func);
+    }
+
+    inline static std::vector<asIScriptFunction*>& GetHooks(Hooks hook, u32 effectId)
+    {
+#ifdef NC_Debug
+        auto itr = _hooks.find(effectId);
+        if (itr == _hooks.end())
+        {
+            NC_LOG_FATAL("Attempted to get EffectHooks (%u), for non-existant EffectID (%u)", hook, effectId);
+        }
+#endif
+
+        return _hooks[effectId][hook];
+    }
+    inline static robin_hood::unordered_map<u32, std::array<std::vector<asIScriptFunction*>, Hooks::COUNT>>& GetEffectMap()
+    {
+        return _hooks;
+    }
+
+    template <typename... Args>
+    inline static void CallHook(Hooks hook, u32 effectId, Args... args)
+    {
+#ifdef NC_Debug
+        auto itr = _hooks.find(effectId);
+        if (itr == _hooks.end())
+        {
+            NC_LOG_FATAL("Attempted to call EffectHooks (%u), for non-existant EffectID (%u)", hook, effectId);
+        }
+#endif
+
+        ScriptEngine::CallHook<Hooks>(_hooks[effectId], hook, args...);
+    }
+
+    inline static void ClearHooks()
+    {
+        for (auto& itr : _hooks)
+        {
+            for (auto& vec : itr.second)
+            {
+                for (auto function : vec)
+                {
+                    function->Release();
+                }
+                vec.clear();
+            }
+        }
+    }
+
+private:
+    static robin_hood::unordered_map<u32, std::array<std::vector<asIScriptFunction*>, Hooks::COUNT>> _hooks;
 };
