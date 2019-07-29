@@ -66,7 +66,11 @@ namespace GlobalFunctions
     {
         SpellHooks::Register(static_cast<SpellHooks::Hooks>(callbackId), callback);
     }
-} // namespace GlobalFunctions
+    inline void RegisterSpellEffectCallback(u32 hook, u32 effectId, asIScriptFunction* callback)
+    {
+        SpellEffectHooks::Register(static_cast<SpellEffectHooks::Hooks>(hook), effectId, callback);
+    }
+    } // namespace GlobalFunctions
 
 inline void RegisterSpellFunctions(AB_NAMESPACE_QUALIFIER Engine* engine)
 {
@@ -83,6 +87,7 @@ inline void RegisterSpellFunctions(AB_NAMESPACE_QUALIFIER Engine* engine)
     engine->asEngine()->RegisterObjectMethod("Spell", "SpellTemplate GetTemplate()", asMETHOD(AngelScriptSpell, GetTemplate), asCALL_THISCALL);
 
     // Register hooks
-    engine->asEngine()->RegisterFuncdef("void SpellCastCallback(Player, Spell)");
-    engine->asEngine()->RegisterGlobalFunction("void RegisterSpellCallback(uint32 id, SpellCastCallback @cb)", asFUNCTION(GlobalFunctions::RegisterSpellCallback), asCALL_CDECL);
+    engine->asEngine()->RegisterFuncdef("void PlayerSpellCallback(Player, Spell)");
+    engine->asEngine()->RegisterGlobalFunction("void RegisterSpellCallback(uint32 id, PlayerSpellCallback @cb)", asFUNCTION(GlobalFunctions::RegisterSpellCallback), asCALL_CDECL);
+    engine->asEngine()->RegisterGlobalFunction("void RegisterSpellEffectCallback(uint32 hook, uint32 effectId, PlayerSpellCallback @cb)", asFUNCTION(GlobalFunctions::RegisterSpellEffectCallback), asCALL_CDECL);
 }

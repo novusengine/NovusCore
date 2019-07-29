@@ -214,7 +214,6 @@ void AngelScriptPlayer::SetMountDisplayId(i32 displayId, bool immediate)
 void AngelScriptPlayer::SetFlyMode(bool state, bool immediate)
 {
     entt::registry* registry = ServiceLocator::GetMainRegistry();
-    SingletonComponent& singleton = registry->ctx<SingletonComponent>();
     PlayerConnectionComponent& playerConnection = registry->get<PlayerConnectionComponent>(_entityId);
 
     if (immediate)
@@ -225,7 +224,7 @@ void AngelScriptPlayer::SetFlyMode(bool state, bool immediate)
     }
     else
     {
-        registry->ctx<ScriptSingleton>().AddTransaction([&singleton, &playerConnection, state]() {
+        registry->ctx<ScriptSingleton>().AddTransaction([&playerConnection, state]() {
             std::shared_ptr<ByteBuffer> flyMode = ByteBuffer::Borrow<12>();
             CharacterUtils::BuildFlyModePacket(playerConnection.characterGuid, flyMode);
             playerConnection.socket->SendPacket(flyMode.get(), state ? Opcode::SMSG_MOVE_SET_CAN_FLY : Opcode::SMSG_MOVE_UNSET_CAN_FLY);

@@ -34,9 +34,4 @@ public:
 
     SpellLoader() { spellLoader = this; }
     bool Load(entt::registry& registry);
-
-    u32 GetAuraEffectCount() { return _auraEffectCount; }
-
-    private: 
-        u32 _auraEffectCount;
 };

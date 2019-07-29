@@ -670,7 +670,7 @@ void Update(entt::registry& registry)
                 packet.data->GetU32(targetFlags);
 
                 SpellData spellData;
-                if (!dbcDatabase.cache->GetSpellData(spellId, spellData))
+                if (!dbcDatabase.cache->GetSpellData(spellId, spellData))   
                     continue;
 
                 // As far as I can tell, the client expects SMSG_SPELL_START followed by SMSG_SPELL_GO.
@@ -679,11 +679,13 @@ void Update(entt::registry& registry)
                 // Call OnSpellCast script hooks
                 AngelScriptSpell asSpell;
                 AngelScriptPlayer asPlayer(playerConnection.entityId);
-                SpellHooks::CallHook(SpellHooks::Hooks::HOOK_ONSPELLCAST, &asPlayer, &asSpell);
-
+                SpellHooks::CallHook(SpellHooks::Hooks::HOOK_ON_SPELL_BEGIN_CAST, &asPlayer, &asSpell);
+                
                 AuraListComponent& auraList = registry.get<AuraListComponent>(playerConnection.entityId);
                 for (i32 i = 0; i < SPELL_EFFECTS_COUNT; i++)
                 {
+                    SpellEffectHooks::CallHook(SpellEffectHooks::Hooks::HOOK_ON_SPELL_EFFECT_BEFORE_HIT, spellData.Effect[i], &asPlayer, &asSpell);
+
                     if (spellData.Effect[i] == SPELL_EFFECT_LEAP)
                     {
                         if (spellData.EffectImplicitTargetA[i] != 1 && spellData.EffectImplicitTargetB[i] != 55)
@@ -736,7 +738,11 @@ void Update(entt::registry& registry)
                     {
                         auraList.ApplyAura(playerConnection.characterGuid, spellData, i);
                     }
+
+                    SpellEffectHooks::CallHook(SpellEffectHooks::Hooks::HOOK_ON_SPELL_EFFECT_AFTER_HIT, spellData.Effect[i], &asPlayer, &asSpell);
                 }
+
+                SpellHooks::CallHook(SpellHooks::Hooks::HOOK_ON_SPELL_FINISH_CAST, &asPlayer, &asSpell); // TODO: Move this to a proper place after we have support for non-instant spells - MPursche
 
                 buffer->Reset();
                 buffer->PutGuid(playerConnection.characterGuid);

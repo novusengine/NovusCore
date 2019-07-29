@@ -27,13 +27,16 @@
 #include "AngelBinder.h"
 #include <array>
 #include <memory>
+#include <robin_hood.h>
 
 class SpellHooks
 {
 public:
     enum Hooks
     {
-        HOOK_ONSPELLCAST,
+        HOOK_ON_SPELL_CAN_CAST,
+        HOOK_ON_SPELL_BEGIN_CAST,
+        HOOK_ON_SPELL_FINISH_CAST,
 
         COUNT
     };
@@ -68,4 +71,78 @@ public:
 
 private:
     static std::array<std::vector<asIScriptFunction*>, Hooks::COUNT> _hooks;
+};
+
+class SpellEffectHooks
+{
+public:
+    enum Hooks
+    {
+        HOOK_ON_SPELL_EFFECT_BEFORE_HIT,
+        HOOK_ON_SPELL_EFFECT_AFTER_HIT,
+
+        COUNT
+    };
+
+    inline static void Register(Hooks hook, u32 effectId, asIScriptFunction* func)
+    {
+#ifdef NC_Debug
+        auto itr = _hooks.find(effectId);
+        if (itr == _hooks.end())
+        {
+            NC_LOG_FATAL("Attempted to register SpellEffectHook (%u), for non-existant EffectID (%u)", hook, effectId);
+        }
+#endif
+
+        _hooks[effectId][hook].push_back(func);
+    }
+
+    inline static std::vector<asIScriptFunction*>& GetHooks(Hooks hook, u32 effectId)
+    {
+#ifdef NC_Debug
+        auto itr = _hooks.find(effectId);
+        if (itr == _hooks.end())
+        {
+            NC_LOG_FATAL("Attempted to get SpellEffectHook (%u), for non-existant EffectID (%u)", hook, effectId);
+        }
+#endif
+
+        return _hooks[effectId][hook];
+    }
+    inline static robin_hood::unordered_map<u32, std::array<std::vector<asIScriptFunction*>, Hooks::COUNT>>& GetEffectMap()
+    {
+        return _hooks;
+    }
+
+    template <typename... Args>
+    inline static void CallHook(Hooks hook, u32 effectId, Args... args)
+    {
+#ifdef NC_Debug
+        auto itr = _hooks.find(effectId);
+        if (itr == _hooks.end())
+        {
+            NC_LOG_FATAL("Attempted to call SpellEffectHook (%u), for non-existant EffectID (%u)", hook, effectId);
+        }
+#endif
+
+        ScriptEngine::CallHook<Hooks>(_hooks[effectId], hook, args...);
+    }
+
+    inline static void ClearHooks()
+    {
+        for (auto& itr : _hooks)
+        {
+            for (auto& vec : itr.second)
+            {
+                for (auto function : vec)
+                {
+                    function->Release();
+                }
+                vec.clear();
+            }
+        }
+    }
+
+private:
+    static robin_hood::unordered_map<u32, std::array<std::vector<asIScriptFunction*>, Hooks::COUNT>> _hooks;
 };
