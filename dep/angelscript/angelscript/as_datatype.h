@@ -138,9 +138,6 @@ public:
 
 	asSTypeBehaviour *GetBehaviour() const;
 
-    size_t GetHash() const { return hash; }
-    void SetHash(size_t h) { hash = h; }
-
 protected:
 	// Base object type
 	eTokenType tokenType;
@@ -157,7 +154,6 @@ protected:
 	bool isHandleToAsHandleType:1; // Used by the compiler to know how to initialize the object
 	bool ifHandleThenConst:1; // Used when creating template instances to determine if a handle should be const or not
 	char dummy:1;
-    size_t hash = 0;
 };
 
 END_AS_NAMESPACE

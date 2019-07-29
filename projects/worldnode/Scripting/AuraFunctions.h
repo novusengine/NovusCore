@@ -42,8 +42,8 @@ public:
     void GetData(std::string& key, void* ref, int typeId) const;
     void SetData(std::string& key, void* ref, int typeId) const;
 
-    i32 GetMiscValueA() const;
-    i32 GetValue() const;
+    i32 GetMiscValueA(i32 effectIndex) const;
+    i32 GetValue(i32 effectIndex) const;
     u32 GetSpellId() const;
 
     Aura* GetAura() const { return _aura; }
@@ -73,12 +73,13 @@ inline void RegisterAuraFunctions(AB_NAMESPACE_QUALIFIER Engine* engine)
     // Register functions for Aura type
     engine->asEngine()->RegisterObjectMethod("Aura", "void GetData(string key, ?&out)", asMETHOD(AngelScriptAura, GetData), asCALL_THISCALL);
     engine->asEngine()->RegisterObjectMethod("Aura", "void SetData(string key, ?&in)", asMETHOD(AngelScriptAura, SetData), asCALL_THISCALL);
-    engine->asEngine()->RegisterObjectMethod("Aura", "int32 GetMiscValueA()", asMETHOD(AngelScriptAura, GetMiscValueA), asCALL_THISCALL);
-    engine->asEngine()->RegisterObjectMethod("Aura", "int32 GetValue()", asMETHOD(AngelScriptAura, GetValue), asCALL_THISCALL);
+    engine->asEngine()->RegisterObjectMethod("Aura", "int32 GetMiscValueA(int32)", asMETHOD(AngelScriptAura, GetMiscValueA), asCALL_THISCALL);
+    engine->asEngine()->RegisterObjectMethod("Aura", "int32 GetValue(int32)", asMETHOD(AngelScriptAura, GetValue), asCALL_THISCALL);
     engine->asEngine()->RegisterObjectMethod("Aura", "uint32 GetSpellId()", asMETHOD(AngelScriptAura, GetSpellId), asCALL_THISCALL);
 
     // Register hooks
     engine->asEngine()->RegisterFuncdef("void AuraAppliedCallback(Player, Aura)");
+    engine->asEngine()->RegisterFuncdef("void AuraEffectAppliedCallback(Player, Aura, int32)");
     engine->asEngine()->RegisterGlobalFunction("void RegisterAuraCallback(uint32 hook, AuraAppliedCallback @cb)", asFUNCTION(GlobalFunctions::RegisterAuraCallback), asCALL_CDECL);
-    engine->asEngine()->RegisterGlobalFunction("void RegisterAuraEffectCallback(uint32 hook, uint32 effectId, AuraAppliedCallback @cb)", asFUNCTION(GlobalFunctions::RegisterAuraEffectCallback), asCALL_CDECL);
+    engine->asEngine()->RegisterGlobalFunction("void RegisterAuraEffectCallback(uint32 hook, uint32 effectId, AuraEffectAppliedCallback @cb)", asFUNCTION(GlobalFunctions::RegisterAuraEffectCallback), asCALL_CDECL);
 }

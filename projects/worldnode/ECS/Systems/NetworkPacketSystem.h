@@ -736,7 +736,8 @@ void Update(entt::registry& registry)
                     }
                     else if (spellData.Effect[i] == SPELL_EFFECT_APPLY_AURA)
                     {
-                        auraList.ApplyAura(playerConnection.characterGuid, spellData, i);
+                        if (!auraList.HasAura(spellData.Id))
+                            auraList.ApplyAura(playerConnection.characterGuid, spellData);
                     }
 
                     SpellEffectHooks::CallHook(SpellEffectHooks::Hooks::HOOK_ON_SPELL_EFFECT_AFTER_HIT, spellData.Effect[i], &asPlayer, &asSpell);
@@ -791,7 +792,7 @@ void Update(entt::registry& registry)
                 packet.data->GetU32(spellId);
 
                 AuraListComponent& auraList = registry.get<AuraListComponent>(playerConnection.entityId);
-                auraList.RemoveAurasFromSpell(spellId);
+                auraList.RemoveAura(spellId);
             }
             case Opcode::CMSG_CONTACT_LIST:
             {

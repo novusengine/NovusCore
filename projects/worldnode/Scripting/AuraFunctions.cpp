@@ -82,15 +82,15 @@ void AngelScriptAura::SetData(std::string& /*key*/, void* /*ref*/, int /*typeId*
     }*/
 }
 
-i32 AngelScriptAura::GetMiscValueA() const
+i32 AngelScriptAura::GetMiscValueA(i32 effectIndex) const
 {
     Aura* aura = GetAura();
-    return aura->spellData.EffectMiscValueA[aura->effectIndex];
+    return aura->spellData.EffectMiscValueA[effectIndex];
 }
-i32 AngelScriptAura::GetValue() const
+i32 AngelScriptAura::GetValue(i32 effectIndex) const
 {
     Aura* aura = GetAura();
-    return aura->spellData.EffectBasePoints[aura->effectIndex];
+    return aura->spellData.EffectBasePoints[effectIndex];
 }
 u32 AngelScriptAura::GetSpellId() const
 {

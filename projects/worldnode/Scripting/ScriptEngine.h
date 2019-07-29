@@ -37,7 +37,6 @@ class AngelScriptSpell;
 class ScriptEngine
 {
 public:
-
     static func_t* GetRegisterFunction()
     {
         return _registerFunction;
@@ -71,7 +70,53 @@ public:
                     int paramTypeId;
                     function->GetParam(i++, &paramTypeId);
 
-                    const char* paramName = ScriptEngine::GetScriptEngine()->asEngine()->GetTypeInfoById(paramTypeId)->GetName();
+                    const char* paramName = nullptr;
+                    if (paramTypeId <= asTYPEID_DOUBLE)
+                    {
+                        switch (paramTypeId)
+                        {
+                        case asTYPEID_BOOL:
+                            paramName = "bool";
+                            break;
+                        case asTYPEID_INT8:
+                            paramName = "i8";
+                            break;
+                        case asTYPEID_INT16:
+                            paramName = "i16";
+                            break;
+                        case asTYPEID_INT32:
+                            paramName = "i32";
+                            break;
+                        case asTYPEID_INT64:
+                            paramName = "i64";
+                            break;
+                        case asTYPEID_UINT8:
+                            paramName = "u8";
+                            break;
+                        case asTYPEID_UINT16:
+                            paramName = "u16";
+                            break;
+                        case asTYPEID_UINT32:
+                            paramName = "u32";
+                            break;
+                        case asTYPEID_UINT64:
+                            paramName = "u64";
+                            break;
+                        case asTYPEID_FLOAT:
+                            paramName = "f32";
+                            break;
+                        case asTYPEID_DOUBLE:
+                            paramName = "f64";
+                            break;
+                        default:
+                            paramName = "void";
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        paramName = ScriptEngine::GetScriptEngine()->asEngine()->GetTypeInfoById(paramTypeId)->GetName();
+                    }
 
                     std::string paramNameStr = {paramName};
                     size_t paramTypeHash = ScriptEngine::GetScriptEngine()->GetTypeHash(StringUtils::fnv1a_32(paramNameStr.c_str(), paramNameStr.length()));
@@ -99,19 +144,19 @@ public:
                     else if (argTypeHash == typeid(u16).hash_code())
                         context->setWord(std::any_cast<u16>(argument));
                     else if (argTypeHash == typeid(u32).hash_code())
-                        context->setWord(std::any_cast<u32>(argument));
+                        context->setDWord(std::any_cast<u32>(argument));
                     else if (argTypeHash == typeid(u64).hash_code())
-                        context->setWord(std::any_cast<u64>(argument));
+                        context->setQWord(std::any_cast<u64>(argument));
                     else if (argTypeHash == typeid(i8).hash_code())
-                        context->setWord(std::any_cast<i8>(argument));
+                        context->setByte(std::any_cast<i8>(argument));
                     else if (argTypeHash == typeid(i16).hash_code())
                         context->setWord(std::any_cast<i16>(argument));
                     else if (argTypeHash == typeid(i32).hash_code())
-                        context->setWord(std::any_cast<i32>(argument));
+                        context->setDWord(std::any_cast<i32>(argument));
                     else if (argTypeHash == typeid(i64).hash_code())
-                        context->setWord(std::any_cast<i64>(argument));
+                        context->setQWord(std::any_cast<i64>(argument));
                     else if (argTypeHash == typeid(bool).hash_code())
-                        context->setWord(std::any_cast<bool>(argument));
+                        context->setBool(std::any_cast<bool>(argument));
                     else if (argTypeHash == typeid(std::string).hash_code())
                     {
                         std::string string = std::any_cast<std::string>(argument);

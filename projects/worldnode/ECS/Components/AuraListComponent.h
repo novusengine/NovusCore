@@ -33,9 +33,9 @@
 #define AURALIST_MAX 255
 struct AuraListComponent
 {
-    bool ApplyAura(u64 casterGuid, SpellData spellData, u8 effectIndex)
+    bool ApplyAura(u64 casterGuid, SpellData spellData)
     {
-        i32 availableSlot = GetFreeSlotOrExistingAuraSlot(spellData.Id, effectIndex);
+        i32 availableSlot = GetFreeSlotOrExistingAuraSlot(spellData.Id);
         if (availableSlot == -1)
             return false;
 
@@ -43,7 +43,6 @@ struct AuraListComponent
         aura.entityId = entityId;
         aura.unitGuid = unitGuid;
         aura.spellData = spellData;
-        aura.effectIndex = effectIndex;
         aura.serverFlags = AURA_SERVER_FLAG_NONE;
 
         if (spellData.Attributes & 0x40) // 0x40 is the flag for passive auras
@@ -55,11 +54,11 @@ struct AuraListComponent
         if (unitGuid == casterGuid)
             aura.clientFlags |= AURA_CLIENT_FLAG_IS_CASTER;
 
-        if (effectIndex == 0)
+        if (spellData.Effect[0] == SPELL_EFFECT_APPLY_AURA)
             aura.clientFlags |= AURA_CLIENT_FLAG_EFFECT_INDEX_1;
-        else if (effectIndex == 1)
+        if (spellData.Effect[1] == SPELL_EFFECT_APPLY_AURA)
             aura.clientFlags |= AURA_CLIENT_FLAG_EFFECT_INDEX_2;
-        else if (effectIndex == 2)
+        if (spellData.Effect[2] == SPELL_EFFECT_APPLY_AURA)
             aura.clientFlags |= AURA_CLIENT_FLAG_EFFECT_INDEX_3;
 
         // We need a way to identify if a spell effect is positive or negative.
@@ -77,47 +76,9 @@ struct AuraListComponent
 
         return true;
     }
-    bool ApplyAurasFromSpell(u64 casterGuid, SpellData spellData)
+
+    bool RemoveAura(u32 spellId)
     {
-        u32 appliedAuras = 0;
-        for (i32 i = 0; i < SPELL_EFFECTS_COUNT; i++)
-        {
-            if (spellData.Effect[i] != SPELL_EFFECT_APPLY_AURA)
-                continue;
-
-            if (!ApplyAura(casterGuid, spellData, i))
-                continue;
-
-            appliedAuras++;
-        }
-
-        return appliedAuras != 0;
-    }
-
-    bool RemoveAura(u32 spellId, u8 effectIndex)
-    {
-        for (i32 i = 0; i < AURALIST_MAX; i++)
-        {
-            Aura& aura = auras[i];
-            if (!aura.IsApplied())
-                continue;
-
-            if (aura.spellData.Id == spellId && aura.effectIndex == effectIndex)
-            {
-                aura.SetApplied(false);
-
-                if (!aura.IsServerside())
-                    aura.SetUpdate(true);
-
-                return true;
-            }
-        }
-
-        return false;
-    }
-    bool RemoveAurasFromSpell(u32 spellId)
-    {
-        bool unApplied = false;
         for (i32 i = 0; i < AURALIST_MAX; i++)
         {
             Aura& aura = auras[i];
@@ -131,11 +92,11 @@ struct AuraListComponent
                 if (!aura.IsServerside())
                     aura.SetUpdate(true);
 
-                unApplied = true;
+                return true;
             }
         }
 
-        return unApplied;
+        return false;
     }
 
     i32 GetFirstFreeAuraSlot()
@@ -149,7 +110,7 @@ struct AuraListComponent
 
         return -1;
     }
-    i32 GetFreeSlotOrExistingAuraSlot(u32 spellId, u8 effectIndex)
+    i32 GetFreeSlotOrExistingAuraSlot(u32 spellId)
     {
         i32 auraIndex = -1;
         for (i32 i = 0; i < AURALIST_MAX; i++)
@@ -158,7 +119,7 @@ struct AuraListComponent
             if (!aura.IsApplied())
                 continue;
 
-            if (aura.spellData.Id == spellId && aura.effectIndex == effectIndex)
+            if (aura.spellData.Id == spellId)
             {
                 auraIndex = i;
                 break;

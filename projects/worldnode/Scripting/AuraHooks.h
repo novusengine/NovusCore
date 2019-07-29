@@ -89,7 +89,7 @@ public:
         auto itr = _hooks.find(effectId);
         if (itr == _hooks.end())
         {
-            NC_LOG_FATAL("Attempted to register EffectHook (%u), for non-existant EffectID (%u)", hook, effectId);
+            NC_LOG_FATAL("Attempted to register AuraEffectHook (%u), for non-existant EffectID (%u)", hook, effectId);
         }
 #endif
 
@@ -102,7 +102,7 @@ public:
         auto itr = _hooks.find(effectId);
         if (itr == _hooks.end())
         {
-            NC_LOG_FATAL("Attempted to get EffectHooks (%u), for non-existant EffectID (%u)", hook, effectId);
+            NC_LOG_FATAL("Attempted to get AuraEffectHook (%u), for non-existant EffectID (%u)", hook, effectId);
         }
 #endif
 
@@ -120,7 +120,7 @@ public:
         auto itr = _hooks.find(effectId);
         if (itr == _hooks.end())
         {
-            NC_LOG_FATAL("Attempted to call EffectHooks (%u), for non-existant EffectID (%u)", hook, effectId);
+            NC_LOG_FATAL("Attempted to call AuraEffectHook (%u), for non-existant EffectID (%u)", hook, effectId);
         }
 #endif
 

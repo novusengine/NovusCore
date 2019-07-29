@@ -40,13 +40,12 @@ enum AuraServerFlags
 };
 struct Aura
 {
-    Aura() : entityId(0), unitGuid(0), spellData(), effectIndex(0), serverFlags(AURA_SERVER_FLAG_NONE), slot(0), clientFlags(AURA_CLIENT_FLAG_NONE), casterLevel(0), casterGuid(0), maxDuration(0), duration(0) {}
+    Aura() : entityId(0), unitGuid(0), spellData(), serverFlags(AURA_SERVER_FLAG_NONE), slot(0), clientFlags(AURA_CLIENT_FLAG_NONE), casterLevel(0), casterGuid(0), maxDuration(0), duration(0) {}
 
     // Information for the server
     u32 entityId;
     u64 unitGuid;
     SpellData spellData;
-    u8 effectIndex;
     u8 serverFlags;
 
     // Information for the client
@@ -79,14 +78,22 @@ struct Aura
         {
             serverFlags |= AURA_SERVER_FLAG_IS_APPLIED;
 
-            AuraEffectHooks::CallHook(AuraEffectHooks::Hooks::HOOK_ON_AURA_EFFECT_APPLIED, spellData.EffectApplyAuraName[effectIndex], &asPlayer, &asAura);
+            for (i32 i = 0; i < 3; i++)
+            {
+                if (spellData.Effect[i] == SPELL_EFFECT_APPLY_AURA)
+                    AuraEffectHooks::CallHook(AuraEffectHooks::Hooks::HOOK_ON_AURA_EFFECT_APPLIED, spellData.EffectApplyAuraName[i], &asPlayer, &asAura, i);
+            }
             AuraHooks::CallHook(AuraHooks::Hooks::HOOK_ON_AURA_APPLIED, &asPlayer, &asAura);
         }
         else
         {
             serverFlags &= ~AURA_SERVER_FLAG_IS_APPLIED;
 
-            AuraEffectHooks::CallHook(AuraEffectHooks::Hooks::HOOK_ON_AURA_EFFECT_REMOVED, spellData.EffectApplyAuraName[effectIndex], &asPlayer, &asAura);
+            for (i32 i = 0; i < 3; i++)
+            {
+                if (spellData.Effect[i] == SPELL_EFFECT_APPLY_AURA)
+                    AuraEffectHooks::CallHook(AuraEffectHooks::Hooks::HOOK_ON_AURA_EFFECT_REMOVED, spellData.EffectApplyAuraName[i], &asPlayer, &asAura, i);
+            }
             AuraHooks::CallHook(AuraHooks::Hooks::HOOK_ON_AURA_REMOVED, &asPlayer, &asAura);
         }
     }

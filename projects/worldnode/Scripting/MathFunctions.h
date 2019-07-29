@@ -76,20 +76,18 @@ static void Vector3InitConstructor(Vector3* self, float x, float y, float z)
 void RegisterMathTypes(AB_NAMESPACE_QUALIFIER Engine* engine)
 {
     // Register object hashes for primitives
-    engine->RegisterObjectHash<i8>("int8"_h);
-    engine->RegisterObjectHash<i16>("int16"_h);
-    engine->RegisterObjectHash<i32>("int"_h);
-    engine->RegisterObjectHash<i32>("int32"_h);
-    engine->RegisterObjectHash<i64>("int64"_h);
+    engine->RegisterObjectHash<i8>("i8"_h);
+    engine->RegisterObjectHash<i16>("i16"_h);
+    engine->RegisterObjectHash<i32>("i32"_h);
+    engine->RegisterObjectHash<i64>("i64"_h);
 
-    engine->RegisterObjectHash<u8>("uint8"_h);
-    engine->RegisterObjectHash<u16>("uint16"_h);
-    engine->RegisterObjectHash<u32>("uint"_h);
-    engine->RegisterObjectHash<u32>("uint32"_h);
-    engine->RegisterObjectHash<u64>("uint64"_h);
+    engine->RegisterObjectHash<u8>("u8"_h);
+    engine->RegisterObjectHash<u16>("u16"_h);
+    engine->RegisterObjectHash<u32>("u32"_h);
+    engine->RegisterObjectHash<u64>("u64"_h);
 
-    engine->RegisterObjectHash<f32>("float"_h);
-    engine->RegisterObjectHash<f64>("double"_h);
+    engine->RegisterObjectHash<f32>("f32"_h);
+    engine->RegisterObjectHash<f64>("f64"_h);
 
     engine->RegisterObjectHash<bool>("bool"_h);
     engine->RegisterObjectHash<std::string>("string"_h);

@@ -4739,11 +4739,6 @@ int asCScriptEngine::GetTypeIdFromDataType(const asCDataType& dtIn) const
         }
     }
 
-    if (dtIn.GetHash() != 0)
-    {
-        return (int)dtIn.GetHash();
-    }
-
     int typeId = -1;
     asCTypeInfo* ot = dtIn.GetTypeInfo();
     asASSERT(ot != &functionBehaviours);
