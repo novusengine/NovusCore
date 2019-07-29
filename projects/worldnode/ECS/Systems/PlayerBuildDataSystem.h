@@ -89,7 +89,7 @@ std::shared_ptr<ByteBuffer> PlayerBuildInitialData(u64 characterGuid, u8 updateT
         ZoneScopedNC("PlayerBuildInitialData::Loop", tracy::Color::Yellow2) for (u16 index = 0; index < PLAYER_END; index++)
         {
             playerFieldData.playerFields->Get<i32>(fieldDataValue, index * 4);
-            if (UPDATEFIELD_FLAG_PUBLIC & flags[index] || (fieldDataValue && (flags[index] & visibleFlags)))
+            if (UPDATEFIELD_FLAG_PUBLIC & flags[index] || (fieldDataValue && (visibleFlags & flags[index])))
             {
                 updateMask.SetBit(index);
 
@@ -143,7 +143,7 @@ std::shared_ptr<ByteBuffer> PlayerBuildInitialData(u64 characterGuid, u8 updateT
 
     return tempBuffer;
 }
-void PlayerBuildDataBlock(u64 characterGuid, u32 visibleFlags, PlayerFieldDataComponent& playerFieldData)
+void PlayerBuildDataBlock(u64 characterGuid, u32 visibleFlags, UpdateMask<1344>& playerChangeMask, std::shared_ptr<ByteBuffer> playerFields, UpdateData& outUpdateData)
 {
     ZoneScopedNC("PlayerBuildUpdateData", tracy::Color::Yellow2)
 
@@ -173,15 +173,14 @@ void PlayerBuildDataBlock(u64 characterGuid, u32 visibleFlags, PlayerFieldDataCo
     {
         ZoneScopedNC("PlayerBuildUpdateData::Loop", tracy::Color::Yellow2) for (u16 index = 0; index < PLAYER_END; index++)
         {
-            if (UPDATEFIELD_FLAG_PUBLIC & flags[index] || ((flags[index] & visibleFlags) & UPDATEFIELD_FLAG_SPECIAL_INFO) ||
-                (playerFieldData.changesMask.IsSet(index) && (flags[index] & visibleFlags)))
+            if (playerChangeMask.IsSet(index) && ((UPDATEFIELD_FLAG_PUBLIC & flags[index]) || (visibleFlags & flags[index])))
             {
                 updateMask.SetBit(index);
 
                 if (index == UNIT_FIELD_FLAGS)
                 {
                     u32 appendValue = 0;
-                    playerFieldData.playerFields->Get<u32>(appendValue, UNIT_FIELD_FLAGS * 4);
+                    playerFields->Get<u32>(appendValue, UNIT_FIELD_FLAGS * 4);
 
                     // If the player is a gamemaster, |= UNIT_FLAG_NOT_SELECTABLE
 
@@ -191,7 +190,7 @@ void PlayerBuildDataBlock(u64 characterGuid, u32 visibleFlags, PlayerFieldDataCo
                 {
                     // Here we should check the aurastate for our target. As an example, sending the correct value here is what would allow us to cast Conflagurate
                     u32 auraState = 0;
-                    /*playerFieldData.playerFields->Get<u32>(auraState, UNIT_FIELD_AURASTATE * 4);
+                    /*playerFields->Get<u32>(auraState, UNIT_FIELD_AURASTATE * 4);
                             auraState &= ~(((1 << (14 - 1)) | (1 << (16 - 1))));*/
 
                     fieldbuffer->PutU32(auraState);
@@ -199,7 +198,7 @@ void PlayerBuildDataBlock(u64 characterGuid, u32 visibleFlags, PlayerFieldDataCo
                 else if (index == UNIT_DYNAMIC_FLAGS)
                 {
                     u32 dynamicFlags = 0;
-                    playerFieldData.playerFields->Get<u32>(dynamicFlags, UNIT_DYNAMIC_FLAGS * 4);
+                    playerFields->Get<u32>(dynamicFlags, UNIT_DYNAMIC_FLAGS * 4);
 
                     // If player has tagged creature, |= ENTIY_DYNAMICFLAG_IS_TAGGED_BY_PLAYER;
                     // If player can loot creature, |= ENTIY_DYNAMICFLAG_IS_LOOTABLE;
@@ -210,7 +209,7 @@ void PlayerBuildDataBlock(u64 characterGuid, u32 visibleFlags, PlayerFieldDataCo
                 }
                 else
                 {
-                    fieldbuffer->PutBytes(playerFieldData.playerFields->GetInternalData() + index * 4, 4);
+                    fieldbuffer->PutBytes(playerFields->GetInternalData() + index * 4, 4);
                 }
             }
         }
@@ -225,7 +224,7 @@ void PlayerBuildDataBlock(u64 characterGuid, u32 visibleFlags, PlayerFieldDataCo
 
     {
         ZoneScopedNC("PlayerBuildUpdateData::AddBlock", tracy::Color::Yellow2)
-            playerFieldData.updateData.AddBlock(buffer.get());
+            outUpdateData.AddBlock(buffer.get());
     }
 }
 
@@ -342,7 +341,7 @@ void Update(entt::registry& registry)
 
                     u32 visibleFlags = (UPDATEFIELD_FLAG_PUBLIC | UPDATEFIELD_FLAG_SELF);
 
-                    PlayerBuildDataBlock(playerConnection.characterGuid, visibleFlags, playerFieldData);
+                    PlayerBuildDataBlock(playerConnection.characterGuid, visibleFlags, playerFieldData.changesMask, playerFieldData.playerFields, playerFieldData.updateData);
                     playerFieldData.changesMask.Reset();
                 }
                 else
@@ -357,7 +356,7 @@ void Update(entt::registry& registry)
                         if (!currentFieldData.changesMask.Any())
                             continue;
 
-                        PlayerBuildDataBlock(currentConnection.characterGuid, visibleFlags, currentFieldData);
+                        PlayerBuildDataBlock(currentConnection.characterGuid, visibleFlags, currentFieldData.changesMask, currentFieldData.playerFields, playerFieldData.updateData);
                     }
                     else
                     {
