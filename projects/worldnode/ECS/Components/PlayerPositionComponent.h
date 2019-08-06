@@ -62,10 +62,10 @@ struct MovementData
 
 struct PlayerPositionComponent
 {
-    u32 mapId;
+    u16 mapId;
     MovementData movementData;
 
-    u32 adtId = std::numeric_limits<u16>().max(); // Invalid ADT
+    u16 adtId = std::numeric_limits<u16>().max(); // Invalid ADT
 
     i32 timeOffsetToServer = INVALID_TIME_OFFSET;
     u32 lastMovementOpcodeTime[MAX_MOVEMENT_OPCODES];

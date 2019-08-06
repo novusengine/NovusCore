@@ -34,7 +34,7 @@ struct CharacterInfo
     u8 gender;
     u8 classId;
     u8 level;
-    u32 mapId;
+    u16 mapId;
     u32 zoneId;
     Vector3 position;
     f32 orientation;
