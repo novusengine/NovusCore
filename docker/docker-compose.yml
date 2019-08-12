@@ -1,0 +1,54 @@
+version: "3.7"
+
+services:
+  novuscore-gcc:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    volumes:
+      - $PWD/..:/home/docker/novuscore/src
+    image: novuscore/novuscore:v1
+    env_file:
+      - base.env
+      - cmake-debug.env
+      - cmake-flags.env
+      - gcc.env
+
+  novuscore-gcc-release:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    volumes:
+      - $PWD/..:/home/docker/novuscore/src
+    image: novuscore/novuscore:v1
+    env_file:
+      - base.env
+      - cmake-release.env
+      - cmake-flags.env
+      - gcc.env
+
+  novuscore-clang:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    volumes:
+      - $PWD/..:/home/docker/novuscore/src
+    image: novuscore/novuscore:v1
+    env_file:
+      - base.env
+      - cmake-debug.env
+      - cmake-flags.env
+      - clang.env
+
+  novuscore-clang-release:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    volumes:
+      - $PWD/..:/home/docker/novuscore/src
+    image: novuscore/novuscore:v1
+    env_file:
+      - base.env
+      - cmake-release.env
+      - cmake-flags.env
+      - clang.env
