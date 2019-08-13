@@ -7,6 +7,7 @@ while [ "$1" != "" ]; do
     case $key in
         --verbose)
         VERBOSE=1
+        EXTRA_MAKE_FLAGS=VERBOSE=1
         shift # past argument
         ;;
         *)    # unknown option
@@ -42,4 +43,4 @@ fi
 
 cmake ${CMAKE_FLAGS} ${REPO_ROOT}
 
-make -j$(nproc)
+make -j$(nproc) ${EXTRA_MAKE_FLAGS}

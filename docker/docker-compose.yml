@@ -6,7 +6,7 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
     volumes:
-      - $PWD/..:/home/docker/novuscore/src
+      - ..:/home/docker/novuscore/src
     image: novuscore/novuscore:v1
     env_file:
       - base.env
@@ -19,7 +19,7 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
     volumes:
-      - $PWD/..:/home/docker/novuscore/src
+      - ..:/home/docker/novuscore/src
     image: novuscore/novuscore:v1
     env_file:
       - base.env
@@ -32,7 +32,7 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
     volumes:
-      - $PWD/..:/home/docker/novuscore/src
+      - ..:/home/docker/novuscore/src
     image: novuscore/novuscore:v1
     env_file:
       - base.env
@@ -45,7 +45,7 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
     volumes:
-      - $PWD/..:/home/docker/novuscore/src
+      - ..:/home/docker/novuscore/src
     image: novuscore/novuscore:v1
     env_file:
       - base.env
