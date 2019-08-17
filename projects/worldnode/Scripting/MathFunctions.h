@@ -183,6 +183,9 @@ void RegisterMathTypes(AB_NAMESPACE_QUALIFIER Engine* engine)
     engine->asEngine()->RegisterGlobalFunction("float RadToDeg(float)", asFUNCTION(Math::RadToDeg), asCALL_CDECL);
     engine->asEngine()->RegisterGlobalFunction("float Sin(float)", asFUNCTION(Math::Sin), asCALL_CDECL);
     engine->asEngine()->RegisterGlobalFunction("float Sqrt(float)", asFUNCTION(Math::Sqrt), asCALL_CDECL);
+    engine->asEngine()->RegisterGlobalFunction("float Min(float)", asFUNCTION(Math::Min), asCALL_CDECL);
+    engine->asEngine()->RegisterGlobalFunction("float Max(float)", asFUNCTION(Math::Max), asCALL_CDECL);
+    engine->asEngine()->RegisterGlobalFunction("float Clamp(float, float, float)", asFUNCTION(Math::Clamp), asCALL_CDECL);
 
     // Math constants
     engine->asEngine()->RegisterGlobalProperty("const float PI", (void*)&Math::PI);

@@ -530,6 +530,22 @@ void Update(entt::registry& registry)
                 if (msgOutput.size() > 255)
                     break;
 
+                if (msgOutput == "health")
+                {
+                    std::shared_ptr<ByteBuffer> byteBuffer = ByteBuffer::Borrow<13>();
+                    /*byteBuffer->PutGuid(playerConnection.characterGuid);
+                    byteBuffer->PutU32(0);
+                    playerConnection.socket->SendPacket(byteBuffer.get(), Opcode::SMSG_HEALTH_UPDATE);
+                    */
+                    clientFieldData.SetFieldValue<u32>(UNIT_FIELD_HEALTH, 0);
+
+                    byteBuffer->Reset();
+                    byteBuffer->PutGuid(playerConnection.characterGuid);
+                    byteBuffer->PutU8(1);
+                    byteBuffer->PutU32(750);
+                    playerConnection.socket->SendPacket(byteBuffer.get(), Opcode::SMSG_POWER_UPDATE);
+                }
+
                 /* Build Packet */
                 ChatUpdateData chatUpdateData;
                 chatUpdateData.chatType = msgType;
@@ -670,7 +686,7 @@ void Update(entt::registry& registry)
                 packet.data->GetU32(targetFlags);
 
                 SpellData spellData;
-                if (!dbcDatabase.cache->GetSpellData(spellId, spellData))   
+                if (!dbcDatabase.cache->GetSpellData(spellId, spellData))
                     continue;
 
                 // As far as I can tell, the client expects SMSG_SPELL_START followed by SMSG_SPELL_GO.
@@ -681,7 +697,7 @@ void Update(entt::registry& registry)
                 AngelScriptSpell asSpell(&asSpellTemplate);
                 AngelScriptPlayer asPlayer(playerConnection.entityId);
                 SpellHooks::CallHook(SpellHooks::Hooks::HOOK_ON_SPELL_BEGIN_CAST, &asPlayer, &asSpell);
-                
+
                 AuraListComponent& auraList = registry.get<AuraListComponent>(playerConnection.entityId);
                 for (i32 i = 0; i < SPELL_EFFECTS_COUNT; i++)
                 {

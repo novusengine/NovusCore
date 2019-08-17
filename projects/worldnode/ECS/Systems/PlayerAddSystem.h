@@ -37,6 +37,7 @@
 #include "../Components/PlayerInitializeComponent.h"
 #include "../Components/AuraListComponent.h"
 #include "../Components/ScriptDataStorageComponent.h"
+#include "../Components/UnitStatsComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
 #include "../Components/Singletons/GuidLookupSingleton.h"
 #include "../Components/Singletons/PlayerCreateQueueSingleton.h"
@@ -75,6 +76,41 @@ void Update(entt::registry& registry)
             playerPositionComponent.movementData.position = characterInfo.position;
             playerPositionComponent.movementData.orientation = characterInfo.orientation;
             Vector2 position = Vector2(playerPositionComponent.movementData.position.x, playerPositionComponent.movementData.position.y);
+
+            UnitStatsComponent& unitStatsComponent = registry.assign<UnitStatsComponent>(entityId);
+            unitStatsComponent.baseHealth = 1337.0f;
+            unitStatsComponent.currentHealth = 1337.0f;
+            unitStatsComponent.maxHealth = 1337.0f;
+
+            for (int i = 0; i < POWER_COUNT; i++)
+            {
+                // TODO: Add some kind of class-mask so all characters don't use all resources
+                switch (i)
+                {
+                case POWER_RAGE:
+                    unitStatsComponent.basePower[i] = 0.0f;
+                    unitStatsComponent.currentPower[i] = 0.0f;
+                    unitStatsComponent.maxPower[i] = 1000.0f;
+                    break;
+                default: // TODO: Handle other special types of resources
+                    unitStatsComponent.basePower[i] = 100.0f;
+                    unitStatsComponent.currentPower[i] = 100.0f;
+                    unitStatsComponent.maxPower[i] = 100.0f;
+                    break;
+                }
+            }
+
+            for (int i = 0; i < STAT_COUNT; i++)
+            {
+                unitStatsComponent.baseStat[i] = 100;
+                unitStatsComponent.currentStat[i] = 100;
+            }
+
+            for (int i = 0; i < RESISTANCE_COUNT; i++)
+            {
+                unitStatsComponent.baseResistance[i] = 100;
+                unitStatsComponent.currentResistance[i] = 100;
+            }
 
             u16 adtId = 0;
             if (mapSingleton.maps[playerPositionComponent.mapId].GetAdtIdFromWorldPosition(position, adtId))

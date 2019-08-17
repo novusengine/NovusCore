@@ -38,14 +38,54 @@
 
 namespace PlayerUpdateSystem
 {
-void Update(entt::registry& registry)
-{
-    PlayerPacketQueueSingleton& playerPacketQueue = registry.ctx<PlayerPacketQueueSingleton>();
-
-    PacketQueueData packet;
-    while (playerPacketQueue.packetQueue->try_dequeue(packet))
+    void Update(entt::registry& registry)
     {
-        packet.connection->SendPacket(packet.data.get(), packet.opcode);
+        PlayerPacketQueueSingleton& playerPacketQueue = registry.ctx<PlayerPacketQueueSingleton>();
+
+        PacketQueueData packet;
+        while (playerPacketQueue.packetQueue->try_dequeue(packet))
+        {
+            packet.connection->SendPacket(packet.data.get(), packet.opcode);
+        }
+
+        auto playerView = registry.view<PlayerConnectionComponent, UnitStatsComponent>();
+        playerView.each([&registry](const auto, PlayerConnectionComponent& playerConnectionComponent, UnitStatsComponent& unitStatsComponent) 
+        {
+            if (unitStatsComponent.healthIsDirty)
+            {
+                // Create HEALTH_UPDATE packet
+                std::shared_ptr<ByteBuffer> byteBuffer = ByteBuffer::Borrow<12>();
+                byteBuffer->PutGuid(playerConnectionComponent.characterGuid);
+                byteBuffer->PutI32(static_cast<i32>(unitStatsComponent.currentHealth));
+
+                CharacterUtils::SendPacketToGridPlayers(&registry, playerConnectionComponent.entityId, byteBuffer, Opcode::SMSG_HEALTH_UPDATE);
+
+                unitStatsComponent.healthIsDirty = false;
+            }
+
+            for (int i = 0; i < POWER_COUNT; i++)
+            {
+                if (unitStatsComponent.powerIsDirty[i])
+                {
+                    // Create POWER_UPDATE packet
+                    std::shared_ptr<ByteBuffer> byteBuffer = ByteBuffer::Borrow<13>();
+                    byteBuffer->PutGuid(playerConnectionComponent.characterGuid);
+                    byteBuffer->PutU8(i);
+
+                    f32 power = unitStatsComponent.currentPower[i];
+
+                    // When updating the client on units rage values, we have to multiply our internal value with 10.
+                    // This is necessary because the client represents their powers as ints, and 1 rage in the visible bar equals 10 "client rage"
+                    if (i == POWER_RAGE)
+                        power *= 10.0f;
+
+                    byteBuffer->PutI32(static_cast<i32>(power));
+
+                    CharacterUtils::SendPacketToGridPlayers(&registry, playerConnectionComponent.entityId, byteBuffer, Opcode::SMSG_POWER_UPDATE);
+
+                    unitStatsComponent.powerIsDirty[i] = false;
+                }
+            }
+        });
     }
-}
 } // namespace PlayerUpdateSystem

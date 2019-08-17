@@ -96,4 +96,19 @@ inline float Cos(float x)
     return Sin(x + HALF_PI);
 }
 
+inline float Min(float a, float b)
+{
+    return (a <= b) ? a : b;
+}
+
+inline float Max(float a, float b)
+{
+    return (a >= b) ? a : b;
+}
+
+inline float Clamp(float x, float min, float max)
+{
+    return Max(Min(x, max), min);
+}
+
 }; // namespace Math

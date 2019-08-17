@@ -24,10 +24,56 @@
 #pragma once
 #include <NovusTypes.h>
 
-struct UnitStatusComponent 
+enum PowerType
 {
-	u32 health;
-	u32 maxHealth;
-	u32 power;
-	u32 maxPower;
+    POWER_HEALTH = -2, // This is strictly used for spells
+    POWER_MANA = 0,
+    POWER_RAGE,
+    POWER_FOCUS,
+    POWER_ENERGY,
+    POWER_HAPPINESS,
+    POWER_RUNE,
+    POWER_RUNIC_POWER,
+    POWER_COUNT = 7
+};
+
+enum StatType
+{
+    STAT_STRENGTH,
+    STAT_AGILITY,
+    STAT_STAMINA,
+    STAT_INTELLECT,
+    STAT_SPIRIT,
+    STAT_COUNT
+};
+
+enum ResistanceType
+{
+    RESISTANCE_NORMAL,
+    RESISTANCE_HOLY,
+    RESISTANCE_FIRE,
+    RESISTANCE_NATURE,
+    RESISTANCE_FROST,
+    RESISTANCE_SHADOW,
+    RESISTANCE_ARCANE,
+    RESISTANCE_COUNT
+};
+
+struct UnitStatsComponent
+{
+    f32 baseHealth;
+    f32 currentHealth;
+    f32 maxHealth;
+    bool healthIsDirty;
+
+    f32 basePower[POWER_COUNT];
+    f32 currentPower[POWER_COUNT];
+    f32 maxPower[POWER_COUNT];
+    bool powerIsDirty[POWER_COUNT];
+
+    i32 baseStat[STAT_COUNT];
+    i32 currentStat[STAT_COUNT];
+
+    i32 baseResistance[RESISTANCE_COUNT];
+    i32 currentResistance[RESISTANCE_COUNT];
 };

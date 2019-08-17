@@ -10,6 +10,7 @@
 #include "../Components/PlayerSpellStorageComponent.h"
 #include "../Components/PlayerSkillStorageComponent.h"
 #include "../Components/PlayerInitializeComponent.h"
+#include "../Components/UnitStatsComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
 #include "../Components/Singletons/CharacterDatabaseCacheSingleton.h"
 
@@ -19,8 +20,8 @@ void Update(entt::registry& registry)
 {
     CharacterDatabaseCacheSingleton& characterDatabase = registry.ctx<CharacterDatabaseCacheSingleton>();
 
-    auto view = registry.view<PlayerInitializeComponent, PlayerFieldDataComponent, PlayerPositionComponent, PlayerSpellStorageComponent, PlayerSkillStorageComponent>();
-    view.each([&characterDatabase](const auto, PlayerInitializeComponent& playerInitializeData, PlayerFieldDataComponent& playerFieldData, PlayerPositionComponent& playerPositionData, PlayerSpellStorageComponent& spellStorageData, PlayerSkillStorageComponent& skillStorageData) {
+    auto view = registry.view<PlayerInitializeComponent, PlayerFieldDataComponent, PlayerPositionComponent, PlayerSpellStorageComponent, PlayerSkillStorageComponent, UnitStatsComponent>();
+    view.each([&characterDatabase](const auto, PlayerInitializeComponent& playerInitializeData, PlayerFieldDataComponent& playerFieldData, PlayerPositionComponent& playerPositionData, PlayerSpellStorageComponent& spellStorageData, PlayerSkillStorageComponent& skillStorageData, UnitStatsComponent& unitStatsComponent) {
         /* Load Cached Data for character */
         robin_hood::unordered_map<u32, CharacterSpellStorage> characterSpellStorage;
         if (characterDatabase.cache->GetCharacterSpellStorage(playerInitializeData.characterGuid, characterSpellStorage))
@@ -167,22 +168,22 @@ void Update(entt::registry& registry)
         playerFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_0, characterInfo.classId, 1);
         playerFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_0, characterInfo.gender, 2);
         playerFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_0, 1, 3);
-        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_HEALTH, 60);
-        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_POWER1, 0);
-        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_POWER2, 0);
-        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_POWER3, 100);
-        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_POWER4, 100);
-        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_POWER5, 0);
-        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_POWER6, 8);
-        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_POWER7, 1000);
-        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_MAXHEALTH, 60);
-        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER1, 0);
-        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER2, 1000);
-        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER3, 100);
-        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER4, 100);
-        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER5, 0);
-        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER6, 8);
-        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER7, 1000);
+        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_HEALTH, unitStatsComponent.currentHealth);
+        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_POWER1, unitStatsComponent.currentPower[0]);
+        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_POWER2, unitStatsComponent.currentPower[1]);
+        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_POWER3, unitStatsComponent.currentPower[2]);
+        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_POWER4, unitStatsComponent.currentPower[3]);
+        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_POWER5, unitStatsComponent.currentPower[4]);
+        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_POWER6, unitStatsComponent.currentPower[5]);
+        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_POWER7, unitStatsComponent.currentPower[6]);
+        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_MAXHEALTH, unitStatsComponent.maxHealth);
+        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER1, unitStatsComponent.maxPower[0]);
+        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER2, unitStatsComponent.maxPower[1]);
+        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER3, unitStatsComponent.maxPower[2]);
+        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER4, unitStatsComponent.maxPower[3]);
+        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER5, unitStatsComponent.maxPower[4]);
+        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER6, unitStatsComponent.maxPower[5]);
+        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_MAXPOWER7, unitStatsComponent.maxPower[6]);
         playerFieldData.SetFieldValue<u32>(UNIT_FIELD_LEVEL, characterInfo.level);
         playerFieldData.SetFieldValue<u32>(UNIT_FIELD_FACTIONTEMPLATE, 14);
         playerFieldData.SetFieldValue<u32>(UNIT_FIELD_FLAGS, 0x00000008);
@@ -206,7 +207,7 @@ void Update(entt::registry& registry)
         playerFieldData.SetFieldValue<u32>(UNIT_FIELD_BYTES_1, 0);
         playerFieldData.SetFieldValue<f32>(UNIT_MOD_CAST_SPEED, 1);
 
-        for (i32 i = 0; i < 5; i++)
+        for (i32 i = 0; i < 5; i++) // Primary stats
         {
             playerFieldData.SetFieldValue<u32>(UNIT_FIELD_STAT0 + i, 20);
             playerFieldData.SetFieldValue<i32>(UNIT_FIELD_POSSTAT0 + i, 0);
@@ -219,7 +220,6 @@ void Update(entt::registry& registry)
             playerFieldData.SetFieldValue<i32>(UNIT_FIELD_RESISTANCEBUFFMODSPOSITIVE + i, 0);
             playerFieldData.SetFieldValue<i32>(UNIT_FIELD_RESISTANCEBUFFMODSNEGATIVE + i, 0);
         }
-        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_STAT0, 42);
 
         playerFieldData.SetFieldValue<u32>(UNIT_FIELD_BASE_MANA, 0);
         playerFieldData.SetFieldValue<u32>(UNIT_FIELD_BASE_HEALTH, 20);

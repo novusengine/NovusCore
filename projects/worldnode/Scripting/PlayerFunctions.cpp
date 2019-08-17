@@ -4,6 +4,7 @@
 #include "../ECS/Components/Singletons/ScriptSingleton.h"
 #include "../ECS/Components/ScriptDataStorageComponent.h"
 #include "../ECS/Components/PlayerFieldDataComponent.h"
+#include "../ECS/Components/UnitStatsComponent.h"
 
 #include <Utils/StringUtils.h>
 #include "../Utils/ServiceLocator.h"
@@ -214,6 +215,118 @@ void AngelScriptPlayer::SetMountDisplayId(i32 displayId, bool immediate)
     {
         registry->ctx<ScriptSingleton>().AddTransaction([&playerFieldData, displayId]() {
             playerFieldData.SetFieldValue<i32>(UNIT_FIELD_MOUNTDISPLAYID, displayId);
+        });
+    }
+}
+
+f32 AngelScriptPlayer::GetHealth() const
+{
+    entt::registry* registry = ServiceLocator::GetMainRegistry();
+    UnitStatsComponent& unitStatsComponent = registry->get<UnitStatsComponent>(_entityId);
+    return unitStatsComponent.currentHealth;
+}
+
+f32 AngelScriptPlayer::GetMaxHealth() const
+{
+    entt::registry* registry = ServiceLocator::GetMainRegistry();
+    UnitStatsComponent& unitStatsComponent = registry->get<UnitStatsComponent>(_entityId);
+    return unitStatsComponent.maxHealth;
+}
+
+void AngelScriptPlayer::ModHealth(f32 modifier, bool immediate)
+{
+    entt::registry* registry = ServiceLocator::GetMainRegistry();
+    UnitStatsComponent& unitStatsComponent = registry->get<UnitStatsComponent>(_entityId);
+
+    if (immediate)
+    {
+        unitStatsComponent.currentHealth += modifier;
+        unitStatsComponent.healthIsDirty = true;
+    }
+    else
+    {
+        registry->ctx<ScriptSingleton>().AddTransaction([&unitStatsComponent, modifier]() {
+            unitStatsComponent.currentHealth += modifier;
+            unitStatsComponent.healthIsDirty = true;
+        });
+    }
+}
+
+void AngelScriptPlayer::SetHealth(f32 health, bool immediate)
+{
+    entt::registry* registry = ServiceLocator::GetMainRegistry();
+    UnitStatsComponent& unitStatsComponent = registry->get<UnitStatsComponent>(_entityId);
+
+    if (immediate)
+    {
+        unitStatsComponent.currentHealth = health;
+        unitStatsComponent.healthIsDirty = true;
+    }
+    else
+    {
+        registry->ctx<ScriptSingleton>().AddTransaction([&unitStatsComponent, health]() {
+            unitStatsComponent.currentHealth = health;
+            unitStatsComponent.healthIsDirty = true;
+        });
+    }
+}
+
+f32 AngelScriptPlayer::GetPower(u8 powerId) const
+{
+    assert(powerId < POWER_COUNT);
+
+    entt::registry* registry = ServiceLocator::GetMainRegistry();
+    UnitStatsComponent& unitStatsComponent = registry->get<UnitStatsComponent>(_entityId);
+    return unitStatsComponent.currentPower[powerId];
+}
+
+f32 AngelScriptPlayer::GetMaxPower(u8 powerId) const
+{
+    assert(powerId < POWER_COUNT);
+
+    entt::registry* registry = ServiceLocator::GetMainRegistry();
+    UnitStatsComponent& unitStatsComponent = registry->get<UnitStatsComponent>(_entityId);
+    return unitStatsComponent.maxPower[powerId];
+}
+
+void AngelScriptPlayer::ModPower(u8 powerId, f32 modifier, bool immediate)
+{
+    assert(powerId < POWER_COUNT);
+
+    entt::registry* registry = ServiceLocator::GetMainRegistry();
+    UnitStatsComponent& unitStatsComponent = registry->get<UnitStatsComponent>(_entityId);
+
+    if (immediate)
+    {
+        unitStatsComponent.currentPower[powerId] += modifier;
+        unitStatsComponent.powerIsDirty[powerId] = true;
+    }
+    else
+    {
+        registry->ctx<ScriptSingleton>().AddTransaction([&unitStatsComponent, powerId, modifier]() {
+            unitStatsComponent.currentPower[powerId] += modifier;
+            unitStatsComponent.powerIsDirty[powerId] = true;
+        });
+    }
+}
+
+void AngelScriptPlayer::SetPower(u8 powerId, f32 power, bool immediate)
+{
+    assert(powerId < POWER_COUNT);
+
+    entt::registry* registry = ServiceLocator::GetMainRegistry();
+    UnitStatsComponent& unitStatsComponent = registry->get<UnitStatsComponent>(_entityId);
+
+    if (immediate)
+    {
+        unitStatsComponent.currentPower[powerId] = power;
+        unitStatsComponent.powerIsDirty[powerId] = true;
+    }
+    else
+    {
+        registry->ctx<ScriptSingleton>().AddTransaction([&unitStatsComponent, powerId, power]() {
+            unitStatsComponent.currentPower[powerId] = power;
+            unitStatsComponent.powerIsDirty[powerId] = true;
         });
     }
 }

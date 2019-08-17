@@ -15,6 +15,7 @@
 //#include "ECS/Systems/CommandParserSystem.h"
 #include "ECS/Systems/PlayerBuildDataSystem.h"
 #include "ECS/Systems/EntityCreateDataSystem.h"
+#include "ECS/Systems/UnitUpdateSystem.h"
 #include "ECS/Systems/PlayerUpdateSystem.h"
 #include "ECS/Systems/PlayerAddSystem.h"
 #include "ECS/Systems/EntityAddSystem.h"
@@ -327,13 +328,21 @@ void WorldNodeHandler::SetupUpdateFramework()
     });
     entityCreateDataSystemTask.gather(playerBuildDataSystemTask);
 
+    // UnitUpdateSystem
+    tf::Task unitUpdateDataSystemTask = framework.emplace([&registry]() {
+        ZoneScopedNC("UnitUpdateSystem", tracy::Color::Yellow2)
+            UnitUpdateSystem::Update(registry);
+        registry.ctx<ScriptSingleton>().CompleteSystem();
+    });
+    unitUpdateDataSystemTask.gather(entityCreateDataSystemTask);
+
     // PlayerUpdateSystem
     tf::Task playerUpdateDataSystemTask = framework.emplace([&registry]() {
         ZoneScopedNC("PlayerUpdateSystem", tracy::Color::Yellow2)
             PlayerUpdateSystem::Update(registry);
         registry.ctx<ScriptSingleton>().CompleteSystem();
     });
-    playerUpdateDataSystemTask.gather(entityCreateDataSystemTask);
+    playerUpdateDataSystemTask.gather(unitUpdateDataSystemTask);
 
     // PlayerAddSystem
     tf::Task playerAddSystemTask = framework.emplace([&registry]() {

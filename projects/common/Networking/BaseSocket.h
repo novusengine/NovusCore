@@ -48,7 +48,7 @@ public:
     {
         return _socket;
     }
-
+        
     void Send(ByteBuffer* buffer)
     {
         if (!buffer->IsEmpty() || buffer->IsFull())
@@ -60,10 +60,15 @@ public:
     bool IsClosed() { return _isClosed; }
 
 protected:
-    BaseSocket(asio::ip::tcp::socket* socket) : _isClosed(false), _socket(socket) 
+    BaseSocket(asio::ip::tcp::socket* socket) : _isClosed(false), _socket(socket)
     {
         _receiveBuffer = ByteBuffer::Borrow<4096>();
         _sendBuffer = ByteBuffer::Borrow<4096>();
+    }
+
+    virtual ~BaseSocket()
+    {
+    
     }
 
     void AsyncRead()
