@@ -1,6 +1,6 @@
 #include <NovusTypes.h>
 #include <Networking/ByteBuffer.h>
-#include <Database\DatabaseConnector.h>
+#include <Database/DatabaseConnector.h>
 #include "../../NovusEnums.h"
 #include "../../MessageHandler.h"
 #include "../../RealmHandler.h"

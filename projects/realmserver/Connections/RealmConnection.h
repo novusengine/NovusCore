@@ -33,7 +33,7 @@
 
 #include <Database/Cache/AuthDatabaseCache.h>
 #include <Database/Cache/CharacterDatabaseCache.h>
-#include <Utils\DebugHandler.h>
+#include <Utils/DebugHandler.h>
 
 #pragma pack(push, 1)
 struct cAuthSessionData
