@@ -23,26 +23,49 @@
 */
 #pragma once
 #include <Utils/DebugHandler.h>
+#include "ScriptEngine.h"
 #include "AngelBinder.h"
-#include <entt.hpp>
-#include "MapFunctions.h"
+#include <array>
+#include <memory>
 
-namespace GlobalFunctions
+class MapHooks
 {
-    inline void Print(std::string& message)
+public:
+    enum Hooks
     {
-        NC_LOG_MESSAGE("[Script]: %s", message.c_str());
+        HOOK_ON_MAP_LOADED,
+
+        COUNT
+    };
+
+    inline static void Register(Hooks id, asIScriptFunction* func)
+    {
+        _hooks[id].push_back(func);
     }
 
-    inline AngelScriptMap GetMapFromId(u32 id)
+    inline static std::vector<asIScriptFunction*>& GetHooks(Hooks id)
     {
-        AngelScriptMap map(id);
-        return map;
+        return _hooks[id];
     }
-} // namespace GlobalFunctions
 
-inline void RegisterGlobalFunctions(AB_NAMESPACE_QUALIFIER Engine* engine)
-{
-    engine->asEngine()->RegisterGlobalFunction("void Print(string msg)", asFUNCTION(GlobalFunctions::Print), asCALL_CDECL);
-    engine->asEngine()->RegisterGlobalFunction("Map GetMapFromId(uint32 id)", asFUNCTION(GlobalFunctions::GetMapFromId), asCALL_CDECL);
-}
+    template <typename... Args>
+    inline static void CallHook(Hooks id, Args... args)
+    {
+        ScriptEngine::CallHook(_hooks, id, args...);
+    }
+
+    inline static void ClearHooks()
+    {
+        for (size_t i = 0; i < Hooks::COUNT; i++)
+        {
+            for (auto function : _hooks[i])
+            {
+                function->Release();
+            }
+            _hooks[i].clear();
+        }
+    }
+
+private:
+    static std::array<std::vector<asIScriptFunction*>, Hooks::COUNT> _hooks;
+};

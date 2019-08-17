@@ -104,6 +104,7 @@ Vector3 AngelScriptPlayer::GetPosition() const
     PlayerPositionComponent& positionComponent = ServiceLocator::GetMainRegistry()->get<PlayerPositionComponent>(_entityId);
     return Vector3(positionComponent.movementData.position.x, positionComponent.movementData.position.y, positionComponent.movementData.position.z);
 }
+
 void AngelScriptPlayer::SetPosition(Vector3 pos, bool immediate)
 {
     entt::registry* registry = ServiceLocator::GetMainRegistry();
@@ -133,6 +134,7 @@ f32 AngelScriptPlayer::GetOrientation() const
 {
     return ServiceLocator::GetMainRegistry()->get<PlayerPositionComponent>(_entityId).movementData.orientation;
 }
+
 void AngelScriptPlayer::SetOrientation(f32 orientation, bool immediate)
 {
     entt::registry* registry = ServiceLocator::GetMainRegistry();
@@ -154,6 +156,7 @@ i32 AngelScriptPlayer::GetDisplayId() const
 {
     return ServiceLocator::GetMainRegistry()->get<PlayerFieldDataComponent>(_entityId).GetFieldValue<i32>(UNIT_FIELD_DISPLAYID);
 }
+
 void AngelScriptPlayer::SetDisplayId(i32 displayId, bool immediate)
 {
     entt::registry* registry = ServiceLocator::GetMainRegistry();
@@ -170,10 +173,12 @@ void AngelScriptPlayer::SetDisplayId(i32 displayId, bool immediate)
         });
     }
 }
+
 i32 AngelScriptPlayer::GetNativeDisplayId() const
 {
     return ServiceLocator::GetMainRegistry()->get<PlayerFieldDataComponent>(_entityId).GetFieldValue<i32>(UNIT_FIELD_NATIVEDISPLAYID);
 }
+
 void AngelScriptPlayer::SetNativeDisplayId(i32 displayId, bool immediate)
 {
     entt::registry* registry = ServiceLocator::GetMainRegistry();
@@ -190,10 +195,12 @@ void AngelScriptPlayer::SetNativeDisplayId(i32 displayId, bool immediate)
         });
     }
 }
+
 i32 AngelScriptPlayer::GetMountDisplayId() const
 {
     return ServiceLocator::GetMainRegistry()->get<PlayerFieldDataComponent>(_entityId).GetFieldValue<i32>(UNIT_FIELD_MOUNTDISPLAYID);
 }
+
 void AngelScriptPlayer::SetMountDisplayId(i32 displayId, bool immediate)
 {
     entt::registry* registry = ServiceLocator::GetMainRegistry();
@@ -231,6 +238,7 @@ void AngelScriptPlayer::SetFlyMode(bool state, bool immediate)
         });
     }
 }
+
 void AngelScriptPlayer::SetSpeed(f32 speed, bool immediate)
 {
     entt::registry* registry = ServiceLocator::GetMainRegistry();

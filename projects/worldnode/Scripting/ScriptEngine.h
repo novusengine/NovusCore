@@ -33,7 +33,10 @@
 typedef void(func_t)(AB_NAMESPACE_QUALIFIER Engine*);
 
 class NovusConnection;
+class AngelScriptPlayer;
 class AngelScriptSpell;
+class AngelScriptAura;
+class AngelScriptMap;
 class ScriptEngine
 {
 public:
@@ -129,11 +132,6 @@ public:
                         NC_LOG_FATAL("When trying to call function '%s', argument %u expects type %s but gets type %s", function->GetName(), i, paramNameStr.c_str(), argName.c_str());
                     }
 
-#ifdef NC_Debug
-                    //volatile std::string paramName = any::GetTypeName(paramTypeId);
-                    //volatile std::string argName = any::GetTypeName(argTypeId);
-#endif
-
                     assert(paramTypeHash == argTypeHash);
 
                     if (!argument.has_value())
@@ -169,6 +167,8 @@ public:
                         context->setObject(std::any_cast<AngelScriptSpell*>(argument));
                     else if (argTypeHash == typeid(AngelScriptAura*).hash_code())
                         context->setObject(std::any_cast<AngelScriptAura*>(argument));
+                    else if (argTypeHash == typeid(AngelScriptMap*).hash_code())
+                        context->setObject(std::any_cast<AngelScriptMap*>(argument));
                     else
                         assert(false);
                 }

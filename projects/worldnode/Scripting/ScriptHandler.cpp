@@ -16,6 +16,7 @@
 #include "GlobalFunctions.h"
 #include "MathFunctions.h"
 #include "PlayerFunctions.h"
+#include "MapFunctions.h"
 #include "SpellFunctions.h"
 #include "AuraFunctions.h"
 #include "PacketFunctions.h"
@@ -66,7 +67,6 @@ void ScriptHandler::LoadScriptDirectory(std::string& path)
     {
         ScriptEngine::SetRegisterFunction(&RegisterFunctions);
         ScriptEngine::SetIOService(_ioService);
-        GlobalFunctions::SetRegistry(_registry);
     }
 
     _path = path;
@@ -162,11 +162,11 @@ void ScriptHandler::RegisterFunctions(AB_NAMESPACE_QUALIFIER Engine* engine)
     RegisterStdStringUtils(engine->asEngine());
 
     // Packet functions
-    GlobalFunctions::SetRegistry(_registry);
     RegisterMathTypes(engine);
-    RegisterGlobalFunctions(engine);
     RegisterPlayerFunctions(engine);
+    RegisterMapFunctions(engine);
     RegisterSpellFunctions(engine);
     RegisterAuraFunctions(engine);
     RegisterPacketFunctions(engine);
+    RegisterGlobalFunctions(engine);
 }

@@ -34,6 +34,8 @@
 #include "../ECS/Components/PlayerUpdateDataComponent.h"
 #include "../ECS/Components/PlayerPositionComponent.h"
 
+class AngelScriptMap;
+
 class AngelScriptPlayer
 {
 public:

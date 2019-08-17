@@ -677,7 +677,8 @@ void Update(entt::registry& registry)
                 std::shared_ptr<ByteBuffer> buffer = ByteBuffer::Borrow<512>();
 
                 // Call OnSpellCast script hooks
-                AngelScriptSpell asSpell;
+                AngelScriptSpellTemplate asSpellTemplate;
+                AngelScriptSpell asSpell(&asSpellTemplate);
                 AngelScriptPlayer asPlayer(playerConnection.entityId);
                 SpellHooks::CallHook(SpellHooks::Hooks::HOOK_ON_SPELL_BEGIN_CAST, &asPlayer, &asSpell);
                 
@@ -688,9 +689,6 @@ void Update(entt::registry& registry)
 
                     if (spellData.Effect[i] == SPELL_EFFECT_LEAP)
                     {
-                        if (spellData.EffectImplicitTargetA[i] != 1 && spellData.EffectImplicitTargetB[i] != 55)
-                            continue;
-
                         f32 tempHeight = playerPositionData.movementData.position.z;
                         u32 dest = 20;
 
@@ -727,12 +725,12 @@ void Update(entt::registry& registry)
                         f32 newPositionX = playerPositionData.movementData.position.x + dest * Math::Cos(playerPositionData.movementData.orientation);
                         f32 newPositionY = playerPositionData.movementData.position.y + dest * Math::Sin(playerPositionData.movementData.orientation);
                         Vector2 newPos(newPositionX, newPositionY);
-                        f32 height = mapSingleton.maps[playerPositionData.mapId].GetHeight(newPos);
+                        //f32 height = mapSingleton.maps[playerPositionData.mapId].GetHeight(newPos);
 
-                        playerPositionData.movementData.position.x = newPositionX;
-                        playerPositionData.movementData.position.y = newPositionY;
-                        playerPositionData.movementData.position.z = height;
-                        CharacterUtils::InvalidatePosition(singleton, playerConnection, playerPositionData);
+                        //playerPositionData.movementData.position.x = newPositionX;
+                        //playerPositionData.movementData.position.y = newPositionY;
+                        //playerPositionData.movementData.position.z = height;
+                        //CharacterUtils::InvalidatePosition(singleton, playerConnection, playerPositionData);
                     }
                     else if (spellData.Effect[i] == SPELL_EFFECT_APPLY_AURA)
                     {

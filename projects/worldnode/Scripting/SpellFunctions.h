@@ -31,6 +31,8 @@
 #include "ScriptEngine.h"
 #include <entt.hpp>
 
+struct SpellData;
+
 class AngelScriptSpellTemplate
 {
 public:
@@ -41,13 +43,15 @@ public:
     void GetData(std::string& key, void* ref, int typeId) const;
     void SetData(std::string& key, void* ref, int typeId) const;
 
+    
+
 private:
 };
 
 class AngelScriptSpell
 {
 public:
-    AngelScriptSpell() {}
+    AngelScriptSpell(AngelScriptSpellTemplate* asSpellTemplate) : _template(asSpellTemplate) {}
 
 public:
     // Data storage
