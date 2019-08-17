@@ -40,7 +40,7 @@ struct CharacterInfo
     f32 orientation;
     u8 online;
 
-    void UpdateCache(u64 characterGuid);
+    void UpdateCache();
 
 private:
     CharacterDatabaseCache* _cache;
@@ -281,7 +281,11 @@ public:
     void Save() override;
     void SaveAsync() override;
 
-    void SaveAndUnloadCharacter(u64 characterGuid);
+    void LoadCharactersForAccount(u32 accountId);
+    void UnloadCharactersForAccount(u32 accountId);
+
+    void LoadCharacterByGuid(u64 guid);
+
     void SaveCharacter(u64 characterGuid);
     void UnloadCharacter(u64 characterGuid);
 

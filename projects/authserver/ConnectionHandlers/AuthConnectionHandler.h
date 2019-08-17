@@ -49,7 +49,7 @@ private:
             _workerThread->_mutex.lock();
 
             socket->non_blocking(true);
-            AuthConnection* connection = new AuthConnection(socket);
+            std::shared_ptr<AuthConnection> connection = std::make_shared<AuthConnection>(socket);
             connection->Start();
 
             _connections.push_back(connection);

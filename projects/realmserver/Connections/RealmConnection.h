@@ -31,8 +31,9 @@
 #include <Cryptography/SHA1.h>
 #include <random>
 
-#include  <Database/Cache/AuthDatabaseCache.h>
-#include  <Database/Cache/CharacterDatabaseCache.h>
+#include <Database/Cache/AuthDatabaseCache.h>
+#include <Database/Cache/CharacterDatabaseCache.h>
+#include <Utils\DebugHandler.h>
 
 #pragma pack(push, 1)
 struct cAuthSessionData
@@ -95,16 +96,23 @@ struct cCharacterCreateData
 class RealmConnection : public BaseSocket
 {
 public:
-    RealmConnection(asio::ip::tcp::socket* socket, AuthDatabaseCache& authCache, CharacterDatabaseCache& charCache, bool resumeConnection) : BaseSocket(socket), account(0), characterGuid(0), enteringWorld(false), _headerBuffer(nullptr, sizeof(ClientPacketHeader)), _packetBuffer(nullptr, 4096), _authCache(authCache), _charCache(charCache)
+    RealmConnection(asio::ip::tcp::socket* socket, AuthDatabaseCache& inAuthCache, CharacterDatabaseCache& inCharCache, bool resumeConnection) : BaseSocket(socket), account(0), characterGuid(0), enteringWorld(false), _headerBuffer(nullptr, sizeof(ClientPacketHeader)), _packetBuffer(nullptr, 4096), authCache(inAuthCache), charCache(inCharCache)
     {
         _resumeConnection = resumeConnection;
         _seed = static_cast<u32>(rand());
         sessionKey = new BigNumber();
     }
+    ~RealmConnection()
+    {
+        if (account)
+        {
+            charCache.UnloadCharactersForAccount(account);
+        }
+    }
 
     bool Start() override;
     void HandleRead() override;
-    void SendPacket(ByteBuffer& buffer, Opcode opcode);
+    void SendPacket(ByteBuffer* buffer, Opcode opcode);
 
     bool HandleNewHeader();
     bool HandleNewPacket();
@@ -129,6 +137,11 @@ public:
     cAuthSessionData sessionData;
     BigNumber* sessionKey;
 
+    ByteBuffer& GetHeaderBuffer() { return _headerBuffer; }
+    ByteBuffer& GetPacketBuffer() { return _packetBuffer; }
+
+    AuthDatabaseCache& authCache;
+    CharacterDatabaseCache& charCache;
 private:
     ByteBuffer _headerBuffer;
     ByteBuffer _packetBuffer;
@@ -136,9 +149,6 @@ private:
     bool _resumeConnection;
     u32 _seed;
     StreamEncryption _streamEncryption;
-
-    AuthDatabaseCache& _authCache;
-    CharacterDatabaseCache& _charCache;
 };
 
 template <>

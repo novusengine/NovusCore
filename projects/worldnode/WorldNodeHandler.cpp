@@ -241,9 +241,10 @@ bool WorldNodeHandler::Update()
                     characterInfo.position = playerPositionData.movementData.position;
                     characterInfo.orientation = playerPositionData.movementData.orientation;
                     characterInfo.online = 0;
-                    characterInfo.UpdateCache(playerConnection.characterGuid);
+                    characterInfo.UpdateCache();
 
-                    characterDatabase.cache->SaveAndUnloadCharacter(playerConnection.characterGuid);
+                    characterDatabase.cache->SaveCharacter(playerConnection.characterGuid);
+                    characterDatabase.cache->UnloadCharacter(playerConnection.characterGuid);
                 }
             }
             else if (message.code == MSG_IN_PLAYER_CONNECTED)

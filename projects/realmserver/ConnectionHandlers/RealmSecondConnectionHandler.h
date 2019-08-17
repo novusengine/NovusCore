@@ -63,7 +63,7 @@ private:
                 socket->set_option(asio::ip::tcp::no_delay(true), error);
             }
 
-            RealmConnection* connection = new RealmConnection(socket, _authCache, _charCache, true);
+            std::shared_ptr<RealmConnection> connection = std::make_shared<RealmConnection>(socket, _authCache, _charCache, true);
             connection->Start();
 
             _connections.push_back(connection);

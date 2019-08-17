@@ -18,110 +18,6 @@ void CharacterDatabaseCache::Load()
         return;
 
     amy::result_set resultSet;
-    connector->Query("SELECT characters.guid, characters.account, characters.name, characters.race, characters.gender, characters.class, characters.level, characters.mapId, characters.zoneId, characters.coordinate_x, characters.coordinate_y, characters.coordinate_z, characters.orientation, characters.online, character_visual_data.skin, character_visual_data.face, character_visual_data.facial_style, character_visual_data.hair_style, character_visual_data.hair_color FROM characters INNER JOIN character_visual_data ON characters.guid = character_visual_data.guid;", resultSet);
-
-    if (resultSet.affected_rows() > 0)
-    {
-        for (auto row : resultSet)
-        {
-            CharacterInfo newCharacterInfo(this);
-            newCharacterInfo.guid = row[0].GetU64();
-            newCharacterInfo.account = row[1].GetU32();
-            newCharacterInfo.name = row[2].GetString();
-            newCharacterInfo.race = row[3].GetU8();
-            newCharacterInfo.gender = row[4].GetU8();
-            newCharacterInfo.classId = row[5].GetU8();
-            newCharacterInfo.level = row[6].GetU8();
-            newCharacterInfo.mapId = row[7].GetU32();
-            newCharacterInfo.zoneId = row[8].GetU32();
-            newCharacterInfo.position.x = row[9].GetF32();
-            newCharacterInfo.position.y = row[10].GetF32();
-            newCharacterInfo.position.z = row[11].GetF32();
-            newCharacterInfo.orientation = row[12].GetF32();
-            newCharacterInfo.online = row[13].GetU8();
-
-            CharacterVisualData newCharacterVisualData(this);
-            newCharacterVisualData.guid = newCharacterInfo.guid;
-            newCharacterVisualData.skin = row[14].GetU8();
-            newCharacterVisualData.face = row[15].GetU8();
-            newCharacterVisualData.facialStyle = row[16].GetU8();
-            newCharacterVisualData.hairStyle = row[17].GetU8();
-            newCharacterVisualData.hairColor = row[18].GetU8();
-
-            _accessMutex.lock();
-            _characterInfoCache[newCharacterInfo.guid] = newCharacterInfo;
-            _characterVisualDataCache[newCharacterInfo.guid] = newCharacterVisualData;
-            _accessMutex.unlock();
-        }
-    }
-
-    connector->Query("SELECT guid, type, timestamp, data FROM character_data", resultSet);
-    if (resultSet.affected_rows() > 0)
-    {
-        for (auto row : resultSet)
-        {
-            CharacterData newCharacterData(this);
-            newCharacterData.guid = row[0].as<amy::sql_bigint_unsigned>();
-            newCharacterData.type = row[1].as<amy::sql_int_unsigned>();
-            newCharacterData.timestamp = row[2].as<amy::sql_int_unsigned>();
-            newCharacterData.data = row[3].as<amy::sql_blob>();
-            newCharacterData.loaded = true;
-
-            _accessMutex.lock();
-            _characterDataCache.insert({newCharacterData.guid, newCharacterData});
-            _accessMutex.unlock();
-        }
-    }
-
-    connector->Query("SELECT guid, spell FROM character_spell_storage;", resultSet);
-    if (resultSet.affected_rows() > 0)
-    {
-        for (auto row : resultSet)
-        {
-            CharacterSpellStorage newCharacterSpellStorage(this);
-            u64 guid = row[0].GetU64();
-            newCharacterSpellStorage.id = row[1].GetU32();
-
-            _accessMutex.lock();
-            _characterSpellStorageCache[guid][newCharacterSpellStorage.id] = newCharacterSpellStorage;
-            _accessMutex.unlock();
-        }
-    }
-
-    connector->Query("SELECT guid, skill, value, character_skill_storage.maxValue FROM character_skill_storage;", resultSet);
-    if (resultSet.affected_rows() > 0)
-    {
-        for (auto row : resultSet)
-        {
-            CharacterSkillStorage newCharacterSkillStorage(this);
-            u64 guid = row[0].GetU64();
-            newCharacterSkillStorage.id = row[1].GetU16();
-            newCharacterSkillStorage.value = row[2].GetU16();
-            newCharacterSkillStorage.maxValue = row[3].GetU16();
-
-            _accessMutex.lock();
-            _characterSkillStorageCache[guid][newCharacterSkillStorage.id] = newCharacterSkillStorage;
-            _accessMutex.unlock();
-        }
-    }
-
-    connector->Query("SELECT lowGuid, itemEntry, bagSlot, bagPosition, characterGuid FROM character_items;", resultSet);
-    if (resultSet.affected_rows() > 0)
-    {
-        for (auto row : resultSet)
-        {
-            CharacterItemData newCharacterItemData(this);
-            newCharacterItemData.lowGuid = row[0].GetU32();
-            newCharacterItemData.itemEntry = row[1].GetU32();
-            newCharacterItemData.bagSlot = row[2].GetU8();
-            newCharacterItemData.bagPosition = row[3].GetU32();
-            newCharacterItemData.characterGuid = row[4].GetU32();
-
-            _accessMutex.lock();
-            _characteritemDataCache[newCharacterItemData.characterGuid][newCharacterItemData.lowGuid] = newCharacterItemData;
-            _accessMutex.unlock();
-        }
-    }
 
     connector->Query("SELECT raceMask, classMask, spell FROM default_spells;", resultSet);
     if (resultSet.affected_rows() > 0)
@@ -287,11 +183,288 @@ void CharacterDatabaseCache::SaveAsync()
 {
 }
 
-void CharacterDatabaseCache::SaveAndUnloadCharacter(u64 characterGuid)
+void CharacterDatabaseCache::LoadCharactersForAccount(u32 accountId)
 {
-    SaveCharacter(characterGuid);
-    UnloadCharacter(characterGuid);
+    std::shared_ptr<DatabaseConnector> connector;
+    bool result = DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, connector);
+    assert(result);
+    if (!result)
+        return;
+
+    amy::result_set resultSet;
+    PreparedStatement characterInfoStmt("SELECT characters.guid, characters.account, characters.name, characters.race, characters.gender, characters.class, characters.level, characters.mapId, characters.zoneId, characters.coordinate_x, characters.coordinate_y, characters.coordinate_z, characters.orientation, characters.online, character_visual_data.skin, character_visual_data.face, character_visual_data.facial_style, character_visual_data.hair_style, character_visual_data.hair_color FROM characters INNER JOIN character_visual_data ON characters.guid = character_visual_data.guid WHERE characters.account = {u};");
+    characterInfoStmt.Bind(accountId);
+
+    connector->Query(characterInfoStmt, resultSet);
+    if (resultSet.affected_rows())
+    {
+        for (auto row : resultSet)
+        {
+            CharacterInfo newCharacterInfo(this);
+            newCharacterInfo.guid = row[0].GetU64();
+            newCharacterInfo.account = row[1].GetU32();
+            newCharacterInfo.name = row[2].GetString();
+            newCharacterInfo.race = row[3].GetU8();
+            newCharacterInfo.gender = row[4].GetU8();
+            newCharacterInfo.classId = row[5].GetU8();
+            newCharacterInfo.level = row[6].GetU8();
+            newCharacterInfo.mapId = row[7].GetU32();
+            newCharacterInfo.zoneId = row[8].GetU32();
+            newCharacterInfo.position.x = row[9].GetF32();
+            newCharacterInfo.position.y = row[10].GetF32();
+            newCharacterInfo.position.z = row[11].GetF32();
+            newCharacterInfo.orientation = row[12].GetF32();
+            newCharacterInfo.online = row[13].GetU8();
+
+            CharacterVisualData newCharacterVisualData(this);
+            newCharacterVisualData.guid = newCharacterInfo.guid;
+            newCharacterVisualData.skin = row[14].GetU8();
+            newCharacterVisualData.face = row[15].GetU8();
+            newCharacterVisualData.facialStyle = row[16].GetU8();
+            newCharacterVisualData.hairStyle = row[17].GetU8();
+            newCharacterVisualData.hairColor = row[18].GetU8();
+
+            _accessMutex.lock();
+            _characterInfoCache[newCharacterInfo.guid] = newCharacterInfo;
+            _characterVisualDataCache[newCharacterInfo.guid] = newCharacterVisualData;
+            _accessMutex.unlock();
+        }
+    }
+
+    PreparedStatement characterDataStmt("SELECT guid, type, timestamp, data FROM character_data WHERE guid IN (SELECT guid FROM characters WHERE account={u});");
+    characterDataStmt.Bind(accountId);
+
+    connector->Query(characterDataStmt, resultSet);
+    if (resultSet.affected_rows())
+    {
+        for (auto row : resultSet)
+        {
+            CharacterData newCharacterData(this);
+            newCharacterData.guid = row[0].as<amy::sql_bigint_unsigned>();
+            newCharacterData.type = row[1].as<amy::sql_int_unsigned>();
+            newCharacterData.timestamp = row[2].as<amy::sql_int_unsigned>();
+            newCharacterData.data = row[3].as<amy::sql_blob>();
+            newCharacterData.loaded = true;
+
+            _accessMutex.lock();
+            _characterDataCache.insert({newCharacterData.guid, newCharacterData});
+            _accessMutex.unlock();
+        }
+    }
+
+    PreparedStatement characterSpellStmt("SELECT guid, spell FROM character_spell_storage WHERE guid IN (SELECT guid FROM characters WHERE account={u});");
+    characterSpellStmt.Bind(accountId);
+
+    connector->Query(characterSpellStmt, resultSet);
+    if (resultSet.affected_rows())
+    {
+        for (auto row : resultSet)
+        {
+            CharacterSpellStorage newCharacterSpellStorage(this);
+            u64 guid = row[0].GetU64();
+            newCharacterSpellStorage.id = row[1].GetU32();
+
+            _accessMutex.lock();
+            _characterSpellStorageCache[guid][newCharacterSpellStorage.id] = newCharacterSpellStorage;
+            _accessMutex.unlock();
+        }
+    }
+
+    PreparedStatement characterSkillStmt("SELECT guid, skill, value, character_skill_storage.maxValue FROM character_skill_storage WHERE guid IN (SELECT guid FROM characters WHERE account={u});");
+    characterSkillStmt.Bind(accountId);
+
+    connector->Query(characterSkillStmt, resultSet);
+    if (resultSet.affected_rows())
+    {
+        for (auto row : resultSet)
+        {
+            CharacterSkillStorage newCharacterSkillStorage(this);
+            u64 guid = row[0].GetU64();
+            newCharacterSkillStorage.id = row[1].GetU16();
+            newCharacterSkillStorage.value = row[2].GetU16();
+            newCharacterSkillStorage.maxValue = row[3].GetU16();
+
+            _accessMutex.lock();
+            _characterSkillStorageCache[guid][newCharacterSkillStorage.id] = newCharacterSkillStorage;
+            _accessMutex.unlock();
+        }
+    }
+
+    PreparedStatement characterItemStmt("SELECT lowGuid, itemEntry, bagSlot, bagPosition, characterGuid FROM character_items WHERE characterGuid IN (SELECT guid FROM characters WHERE account={u});");
+    characterItemStmt.Bind(accountId);
+
+    connector->Query(characterItemStmt, resultSet);
+    if (resultSet.affected_rows() > 0)
+    {
+        for (auto row : resultSet)
+        {
+            CharacterItemData newCharacterItemData(this);
+            newCharacterItemData.lowGuid = row[0].GetU32();
+            newCharacterItemData.itemEntry = row[1].GetU32();
+            newCharacterItemData.bagSlot = row[2].GetU8();
+            newCharacterItemData.bagPosition = row[3].GetU32();
+            newCharacterItemData.characterGuid = row[4].GetU32();
+
+            _accessMutex.lock();
+            _characteritemDataCache[newCharacterItemData.characterGuid][newCharacterItemData.lowGuid] = newCharacterItemData;
+            _accessMutex.unlock();
+        }
+    }
 }
+void CharacterDatabaseCache::UnloadCharactersForAccount(u32 accountId)
+{
+    std::shared_ptr<DatabaseConnector> connector;
+    bool result = DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, connector);
+    assert(result);
+    if (!result)
+        return;
+
+    amy::result_set resultSet;
+    PreparedStatement characterInfoStmt("SELECT guid FROM characters WHERE account = {u};");
+    characterInfoStmt.Bind(accountId);
+
+    connector->Query(characterInfoStmt, resultSet);
+    if (resultSet.affected_rows())
+    {
+        _accessMutex.lock();
+        for (auto row : resultSet)
+        {
+            u64 characterGuid = row[0].GetU64();
+            UnloadCharacter(characterGuid);
+        }
+        _accessMutex.unlock();
+    }
+}
+
+void CharacterDatabaseCache::LoadCharacterByGuid(u64 characterGuid)
+{
+    std::shared_ptr<DatabaseConnector> connector;
+    bool result = DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, connector);
+    assert(result);
+    if (!result)
+        return;
+
+    amy::result_set resultSet;
+    PreparedStatement characterInfoStmt("SELECT characters.guid, characters.account, characters.name, characters.race, characters.gender, characters.class, characters.level, characters.mapId, characters.zoneId, characters.coordinate_x, characters.coordinate_y, characters.coordinate_z, characters.orientation, characters.online, character_visual_data.skin, character_visual_data.face, character_visual_data.facial_style, character_visual_data.hair_style, character_visual_data.hair_color FROM characters INNER JOIN character_visual_data ON characters.guid = character_visual_data.guid WHERE characters.guid = {u};");
+    characterInfoStmt.Bind(characterGuid);
+
+    connector->Query(characterInfoStmt, resultSet);
+    if (resultSet.affected_rows())
+    {
+        for (auto row : resultSet)
+        {
+            CharacterInfo newCharacterInfo(this);
+            newCharacterInfo.guid = row[0].GetU64();
+            newCharacterInfo.account = row[1].GetU32();
+            newCharacterInfo.name = row[2].GetString();
+            newCharacterInfo.race = row[3].GetU8();
+            newCharacterInfo.gender = row[4].GetU8();
+            newCharacterInfo.classId = row[5].GetU8();
+            newCharacterInfo.level = row[6].GetU8();
+            newCharacterInfo.mapId = row[7].GetU32();
+            newCharacterInfo.zoneId = row[8].GetU32();
+            newCharacterInfo.position.x = row[9].GetF32();
+            newCharacterInfo.position.y = row[10].GetF32();
+            newCharacterInfo.position.z = row[11].GetF32();
+            newCharacterInfo.orientation = row[12].GetF32();
+            newCharacterInfo.online = row[13].GetU8();
+
+            CharacterVisualData newCharacterVisualData(this);
+            newCharacterVisualData.guid = newCharacterInfo.guid;
+            newCharacterVisualData.skin = row[14].GetU8();
+            newCharacterVisualData.face = row[15].GetU8();
+            newCharacterVisualData.facialStyle = row[16].GetU8();
+            newCharacterVisualData.hairStyle = row[17].GetU8();
+            newCharacterVisualData.hairColor = row[18].GetU8();
+
+            _accessMutex.lock();
+            _characterInfoCache[newCharacterInfo.guid] = newCharacterInfo;
+            _characterVisualDataCache[newCharacterInfo.guid] = newCharacterVisualData;
+            _accessMutex.unlock();
+        }
+    }
+
+    PreparedStatement characterDataStmt("SELECT guid, type, timestamp, data FROM character_data WHERE guid = {u};");
+    characterDataStmt.Bind(characterGuid);
+
+    connector->Query(characterDataStmt, resultSet);
+    if (resultSet.affected_rows())
+    {
+        for (auto row : resultSet)
+        {
+            CharacterData newCharacterData(this);
+            newCharacterData.guid = row[0].as<amy::sql_bigint_unsigned>();
+            newCharacterData.type = row[1].as<amy::sql_int_unsigned>();
+            newCharacterData.timestamp = row[2].as<amy::sql_int_unsigned>();
+            newCharacterData.data = row[3].as<amy::sql_blob>();
+            newCharacterData.loaded = true;
+
+            _accessMutex.lock();
+            _characterDataCache.insert({newCharacterData.guid, newCharacterData});
+            _accessMutex.unlock();
+        }
+    }
+
+    PreparedStatement characterSpellStmt("SELECT guid, spell FROM character_spell_storage WHERE guid = {u};");
+    characterSpellStmt.Bind(characterGuid);
+
+    connector->Query(characterSpellStmt, resultSet);
+    if (resultSet.affected_rows())
+    {
+        for (auto row : resultSet)
+        {
+            CharacterSpellStorage newCharacterSpellStorage(this);
+            u64 guid = row[0].GetU64();
+            newCharacterSpellStorage.id = row[1].GetU32();
+
+            _accessMutex.lock();
+            _characterSpellStorageCache[guid][newCharacterSpellStorage.id] = newCharacterSpellStorage;
+            _accessMutex.unlock();
+        }
+    }
+
+    PreparedStatement characterSkillStmt("SELECT guid, skill, value, character_skill_storage.maxValue FROM character_skill_storage WHERE guid = {u};");
+    characterSkillStmt.Bind(characterGuid);
+
+    connector->Query(characterSkillStmt, resultSet);
+    if (resultSet.affected_rows())
+    {
+        for (auto row : resultSet)
+        {
+            CharacterSkillStorage newCharacterSkillStorage(this);
+            u64 guid = row[0].GetU64();
+            newCharacterSkillStorage.id = row[1].GetU16();
+            newCharacterSkillStorage.value = row[2].GetU16();
+            newCharacterSkillStorage.maxValue = row[3].GetU16();
+
+            _accessMutex.lock();
+            _characterSkillStorageCache[guid][newCharacterSkillStorage.id] = newCharacterSkillStorage;
+            _accessMutex.unlock();
+        }
+    }
+
+    PreparedStatement characterItemStmt("SELECT lowGuid, itemEntry, bagSlot, bagPosition, characterGuid FROM character_items WHERE characterGuid = {u};");
+    characterItemStmt.Bind(characterGuid);
+
+    connector->Query(characterItemStmt, resultSet);
+    if (resultSet.affected_rows() > 0)
+    {
+        for (auto row : resultSet)
+        {
+            CharacterItemData newCharacterItemData(this);
+            newCharacterItemData.lowGuid = row[0].GetU32();
+            newCharacterItemData.itemEntry = row[1].GetU32();
+            newCharacterItemData.bagSlot = row[2].GetU8();
+            newCharacterItemData.bagPosition = row[3].GetU32();
+            newCharacterItemData.characterGuid = row[4].GetU32();
+
+            _accessMutex.lock();
+            _characteritemDataCache[newCharacterItemData.characterGuid][newCharacterItemData.lowGuid] = newCharacterItemData;
+            _accessMutex.unlock();
+        }
+    }
+}
+
 void CharacterDatabaseCache::SaveCharacter(u64 characterGuid)
 {
     DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, [this, characterGuid](std::shared_ptr<DatabaseConnector>& connector) {
@@ -406,68 +579,33 @@ void CharacterDatabaseCache::SaveCharacter(u64 characterGuid)
 void CharacterDatabaseCache::UnloadCharacter(u64 characterGuid)
 {
     _characterInfoCache.erase(characterGuid);
+    _characterDataCache.erase(characterGuid);
     _characterVisualDataCache.erase(characterGuid);
     _characterSpellStorageCache.erase(characterGuid);
     _characterSkillStorageCache.erase(characterGuid);
-    _characterDataCache.erase(characterGuid);
+    _characteritemDataCache.erase(characterGuid);
 }
 
 bool CharacterDatabaseCache::GetCharacterInfo(u64 characterGuid, CharacterInfo& output)
 {
     auto cache = _characterInfoCache.find(characterGuid);
-    if (cache != _characterInfoCache.end())
+    if (cache == _characterInfoCache.end())
     {
-        _accessMutex.lock_shared();
-        CharacterInfo characterInfo = cache->second;
-        _accessMutex.unlock_shared();
-
-        output = characterInfo;
-        return true;
+        LoadCharacterByGuid(characterGuid);
     }
-    else
+
+    cache = _characterInfoCache.find(characterGuid);
+    if (cache == _characterInfoCache.end())
     {
-        // We don't have the character, so we load it
-        std::shared_ptr<DatabaseConnector> connector;
-        bool result = DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, connector);
-        assert(result);
-        if (!result)
-            return false;
-
-        PreparedStatement stmt("SELECT * FROM characters WHERE guid = {u};");
-        stmt.Bind(characterGuid);
-
-        amy::result_set resultSet;
-        connector->Query(stmt, resultSet);
-
-        if (resultSet.affected_rows() == 0)
-            return false;
-
-        CharacterInfo newCharacterInfo(this);
-        amy::row resultRow = resultSet[0];
-
-        newCharacterInfo.guid = resultRow[0].GetU32();
-        newCharacterInfo.account = resultRow[1].GetU32();
-
-        newCharacterInfo.name = resultRow[2].GetString();
-
-        newCharacterInfo.race = resultRow[3].GetU8();
-        newCharacterInfo.gender = resultRow[4].GetU8();
-        newCharacterInfo.classId = resultRow[5].GetU8();
-        newCharacterInfo.level = resultRow[6].GetU8();
-        newCharacterInfo.mapId = resultRow[7].GetU32();
-        newCharacterInfo.zoneId = resultRow[8].GetU32();
-        newCharacterInfo.position.x = resultRow[9].GetF32();
-        newCharacterInfo.position.y = resultRow[10].GetF32();
-        newCharacterInfo.position.z = resultRow[11].GetF32();
-        newCharacterInfo.orientation = resultRow[12].GetF32();
-
-        _accessMutex.lock();
-        _characterInfoCache[characterGuid] = newCharacterInfo;
-        _accessMutex.unlock();
-
-        output = newCharacterInfo;
-        return true;
+        return false;
     }
+
+    _accessMutex.lock_shared();
+    CharacterInfo characterInfo = cache->second;
+    _accessMutex.unlock_shared();
+
+    output = characterInfo;
+    return true;
 }
 bool CharacterDatabaseCache::GetCharacterData(u64 characterGuid, u32 type, CharacterData& output)
 {
@@ -522,190 +660,86 @@ bool CharacterDatabaseCache::GetCharacterData(u64 characterGuid, u32 type, Chara
 bool CharacterDatabaseCache::GetCharacterVisualData(u64 characterGuid, CharacterVisualData& output)
 {
     auto cache = _characterVisualDataCache.find(characterGuid);
-    if (cache != _characterVisualDataCache.end())
+    if (cache == _characterVisualDataCache.end())
     {
-        _accessMutex.lock_shared();
-        CharacterVisualData characterVisualData = cache->second;
-        _accessMutex.unlock_shared();
-
-        output = characterVisualData;
-        return true;
+        LoadCharacterByGuid(characterGuid);
     }
-    else
+
+    cache = _characterVisualDataCache.find(characterGuid);
+    if (cache == _characterVisualDataCache.end())
     {
-        // We don't have the character, so we load it
-        std::shared_ptr<DatabaseConnector> connector;
-        bool result = DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, connector);
-        assert(result);
-        if (!result)
-            return false;
-
-        PreparedStatement stmt("SELECT * FROM character_visual_data WHERE guid = {u};");
-        stmt.Bind(characterGuid);
-
-        amy::result_set resultSet;
-        connector->Query(stmt, resultSet);
-
-        if (resultSet.affected_rows() == 0)
-            return false;
-
-        CharacterVisualData newCharacterVisualData(this);
-        amy::row resultRow = resultSet[0];
-
-        newCharacterVisualData.guid = resultRow[0].GetU32();
-        newCharacterVisualData.skin = resultRow[1].GetU8();
-        newCharacterVisualData.face = resultRow[2].GetU8();
-        newCharacterVisualData.facialStyle = resultRow[3].GetU8();
-        newCharacterVisualData.hairStyle = resultRow[4].GetU8();
-        newCharacterVisualData.hairColor = resultRow[5].GetU8();
-
-        _accessMutex.lock();
-        _characterVisualDataCache[characterGuid] = newCharacterVisualData;
-        _accessMutex.unlock();
-
-        output = newCharacterVisualData;
-        return true;
+        return false;
     }
+
+    _accessMutex.lock_shared();
+    CharacterVisualData characterVisualData = cache->second;
+    _accessMutex.unlock_shared();
+
+    output = characterVisualData;
+    return true;
 }
 bool CharacterDatabaseCache::GetCharacterSpellStorage(u64 characterGuid, robin_hood::unordered_map<u32, CharacterSpellStorage>& output)
 {
     auto cache = _characterSpellStorageCache.find(characterGuid);
-    if (cache != _characterSpellStorageCache.end())
+    if (cache == _characterSpellStorageCache.end())
     {
-        _accessMutex.lock_shared();
-        robin_hood::unordered_map<u32, CharacterSpellStorage> characterSpellStorageData = cache->second;
-        _accessMutex.unlock_shared();
-
-        output = characterSpellStorageData;
-        return true;
+        LoadCharacterByGuid(characterGuid);
     }
-    else
+
+    cache = _characterSpellStorageCache.find(characterGuid);
+    if (cache == _characterSpellStorageCache.end())
     {
-        // We don't have the character, so we load it
-        std::shared_ptr<DatabaseConnector> connector;
-        bool result = DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, connector);
-        assert(result);
-        if (!result)
-            return false;
-
-        PreparedStatement stmt("SELECT guid, spell FROM character_spell_storage WHERE guid = {u};");
-        stmt.Bind(characterGuid);
-
-        amy::result_set resultSet;
-        connector->Query(stmt, resultSet);
-
-        if (resultSet.affected_rows() == 0)
-            return false;
-
-        _accessMutex.lock();
-        for (auto row : resultSet)
-        {
-            CharacterSpellStorage newCharacterSpellStorage(this);
-            u64 guid = row[0].GetU64();
-            newCharacterSpellStorage.id = row[1].GetU32();
-
-            _characterSpellStorageCache[guid][newCharacterSpellStorage.id] = newCharacterSpellStorage;
-        }
-        _accessMutex.unlock();
-
-        output = _characterSpellStorageCache[characterGuid];
-        return true;
+        return false;
     }
+
+    _accessMutex.lock_shared();
+    robin_hood::unordered_map<u32, CharacterSpellStorage> characterSpellStorageData = cache->second;
+    _accessMutex.unlock_shared();
+
+    output = characterSpellStorageData;
+    return true;
 }
 bool CharacterDatabaseCache::GetCharacterSkillStorage(u64 characterGuid, robin_hood::unordered_map<u32, CharacterSkillStorage>& output)
 {
     auto cache = _characterSkillStorageCache.find(characterGuid);
-    if (cache != _characterSkillStorageCache.end())
+    if (cache == _characterSkillStorageCache.end())
     {
-        _accessMutex.lock_shared();
-        robin_hood::unordered_map<u32, CharacterSkillStorage> characterSkillStorageData = cache->second;
-        _accessMutex.unlock_shared();
-
-        output = characterSkillStorageData;
-        return true;
+        LoadCharacterByGuid(characterGuid);
     }
-    else
+
+    cache = _characterSkillStorageCache.find(characterGuid);
+    if (cache == _characterSkillStorageCache.end())
     {
-        // We don't have the character, so we load it
-        std::shared_ptr<DatabaseConnector> connector;
-        bool result = DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, connector);
-        assert(result);
-        if (!result)
-            return false;
-
-        PreparedStatement stmt("SELECT guid, skill, value, character_skill_storage.maxValue FROM character_skill_storage WHERE guid = {u};");
-        stmt.Bind(characterGuid);
-
-        amy::result_set resultSet;
-        connector->Query(stmt, resultSet);
-
-        if (resultSet.affected_rows() == 0)
-            return false;
-
-        _accessMutex.lock();
-        for (auto row : resultSet)
-        {
-            CharacterSkillStorage newCharacterSkillStorage(this);
-            u64 guid = row[0].GetU64();
-            newCharacterSkillStorage.id = row[1].GetU16();
-            newCharacterSkillStorage.value = row[2].GetU16();
-            newCharacterSkillStorage.maxValue = row[3].GetU16();
-
-            _characterSkillStorageCache[guid][newCharacterSkillStorage.id] = newCharacterSkillStorage;
-        }
-        _accessMutex.unlock();
-
-        output = _characterSkillStorageCache[characterGuid];
-        return true;
+        return false;
     }
+
+    _accessMutex.lock_shared();
+    robin_hood::unordered_map<u32, CharacterSkillStorage> characterSkillStorageData = cache->second;
+    _accessMutex.unlock_shared();
+
+    output = characterSkillStorageData;
+    return true;
 }
 bool CharacterDatabaseCache::GetCharacterItemData(u64 characterGuid, robin_hood::unordered_map<u32, CharacterItemData>& output)
 {
     auto cache = _characteritemDataCache.find(characterGuid);
-    if (cache != _characteritemDataCache.end())
+    if (cache == _characteritemDataCache.end())
     {
-        _accessMutex.lock_shared();
-        robin_hood::unordered_map<u32, CharacterItemData> characterItemData = cache->second;
-        _accessMutex.unlock_shared();
-
-        output = characterItemData;
-        return true;
+        LoadCharacterByGuid(characterGuid);
     }
-    else
+
+    cache = _characteritemDataCache.find(characterGuid);
+    if (cache == _characteritemDataCache.end())
     {
-        // We don't have the character, so we load it
-        std::shared_ptr<DatabaseConnector> connector;
-        bool result = DatabaseConnector::Borrow(DATABASE_TYPE::CHARSERVER, connector);
-        assert(result);
-        if (!result)
-            return false;
-
-        PreparedStatement stmt("SELECT lowGuid, itemEntry, bagSlot, bagPosition, characterGuid FROM character_items WHERE characterGuid = {u};");
-        stmt.Bind(characterGuid);
-
-        amy::result_set resultSet;
-        connector->Query(stmt, resultSet);
-
-        if (resultSet.affected_rows() == 0)
-            return false;
-
-        _accessMutex.lock();
-        for (auto row : resultSet)
-        {
-            CharacterItemData newCharacterItemData(this);
-            newCharacterItemData.lowGuid = row[0].GetU32();
-            newCharacterItemData.itemEntry = row[1].GetU32();
-            newCharacterItemData.bagSlot = row[2].GetU8();
-            newCharacterItemData.bagPosition = row[3].GetU32();
-            newCharacterItemData.characterGuid = row[4].GetU32();
-
-            _characteritemDataCache[newCharacterItemData.characterGuid][newCharacterItemData.lowGuid] = newCharacterItemData;
-        }
-        _accessMutex.unlock();
-
-        output = _characteritemDataCache[characterGuid];
-        return true;
+        return false;
     }
+
+    _accessMutex.lock_shared();
+    robin_hood::unordered_map<u32, CharacterItemData> characterItemData = cache->second;
+    _accessMutex.unlock_shared();
+
+    output = characterItemData;
+    return true;
 }
 
 const std::vector<DefaultSpellStorage> CharacterDatabaseCache::GetDefaultSpellStorageData()
@@ -721,9 +755,9 @@ const std::vector<DefaultSpawnStorage> CharacterDatabaseCache::GetDefaultSpawnSt
     return _defaultSpawnStorageCache;
 }
 
-void CharacterInfo::UpdateCache(u64 characterGuid)
+void CharacterInfo::UpdateCache()
 {
-    _cache->_characterInfoCache[characterGuid] = *this;
+    _cache->_characterInfoCache[guid] = *this;
 }
 void CharacterData::UpdateCache()
 {

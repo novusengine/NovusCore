@@ -68,7 +68,7 @@ private:
                 socket->set_option(asio::ip::tcp::no_delay(true), error);
             }
 
-            WorldConnection* connection = new WorldConnection(_worldNodeHandler, socket);
+            std::shared_ptr<WorldConnection> connection = std::make_shared<WorldConnection>(_worldNodeHandler, socket);
             connection->Start();
 
             _connections.push_back(connection);

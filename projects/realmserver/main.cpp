@@ -32,6 +32,10 @@
 #include "ConnectionHandlers/RealmConnectionHandler.h"
 #include "ConnectionHandlers/RealmSecondConnectionHandler.h"
 
+#include "Utils/Packets/CharacterPacketUtils.h"
+#include "Utils/Packets/SocketPacketUtils.h"
+#include "Utils/Packets/AccountPacketUtils.h"
+
 #ifdef _WIN32
 #include <Windows.h>
 #endif
@@ -91,6 +95,11 @@ i32 main()
     RealmSecondConnectionHandler realmSecondConnectionHandler(io_service, port + 1, authDatabaseCache, characterDatabaseCache);
     realmConnectionHandler.Start();
     realmSecondConnectionHandler.Start();
+
+    // Register Network Message Handlers
+    CharacterPacketUtils::RegisterCharacterPacketHandlers();
+    SocketPacketUtils::RegisterSocketPacketHandlers();
+    AccountPacketUtils::RegisterAccountPacketHandlers();
 
     srand(static_cast<u32>(time(NULL)));
     std::thread run_thread([&] {

@@ -31,9 +31,11 @@ namespace Common
 {
 struct WorkerThread
 {
+    WorkerThread(std::vector<std::shared_ptr<BaseSocket>>& connections) : _connections(connections) {}
+
     std::thread _thread;
     std::mutex _mutex;
-    std::vector<BaseSocket*>* _connections;
+    std::vector<std::shared_ptr<BaseSocket>>& _connections;
     bool _running;
 };
 
@@ -48,16 +50,13 @@ static void WorkerThreadMain(WorkerThread* thread)
 
         // Remove closed sessions
         thread->_mutex.lock();
-        if (thread->_connections->size())
+        if (thread->_connections.size())
         {
-            thread->_connections->erase(
-                std::remove_if(thread->_connections->begin(), thread->_connections->end(), [](BaseSocket* connection) {
-                    if (!connection)
-                        return false;
-
+            thread->_connections.erase(
+                std::remove_if(thread->_connections.begin(), thread->_connections.end(), [](std::shared_ptr<BaseSocket>& connection) {
                     return connection->IsClosed();
                 }),
-                thread->_connections->end());
+                thread->_connections.end());
         }
         thread->_mutex.unlock();
 
@@ -76,10 +75,9 @@ class TcpServer
 public:
     TcpServer(asio::io_service& io_service, i32 port) : _acceptor(io_service, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port)), _ioService(io_service)
     {
-        _connections.resize(4096);
+        _connections.reserve(4096);
 
-        _workerThread = new WorkerThread();
-        _workerThread->_connections = &_connections;
+        _workerThread = new WorkerThread(_connections);
         _workerThread->_running = true;
         _workerThread->_thread = std::thread(WorkerThreadMain, _workerThread);
         _workerThread->_thread.detach();
@@ -103,7 +101,7 @@ protected:
     virtual void StartListening() = 0;
     virtual void HandleNewConnection(asio::ip::tcp::socket* socket, const asio::error_code& error) = 0;
 
-    std::vector<BaseSocket*> _connections;
+    std::vector<std::shared_ptr<BaseSocket>> _connections;
     WorkerThread* _workerThread;
     asio::ip::tcp::acceptor _acceptor;
     asio::io_service& _ioService;
