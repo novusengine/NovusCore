@@ -31,7 +31,6 @@
 #include "../../NovusEnums.h"
 
 #define MAX_MOVEMENT_OPCODES 27
-#define INVALID_TIME_OFFSET std::numeric_limits<i32>().min()
 struct MovementData
 {
     Vector3 position;
@@ -67,7 +66,8 @@ struct PlayerPositionComponent
 
     u16 adtId = std::numeric_limits<u16>().max(); // Invalid ADT
 
-    i32 timeOffsetToServer = INVALID_TIME_OFFSET;
+    u32 initialServerTime = 0;
+    u32 initialClientTime = 0;
     u32 lastMovementOpcodeTime[MAX_MOVEMENT_OPCODES];
     std::vector<PositionUpdateData> positionUpdateData;
 

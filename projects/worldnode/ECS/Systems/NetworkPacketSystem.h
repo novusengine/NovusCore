@@ -450,9 +450,10 @@ void Update(entt::registry& registry)
                 playerPositionData.ReadMovementData(packet.data, movementData);
 
                 // Find time offset
-                if (playerPositionData.timeOffsetToServer == INVALID_TIME_OFFSET)
+                if (playerPositionData.initialServerTime == 0)
                 {
-                    playerPositionData.timeOffsetToServer = static_cast<i32>(movementData.gameTime - singleton.lifeTimeInMS);
+                    playerPositionData.initialServerTime = static_cast<u32>(singleton.lifeTimeInMS);
+                    playerPositionData.initialClientTime = movementData.gameTime;
                 }
 
                 if (movementData.gameTime > opcodeTime)

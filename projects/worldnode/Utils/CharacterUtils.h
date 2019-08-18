@@ -341,7 +341,13 @@ inline void InvalidatePosition(SingletonComponent& singleton, PlayerConnectionCo
     u32 serverTime = static_cast<u32>(singleton.lifeTimeInMS);
     playerPositionData.WriteMovementData(buffer, serverTime);
 
-    u32 clientTime = static_cast<u32>(serverTime + playerPositionData.timeOffsetToServer);
+    u32 clientTime = 0;
+    if (playerPositionData.initialServerTime)
+    {
+        u32 serverTimeDifference = serverTime - playerPositionData.initialServerTime;
+        clientTime = playerPositionData.initialClientTime + serverTimeDifference;
+    }
+
     for (i32 i = 0; i < MAX_MOVEMENT_OPCODES; i++)
     {
         playerPositionData.lastMovementOpcodeTime[i] = clientTime;
