@@ -35,6 +35,7 @@ struct PlayerFieldDataComponent
     { 
         playerFields = ByteBuffer::Borrow<PLAYER_END * 4>();
         std::memset(playerFields->GetInternalData(), 0, playerFields->Size);
+        lastSentTime = 0.0f;
     }
 
     void SetGuidValue(u16 index, u64 value)
@@ -62,6 +63,7 @@ struct PlayerFieldDataComponent
         playerFields->Reset();
     }
 
+    f32 lastSentTime;
     UpdateMask<1344> changesMask;
     UpdateData updateData;
     std::shared_ptr<ByteBuffer> playerFields;

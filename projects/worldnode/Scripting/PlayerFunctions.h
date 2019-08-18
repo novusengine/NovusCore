@@ -118,15 +118,15 @@ inline void RegisterPlayerFunctions(AB_NAMESPACE_QUALIFIER Engine* engine)
     engine->asEngine()->RegisterObjectMethod("Player", "int32 GetMountDisplayId()", asMETHOD(AngelScriptPlayer, GetMountDisplayId), asCALL_THISCALL);
     engine->asEngine()->RegisterObjectMethod("Player", "void SetMountDisplayId(int32, bool = false)", asMETHOD(AngelScriptPlayer, SetMountDisplayId), asCALL_THISCALL);
 
-    engine->asEngine()->RegisterObjectMethod("Player", "int32 GetHealth()", asMETHOD(AngelScriptPlayer, GetHealth), asCALL_THISCALL);
-    engine->asEngine()->RegisterObjectMethod("Player", "int32 GetMaxHealth()", asMETHOD(AngelScriptPlayer, GetMaxHealth), asCALL_THISCALL);
-    engine->asEngine()->RegisterObjectMethod("Player", "void ModHealth(int32, bool = false)", asMETHOD(AngelScriptPlayer, ModHealth), asCALL_THISCALL);
-    engine->asEngine()->RegisterObjectMethod("Player", "void SetHealth(int32, bool = false)", asMETHOD(AngelScriptPlayer, SetHealth), asCALL_THISCALL);
+    engine->asEngine()->RegisterObjectMethod("Player", "float GetHealth()", asMETHOD(AngelScriptPlayer, GetHealth), asCALL_THISCALL);
+    engine->asEngine()->RegisterObjectMethod("Player", "float GetMaxHealth()", asMETHOD(AngelScriptPlayer, GetMaxHealth), asCALL_THISCALL);
+    engine->asEngine()->RegisterObjectMethod("Player", "void ModHealth(float, bool = false)", asMETHOD(AngelScriptPlayer, ModHealth), asCALL_THISCALL);
+    engine->asEngine()->RegisterObjectMethod("Player", "void SetHealth(float, bool = false)", asMETHOD(AngelScriptPlayer, SetHealth), asCALL_THISCALL);
 
-    engine->asEngine()->RegisterObjectMethod("Player", "int32 GetPower(uint8)", asMETHOD(AngelScriptPlayer, GetPower), asCALL_THISCALL);
-    engine->asEngine()->RegisterObjectMethod("Player", "int32 GetMaxPower(uint8)", asMETHOD(AngelScriptPlayer, GetMaxPower), asCALL_THISCALL);
-    engine->asEngine()->RegisterObjectMethod("Player", "void ModPower(uint8, int32, bool = false)", asMETHOD(AngelScriptPlayer, ModPower), asCALL_THISCALL);
-    engine->asEngine()->RegisterObjectMethod("Player", "void SetPower(uint8, int32, bool = false)", asMETHOD(AngelScriptPlayer, SetPower), asCALL_THISCALL);
+    engine->asEngine()->RegisterObjectMethod("Player", "float GetPower(uint8)", asMETHOD(AngelScriptPlayer, GetPower), asCALL_THISCALL);
+    engine->asEngine()->RegisterObjectMethod("Player", "float GetMaxPower(uint8)", asMETHOD(AngelScriptPlayer, GetMaxPower), asCALL_THISCALL);
+    engine->asEngine()->RegisterObjectMethod("Player", "void ModPower(uint8, float, bool = false)", asMETHOD(AngelScriptPlayer, ModPower), asCALL_THISCALL);
+    engine->asEngine()->RegisterObjectMethod("Player", "void SetPower(uint8, float, bool = false)", asMETHOD(AngelScriptPlayer, SetPower), asCALL_THISCALL);
 
     engine->asEngine()->RegisterObjectMethod("Player", "void SetFlyMode(bool, bool = false)", asMETHOD(AngelScriptPlayer, SetFlyMode), asCALL_THISCALL);
     engine->asEngine()->RegisterObjectMethod("Player", "void SetSpeed(float, bool = false)", asMETHOD(AngelScriptPlayer, SetSpeed), asCALL_THISCALL);

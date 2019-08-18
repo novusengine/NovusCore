@@ -279,8 +279,6 @@ void Update(entt::registry& registry)
 
     auto buildUpdateDataView = registry.view<PlayerConnectionComponent, PlayerFieldDataComponent, PlayerPositionComponent, PlayerUpdateDataComponent, AuraListComponent>();
     buildUpdateDataView.each([&registry, &mapSingleton, lifeTimeInMS](const auto, PlayerConnectionComponent& playerConnection, PlayerFieldDataComponent& playerFieldData, PlayerPositionComponent& playerPositionData, PlayerUpdateDataComponent& playerUpdateData, AuraListComponent& playerAuraList) {
-        playerFieldData.updateData.ResetBlocks();
-
         Vector2 position = Vector2(playerPositionData.movementData.position.x, playerPositionData.movementData.position.y);
         u32 mapId = playerPositionData.mapId;
 
@@ -342,7 +340,7 @@ void Update(entt::registry& registry)
                     u32 visibleFlags = (UPDATEFIELD_FLAG_PUBLIC | UPDATEFIELD_FLAG_SELF);
 
                     PlayerBuildDataBlock(playerConnection.characterGuid, visibleFlags, playerFieldData.changesMask, playerFieldData.playerFields, playerFieldData.updateData);
-                    playerFieldData.changesMask.Reset();
+                    
                 }
                 else
                 {
@@ -373,8 +371,10 @@ void Update(entt::registry& registry)
                 }
             }
 
-            if (!playerFieldData.updateData.IsEmpty())
+            const f32 updateFrequency = 250.0f; // 250 MS
+            if (!playerFieldData.updateData.IsEmpty() && lifeTimeInMS - playerFieldData.lastSentTime > updateFrequency)
             {
+                playerFieldData.lastSentTime = lifeTimeInMS;
                 u16 buildOpcode = 0;
                 std::shared_ptr<ByteBuffer> update = ByteBuffer::Borrow<8192>();
                 {
@@ -384,6 +384,7 @@ void Update(entt::registry& registry)
                 }
 
                 playerConnection.socket->SendPacket(update.get(), buildOpcode);
+                playerFieldData.updateData.ResetBlocks();
             }
         }
 
@@ -447,6 +448,12 @@ void Update(entt::registry& registry)
             // Clear Chat Updates
             playerUpdateData.chatUpdateData.clear();
         }
+    });
+
+    auto resetFieldDataView = registry.view<PlayerFieldDataComponent>();
+    resetFieldDataView.each([](const auto, PlayerFieldDataComponent& playerFieldData) {
+        if (playerFieldData.changesMask.Any())
+            playerFieldData.changesMask.Reset();
     });
 }
 } // namespace PlayerBuildDataSystem
