@@ -17,6 +17,7 @@
 #include "Utils/Packets/CharacterPacketUtils.h"
 #include "Utils/Packets/SocketPacketUtils.h"
 #include "Utils/Packets/AccountPacketUtils.h"
+#include "Utils/Packets/GamemasterPacketUtils.h"
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -91,6 +92,7 @@ i32 main()
                 CharacterPacketUtils::RegisterCharacterPacketHandlers();
                 SocketPacketUtils::RegisterSocketPacketHandlers();
                 AccountPacketUtils::RegisterAccountPacketHandlers();
+                GamemasterPacketUtils::RegisterGamemasterPacketHandlers();
 
                 srand(static_cast<u32>(time(NULL)));
                 run_thread = new std::thread([&] {
