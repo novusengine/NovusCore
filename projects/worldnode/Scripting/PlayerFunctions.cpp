@@ -1,8 +1,10 @@
 #include "PlayerFunctions.h"
 
 #include "../Utils/CharacterUtils.h"
+#include "../Connections/WorldConnection.h"
 #include "../ECS/Components/Singletons/ScriptSingleton.h"
 #include "../ECS/Components/ScriptDataStorageComponent.h"
+#include "../ECS/Components/PlayerConnectionComponent.h"
 #include "../ECS/Components/PlayerFieldDataComponent.h"
 #include "../ECS/Components/UnitStatsComponent.h"
 
