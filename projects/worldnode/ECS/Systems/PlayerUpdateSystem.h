@@ -48,8 +48,8 @@ namespace PlayerUpdateSystem
             packet.connection->SendPacket(packet.data.get(), packet.opcode);
         }
 
-        auto playerView = registry.view<PlayerConnectionComponent, UnitStatsComponent>();
-        playerView.each([&registry](const auto, PlayerConnectionComponent& playerConnectionComponent, UnitStatsComponent& unitStatsComponent) 
+        auto playerView = registry.view<PlayerConnectionComponent, PlayerFieldDataComponent, UnitStatsComponent>();
+        playerView.each([&registry](const auto, PlayerConnectionComponent& playerConnectionComponent, PlayerFieldDataComponent& playerFieldDataComponent, UnitStatsComponent& unitStatsComponent) 
         {
             if (unitStatsComponent.healthIsDirty)
             {
@@ -59,6 +59,7 @@ namespace PlayerUpdateSystem
                 byteBuffer->PutI32(static_cast<i32>(unitStatsComponent.currentHealth));
 
                 CharacterUtils::SendPacketToGridPlayers(&registry, playerConnectionComponent.entityId, byteBuffer, Opcode::SMSG_HEALTH_UPDATE);
+                playerFieldDataComponent.SetFieldValue<i32>(UNIT_FIELD_HEALTH, static_cast<i32>(unitStatsComponent.currentHealth));
 
                 unitStatsComponent.healthIsDirty = false;
             }
@@ -82,6 +83,7 @@ namespace PlayerUpdateSystem
                     byteBuffer->PutI32(static_cast<i32>(power));
 
                     CharacterUtils::SendPacketToGridPlayers(&registry, playerConnectionComponent.entityId, byteBuffer, Opcode::SMSG_POWER_UPDATE);
+                    playerFieldDataComponent.SetFieldValue<i32>(UNIT_FIELD_POWER1 + i, static_cast<i32>(power));
 
                     unitStatsComponent.powerIsDirty[i] = false;
                 }

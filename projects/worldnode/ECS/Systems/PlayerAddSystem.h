@@ -84,13 +84,13 @@ void Update(entt::registry& registry)
 
             for (int i = 0; i < POWER_COUNT; i++)
             {
-                // TODO: Add some kind of class-mask so all characters don't use all resources
+                // TODO: Add some kind of class-mask so all classes don't use all resources
                 switch (i)
                 {
                 case POWER_RAGE:
                     unitStatsComponent.basePower[i] = 0.0f;
                     unitStatsComponent.currentPower[i] = 0.0f;
-                    unitStatsComponent.maxPower[i] = 1000.0f;
+                    unitStatsComponent.maxPower[i] = 100.0f;
                     break;
                 default: // TODO: Handle other special types of resources
                     unitStatsComponent.basePower[i] = 100.0f;
