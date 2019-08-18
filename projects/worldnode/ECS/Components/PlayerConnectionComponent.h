@@ -26,6 +26,7 @@
 #include <Networking/ByteBuffer.h>
 #include "../../Utils/CharacterUtils.h"
 #include "../../Game/ObjectGuid/ObjectGuid.h"
+#include "../../Connections/WorldConnection.h"
 #include <vector>
 
 struct NetPacket

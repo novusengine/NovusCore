@@ -14,6 +14,10 @@
 
 #include "ConsoleCommands.h"
 
+#include "Utils/Packets/CharacterPacketUtils.h"
+#include "Utils/Packets/SocketPacketUtils.h"
+#include "Utils/Packets/AccountPacketUtils.h"
+
 #ifdef _WIN32
 #include <Windows.h>
 #endif
@@ -82,6 +86,11 @@ i32 main()
             else if (message.code == MSG_OUT_SETUP_COMPLETE)
             {
                 WorldConnectionHandler.Start();
+
+                // Register Network Message Handlers
+                CharacterPacketUtils::RegisterCharacterPacketHandlers();
+                SocketPacketUtils::RegisterSocketPacketHandlers();
+                AccountPacketUtils::RegisterAccountPacketHandlers();
 
                 srand(static_cast<u32>(time(NULL)));
                 run_thread = new std::thread([&] {

@@ -39,6 +39,7 @@
 #include "../../WorldNodeHandler.h"
 #include "../../Scripting/PlayerFunctions.h"
 #include "../../Scripting/SpellFunctions.h"
+#include "../../MessageHandler.h"
 
 #include "../Components/PlayerConnectionComponent.h"
 #include "../Components/PlayerFieldDataComponent.h"
@@ -77,12 +78,17 @@ void Update(entt::registry& registry)
     LockWrite(PlayerUpdateDataComponent);
     LockWrite(PlayerPositionComponent);
 
+    MessageHandler* messageHandler = MessageHandler::Instance();
+
     auto view = registry.view<PlayerConnectionComponent, PlayerFieldDataComponent, PlayerUpdateDataComponent, PlayerPositionComponent>();
-    view.each([&registry, &singleton, &characterDatabase, &worldDatabase, &dbcDatabase, &playerPacketQueue, &worldNodeHandler, &mapSingleton](const auto, PlayerConnectionComponent& playerConnection, PlayerFieldDataComponent& clientFieldData, PlayerUpdateDataComponent& playerUpdateData, PlayerPositionComponent& playerPositionData) {
+    view.each([&registry, &singleton, &characterDatabase, &worldDatabase, &dbcDatabase, &playerPacketQueue, &worldNodeHandler, &mapSingleton, &messageHandler](const auto, PlayerConnectionComponent& playerConnection, PlayerFieldDataComponent& clientFieldData, PlayerUpdateDataComponent& playerUpdateData, PlayerPositionComponent& playerPositionData) {
         ZoneScopedNC("Connection", tracy::Color::Orange2)
 
             for (NetPacket& packet : playerConnection.packets)
         {
+            packet.handled = messageHandler->CallHandler(&packet, &playerConnection);
+
+
             ZoneScopedNC("Packet", tracy::Color::Orange2)
 
                 Opcode opcode = static_cast<Opcode>(packet.opcode);
@@ -97,146 +103,6 @@ void Update(entt::registry& registry)
                 timeSync->PutU32(0);
 
                 playerConnection.socket->SendPacket(timeSync.get(), Opcode::SMSG_TIME_SYNC_REQ);
-                packet.handled = true;
-                break;
-            }
-            case Opcode::CMSG_LOGOUT_REQUEST:
-            {
-                ZoneScopedNC("Packet::LogoutRequest", tracy::Color::Orange2)
-                    // Here we need to Redirect the client back to Realmserver. The Realmserver will send SMSG_LOGOUT_COMPLETE
-
-                    i32 ip = worldNodeHandler.realmserverAddress;
-                i16 port = worldNodeHandler.realmserverPort;
-
-                std::shared_ptr<ByteBuffer> buffer = ByteBuffer::Borrow<30>();
-                buffer->PutI32(ip);
-                buffer->PutI16(port);
-                buffer->PutI32(0); // unk
-#pragma warning(push)
-#pragma warning(disable : 4312)
-                HMACH hmac(40, playerConnection.socket->sessionKey.BN2BinArray(20).get());
-                hmac.UpdateHash((u8*)&ip, 4);
-                hmac.UpdateHash((u8*)&port, 2);
-                hmac.Finish();
-                buffer->PutBytes(hmac.GetData(), 20);
-#pragma warning(pop)
-                playerConnection.socket->SendPacket(buffer.get(), Opcode::SMSG_REDIRECT_CLIENT);
-
-                packet.handled = true;
-                break;
-            }
-            case Opcode::CMSG_READY_FOR_ACCOUNT_DATA_TIMES:
-            {
-                /* Packet Structure */
-                // UInt32:  Server Time (time(nullptr))
-                // UInt8:   Unknown Byte Value
-                // UInt32:  Mask for the account data fields
-
-                std::shared_ptr<ByteBuffer> accountDataTimes = ByteBuffer::Borrow<41>();
-
-                u32 mask = 0x15;
-                accountDataTimes->PutU32(static_cast<u32>(time(nullptr)));
-                accountDataTimes->PutU8(1); // bitmask blocks count
-                accountDataTimes->PutU32(mask);
-
-                for (u32 i = 0; i < 8; ++i)
-                {
-                    if (mask & (1 << i))
-                    {
-                        CharacterData characterData;
-                        if (characterDatabase.cache->GetCharacterData(playerConnection.characterGuid, i, characterData))
-                        {
-                            accountDataTimes->PutU32(characterData.timestamp);
-                        }
-                    }
-                }
-
-                playerConnection.socket->SendPacket(accountDataTimes.get(), Opcode::SMSG_ACCOUNT_DATA_TIMES);
-                packet.handled = true;
-                break;
-            }
-            case Opcode::CMSG_UPDATE_ACCOUNT_DATA:
-            {
-                packet.handled = true;
-
-                u32 type, timestamp, decompressedSize;
-                packet.data->GetU32(type);
-                packet.data->GetU32(timestamp);
-                packet.data->GetU32(decompressedSize);
-
-                if (type > 8)
-                {
-                    break;
-                }
-
-                bool characterDataUpdate = ((1 << type) & CHARACTER_DATA_CACHE_MASK);
-
-                // This is here temporarily as I'm not certain if the client will UPDATE any AccountData while connected to a WorldNode
-                if (!characterDataUpdate)
-                {
-                    NC_LOG_WARNING("Received AccountDataUpdate");
-                    break;
-                }
-
-                // Clear Data
-                if (decompressedSize == 0)
-                {
-                    if (characterDataUpdate)
-                    {
-                        CharacterData characterData;
-                        if (characterDatabase.cache->GetCharacterData(playerConnection.characterGuid, type, characterData))
-                        {
-                            characterData.timestamp = 0;
-                            characterData.data = "";
-                            characterData.UpdateCache();
-                        }
-                    }
-                }
-                else
-                {
-                    if (decompressedSize > 0xFFFF)
-                    {
-                        break;
-                    }
-
-                    std::shared_ptr<ByteBuffer> DataInfo = ByteBuffer::Borrow<1024>();
-                    DataInfo->Size = packet.data->Size - packet.data->ReadData;
-                    DataInfo->PutBytes(packet.data->GetInternalData() + packet.data->ReadData, DataInfo->Size);
-
-                    uLongf uSize = decompressedSize;
-                    u32 pos = static_cast<u32>(DataInfo->ReadData);
-
-                    std::shared_ptr<ByteBuffer> dataInfo = ByteBuffer::Borrow<8192>();
-                    if (uncompress(dataInfo->GetInternalData(), &uSize, DataInfo->GetInternalData() + pos, static_cast<uLong>(DataInfo->Size - pos)) != Z_OK)
-                    {
-                        break;
-                    }
-                    dataInfo->WrittenData = static_cast<size_t>(decompressedSize);
-
-                    std::string finalData = "";
-                    dataInfo->GetString(finalData, static_cast<i32>(decompressedSize));
-
-                    if (characterDataUpdate)
-                    {
-                        CharacterData characterData;
-                        if (characterDatabase.cache->GetCharacterData(playerConnection.characterGuid, type, characterData))
-                        {
-                            characterData.timestamp = timestamp;
-                            characterData.data = finalData;
-                            characterData.UpdateCache();
-                        }
-                    }
-                }
-
-                std::shared_ptr<ByteBuffer> updateAccountDataComplete = ByteBuffer::Borrow<8>();
-                updateAccountDataComplete->PutU32(type);
-                updateAccountDataComplete->PutU32(0);
-
-                playerConnection.socket->SendPacket(updateAccountDataComplete.get(), Opcode::SMSG_UPDATE_ACCOUNT_DATA_COMPLETE);
-                break;
-            }
-            case Opcode::CMSG_REQUEST_ACCOUNT_DATA:
-            {
                 packet.handled = true;
                 break;
             }
