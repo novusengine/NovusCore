@@ -16,6 +16,7 @@
 #include "../../Scripting/PlayerFunctions.h"
 #include "../../Scripting/SpellFunctions.h"
 #include "../../Utils/ServiceLocator.h"
+#include "../../Utils/BotUtils.h"
 
 #include <Database/Cache/DBCDatabaseCache.h>
 #include <Database/Cache/CharacterDatabaseCache.h>
@@ -75,8 +76,8 @@ bool CharacterPacketUtils::HandleSetActiveMover(NetPacket* packet, PlayerConnect
 {
     ZoneScopedNC("Packet::SetActiveMover", tracy::Color::Orange2)
 
-    std::shared_ptr<ByteBuffer>
-    timeSync = ByteBuffer::Borrow<4>();
+        std::shared_ptr<ByteBuffer>
+            timeSync = ByteBuffer::Borrow<4>();
     timeSync->PutU32(0);
 
     playerConnectionComponent->socket->SendPacket(timeSync.get(), Opcode::SMSG_TIME_SYNC_REQ);
@@ -87,9 +88,9 @@ bool CharacterPacketUtils::HandleStandStateChange(NetPacket* packet, PlayerConne
 {
     ZoneScopedNC("Packet::StandStateChange", tracy::Color::Orange2)
 
-    u32 standState = 0;
+        u32 standState = 0;
     packet->data->GetU32(standState);
-    
+
     entt::registry* registry = ServiceLocator::GetMainRegistry();
     PlayerFieldDataComponent& playerFieldDataComponent = registry->get<PlayerFieldDataComponent>(playerConnectionComponent->entityId);
 
@@ -106,7 +107,7 @@ bool CharacterPacketUtils::HandleSetSelection(NetPacket* packet, PlayerConnectio
 {
     ZoneScopedNC("Packet::SetSelection", tracy::Color::Orange2)
 
-    u64 selectedGuid = 0;
+        u64 selectedGuid = 0;
     packet->data->GetGuid(selectedGuid);
 
     entt::registry* registry = ServiceLocator::GetMainRegistry();
@@ -120,7 +121,7 @@ bool CharacterPacketUtils::HandleNameQuery(NetPacket* packet, PlayerConnectionCo
 {
     ZoneScopedNC("Packet::NameQuery", tracy::Color::Orange2)
 
-    u64 guid;
+        u64 guid;
     packet->data->GetU64(guid);
 
     entt::registry* registry = ServiceLocator::GetMainRegistry();
@@ -159,7 +160,6 @@ bool CharacterPacketUtils::HandleItemQuerySingle(NetPacket* packet, PlayerConnec
     u32 itemEntry = 0;
     packet->data->GetU32(itemEntry);
 
-    
     entt::registry* registry = ServiceLocator::GetMainRegistry();
     WorldDatabaseCacheSingleton& worldDatabaseCacheSingleton = registry->ctx<WorldDatabaseCacheSingleton>();
 
@@ -187,7 +187,7 @@ bool CharacterPacketUtils::HandleMove(NetPacket* packet, PlayerConnectionCompone
     SingletonComponent& singletonComponent = registry->ctx<SingletonComponent>();
     PlayerPositionComponent& playerPositionComponent = registry->get<PlayerPositionComponent>(playerConnectionComponent->entityId);
     PlayerUpdateDataComponent& playerUpdateDataComponent = registry->get<PlayerUpdateDataComponent>(playerConnectionComponent->entityId);
-    
+
     u8 opcodeIndex = CharacterUtils::GetLastMovementTimeIndexFromOpcode(packet->opcode);
     u32 opcodeTime = playerPositionComponent.lastMovementOpcodeTime[opcodeIndex];
 
@@ -295,6 +295,12 @@ bool CharacterPacketUtils::HandleChatMessage(NetPacket* packet, PlayerConnection
         byteBuffer->PutU8(1);
         byteBuffer->PutU32(750);
         playerConnectionComponent->socket->SendPacket(byteBuffer.get(), Opcode::SMSG_POWER_UPDATE);
+    }
+
+    if (msgOutput == "bot")
+    {
+        PlayerPositionComponent& playerPositionComponent = registry->get<PlayerPositionComponent>(playerConnectionComponent->entityId);
+        BotUtils::CreateBot(playerPositionComponent.mapId, playerPositionComponent.movementData.position, playerPositionComponent.movementData.orientation);
     }
 
     /* Build Packet */

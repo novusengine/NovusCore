@@ -36,7 +36,7 @@ struct PlayerPositionComponent;
 class CharacterUtils
 {
 public:
-    static void GetDisplayIdFromRace(const CharacterInfo characterData, u32& displayId);
+    static void GetDisplayIdFromRace(u8 raceId, u8 genderId, u32& displayId);
     static u8 GetLastMovementTimeIndexFromOpcode(u16 opcode);
 
     static void BuildSpeedChangePacket(u64 characterGuid, f32 speed, Opcode opcode, std::shared_ptr<ByteBuffer> buffer);

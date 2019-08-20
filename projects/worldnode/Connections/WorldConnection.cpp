@@ -309,6 +309,9 @@ bool WorldConnection::HandleNewPacket()
 
 void WorldConnection::SendPacket(ByteBuffer* packet, u16 opcode)
 {
+    if (_isBot)
+        return;
+
     ServerPacketHeader header(packet->GetActiveSize() + 2, opcode);
     u8 headerSize = header.GetLength();
     i32 packetSize = packet->GetActiveSize() + headerSize;

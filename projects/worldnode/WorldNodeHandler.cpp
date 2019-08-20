@@ -19,6 +19,7 @@
 #include "ECS/Systems/PlayerUpdateSystem.h"
 #include "ECS/Systems/PlayerAddSystem.h"
 #include "ECS/Systems/EntityAddSystem.h"
+#include "ECS/Systems/BotAddSystem.h"
 #include "ECS/Systems/PlayerDeleteSystem.h"
 #include "ECS/Systems/ScriptTransactionSystem.h"
 
@@ -29,6 +30,7 @@
 #include "ECS/Components/Singletons/PlayerDeleteQueueSingleton.h"
 #include "ECS/Components/Singletons/PlayerPacketQueueSingleton.h"
 #include "ECS/Components/Singletons/EntityCreateQueueSingleton.h"
+#include "ECS/Components/Singletons/BotCreateQueueSingleton.h"
 #include "ECS/Components/Singletons/CharacterDatabaseCacheSingleton.h"
 #include "ECS/Components/Singletons/WorldDatabaseCacheSingleton.h"
 #include "ECS/Components/Singletons/DBCDatabaseCacheSingleton.h"
@@ -137,6 +139,9 @@ void WorldNodeHandler::Run()
 
     EntityCreateQueueSingleton& entityCreateQueueSingleton = _updateFramework.registry.set<EntityCreateQueueSingleton>();
     entityCreateQueueSingleton.newEntityQueue = new moodycamel::ConcurrentQueue<EntityCreationRequest>(4096);
+
+    BotCreateQueueSingleton& botCreateQueueSingleton = _updateFramework.registry.set<BotCreateQueueSingleton>();
+    botCreateQueueSingleton.newBotQueue = new moodycamel::ConcurrentQueue<BotCreateInfo>(4096);
 
     _updateFramework.registry.set<ScriptSingleton>();
 
@@ -352,13 +357,21 @@ void WorldNodeHandler::SetupUpdateFramework()
     });
     playerAddSystemTask.gather(playerUpdateDataSystemTask);
 
-    // ItemCreateSystem
+    // EntityCreateSystem
     tf::Task entityAddSystemTask = framework.emplace([&registry]() {
         ZoneScopedNC("EntityAddSystem", tracy::Color::Blue2)
             EntityAddSystem::Update(registry);
         registry.ctx<ScriptSingleton>().CompleteSystem();
     });
     entityAddSystemTask.gather(playerAddSystemTask);
+
+    // BotCreateSystem
+    tf::Task botAddSystemTask = framework.emplace([&registry]() {
+        ZoneScopedNC("BotAddSystem", tracy::Color::Blue2)
+            BotAddSystem::Update(registry);
+        registry.ctx<ScriptSingleton>().CompleteSystem();
+    });
+    botAddSystemTask.gather(playerAddSystemTask);
 
     // PlayerDeleteSystem
     tf::Task playerDeleteSystemTask = framework.emplace([&registry]() {

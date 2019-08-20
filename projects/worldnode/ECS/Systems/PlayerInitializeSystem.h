@@ -10,6 +10,8 @@
 #include "../Components/PlayerSpellStorageComponent.h"
 #include "../Components/PlayerSkillStorageComponent.h"
 #include "../Components/PlayerInitializeComponent.h"
+#include "../Components/PlayerVisualInfoComponent.h"
+#include "../Components/UnitInfoComponent.h"
 #include "../Components/UnitStatsComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
 #include "../Components/Singletons/CharacterDatabaseCacheSingleton.h"
@@ -20,8 +22,8 @@ void Update(entt::registry& registry)
 {
     CharacterDatabaseCacheSingleton& characterDatabase = registry.ctx<CharacterDatabaseCacheSingleton>();
 
-    auto view = registry.view<PlayerInitializeComponent, PlayerFieldDataComponent, PlayerPositionComponent, PlayerSpellStorageComponent, PlayerSkillStorageComponent, UnitStatsComponent>();
-    view.each([&characterDatabase](const auto, PlayerInitializeComponent& playerInitializeData, PlayerFieldDataComponent& playerFieldData, PlayerPositionComponent& playerPositionData, PlayerSpellStorageComponent& spellStorageData, PlayerSkillStorageComponent& skillStorageData, UnitStatsComponent& unitStatsComponent) {
+    auto view = registry.view<PlayerInitializeComponent, PlayerFieldDataComponent, UnitInfoComponent, PlayerVisualInfoComponent, PlayerPositionComponent, PlayerSpellStorageComponent, PlayerSkillStorageComponent, UnitStatsComponent>();
+    view.each([&characterDatabase](const auto, PlayerInitializeComponent& playerInitializeData, PlayerFieldDataComponent& playerFieldData, UnitInfoComponent& playerInfo, PlayerVisualInfoComponent& playerVisualInfo, PlayerPositionComponent& playerPositionData, PlayerSpellStorageComponent& spellStorageData, PlayerSkillStorageComponent& skillStorageData, UnitStatsComponent& unitStatsComponent) {
         /* Load Cached Data for character */
         robin_hood::unordered_map<u32, CharacterSpellStorage> characterSpellStorage;
         if (characterDatabase.cache->GetCharacterSpellStorage(playerInitializeData.characterGuid, characterSpellStorage))
@@ -85,7 +87,6 @@ void Update(entt::registry& registry)
                 }
             }
         }
-
         playerInitializeData.socket->SendPacket(initializeBuffer.get(), Opcode::SMSG_ACCOUNT_DATA_TIMES);
 
         /* SMSG_FEATURE_SYSTEM_STATUS */
@@ -155,18 +156,14 @@ void Update(entt::registry& registry)
         playerInitializeData.socket->SendPacket(initializeBuffer.get(), Opcode::SMSG_LOGIN_SETTIMESPEED);
 
         /* Set Initial Fields */
-        CharacterInfo characterInfo;
-        characterDatabase.cache->GetCharacterInfo(playerInitializeData.characterGuid, characterInfo);
-        CharacterVisualData characterVisualData;
-        characterDatabase.cache->GetCharacterVisualData(playerInitializeData.characterGuid, characterVisualData);
 
-        playerFieldData.SetGuidValue(OBJECT_FIELD_GUID, characterInfo.guid);
+        playerFieldData.SetGuidValue(OBJECT_FIELD_GUID, playerInitializeData.characterGuid);
         playerFieldData.SetFieldValue<u32>(OBJECT_FIELD_TYPE, 0x19); // Object Type Player (Player, Unit, Object)
         playerFieldData.SetFieldValue<f32>(OBJECT_FIELD_SCALE_X, 1.0f);
 
-        playerFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_0, characterInfo.race, 0);
-        playerFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_0, characterInfo.classId, 1);
-        playerFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_0, characterInfo.gender, 2);
+        playerFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_0, playerInfo.race, 0);
+        playerFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_0, playerInfo.classId, 1);
+        playerFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_0, playerInfo.gender, 2);
         playerFieldData.SetFieldValue<u8>(UNIT_FIELD_BYTES_0, 1, 3);
         playerFieldData.SetFieldValue<i32>(UNIT_FIELD_HEALTH, static_cast<i32>(unitStatsComponent.currentHealth));
         playerFieldData.SetFieldValue<i32>(UNIT_FIELD_POWER1, static_cast<i32>(unitStatsComponent.currentPower[POWER_MANA]));
@@ -184,7 +181,7 @@ void Update(entt::registry& registry)
         playerFieldData.SetFieldValue<i32>(UNIT_FIELD_MAXPOWER5, static_cast<i32>(unitStatsComponent.maxPower[POWER_HAPPINESS]));
         playerFieldData.SetFieldValue<i32>(UNIT_FIELD_MAXPOWER6, static_cast<i32>(unitStatsComponent.maxPower[POWER_RUNE]));
         playerFieldData.SetFieldValue<i32>(UNIT_FIELD_MAXPOWER7, static_cast<i32>(unitStatsComponent.maxPower[POWER_RUNIC_POWER]));
-        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_LEVEL, characterInfo.level);
+        playerFieldData.SetFieldValue<u32>(UNIT_FIELD_LEVEL, playerInfo.level);
         playerFieldData.SetFieldValue<u32>(UNIT_FIELD_FACTIONTEMPLATE, 14);
         playerFieldData.SetFieldValue<u32>(UNIT_FIELD_FLAGS, 0x00000008);
         playerFieldData.SetFieldValue<u32>(UNIT_FIELD_FLAGS_2, 0x00000800);
@@ -195,7 +192,7 @@ void Update(entt::registry& registry)
         playerFieldData.SetFieldValue<f32>(UNIT_FIELD_COMBATREACH, 1.5f);
 
         u32 displayId = 0;
-        CharacterUtils::GetDisplayIdFromRace(characterInfo, displayId);
+        CharacterUtils::GetDisplayIdFromRace(playerInfo.race, playerInfo.gender, displayId);
 
         playerFieldData.SetFieldValue<u32>(UNIT_FIELD_DISPLAYID, displayId);
         playerFieldData.SetFieldValue<u32>(UNIT_FIELD_NATIVEDISPLAYID, displayId);
@@ -238,15 +235,15 @@ void Update(entt::registry& registry)
         playerFieldData.SetFieldValue<f32>(UNIT_FIELD_HOVERHEIGHT, 1);
 
         playerFieldData.SetFieldValue<u32>(PLAYER_FLAGS, 0);
-        playerFieldData.SetFieldValue<u8>(PLAYER_BYTES, characterVisualData.skin);
-        playerFieldData.SetFieldValue<u8>(PLAYER_BYTES, characterVisualData.face, 1);
-        playerFieldData.SetFieldValue<u8>(PLAYER_BYTES, characterVisualData.hairStyle, 2);
-        playerFieldData.SetFieldValue<u8>(PLAYER_BYTES, characterVisualData.hairColor, 3);
-        playerFieldData.SetFieldValue<u8>(PLAYER_BYTES_2, characterVisualData.facialStyle, 0);
+        playerFieldData.SetFieldValue<u8>(PLAYER_BYTES, playerVisualInfo.skin);
+        playerFieldData.SetFieldValue<u8>(PLAYER_BYTES, playerVisualInfo.face, 1);
+        playerFieldData.SetFieldValue<u8>(PLAYER_BYTES, playerVisualInfo.hairStyle, 2);
+        playerFieldData.SetFieldValue<u8>(PLAYER_BYTES, playerVisualInfo.hairColor, 3);
+        playerFieldData.SetFieldValue<u8>(PLAYER_BYTES_2, playerVisualInfo.facialStyle, 0);
         playerFieldData.SetFieldValue<u8>(PLAYER_BYTES_2, 0, 1);
         playerFieldData.SetFieldValue<u8>(PLAYER_BYTES_2, 0, 2);
         playerFieldData.SetFieldValue<u8>(PLAYER_BYTES_2, 3, 3);
-        playerFieldData.SetFieldValue<u8>(PLAYER_BYTES_3, characterInfo.gender);
+        playerFieldData.SetFieldValue<u8>(PLAYER_BYTES_3, playerInfo.gender);
         playerFieldData.SetFieldValue<u8>(PLAYER_BYTES_3, 0, 1);
         playerFieldData.SetFieldValue<u8>(PLAYER_BYTES_3, 0, 2);
         playerFieldData.SetFieldValue<u8>(PLAYER_BYTES_3, 0, 3);

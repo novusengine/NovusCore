@@ -67,10 +67,11 @@ class WorldNodeHandler;
 class WorldConnection : public BaseSocket
 {
 public:
-    WorldConnection(WorldNodeHandler* worldNodeHandler, asio::ip::tcp::socket* socket) : BaseSocket(socket), account(0), _headerBuffer(nullptr, sizeof(ClientPacketHeader)), _packetBuffer(nullptr, 4096)
+    WorldConnection(WorldNodeHandler* worldNodeHandler, asio::ip::tcp::socket* socket, bool isBot = false) : BaseSocket(socket), account(0), _headerBuffer(nullptr, sizeof(ClientPacketHeader)), _packetBuffer(nullptr, 4096)
     {
         _seed = static_cast<u32>(rand());
         _worldNodeHandler = worldNodeHandler;
+        _isBot = isBot;
     }
 
     bool Start() override;
@@ -105,6 +106,7 @@ private:
     ByteBuffer _headerBuffer;
     ByteBuffer _packetBuffer;
 
+    bool _isBot;
     u32 _seed;
     StreamEncryption _streamEncryption;
     WorldNodeHandler* _worldNodeHandler;

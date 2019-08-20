@@ -7,68 +7,68 @@
 #include "../ECS/Components/PlayerConnectionComponent.h"
 #include "../ECS/Components/PlayerPositionComponent.h"
 
-void CharacterUtils::GetDisplayIdFromRace(const CharacterInfo characterData, u32& displayId)
+void CharacterUtils::GetDisplayIdFromRace(u8 raceId, u8 genderId, u32& displayId)
 {
-    switch (characterData.race)
+    switch (raceId)
     {
     // Human
     case 1:
     {
-        displayId = 49 + characterData.gender;
+        displayId = 49 + genderId;
         break;
     }
     // Orc
     case 2:
     {
-        displayId = 51 + characterData.gender;
+        displayId = 51 + genderId;
         break;
     }
     // Dwarf
     case 3:
     {
-        displayId = 53 + characterData.gender;
+        displayId = 53 + genderId;
         break;
     }
     // Night Elf
     case 4:
     {
-        displayId = 55 + characterData.gender;
+        displayId = 55 + genderId;
         break;
     }
     // Undead
     case 5:
     {
-        displayId = 57 + characterData.gender;
+        displayId = 57 + genderId;
         break;
     }
     // Tauren
     case 6:
     {
-        displayId = 59 + characterData.gender;
+        displayId = 59 + genderId;
         break;
     }
     // Gnome
     case 7:
     {
-        displayId = 1563 + characterData.gender;
+        displayId = 1563 + genderId;
         break;
     }
     // Gnome
     case 8:
     {
-        displayId = 1478 + characterData.gender;
+        displayId = 1478 + genderId;
         break;
     }
     // Blood Elf
     case 10:
     {
-        displayId = 15476 - characterData.gender;
+        displayId = 15476 - genderId;
         break;
     }
     // Draenie
     case 11:
     {
-        displayId = 16125 + characterData.gender;
+        displayId = 16125 + genderId;
         break;
     }
     }

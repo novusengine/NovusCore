@@ -42,45 +42,37 @@
 #include "../Components/UnitStatsComponent.h"
 #include "../Components/Singletons/SingletonComponent.h"
 #include "../Components/Singletons/GuidLookupSingleton.h"
-#include "../Components/Singletons/PlayerCreateQueueSingleton.h"
+#include "../Components/Singletons/BotCreateQueueSingleton.h"
 #include "../Components/Singletons/CharacterDatabaseCacheSingleton.h"
 #include "../Components/Singletons/MapSingleton.h"
 
-namespace PlayerAddSystem
+namespace BotAddSystem
 {
 void Update(entt::registry& registry)
 {
     SingletonComponent& singleton = registry.ctx<SingletonComponent>();
     GuidLookupSingleton& guidLookupSingleton = registry.ctx<GuidLookupSingleton>();
-    PlayerCreateQueueSingleton& createPlayerQueue = registry.ctx<PlayerCreateQueueSingleton>();
+    BotCreateQueueSingleton& createBotQueue = registry.ctx<BotCreateQueueSingleton>();
     CharacterDatabaseCacheSingleton& characterDatabase = registry.ctx<CharacterDatabaseCacheSingleton>();
     MapSingleton& mapSingleton = registry.ctx<MapSingleton>();
 
-    Message message;
-    while (createPlayerQueue.newPlayerQueue->try_dequeue(message))
+    BotCreateInfo botCreateInfo;
+    while (createBotQueue.newBotQueue->try_dequeue(botCreateInfo))
     {
-        u64 characterGuid = 0;
-        message.packet->Get<u64>(characterGuid);
-
-        CharacterInfo characterInfo;
-        if (!characterDatabase.cache->GetCharacterInfo(characterGuid, characterInfo))
-            continue;
-
-        CharacterVisualData characterVisualData;
-        if (!characterDatabase.cache->GetCharacterVisualData(characterGuid, characterVisualData))
-            continue;
-
+        CharacterInfo characterInfo = botCreateInfo.characterInfo;
+        
         u32 entityId = registry.create();
-        u32 accountId = static_cast<u32>(message.account);
-        ObjectGuid charGuid(characterGuid);
+        u32 accountId = characterInfo.account;
+        ObjectGuid charGuid(characterInfo.guid);
 
-        registry.assign<PlayerConnectionComponent>(entityId, entityId, accountId, charGuid, message.connection);
-        registry.assign<PlayerInitializeComponent>(entityId, entityId, accountId, charGuid, message.connection);
+        registry.assign<PlayerConnectionComponent>(entityId, entityId, accountId, charGuid, botCreateInfo.socket);
+        registry.assign<PlayerInitializeComponent>(entityId, entityId, accountId, charGuid, botCreateInfo.socket);
 
         registry.assign<PlayerFieldDataComponent>(entityId);
         registry.assign<PlayerUpdateDataComponent>(entityId);
 
-        registry.assign<PlayerVisualInfoComponent>(entityId, characterVisualData.skin, characterVisualData.face, characterVisualData.facialStyle, characterVisualData.hairStyle, characterVisualData.hairColor);
+        u8 visualData = 0;
+        registry.assign<PlayerVisualInfoComponent>(entityId, visualData, visualData, visualData, visualData, visualData);
         registry.assign<UnitInfoComponent>(entityId, characterInfo.name, characterInfo.race, characterInfo.gender, characterInfo.classId, characterInfo.level);
 
         PlayerPositionComponent& playerPositionComponent = registry.assign<PlayerPositionComponent>(entityId, characterInfo.mapId);
@@ -134,10 +126,10 @@ void Update(entt::registry& registry)
         registry.assign<PlayerSkillStorageComponent>(entityId);
 
         registry.assign<ScriptDataStorageComponent>(entityId);
-        registry.assign<AuraListComponent>(entityId, entityId, characterGuid);
+        registry.assign<AuraListComponent>(entityId, entityId, characterInfo.guid);
 
-        singleton.accountToEntityMap[static_cast<u32>(message.account)] = entityId;
-        guidLookupSingleton.playerToEntityMap[characterGuid] = entityId;
+        singleton.accountToEntityMap[static_cast<u32>(characterInfo.account)] = entityId;
+        guidLookupSingleton.playerToEntityMap[characterInfo.guid] = entityId;
     }
 }
-} // namespace PlayerAddSystem
+} // namespace BotAddSystem
