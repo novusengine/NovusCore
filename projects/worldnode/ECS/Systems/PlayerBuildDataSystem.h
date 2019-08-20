@@ -241,8 +241,10 @@ void Update(entt::registry& registry)
         CharacterDatabaseCacheSingleton& characterDatabase = registry.ctx<CharacterDatabaseCacheSingleton>();
 
         buildInitialDataView.each([&entityCreateQueue, &characterDatabase, lifeTimeInMS](const auto, PlayerInitializeComponent& playerInitializeComponent, PlayerFieldDataComponent& playerFieldData, PlayerPositionComponent& playerPositionData) {
-            /* Build Self Packet, must be sent immediately */
-            u8 updateType = UPDATETYPE_CREATE_OBJECT2;
+            ZoneScopedNC("PlayerBuildDataSystem::BuildInitialDataView", tracy::Color::Yellow2)
+
+                /* Build Self Packet, must be sent immediately */
+                u8 updateType = UPDATETYPE_CREATE_OBJECT2;
             u16 updateFlags = (UPDATEFLAG_SELF | UPDATEFLAG_LIVING | UPDATEFLAG_STATIONARY_POSITION);
             u32 visibleFlags = (UPDATEFIELD_FLAG_PUBLIC | UPDATEFIELD_FLAG_SELF);
             u16 buildOpcode = 0;
@@ -279,7 +281,9 @@ void Update(entt::registry& registry)
 
     auto buildUpdateDataView = registry.view<PlayerConnectionComponent, PlayerFieldDataComponent, PlayerPositionComponent, PlayerUpdateDataComponent, AuraListComponent>();
     buildUpdateDataView.each([&registry, &mapSingleton, lifeTimeInMS](const auto, PlayerConnectionComponent& playerConnection, PlayerFieldDataComponent& playerFieldData, PlayerPositionComponent& playerPositionData, PlayerUpdateDataComponent& playerUpdateData, AuraListComponent& playerAuraList) {
-        Vector2 position = Vector2(playerPositionData.movementData.position.x, playerPositionData.movementData.position.y);
+        ZoneScopedNC("PlayerBuildDataSystem::BuildUpdateDataView", tracy::Color::Yellow2)
+
+            Vector2 position = Vector2(playerPositionData.movementData.position.x, playerPositionData.movementData.position.y);
         u32 mapId = playerPositionData.mapId;
 
         u16 adtId;
@@ -287,7 +291,8 @@ void Update(entt::registry& registry)
         {
             if (adtId != playerPositionData.adtId)
             {
-                u32 entityId = playerConnection.entityId;
+                ZoneScopedNC("PlayerBuildDataSystem::AdtChanges", tracy::Color::Yellow2)
+                    u32 entityId = playerConnection.entityId;
                 u64 characterGuid = playerConnection.characterGuid;
 
                 std::vector<u32>& playerList = mapSingleton.maps[mapId].playersInAdts[playerPositionData.adtId];
@@ -299,6 +304,7 @@ void Update(entt::registry& registry)
 
                     for (u32 entity : playerList)
                     {
+
                         PlayerConnectionComponent& currentConnection = registry.get<PlayerConnectionComponent>(entity);
                         PlayerUpdateDataComponent& currentUpdateData = registry.get<PlayerUpdateDataComponent>(entity);
                         PlayerFieldDataComponent& currentFieldData = registry.get<PlayerFieldDataComponent>(entity);
@@ -329,21 +335,21 @@ void Update(entt::registry& registry)
                 playerConnection.SendChatNotification("[DEBUG] New ADT: %u has %u players", adtId, mapSingleton.maps[mapId].playersInAdts[adtId].size());
             }
 
-            std::vector<u32>& playerList = mapSingleton.maps[mapId].playersInAdts[playerPositionData.adtId];
+            ZoneScopedNC("PlayerBuildDataSystem::PlayersInOurADT", tracy::Color::Yellow2)
+                std::vector<u32>& playerList = mapSingleton.maps[mapId].playersInAdts[playerPositionData.adtId];
             for (u32 entity : playerList)
             {
                 if (playerConnection.entityId == entity)
                 {
-                    if (!playerFieldData.changesMask.Any())
-                        continue;
+                    ZoneScopedNC("PlayerBuildDataSystem::BuildSelfUpdate", tracy::Color::Yellow2) if (!playerFieldData.changesMask.Any()) continue;
 
                     u32 visibleFlags = (UPDATEFIELD_FLAG_PUBLIC | UPDATEFIELD_FLAG_SELF);
 
                     PlayerBuildDataBlock(playerConnection.characterGuid, visibleFlags, playerFieldData.changesMask, playerFieldData.playerFields, playerFieldData.updateData);
-                    
                 }
                 else
                 {
+                    ZoneScopedNC("PlayerBuildDataSystem::BuildOthersUpdate", tracy::Color::Yellow2) 
                     PlayerConnectionComponent& currentConnection = registry.get<PlayerConnectionComponent>(entity);
                     PlayerFieldDataComponent& currentFieldData = registry.get<PlayerFieldDataComponent>(entity);
                     u32 visibleFlags = UPDATEFIELD_FLAG_PUBLIC;
@@ -351,14 +357,15 @@ void Update(entt::registry& registry)
                     auto position = std::find(playerUpdateData.visibleGuids.begin(), playerUpdateData.visibleGuids.end(), currentConnection.characterGuid);
                     if (position != playerUpdateData.visibleGuids.end())
                     {
-                        if (!currentFieldData.changesMask.Any())
-                            continue;
+                        ZoneScopedNC("PlayerBuildDataSystem::BuildOthersUpdate2", tracy::Color::Yellow2) 
+                        if (!currentFieldData.changesMask.Any()) continue;
 
                         PlayerBuildDataBlock(currentConnection.characterGuid, visibleFlags, currentFieldData.changesMask, currentFieldData.playerFields, playerFieldData.updateData);
                     }
                     else
                     {
-                        u8 updateType = UPDATETYPE_CREATE_OBJECT2;
+                        ZoneScopedNC("PlayerBuildDataSystem::BuildNewUpdate", tracy::Color::Yellow2)
+                            u8 updateType = UPDATETYPE_CREATE_OBJECT2;
                         u16 updateFlags = (UPDATEFLAG_LIVING | UPDATEFLAG_STATIONARY_POSITION);
                         u16 buildOpcode = 0;
 
@@ -374,12 +381,12 @@ void Update(entt::registry& registry)
             const f32 updateFrequency = 250.0f; // 250 MS
             if (!playerFieldData.updateData.IsEmpty() && lifeTimeInMS - playerFieldData.lastSentTime > updateFrequency)
             {
-                playerFieldData.lastSentTime = lifeTimeInMS;
+                ZoneScopedNC("BuildUpdateDataView::Build", tracy::Color::Yellow2)
+                    playerFieldData.lastSentTime = lifeTimeInMS;
                 u16 buildOpcode = 0;
                 std::shared_ptr<ByteBuffer> update = ByteBuffer::Borrow<8192>();
                 {
-                    ZoneScopedNC("BuildUpdateDataView::Build", tracy::Color::Yellow2)
-                        playerFieldData.updateData.Build(update.get(), buildOpcode);
+                    playerFieldData.updateData.Build(update.get(), buildOpcode);
                     playerFieldData.updateData.ResetInvalidGuids();
                 }
 
@@ -388,21 +395,26 @@ void Update(entt::registry& registry)
             }
         }
 
-        std::shared_ptr<ByteBuffer> auraBuffer = ByteBuffer::Borrow<32768>();
-        for (i32 i = 0; i < AURALIST_MAX; i++)
         {
-            Aura& aura = playerAuraList.auras[i];
-            if (aura.IsApplied())
-                aura.Tick();
+            ZoneScopedNC("BuildUpdateDataView::HandleAuras", tracy::Color::Yellow2)
+            std::shared_ptr<ByteBuffer>
+            auraBuffer = ByteBuffer::Borrow<32768>();
+            for (i32 i = 0; i < AURALIST_MAX; i++)
+            {
+                Aura& aura = playerAuraList.auras[i];
+                if (aura.IsApplied())
+                    aura.Tick();
 
-            if (!aura.NeedUpdate())
-                continue;
+                if (!aura.NeedUpdate())
+                    continue;
 
-            aura.CreateAuraUpdate(auraBuffer, true);
+                aura.CreateAuraUpdate(auraBuffer, true);
 
-            CharacterUtils::SendPacketToGridPlayers(&registry, playerConnection.entityId, auraBuffer, Opcode::SMSG_AURA_UPDATE);
-            auraBuffer->Reset();
+                CharacterUtils::SendPacketToGridPlayers(&registry, playerConnection.entityId, auraBuffer, Opcode::SMSG_AURA_UPDATE);
+                auraBuffer->Reset();
+            }
         }
+        
 
         if (!playerUpdateData.positionUpdateData.empty())
         {
@@ -426,7 +438,8 @@ void Update(entt::registry& registry)
 
         if (!playerUpdateData.chatUpdateData.empty())
         {
-            ZoneScopedNC("ChatUpdate", tracy::Color::Yellow2) for (ChatUpdateData chatData : playerUpdateData.chatUpdateData)
+            ZoneScopedNC("ChatUpdate", tracy::Color::Yellow2) 
+            for (ChatUpdateData chatData : playerUpdateData.chatUpdateData)
             {
                 std::shared_ptr<ByteBuffer> buffer = ByteBuffer::Borrow<286>();
 
@@ -450,6 +463,7 @@ void Update(entt::registry& registry)
         }
     });
 
+    ZoneScopedNC("ResetFieldDataView", tracy::Color::Yellow2) 
     auto resetFieldDataView = registry.view<PlayerFieldDataComponent>();
     resetFieldDataView.each([](const auto, PlayerFieldDataComponent& playerFieldData) {
         if (playerFieldData.changesMask.Any())
