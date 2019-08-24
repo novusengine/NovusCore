@@ -1,4 +1,5 @@
 # NovusCore
+[![Build Status](https://travis-ci.org/novuscore/NovusCore.svg?branch=master)](https://travis-ci.org/novuscore/NovusCore)
 
 ### What is NovusCore
 
