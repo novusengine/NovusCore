@@ -5,7 +5,7 @@
 [//]: # (The PR will be reviewed and approved by one or multiple NovusCore developers to make sure everything is okay.)
 [//]: # (The PR will need to be tested in-game to see if it actually a valid fix.)
 
-**Changes proposed:** (Add / Remove lines as necessary)
+**Changes proposed:** (Add / Remove lines if necessary)
 
 -
 -
@@ -13,13 +13,13 @@
 **Concerning issue:**
 Fixes # (Insert issue number)
 
-**Tests Performed:** (Add / Remove lines as necessary)
+**Tests Performed:** (Add / Remove lines if necessary)
 
 - [ ] Build
 - [ ] Tested in-game
 - [ ] 
 
-**Known issues & TODO list** (Add / Remove lines as necessary)
+**Known issues & TODO list** (Add / Remove lines if necessary)
 
 - [ ] 
 - [ ] 
