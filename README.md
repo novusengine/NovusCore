@@ -1,6 +1,7 @@
 # NovusCore
 [![Build Status](https://travis-ci.com/novuscore/NovusCore.svg?branch=master)](https://travis-ci.com/novuscore/NovusCore)
 [![Build status](https://ci.appveyor.com/api/projects/status/aduidyknihendeph/branch/master?svg=true)](https://ci.appveyor.com/project/NixAJ/novuscore/branch/master)
+[![Website Documentation](https://img.shields.io/badge/Website-Documentation-success)](https://novuscore.org)
 [![Discord](https://img.shields.io/discord/554123112384299010?label=Discord&logo=Discord)](https://discord.gg/gz6FMZa)
 
 ### What is NovusCore
