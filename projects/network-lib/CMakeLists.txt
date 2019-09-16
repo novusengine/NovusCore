@@ -9,7 +9,7 @@ find_assign_files(${NETWORK_LIB_FILES})
 
 # Set VERSION & FOLDER Property
 set_target_properties(network-lib PROPERTIES VERSION ${PROJECT_VERSION})
-set_target_properties(network-lib PROPERTIES FOLDER "network-lib")
+set_target_properties(network-lib PROPERTIES FOLDER "libs")
 
 add_compile_definitions(NOMINMAX _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
 

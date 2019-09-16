@@ -23,6 +23,7 @@
 */
 #pragma once
 #include <cstdint>
+#include <memory>
 
 #include "Math/Vector2.h"
 #include "Math/Vector3.h"

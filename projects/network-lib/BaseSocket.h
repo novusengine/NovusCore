@@ -23,7 +23,6 @@
 */
 #pragma once
 
-#include "ByteBuffer.h"
 #include "BaseSocket.h"
 
 #include <ctime>
@@ -32,11 +31,12 @@
 #include <functional>
 #include <asio.hpp>
 #include <asio/placeholders.hpp>
+#include <Networking/ByteBuffer.h>
 
 class BaseSocket : public std::enable_shared_from_this<BaseSocket>
 {
 public:
-    virtual bool Start() = 0;
+    virtual void Start() = 0;
     virtual void Close(asio::error_code error)
     {
         _socket->close();

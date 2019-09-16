@@ -9,7 +9,7 @@ find_assign_files(${RENDER_LIB_FILES})
 
 # Set VERSION & FOLDER Property
 set_target_properties(render-lib PROPERTIES VERSION ${PROJECT_VERSION})
-set_target_properties(render-lib PROPERTIES FOLDER "render-lib")
+set_target_properties(render-lib PROPERTIES FOLDER "libs")
 
 add_compile_definitions(NOMINMAX _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
 
