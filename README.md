@@ -24,13 +24,8 @@ The end-goal is to provide a core capable of tackling all of the current limitat
 The project has an official [Discord](https://discord.gg/gz6FMZa).
 You will find the developers to be active on the discord and always up for answering any questions you might have regarding the project. Despite NovusCore not currently being ready for production level use, we are always welcoming any users that want to try using it.
 
-
-### How to install NovusCore
-[Guide by Grim](https://github.com/novuscore/NovusCore/blob/master/Installing.md)
-
-
 ### Dependencies
-* [OpenSSL 1.0.x](https://www.openssl.org/source/)
+* [OpenSSL 1.1.0](https://www.openssl.org/source/)
 * [MySQL C Connector 5.6 (libmysqlcclient) or newer](https://dev.mysql.com/downloads/connector/c/)
 * [CMAKE 3.12 or newer](https://cmake.org/download/)
 
@@ -45,8 +40,3 @@ Here we include a honorable mention to all the libraries included directly into 
 * [Tracy Profiler](https://bitbucket.org/wolfpld/tracy/src/master)
 * [Entt ECS](https://github.com/skypjack/entt/)
 * [Cpp-Taskflow](https://github.com/cpp-taskflow/cpp-taskflow)
-* [ZLIB](https://github.com/madler/zlib)
-
-### Tools
-DataExtractor is sub licensed under GPL-2.0. This is due to a dependency that is required for the extractor to work.
-* [Libmpq](https://github.com/ge0rg/libmpq)
