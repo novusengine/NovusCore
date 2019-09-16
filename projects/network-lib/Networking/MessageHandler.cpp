@@ -2,9 +2,9 @@
 #include "MessageHandler.h"
 
 MessageHandler* MessageHandler::_instance = nullptr;
-MessageHandler::_MessageHandler()
+MessageHandler::MessageHandler()
 {
-    for (i32 i = 0; i < opcodeCount; i++)
+    for (i32 i = 0; i < OpcodeCount; i++)
     {
         handlers[i] = nullptr;
     }

@@ -24,21 +24,9 @@
 #pragma once
 #include <NovusTypes.h>
 #include <Utils/ConcurrentQueue.h>
+#include <Utils/Message.h>
 #include <Utils/StringUtils.h>
 #include <Utils/Timer.h>
-#include "Message.h"
-
-enum InputMessages
-{
-    MSG_IN_EXIT,
-    MSG_IN_PING
-};
-
-enum OutputMessages
-{
-    MSG_OUT_EXIT_CONFIRM,
-    MSG_OUT_PRINT
-};
 
 class ClientHandler
 {

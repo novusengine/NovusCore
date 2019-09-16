@@ -15,8 +15,8 @@ add_compile_definitions(NOMINMAX _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
 target_link_libraries(client-demo PRIVATE
 	asio::asio
 	common::common
-	render-lib::render-lib
-	network-lib::network-lib
+	render::render
+	network::network
 )
 
 install(TARGETS client-demo DESTINATION bin)

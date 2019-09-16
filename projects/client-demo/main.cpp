@@ -3,7 +3,8 @@
 
 #include "ClientHandler.h"
 #include "ConsoleCommands.h"
-#include "Message.h"
+#include <Utils/Message.h>
+#include <Networking/Connection.h>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -22,8 +23,19 @@ i32 main()
 
     NC_LOG_SUCCESS("Client Started");
 
+    asio::io_service io_service(2);
+    std::thread run_thread([&]
+    {
+        auto work = std::make_shared<asio::io_service::work>(io_service);
+        io_service.run();
+    });
+
+    Connection connection(new asio::ip::tcp::socket(io_service));
+    connection.Start();
+
     ClientHandler clientHandler;
     clientHandler.Start();
+
 
     ConsoleCommandHandler consoleCommandHandler;
     auto future = std::async(std::launch::async, StringUtils::GetLineFromCin);

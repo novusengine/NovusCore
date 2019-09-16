@@ -31,7 +31,7 @@
 #include <functional>
 #include <asio.hpp>
 #include <asio/placeholders.hpp>
-#include <Networking/ByteBuffer.h>
+#include <Utils/ByteBuffer.h>
 
 class BaseSocket : public std::enable_shared_from_this<BaseSocket>
 {

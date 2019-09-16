@@ -1,5 +1,5 @@
 #include <NovusTypes.h>
-#include <Networking\ByteBuffer.h>
+#include <Utils\ByteBuffer.h>
 
 struct NetPacket
 {

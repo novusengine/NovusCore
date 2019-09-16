@@ -1,4 +1,8 @@
 #include "ClientHandler.h"
+#include <Networking/MessageHandler.h>
+#include <Networking/InputQueue.h>
+
+#include "Utils/ServiceLocator.h"
 
 ClientHandler::ClientHandler()
     : _isRunning(false), _inputQueue(256), _outputQueue(256)
@@ -13,6 +17,12 @@ void ClientHandler::Start()
 {
     if (_isRunning)
         return;
+
+    ServiceLocator::SetMainInputQueue(&_inputQueue);
+
+    // Setup Network Lib
+    InputQueue::SetInputQueue(&_inputQueue);
+    MessageHandler::Create();
 
     std::thread thread = std::thread(&ClientHandler::Run, this);
     thread.detach();
@@ -44,7 +54,7 @@ void ClientHandler::Run()
 
     Timer timer;
     f32 targetDelta = 1.0f / 5;
-
+    
     while (true)
     {
         f32 deltaTime = timer.GetDeltaTime();

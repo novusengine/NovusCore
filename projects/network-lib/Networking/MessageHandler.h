@@ -4,20 +4,19 @@
 
 #include "NetPacket.h"
 
+#define OpcodeCount 512
 typedef bool (*MessageHandlerFunc)(NetPacket*);
-
-template <size_t OpcodeCount>
-class _MessageHandler
+class MessageHandler
 {
 public:
-    _MessageHandler();
+    MessageHandler();
 
-    static void Create(size_t opcodeNums)
+    static void Create()
     {
         assert(_instance == nullptr);
-        _instance = new _MessageHandler<opcodeNums>();
+        _instance = new MessageHandler();
     }
-    static _MessageHandler* Instance()
+    static MessageHandler* Instance()
     {
         assert(_instance != nullptr);
         return _instance;
@@ -27,9 +26,6 @@ public:
     bool CallHandler(NetPacket* packet);
 
 private:
-    static _MessageHandler* _instance;
-    const size_t opcodeCount = OpcodeCount;
+    static MessageHandler* _instance;
     MessageHandlerFunc handlers[OpcodeCount];
 };
-
-using MessageHandler = _MessageHandler<512>;

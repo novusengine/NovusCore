@@ -22,9 +22,9 @@
     SOFTWARE.
 */
 #pragma once
+#include <Utils/Message.h>
 #include <vector>
 #include "../ClientHandler.h"
-#include "../Message.h"
 
 void QuitCommand(ClientHandler& clientHandler, std::vector<std::string> subCommands)
 {

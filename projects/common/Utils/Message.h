@@ -25,14 +25,29 @@
 #include <NovusTypes.h>
 #include <string>
 
+enum InputMessages
+{
+    MSG_IN_EXIT,
+    MSG_IN_PING,
+    MSG_IN_NET_PACKET
+};
+
+enum OutputMessages
+{
+    MSG_OUT_EXIT_CONFIRM,
+    MSG_OUT_PRINT
+};
+
 struct Message
 {
     Message()
     {
         code = -1;
         message = nullptr;
+        object = nullptr;
     }
 
     i32 code;
     std::string* message;
+    void* object;
 };
