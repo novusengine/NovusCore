@@ -29,7 +29,8 @@ enum InputMessages
 {
     MSG_IN_EXIT,
     MSG_IN_PING,
-    MSG_IN_NET_PACKET
+    MSG_IN_NET_PACKET,
+    MSG_OUT_SETUP_COMPLETE
 };
 
 enum OutputMessages

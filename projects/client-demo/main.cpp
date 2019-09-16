@@ -26,16 +26,13 @@ i32 main()
     asio::io_service io_service(2);
     std::thread run_thread([&]
     {
-        auto work = std::make_shared<asio::io_service::work>(io_service);
+        asio::io_service::work work(io_service);
         io_service.run();
     });
 
     Connection connection(new asio::ip::tcp::socket(io_service));
-    connection.Start();
-
     ClientHandler clientHandler;
     clientHandler.Start();
-
 
     ConsoleCommandHandler consoleCommandHandler;
     auto future = std::async(std::launch::async, StringUtils::GetLineFromCin);
@@ -54,6 +51,11 @@ i32 main()
             {
                 NC_LOG_MESSAGE(*message.message);
                 delete message.message;
+            }
+            else if (message.code == MSG_OUT_SETUP_COMPLETE)
+            {
+                // Client is setup and is ready to start networking
+                connection.Start();
             }
         }
 

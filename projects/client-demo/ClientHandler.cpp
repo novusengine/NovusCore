@@ -52,6 +52,10 @@ void ClientHandler::Run()
 {
     _isRunning = true;
 
+    Message setupCompleteMessage;
+    setupCompleteMessage.code = MSG_OUT_SETUP_COMPLETE;
+    _outputQueue.enqueue(setupCompleteMessage);
+
     Timer timer;
     f32 targetDelta = 1.0f / 5;
     

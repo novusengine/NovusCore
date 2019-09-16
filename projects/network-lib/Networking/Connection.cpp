@@ -8,7 +8,7 @@
 
 void Connection::Start()
 {
-    /*_socket->connect(asio::ip::tcp::endpoint(asio::ip::address::from_string("127.0.0.1"), 3724));
+    _socket->connect(asio::ip::tcp::endpoint(asio::ip::address::from_string("127.0.0.1"), 3724));
 
     cAuthLogonChallenge challenge("admin");
     u32 challengeSize = 34 + 5;
@@ -18,7 +18,7 @@ void Connection::Start()
     std::memcpy(data->GetInternalData(), &challenge, challengeSize);
     data->WrittenData += challengeSize;
 
-    Send(data.get());*/
+    Send(data.get());
 
     AsyncRead();
 }
