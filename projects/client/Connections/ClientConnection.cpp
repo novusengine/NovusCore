@@ -1,6 +1,5 @@
 #include "ClientConnection.h"
 #include <Networking/ByteBuffer.h>
-#include <Cryptography/SHA1.h>
 
 #pragma pack(push, 1)
 struct ClientLogonChallenge
