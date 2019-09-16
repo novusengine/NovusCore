@@ -67,6 +67,7 @@ public:
 private:
     void Run();
     bool Update(f32 deltaTime);
+    void Render();
 
 private:
     bool _isRunning;

@@ -53,6 +53,8 @@ void ClientHandler::Run()
         if (!Update(deltaTime))
             break;
 
+        Render();
+
         // Wait for tick rate, this might be an overkill implementation but it has the even tickrate I've seen - MPursche
         for (deltaTime = timer.GetDeltaTime(); deltaTime < targetDelta - 0.0025f; deltaTime = timer.GetDeltaTime())
         {
@@ -92,5 +94,10 @@ bool ClientHandler::Update(f32 deltaTime)
             _outputQueue.enqueue(pongMessage);
         }
     }
+
     return true;
+}
+
+void ClientHandler::Render()
+{
 }
