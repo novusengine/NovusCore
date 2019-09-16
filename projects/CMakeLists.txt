@@ -22,4 +22,6 @@
 
 # Include Project Directories
 add_subdirectory(common)
-add_subdirectory(client)
+add_subdirectory(render-lib)
+add_subdirectory(network-lib)
+add_subdirectory(client-demo)

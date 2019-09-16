@@ -14,11 +14,10 @@ target_link_libraries(common PUBLIC
     tracy::tracy
     common::dependencies
     openssl::openssl
-    zlib::zlib
 )
 
 add_compile_definitions(NOMINMAX _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
 
 # Set VERSION & FOLDER Property
 set_target_properties(common PROPERTIES VERSION ${PROJECT_VERSION})
-set_target_properties(common PROPERTIES FOLDER "client")
+set_target_properties(common PROPERTIES FOLDER "shared")
