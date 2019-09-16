@@ -14,7 +14,7 @@ void DebugHandler::Initialize()
 
     if (!GetConsoleScreenBufferInfo(_handle, &info))
     {
-        assert(false);
+        //assert(false);
     }
 
     _defaultColor = info.wAttributes;

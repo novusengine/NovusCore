@@ -1,6 +1,7 @@
 #include "ClientHandler.h"
 #include <Networking/MessageHandler.h>
 #include <Networking/InputQueue.h>
+#include "Window.h"
 
 #include "Utils/ServiceLocator.h"
 
@@ -58,7 +59,10 @@ void ClientHandler::Run()
 
     Timer timer;
     f32 targetDelta = 1.0f / 5;
-    
+
+    _window = new Window();
+    _window->Init(1280, 720);
+
     while (true)
     {
         f32 deltaTime = timer.GetDeltaTime();
@@ -90,6 +94,10 @@ void ClientHandler::Run()
 
 bool ClientHandler::Update(f32 deltaTime)
 {
+    bool shouldExit = _window->Update(deltaTime) == false;
+    if (shouldExit)
+        return false;
+
     Message message;
     while (_inputQueue.try_dequeue(message))
     {
@@ -114,4 +122,6 @@ bool ClientHandler::Update(f32 deltaTime)
 
 void ClientHandler::Render()
 {
+
+    _window->Render();
 }

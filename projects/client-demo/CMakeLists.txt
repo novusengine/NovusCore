@@ -6,6 +6,8 @@ add_executable(client-demo ${CLIENT_DEMO_FILES})
 
 find_assign_files(${CLIENT_DEMO_FILES})
 
+include_directories(../../dep/glfw/include)
+
 # Set VERSION & FOLDER Property
 set_target_properties(client-demo PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(client-demo PROPERTIES FOLDER "client-demo")
@@ -17,6 +19,7 @@ target_link_libraries(client-demo PRIVATE
 	common::common
 	render::render
 	network::network
+	glfw ${GLFW_LIBRARIES}
 )
 
 install(TARGETS client-demo DESTINATION bin)

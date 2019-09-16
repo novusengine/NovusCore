@@ -24,7 +24,7 @@ add_compile_definitions(NC_$<CONFIG> NOMINMAX WIN32_LEAN_AND_MEAN)
 
 if (MSVC)
     if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang") #MSVC
-        add_definitions("/MP")
+        #add_definitions("/MP")
         add_compile_options("/WX")
     else() #GCC/Clang on Windows
         add_compile_options("-Werror")
