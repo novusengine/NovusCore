@@ -14,6 +14,7 @@ target_link_libraries(common PUBLIC
     tracy::tracy
     common::dependencies
     openssl::openssl
+    type_safe::type_safe
 )
 
 add_compile_definitions(NOMINMAX _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)

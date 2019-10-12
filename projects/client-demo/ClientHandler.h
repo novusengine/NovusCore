@@ -29,6 +29,7 @@
 #include <Utils/Timer.h>
 
 class Window;
+class Renderer;
 class ClientHandler
 {
 public:
@@ -65,4 +66,5 @@ private:
     moodycamel::ConcurrentQueue<Message> _outputQueue;
 
     Window* _window;
+    Renderer* _renderer;
 };

@@ -12,7 +12,9 @@ public:
     bool Init(u32 width, u32 height);
 
     bool Update(f32 deltaTime);
-    void Render();
+    void Present();
+
+    GLFWwindow* GetWindow() { return _window; }
 
 private:
 

@@ -42,6 +42,9 @@ bool Window::Init(u32 width, u32 height)
         
     }
 
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
     _window = glfwCreateWindow(width, height, "CNovusCore", NULL, NULL);
     if (!_window)
     {
@@ -64,7 +67,7 @@ bool Window::Update(f32 deltaTime)
     return true;
 }
 
-void Window::Render()
+void Window::Present()
 {
-    glfwSwapBuffers(_window);
+    //glfwSwapBuffers(_window);
 }

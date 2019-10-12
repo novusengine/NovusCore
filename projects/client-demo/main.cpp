@@ -55,7 +55,7 @@ i32 main()
             else if (message.code == MSG_OUT_SETUP_COMPLETE)
             {
                 // Client is setup and is ready to start networking
-                connection.Start();
+                //connection.Start();
             }
         }
 

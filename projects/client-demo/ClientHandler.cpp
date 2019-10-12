@@ -5,6 +5,8 @@
 
 #include "Utils/ServiceLocator.h"
 
+#include <Renderer.h>
+
 ClientHandler::ClientHandler()
     : _isRunning(false), _inputQueue(256), _outputQueue(256)
 {
@@ -12,6 +14,7 @@ ClientHandler::ClientHandler()
 
 ClientHandler::~ClientHandler()
 {
+    delete _renderer;
 }
 
 void ClientHandler::Start()
@@ -58,10 +61,13 @@ void ClientHandler::Run()
     _outputQueue.enqueue(setupCompleteMessage);
 
     Timer timer;
-    f32 targetDelta = 1.0f / 5;
+    f32 targetDelta = 1.0f / 5.0f;
 
     _window = new Window();
     _window->Init(1280, 720);
+
+    _renderer = new Renderer();
+    _renderer->Init(_window->GetWindow());
 
     while (true)
     {
@@ -122,6 +128,7 @@ bool ClientHandler::Update(f32 deltaTime)
 
 void ClientHandler::Render()
 {
-
-    _window->Render();
+    _renderer->Render();
+    _renderer->Present();
+    _window->Present();
 }
