@@ -49,7 +49,7 @@ private:
     void CreateFrameBuffers();
     void CreateCommandPool();
     void CreateCommandBuffers();
-    void CreateSemaphores();
+    void CreateSyncObjects();
 
     std::vector<const char*> GetRequiredExtensions();
     bool CheckValidationLayerSupport();
@@ -85,6 +85,10 @@ private:
     VkCommandPool _commandPool;
     std::vector<VkCommandBuffer> _commandBuffers;
 
-    VkSemaphore _imageAvailableSemaphore;
-    VkSemaphore _renderFinishedSemaphore;
+    std::vector<VkSemaphore> _imageAvailableSemaphores;
+    std::vector<VkSemaphore> _renderFinishedSemaphores;
+    std::vector<VkFence> _inFlightFences;
+    size_t _currentFrame = 0;
+
+    uint32_t _imageIndex;
 };
