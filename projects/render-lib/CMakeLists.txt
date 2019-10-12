@@ -17,15 +17,14 @@ target_link_libraries(render PUBLIC
 	glfw ${GLFW_LIBRARIES}
 	Vulkan::Vulkan
 )
-
 add_dependencies(render Shaders)
 
 add_custom_command(TARGET render POST_BUILD
 	COMMENT "Compiling shaders..."
-	COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:render>/shaders/"
+	COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_INSTALL_PREFIX}/$<CONFIG>/shaders/"
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${PROJECT_BINARY_DIR}/shaders"
-        "$<TARGET_FILE_DIR:render>/shaders"
+        "${SHADER_OUTPUT}"
+        "${CMAKE_INSTALL_PREFIX}/$<CONFIG>/shaders/"
         )
 
 add_compile_definitions(NOMINMAX _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS VK_USE_PLATFORM_WIN32_KHR)
