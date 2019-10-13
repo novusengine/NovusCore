@@ -124,7 +124,7 @@ public:
         y = in.y;
         z = in.z;
     }
-    Vector3(const Vector2& in);
+    Vector3(const Vector2& in, float z = 0.0f);
 
     // Returns the length of the vector
     inline float Length()
@@ -633,10 +633,11 @@ public:
 public:
     static Vector3 One;
     static Vector3 Zero;
-    static Vector3 North;
-    static Vector3 South;
-    static Vector3 West;
-    static Vector3 East;
+
     static Vector3 Up;
     static Vector3 Down;
+    static Vector3 Left;
+    static Vector3 Right;
+    static Vector3 Forward;
+    static Vector3 Backward;
 };

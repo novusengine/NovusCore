@@ -39,7 +39,6 @@ bool Window::Init(u32 width, u32 height)
             return false;
         }
         glfwSetErrorCallback(error_callback);
-        
     }
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);

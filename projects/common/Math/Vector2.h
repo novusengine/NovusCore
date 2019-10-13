@@ -585,8 +585,8 @@ public:
 public:
     static Vector2 One;
     static Vector2 Zero;
-    static Vector2 North;
-    static Vector2 South;
-    static Vector2 West;
-    static Vector2 East;
+    static Vector2 Up;
+    static Vector2 Down;
+    static Vector2 Left;
+    static Vector2 Right;
 };

@@ -96,6 +96,8 @@ inline float Cos(float x)
     return Sin(x + HALF_PI);
 }
 
+float Tan(float x);
+
 inline float Min(float a, float b)
 {
     return (a <= b) ? a : b;

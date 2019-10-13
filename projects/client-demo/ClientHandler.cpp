@@ -2,6 +2,7 @@
 #include <Networking/MessageHandler.h>
 #include <Networking/InputQueue.h>
 #include "Window.h"
+#include "Camera.h"
 
 #include "Utils/ServiceLocator.h"
 
@@ -61,10 +62,12 @@ void ClientHandler::Run()
     _outputQueue.enqueue(setupCompleteMessage);
 
     Timer timer;
-    f32 targetDelta = 1.0f / 5.0f;
+    f32 targetDelta = 1.0f / 30.0f;
 
     _window = new Window();
     _window->Init(1280, 720);
+
+    _camera = new Camera(Vector3(0, 0, -5));
 
     _renderer = new Renderer();
     _renderer->Init(_window->GetWindow());
@@ -122,6 +125,10 @@ bool ClientHandler::Update(f32 deltaTime)
             _outputQueue.enqueue(pongMessage);
         }
     }
+
+    _camera->Update(deltaTime);
+    _renderer->SetViewMatrix(_camera->GetViewMatrix().Inverted());
+    _renderer->Update(deltaTime);
 
     return true;
 }

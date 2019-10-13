@@ -30,6 +30,7 @@
 
 class Window;
 class Renderer;
+class Camera;
 class ClientHandler
 {
 public:
@@ -66,5 +67,6 @@ private:
     moodycamel::ConcurrentQueue<Message> _outputQueue;
 
     Window* _window;
+    Camera* _camera;
     Renderer* _renderer;
 };
