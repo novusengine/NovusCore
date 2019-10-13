@@ -1,6 +1,8 @@
 #include "Window.h"
 #include <GLFW/glfw3.h>
 #include <cassert>
+#include <InputManager.h>
+
 
 bool Window::_glfwInitialized = false;
 
@@ -27,8 +29,23 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GLFW_TRUE);
+
+    InputManager::Instance()->Checker(action, key, mods);
 }
 
+void MyTestCallback(InputBinding* binding)
+{
+    printf("%s pressed\n", binding->name.c_str());
+
+    if (InputManager::Instance()->UnregisterBinding("[Test] Spacebar", GLFW_KEY_SPACE))
+    {
+        printf("Successfully unregistered %s\n", binding->name.c_str());
+    }
+    else
+    {
+        printf("Failed to unregistered %s\n", binding->name.c_str());
+    }
+}
 bool Window::Init(u32 width, u32 height)
 {
     if (!_glfwInitialized)
@@ -50,6 +67,9 @@ bool Window::Init(u32 width, u32 height)
         assert(false);
         return false;
     }
+
+
+    InputManager::Instance()->RegisterBinding("[Test] Spacebar", GLFW_KEY_SPACE, 1, INPUTBINDING_MOD_NONE, MyTestCallback);
     glfwSetKeyCallback(_window, key_callback);
 
     return true;

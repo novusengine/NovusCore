@@ -10,6 +10,7 @@ find_assign_files(${INPUT_LIB_FILES})
 target_include_directories(input PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(input PUBLIC
 	common::common
+	glfw ${GLFW_LIBRARIES}
 )
 
 add_compile_definitions(NOMINMAX _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
