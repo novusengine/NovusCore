@@ -128,6 +128,7 @@ void InputManager::Setup()
     _inputBindingMap[GLFW_KEY_RIGHT_SUPER] = std::vector<InputBinding>();
     _inputBindingMap[GLFW_KEY_MENU] = std::vector<InputBinding>();
 
+    // Micro Optimization (Pre Allocate Memory for 8 InputBindings)
     for (auto inputBinding : _inputBindingMap)
     {
         inputBinding.second.reserve(8);
@@ -136,7 +137,6 @@ void InputManager::Setup()
 
 bool InputManager::Checker(i32 action, i32 key, i32 modifiers)
 {
-    printf("Checker called for key: %i\n", key);
     for (auto inputBinding : _inputBindingMap[key])
     {
         if ((inputBinding.actionMask == action || (inputBinding.actionMask & action)) && inputBinding.modifierMask == modifiers)
