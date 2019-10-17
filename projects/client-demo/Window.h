@@ -1,8 +1,8 @@
 #pragma once
 #include <NovusTypes.h>
+#include <InputManager.h>
 
 struct GLFWwindow;
-
 class Window
 {
 public:
@@ -15,11 +15,13 @@ public:
     void Present();
 
     GLFWwindow* GetWindow() { return _window; }
+    InputManager* GetInputManager() { return _inputManager; }
 
 private:
 
 private:
     GLFWwindow* _window;
+    InputManager* _inputManager;
 
     static bool _glfwInitialized;
 };

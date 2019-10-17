@@ -1,5 +1,5 @@
 #include <NovusTypes.h>
-
+#include <GLFW/glfw3.h>
 
 enum InputBindingModifier
 {
@@ -9,8 +9,9 @@ enum InputBindingModifier
     INPUTBINDING_MOD_ALT = 0x04
 };
 
+class Window;
 class InputBinding;
-typedef void InputBindingFunc(InputBinding*);
+typedef void InputBindingFunc(Window*, InputBinding*);
 class InputBinding
 {
 public:

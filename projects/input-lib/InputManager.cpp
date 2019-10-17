@@ -1,7 +1,5 @@
 #include "InputManager.h"
-#include <GLFW/glfw3.h>
 
-InputManager* InputManager::_inputManager = nullptr;
 void InputManager::Setup()
 {
     _inputBindingMap.clear();
@@ -135,7 +133,7 @@ void InputManager::Setup()
     }
 }
 
-bool InputManager::Checker(i32 action, i32 key, i32 modifiers)
+void InputManager::KeyboardInputChecker(Window* window, i32 key, i32 scancode, i32 action, i32 modifiers)
 {
     for (auto inputBinding : _inputBindingMap[key])
     {
@@ -144,11 +142,9 @@ bool InputManager::Checker(i32 action, i32 key, i32 modifiers)
             if (!inputBinding.callback)
                 continue;
 
-            inputBinding.callback(&inputBinding);
+            inputBinding.callback(window, &inputBinding);
         }
     }
-
-    return true;
 }
 
 bool InputManager::RegisterBinding(std::string bindingName, i32 key, i32 actionMask, i32 modifierMask, InputBindingFunc callback)

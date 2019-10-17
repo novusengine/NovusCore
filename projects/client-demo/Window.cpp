@@ -1,7 +1,6 @@
 #include "Window.h"
 #include <GLFW/glfw3.h>
 #include <cassert>
-#include <InputManager.h>
 
 
 bool Window::_glfwInitialized = false;
@@ -18,34 +17,29 @@ Window::~Window()
     {
         glfwDestroyWindow(_window);
     }
+
+    if (_inputManager != nullptr)
+    {
+        delete _inputManager;
+    }
 }
 
-void error_callback(int error, const char* description)
+void error_callback(i32 error, const char* description)
 {
     fprintf(stderr, "Error: %s\n", description);
 }
 
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+void key_callback(GLFWwindow* window, i32 key, i32 scancode, i32 action, i32 modifiers)
 {
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
-
-    InputManager::Instance()->Checker(action, key, mods);
+    Window* userWindow = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+    userWindow->GetInputManager()->KeyboardInputChecker(userWindow, key, scancode, action, modifiers);
 }
 
-void MyTestCallback(InputBinding* binding)
+void CloseWindowInput(Window* window, InputBinding* binding)
 {
-    printf("%s pressed\n", binding->name.c_str());
-
-    if (InputManager::Instance()->UnregisterBinding("[Test] Spacebar", GLFW_KEY_SPACE))
-    {
-        printf("Successfully unregistered %s\n", binding->name.c_str());
-    }
-    else
-    {
-        printf("Failed to unregistered %s\n", binding->name.c_str());
-    }
+    glfwSetWindowShouldClose(window->GetWindow(), GLFW_TRUE);
 }
+
 bool Window::Init(u32 width, u32 height)
 {
     if (!_glfwInitialized)
@@ -67,9 +61,10 @@ bool Window::Init(u32 width, u32 height)
         assert(false);
         return false;
     }
+    glfwSetWindowUserPointer(_window, this);
 
-
-    InputManager::Instance()->RegisterBinding("[Test] Spacebar", GLFW_KEY_SPACE, 1, INPUTBINDING_MOD_NONE, MyTestCallback);
+    _inputManager = new InputManager();
+    _inputManager->RegisterBinding("[Test] Close Window", GLFW_KEY_ESCAPE, GLFW_PRESS, INPUTBINDING_MOD_NONE, CloseWindowInput);
     glfwSetKeyCallback(_window, key_callback);
 
     return true;
