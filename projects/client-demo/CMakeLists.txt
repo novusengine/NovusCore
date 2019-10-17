@@ -19,6 +19,7 @@ target_link_libraries(client-demo PRIVATE
 	common::common
 	render::render
 	network::network
+	input::input
 	glfw ${GLFW_LIBRARIES}
 )
 
