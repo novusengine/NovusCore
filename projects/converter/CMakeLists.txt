@@ -1,9 +1,13 @@
+set(CONVERTER_OUTPUT ${CMAKE_INSTALL_PREFIX} CACHE PATH "Output Directory for converter")
+# Make an alternative CONVERTER_OUTPUT which uses backslashes
+string(REGEX REPLACE "/" "\\\\" CONVERTER_OUTPUT_BACKSLASHES ${CONVERTER_OUTPUT}) 
+
 project(converter VERSION 1.0.0 DESCRIPTION "Converter for internal filetype" LANGUAGES CSharp)
 
 # Because CMake has really bad CSharp support, we're going to generate our own .csproj file from our .csproj template
 # We then include this .csproj file with include_external_msproject
 
-#First make CSHARP_SOURCE_FILES_LIST include all .cs files
+# First make CSHARP_SOURCE_FILES_LIST include all .cs files
 set(CSHARP_SOURCE_FILES_LIST "")
 file(GLOB_RECURSE CSHARP_SOURCE_FILES "*.cs")
 foreach(FILE_PATH ${CSHARP_SOURCE_FILES})
@@ -57,16 +61,12 @@ foreach(FILE_PATH ${CSHARP_APP_CONFIG_FILES})
 
 endforeach(FILE_PATH)
 
-# Make an alternative CMAKE_INSTALL_PREFIX which uses backslashes
-string(REGEX REPLACE "/" "\\\\" CMAKE_INSTALL_PREFIX_BACKSLASHES ${CMAKE_INSTALL_PREFIX}) 
-#set(CMAKE_INSTALL_PREFIX_BACKSLASHES "..")
-
-# Then we configure our template file, which will copy it to our install prefix and replace all matched ${} tags
-configure_file(../../cmake/templates/CSharp.csproj.template "${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}.csproj")
-# If we found packages.config we copy it from sources to be next to the .csproj in the install prefix
+# Then we configure our template file, which will copy it to our CONVERTER_OUTPUT and replace all matched ${} tags
+configure_file(../../cmake/templates/CSharp.csproj.template "${CONVERTER_OUTPUT}/${PROJECT_NAME}.csproj")
+# If we found packages.config we copy it from sources to be next to the .csproj in the CONVERTER_OUTPUT
 if (NOT ${CSHARP_PACKAGES_CONFIG} STREQUAL "")
 	file(COPY ${CSHARP_PACKAGES_CONFIG}
-	DESTINATION "${CMAKE_INSTALL_PREFIX}")
+	DESTINATION "${CONVERTER_OUTPUT}")
 endif()
 
 # Then we include the .csproj file into this project
