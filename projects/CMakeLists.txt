@@ -21,6 +21,7 @@
 # SOFTWARE.
 
 # Include Project Directories
+add_subdirectory(converter)
 add_subdirectory(shaders)
 add_subdirectory(common)
 add_subdirectory(render-lib)

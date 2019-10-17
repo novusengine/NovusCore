@@ -17,7 +17,7 @@ target_link_libraries(render PUBLIC
 	glfw ${GLFW_LIBRARIES}
 	Vulkan::Vulkan
 )
-add_dependencies(render Shaders)
+add_dependencies(render shaders)
 
 add_custom_command(TARGET render POST_BUILD
 	COMMENT "Compiling shaders..."

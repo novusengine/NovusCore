@@ -7,7 +7,7 @@ else()
 endif()
 
 file(GLOB_RECURSE GLSL_SOURCE_FILES
-    "*.frag"
+  "*.frag"
 	"*.vert"
 	"*.comp"
     )
@@ -23,7 +23,7 @@ foreach(GLSL ${GLSL_SOURCE_FILES})
   list(APPEND SPIRV_BINARY_FILES ${SPIRV})
 endforeach(GLSL)
 
-add_custom_target(
-    Shaders 
+add_custom_target(shaders
     DEPENDS ${SPIRV_BINARY_FILES}
+    SOURCES ${GLSL_SOURCE_FILES}
     )
