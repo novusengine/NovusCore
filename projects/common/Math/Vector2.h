@@ -578,6 +578,11 @@ public:
         return (x == other.x) && (y == other.y);
     }
 
+    bool operator!=(const Vector2& other)
+    {
+        return (x != other.x) || (y != other.y);
+    }
+
 public:
     float x = 0.0f;
     float y = 0.0f;

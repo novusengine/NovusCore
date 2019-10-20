@@ -206,18 +206,19 @@ bool Renderer::Init(GLFWwindow* window)
     return true;
 }
 
-void Renderer::Update(f32 deltaTime)
+void Renderer::Render()
 {
+    // We only need to render if we actually have something to render...
+    if (_cubesToRender.size() <= 0)
+    {
+        return;
+    }
+
     vkWaitForFences(_device, 1, &_inFlightFences[_currentFrame], VK_TRUE, UINT64_MAX);
     vkResetFences(_device, 1, &_inFlightFences[_currentFrame]);
 
     vkAcquireNextImageKHR(_device, _swapChain, UINT64_MAX, _imageAvailableSemaphores[_currentFrame], VK_NULL_HANDLE, &_imageIndex);
 
-    UpdateUniformBuffer(deltaTime);
-}
-
-void Renderer::Render()
-{
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
@@ -234,22 +235,32 @@ void Renderer::Render()
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
-    if (vkQueueSubmit(_graphicsQueue, 1, &submitInfo, _inFlightFences[_currentFrame]) != VK_SUCCESS)
+    for (Matrix& modelMatrix : _cubesToRender)
     {
-        throw std::runtime_error("failed to submit draw command buffer!");
+        UpdateUniformBuffer(modelMatrix);
+
+        if (vkQueueSubmit(_graphicsQueue, 1, &submitInfo, _inFlightFences[_currentFrame]) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to submit draw command buffer!");
+        }
     }
 }
 
 void Renderer::Present()
 {
+    // We only need to present if we actually have something to render...
+    if (_cubesToRender.size() <= 0)
+    {
+        return;
+    }
+
     VkSemaphore signalSemaphores[] = { _renderFinishedSemaphores[_currentFrame] };
 
     VkPresentInfoKHR presentInfo = {};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pWaitSemaphores = signalSemaphores;
-
+    
     VkSwapchainKHR swapChains[] = { _swapChain };
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = swapChains;
@@ -261,6 +272,7 @@ void Renderer::Present()
     vkQueueWaitIdle(_presentQueue);
 
     _currentFrame = (_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+    _cubesToRender.clear();
 }
 
 void Renderer::InitVulkan()
@@ -1266,11 +1278,10 @@ void Renderer::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize s
     vkFreeCommandBuffers(_device, _commandPool, 1, &commandBuffer);
 }
 
-void Renderer::UpdateUniformBuffer(f32 deltaTime)
+void Renderer::UpdateUniformBuffer(Matrix& modelMatrix)
 {
     // Model matrix
-    _ubo.model.RotateZ(25.0f * deltaTime, Matrix::MultiplicationType::PRE);
-    _ubo.model.RotateY(25.0f * deltaTime, Matrix::MultiplicationType::PRE);
+    _ubo.model = modelMatrix;
 
     // Proj matrix
     const f32 fov = (68.0f)/2.0f;
@@ -1290,4 +1301,21 @@ void Renderer::UpdateUniformBuffer(f32 deltaTime)
     vkMapMemory(_device, _uniformBuffersMemory[_imageIndex], 0, sizeof(_ubo), 0, &data);
     memcpy(data, &_ubo, sizeof(_ubo));
     vkUnmapMemory(_device, _uniformBuffersMemory[_imageIndex]);
+}
+
+void Renderer::RegisterRenderableCube(Vector3& position, Vector3& rotation, Vector3& scale)
+{
+    Matrix newCube;
+    newCube.pos = position;
+    
+    if (rotation != Vector3::One)
+    {
+        newCube.RotateX(rotation.x, Matrix::MultiplicationType::PRE);
+        newCube.RotateY(rotation.y, Matrix::MultiplicationType::PRE);
+        newCube.RotateZ(rotation.z, Matrix::MultiplicationType::PRE);
+    }
+
+    newCube.Scale(scale, Matrix::MultiplicationType::POST);
+    
+    _cubesToRender.push_back(newCube);
 }

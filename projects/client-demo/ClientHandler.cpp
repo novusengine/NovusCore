@@ -128,7 +128,8 @@ bool ClientHandler::Update(f32 deltaTime)
 
     _camera->Update(deltaTime);
     _renderer->SetViewMatrix(_camera->GetViewMatrix().Inverted());
-    _renderer->Update(deltaTime);
+
+    _renderer->RegisterRenderableCube(Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(1, 1, 1));
 
     return true;
 }

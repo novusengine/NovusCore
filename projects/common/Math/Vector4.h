@@ -679,6 +679,11 @@ public:
         return (x == other.x) && (y == other.y) && (z == other.z) && (w == other.w);
     }
 
+    bool operator!=(const Vector4& other)
+    {
+        return (x != other.x) || (y != other.y) || (z != other.z) || (w != other.w);
+    }
+
 public:
     float x = 0.0f;
     float y = 0.0f;

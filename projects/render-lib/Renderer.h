@@ -76,11 +76,12 @@ public:
     ~Renderer();
     bool Init(GLFWwindow* window);
     
-    void Update(f32 deltaTime);
     void Render();
     void Present();
 
     void SetViewMatrix(const Matrix& viewMatrix) { _ubo.view = viewMatrix; }
+
+    void RegisterRenderableCube(Vector3& position, Vector3& rotation = Vector3::Zero, Vector3& scale = Vector3::One);
 
 private:
     void InitVulkan();
@@ -115,7 +116,7 @@ private:
     u32 FindMemoryType(u32 typeFilter, VkMemoryPropertyFlags properties);
     void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-    void UpdateUniformBuffer(f32 deltaTime);
+    void UpdateUniformBuffer(Matrix& modelMatrix);
 
 private:
     GLFWwindow* _window;
@@ -162,4 +163,6 @@ private:
     uint32_t _imageIndex;
 
     UniformBufferObject _ubo;
+
+    std::vector<Matrix> _cubesToRender;
 };

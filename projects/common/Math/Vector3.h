@@ -625,6 +625,11 @@ public:
         return (x == other.x) && (y == other.y) && (z == other.z);
     }
 
+    bool operator!=(const Vector3& other)
+    {
+        return (x != other.x) || (y != other.y) || (z != other.z);
+    }
+
 public:
     float x = 0.0f;
     float y = 0.0f;
