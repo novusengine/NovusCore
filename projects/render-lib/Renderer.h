@@ -7,46 +7,12 @@
 
 #include "ShaderHandler.h"
 
+class NovusDevice;
+class NovusModel;
 struct GLFWwindow;
-
-struct Vertex 
-{
-    Vector3 pos;
-    Vector3 color;
-
-    static VkVertexInputBindingDescription getBindingDescription() 
-    {
-        VkVertexInputBindingDescription bindingDescription = {};
-        bindingDescription.binding = 0;
-        bindingDescription.stride = sizeof(Vertex);
-        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-        return bindingDescription;
-    }
-
-    static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions() 
-    {
-        std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions = {};
-
-        // Position
-        attributeDescriptions[0].binding = 0;
-        attributeDescriptions[0].location = 0;
-        attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[0].offset = offsetof(Vertex, pos);
-
-        // Color
-        attributeDescriptions[1].binding = 0;
-        attributeDescriptions[1].location = 1;
-        attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[1].offset = offsetof(Vertex, color);
-
-        return attributeDescriptions;
-    }
-};
 
 struct UniformBufferObject 
 {
-    Matrix model;
     Matrix view;
     Matrix proj;
 };
@@ -98,8 +64,7 @@ private:
     void CreateCommandPool();
     void CreateCommandBuffers();
     void CreateSyncObjects();
-    void CreateVertexBuffer(); // TODO: This should be in a Model/Mesh class later
-    void CreateIndexBuffer(); // TODO: This should be in a Model/Mesh class later
+    // This is where the model gets created
     void CreateUniformBuffers();
     void CreateDescriptorPool();
     void CreateDescriptorSets();
@@ -113,39 +78,22 @@ private:
     VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
     VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
     VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
-    u32 FindMemoryType(u32 typeFilter, VkMemoryPropertyFlags properties);
-    void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
-    void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-    void UpdateUniformBuffer(Matrix& modelMatrix);
+    void UpdateSharedUniformBuffer();
 
 private:
     GLFWwindow* _window;
     VkInstance _instance;
     VkDebugUtilsMessengerEXT _debugMessenger;
-    VkPhysicalDevice _physicalDevice = VK_NULL_HANDLE;
-    VkDevice _device;
-    VkQueue _graphicsQueue;
-    VkQueue _presentQueue;
-    VkSurfaceKHR _surface;
 
-    VkSwapchainKHR _swapChain;
-    std::vector<VkImage> _swapChainImages;
-    VkFormat _swapChainImageFormat;
-    VkExtent2D _swapChainExtent;
-    std::vector<VkImageView> _swapChainImageViews;
-    std::vector<VkFramebuffer> _swapChainFramebuffers;
+    NovusDevice* _device;
+
+    VkSurfaceKHR _surface;
 
     ShaderHandler _shaderHandler;
     VkDescriptorSetLayout _descriptorSetLayout;
     VkPipelineLayout _pipelineLayout;
     VkPipeline _graphicsPipeline;
     VkRenderPass _renderPass;
-
-    VkCommandPool _commandPool;
-    VkBuffer _vertexBuffer;
-    VkDeviceMemory _vertexBufferMemory;
-    VkBuffer _indexBuffer;
-    VkDeviceMemory _indexBufferMemory;
 
     std::vector<VkBuffer> _uniformBuffers;
     std::vector<VkDeviceMemory> _uniformBuffersMemory;
@@ -164,5 +112,6 @@ private:
 
     UniformBufferObject _ubo;
 
+    NovusModel* _model;
     std::vector<Matrix> _cubesToRender;
 };
