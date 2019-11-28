@@ -6,6 +6,7 @@
 #include <optional>
 
 #include "ShaderHandler.h"
+#include "TextureHandler.h"
 
 class NovusDevice;
 class NovusModel;
@@ -68,6 +69,7 @@ private:
     void CreateUniformBuffers();
     void CreateDescriptorPool();
     void CreateDescriptorSets();
+    void CreateTextureSampler();
 
     std::vector<const char*> GetRequiredExtensions();
     bool CheckValidationLayerSupport();
@@ -90,6 +92,9 @@ private:
     VkSurfaceKHR _surface;
 
     ShaderHandler _shaderHandler;
+    TextureHandler _textureHandler;
+    VkSampler _textureSampler;
+
     VkDescriptorSetLayout _descriptorSetLayout;
     VkPipelineLayout _pipelineLayout;
     VkPipeline _graphicsPipeline;

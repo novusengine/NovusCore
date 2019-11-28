@@ -3,7 +3,7 @@
 #include <limits>
 
 template <class StrongTypedef>
-struct ShaderComparison
+struct TextureComparison
 {
     friend bool operator==(StrongTypedef& lhs, const StrongTypedef& rhs)
     {
@@ -31,11 +31,11 @@ struct ShaderComparison
 };
 
 // If you want to change the underlying integer type used for these handles, change the type under "HERE"
-//                                                                HERE
-struct __ShaderHandle : type_safe::strong_typedef<__ShaderHandle, u16>, ShaderComparison<__ShaderHandle>
+//                                                              HERE
+struct TextureHandle : type_safe::strong_typedef<TextureHandle, u16>, TextureComparison<TextureHandle>
 {
     using strong_typedef::strong_typedef;
-    using type = type_safe::underlying_type<__ShaderHandle>;
+    using type = type_safe::underlying_type<TextureHandle>;
 
     static size_t MaxValue()
     {
@@ -46,34 +46,9 @@ struct __ShaderHandle : type_safe::strong_typedef<__ShaderHandle, u16>, ShaderCo
     {
         return (type)std::numeric_limits<type>::max();
     }
-};
 
-struct ShaderHandleVert :type_safe::strong_typedef<ShaderHandleVert, __ShaderHandle>, ShaderComparison<ShaderHandleVert>
-{
-    using strong_typedef::strong_typedef;
-
-    static ShaderHandleVert Invalid()
+    static TextureHandle Invalid()
     {
-        return ShaderHandleVert(static_cast<ShaderHandleVert>(__ShaderHandle(__ShaderHandle::MaxValueTyped())));
-    }
-};
-
-struct ShaderHandleFrag :type_safe::strong_typedef<ShaderHandleFrag, __ShaderHandle>, ShaderComparison<ShaderHandleFrag>
-{
-    using strong_typedef::strong_typedef;
-
-    static ShaderHandleFrag Invalid()
-    {
-        return ShaderHandleFrag(static_cast<ShaderHandleFrag>(__ShaderHandle(__ShaderHandle::MaxValueTyped())));
-    }
-};
-
-struct ShaderHandleComp :type_safe::strong_typedef<ShaderHandleComp, __ShaderHandle>, ShaderComparison<ShaderHandleComp>
-{
-    using strong_typedef::strong_typedef;
-
-    static ShaderHandleComp Invalid()
-    {
-        return ShaderHandleComp(static_cast<ShaderHandleComp>(__ShaderHandle(__ShaderHandle::MaxValueTyped())));
+        return TextureHandle(TextureHandle::MaxValueTyped());
     }
 };

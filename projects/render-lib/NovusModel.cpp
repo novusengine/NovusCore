@@ -18,7 +18,7 @@ bool NovusModel::LoadFromFile(NovusDevice* device, const std::string& filePath)
 {
     _device = device;
 
-    std::ifstream file(filePath);
+    std::ifstream file(filePath, std::ios::binary);
 
     // get length of file:
     file.seekg(0, file.end);
@@ -35,11 +35,14 @@ bool NovusModel::LoadFromFile(NovusDevice* device, const std::string& filePath)
     // Read vertex count
     file.read((char*)&_vertexCount, sizeof(u32));
 
+    std::vector<Vertex> vertices(_vertexCount);
+
     // Read vertices
-    std::vector<Vector3> vertexPositions(_vertexCount);
     for (u32 i = 0; i < _vertexCount; i++)
     {
-        file.read((char*)& vertexPositions[i], sizeof(Vector3));
+        file.read((char*)& vertices[i].pos, sizeof(Vector3));
+        file.read((char*)& vertices[i].normal, sizeof(Vector3));
+        file.read((char*)& vertices[i].texCoord, sizeof(Vector2));
     }
 
     // Read index type
@@ -55,26 +58,27 @@ bool NovusModel::LoadFromFile(NovusDevice* device, const std::string& filePath)
         file.read((char*)& indices[i], sizeof(i16));
     }
 
-    CreateVertexBuffer(vertexPositions);
+    CreateVertexBuffer(vertices);
     CreateIndexBuffer(indices);
     CreateUniformBuffers();
 
-    _bindingDescription.binding = 0;
-    _bindingDescription.stride = sizeof(Vector3);
-    _bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-    _attributeDescriptions.resize(1);
+    _attributeDescriptions.resize(2);
     _attributeDescriptions[0].binding = 0;
     _attributeDescriptions[0].location = 0;
     _attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-    _attributeDescriptions[0].offset = 0;//offsetof(Vertex, pos);
+    _attributeDescriptions[0].offset = offsetof(Vertex, pos);
+
+    _attributeDescriptions[1].binding = 0;
+    _attributeDescriptions[1].location = 1;
+    _attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
+    _attributeDescriptions[1].offset = offsetof(Vertex, texCoord);
     
     return true;
 }
 
-void NovusModel::CreateVertexBuffer(std::vector<Vector3>& vertexPositions)
+void NovusModel::CreateVertexBuffer(std::vector<Vertex>& vertices)
 {
-    VkDeviceSize bufferSize = sizeof(vertexPositions[0]) * vertexPositions.size();
+    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
@@ -82,7 +86,7 @@ void NovusModel::CreateVertexBuffer(std::vector<Vector3>& vertexPositions)
 
     void* data;
     vkMapMemory(_device->device, stagingBufferMemory, 0, bufferSize, 0, &data);
-    memcpy(data, vertexPositions.data(), (size_t)bufferSize);
+    memcpy(data, vertices.data(), (size_t)bufferSize);
     vkUnmapMemory(_device->device, stagingBufferMemory);
 
     _device->CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, _vertexBuffer, _vertexBufferMemory);

@@ -3,12 +3,30 @@
 #include <NovusTypeHeader.h>
 #include <vulkan/vulkan.h>
 #include <vector>
+#include "TextureHandle.h"
+
+struct Vertex
+{
+    Vector3 pos;
+    Vector3 normal;
+    Vector2 texCoord;
+
+    static VkVertexInputBindingDescription GetBindingDescription() 
+    {
+        VkVertexInputBindingDescription bindingDescription = {};
+        bindingDescription.binding = 0;
+        bindingDescription.stride = sizeof(Vertex);
+        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+        return bindingDescription;
+    }
+};
 
 class NovusDevice;
 class NovusModel
 {
     // Update this when the format exported from the converter gets changed
-    const NovusTypeHeader EXPECTED_TYPE_HEADER = NovusTypeHeader(42, 1);
+    const NovusTypeHeader EXPECTED_TYPE_HEADER = NovusTypeHeader(42, 2);
 public:
     ~NovusModel();
 
@@ -25,11 +43,14 @@ public:
     VkBuffer& GetUniformBuffer(size_t frame) { return _uniformBuffers[frame]; }
 
     VkPrimitiveTopology& GetPrimitiveTopology() { return _primitiveTopology; }
-    VkVertexInputBindingDescription& GetBindingDescription() { return _bindingDescription; }
+    VkVertexInputBindingDescription GetBindingDescription() { return Vertex::GetBindingDescription(); }
     std::vector<VkVertexInputAttributeDescription>& GetAttributeDescriptions() { return _attributeDescriptions; }
 
+    TextureHandle GetTextureHandle() { return _textureHandle; }
+    void SetTextureHandle(TextureHandle handle) { _textureHandle = handle; }
+
 private:
-    void CreateVertexBuffer(std::vector<Vector3>& vertexPositions);
+    void CreateVertexBuffer(std::vector<Vertex>& vertices);
     void CreateIndexBuffer(std::vector<i16>& indices);
     void CreateUniformBuffers();
     
@@ -52,8 +73,7 @@ private:
     std::vector<VkDeviceMemory> _uniformBuffersMemory;
 
     VkPrimitiveTopology _primitiveTopology;
-    VkVertexInputBindingDescription _bindingDescription;
     std::vector<VkVertexInputAttributeDescription> _attributeDescriptions;
 
-    
+    TextureHandle _textureHandle;
 };

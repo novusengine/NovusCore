@@ -65,9 +65,10 @@ void ClientHandler::Run()
     f32 targetDelta = 1.0f / 30.0f;
 
     _window = new Window();
-    _window->Init(1280, 720);
+    _window->Init(1920, 1080);
 
     _camera = new Camera(Vector3(0, 0, -5));
+    _camera->SetInputManager(_window->GetInputManager());
 
     _renderer = new Renderer();
     _renderer->Init(_window->GetWindow());
@@ -129,7 +130,7 @@ bool ClientHandler::Update(f32 deltaTime)
     _camera->Update(deltaTime);
     _renderer->SetViewMatrix(_camera->GetViewMatrix().Inverted());
 
-    _renderer->RegisterRenderableCube(Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(1, 1, 1));
+    _renderer->RegisterRenderableCube(Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0.1f, 0.1f, 0.1f));
 
     return true;
 }

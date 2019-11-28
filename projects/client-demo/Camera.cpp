@@ -1,5 +1,6 @@
 #include "Camera.h"
 #include <windows.h>
+#include <InputManager.h>
 
 Camera::Camera(const Vector3& pos)
     : _viewMatrix()
@@ -7,9 +8,9 @@ Camera::Camera(const Vector3& pos)
     _viewMatrix.pos = pos;
 }
 
-
 void Camera::Update(f32 deltaTime)
 {
+    _lastDeltaTime = deltaTime;
     // Movement
     if (GetAsyncKeyState('W'))
     {
@@ -37,6 +38,14 @@ void Camera::Update(f32 deltaTime)
     }
 
     // Rotation
+    if (GetAsyncKeyState('Q'))
+    {
+        _viewMatrix.RotateZ(-_rotationSpeed * deltaTime, Matrix::MultiplicationType::PRE);
+    }
+    if (GetAsyncKeyState('E'))
+    {
+        _viewMatrix.RotateZ(_rotationSpeed * deltaTime, Matrix::MultiplicationType::PRE);
+    }
     if (GetAsyncKeyState(VK_UP))
     {
         _viewMatrix.RotateX(-_rotationSpeed * deltaTime, Matrix::MultiplicationType::PRE);

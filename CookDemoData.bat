@@ -1,0 +1,1 @@
+build\bin\Debug\converter.exe D:\Projects\CNovusCore\projects\client-demo\Data D:\Projects\CNovusCore\build\Debug\data

@@ -33,7 +33,6 @@ namespace Converter.Converters
         {
             objLoaderFactory = new ObjLoaderFactory();
             materialStreamProvider = new CustomMaterialStreamProvider();
-            objLoader = objLoaderFactory.Create(materialStreamProvider);
         }
 
         public override bool CanConvert(string pythonPath, ScriptScope scope, out string error)
@@ -58,36 +57,85 @@ namespace Converter.Converters
 
             using (FileStream assetStream = new FileStream(assetPath, FileMode.Open))
             {
+                objLoader = objLoaderFactory.Create(materialStreamProvider);
                 LoadResult result = objLoader.Load(assetStream);
 
                 NovusModel model = new NovusModel();
+                model.indexType = NovusModel.VkPrimitiveTopology.TRIANGLE_LIST; // We only support trianglelist
 
-                // Convert vertices
+                // Get all vertex positions
+                List<Vec3> vertexPositions = new List<Vec3>();
                 foreach (Vertex vertex in result.Vertices)
                 {
-                    model.vertexPositions.Add(new Vec3(vertex.X, vertex.Y, vertex.Z));
+                    Vec3 pos = new Vec3(vertex.X, vertex.Y, vertex.Z);
+                    vertexPositions.Add(pos);
                 }
 
+                // Get all vertex texCoords
+                List<Vec2> vertexTexCoords = new List<Vec2>();
+                foreach (Texture texture in result.Textures)
+                {
+                    Vec2 texCoord = new Vec2(texture.X, 1-texture.Y);
+                    vertexTexCoords.Add(texCoord);
+                }
+
+                // Get all vertex normals
+                List<Vec3> vertexNormals = new List<Vec3>();
+                foreach (Normal normal in result.Normals)
+                {
+                    Vec3 vertexNormal = new Vec3(normal.X, normal.Y, normal.Z);
+                    vertexNormals.Add(vertexNormal);
+                }
+
+                // Because .obj stores vertex positions, vertex texcoords and vertex normals separately and without duplication we need to "unpack" combined vertices from this data
+                // Each .obj model has a list of "groups" which represent submeshes
+                // Each group has a list of faces which represent quads, they have 4 "indices" that point to vertex positions, vertex texcoords and vertex normals separately
+                // We need to iterate over these, and then build one combined vertex for each unique combination of position, texcoord and normal
+
                 // Convert indices
-                model.indexType = NovusModel.VkPrimitiveTopology.TRIANGLE_LIST; // We only support trianglelist so far
-                foreach (Group group in result.Groups) // A group represents a "submesh"
+
+                // This dictionary will hold unique vertices as keys, and it's corresponding index as value, this makes it easy for us to look up indices of duplicated vertices
+                Dictionary<NovusModel.Vertex, Int16> combinedVertices = new Dictionary<NovusModel.Vertex, Int16>();
+
+                foreach (ObjLoader.Loader.Data.Elements.Group group in result.Groups) // A group represents a "submesh"
                 {
                     foreach (Face face in group.Faces)
                     {
-                        Debug.Assert(face.Count == 4); // I haven't seen a model where faces don't have 4 indices yet
+                        Debug.Assert(face.Count == 3 || face.Count == 4); // I haven't seen a model where faces don't have 3 or 4 indices yet
 
-                        // We split the face (quad) into two triangles, the first one with index 0 1 and 2
-                        model.indices.Add((Int16)(face[0].VertexIndex-1));
-                        model.indices.Add((Int16)(face[1].VertexIndex-1));
-                        model.indices.Add((Int16)(face[2].VertexIndex-1));
+                        Int16[] combinedIndices = new Int16[face.Count];
+                        for (int i = 0; i < face.Count; i++)
+                        {
+                            Vec3 position = vertexPositions[face[i].VertexIndex - 1];
+                            Vec3 normal = vertexNormals[face[i].NormalIndex - 1];
+                            Vec2 texCoord = vertexTexCoords[face[i].TextureIndex - 1];
+                            combinedIndices[i] = CombineVertex(position, normal, texCoord, ref combinedVertices);
+                        }
 
-                        // The second one with index 0 2 and 3
-                        model.indices.Add((Int16)(face[2].VertexIndex-1));
-                        model.indices.Add((Int16)(face[3].VertexIndex-1));
-                        model.indices.Add((Int16)(face[0].VertexIndex-1));
-                        //break;
+                        if (face.Count == 4)
+                        {
+                            // We split the face (quad) into two triangles, the first one with index 0 1 and 2
+                            model.indices.Add(combinedIndices[2]);
+                            model.indices.Add(combinedIndices[1]);
+                            model.indices.Add(combinedIndices[0]);
+
+                            // The second one with index 2 3 and 0
+                            model.indices.Add(combinedIndices[0]);
+                            model.indices.Add(combinedIndices[3]);
+                            model.indices.Add(combinedIndices[2]);
+                        }
+                        else if (face.Count == 3)
+                        {
+                            // The face is a triangle so just add it like it is
+                            model.indices.Add(combinedIndices[2]);
+                            model.indices.Add(combinedIndices[1]);
+                            model.indices.Add(combinedIndices[0]);
+                        }
+                        
                     }
                 }
+
+                model.vertices.AddRange(combinedVertices.Keys);
 
                 // Create output file
                 string outputFileName = Path.ChangeExtension(Path.GetFileName(assetPath), ".novusmodel");
@@ -100,6 +148,26 @@ namespace Converter.Converters
             return true;
         }
 
+        Int16 CombineVertex(Vec3 position, Vec3 normal, Vec2 texCoord, ref Dictionary<NovusModel.Vertex, Int16> combinedVertices)
+        {
+            NovusModel.Vertex combinedVertex = new NovusModel.Vertex();
+            combinedVertex.position = position;
+            combinedVertex.normal = normal;
+            combinedVertex.texCoord = texCoord;
+
+            // If our dict of combined vertices contains a vertex identical to this already
+            if (combinedVertices.ContainsKey(combinedVertex))
+            {
+                // Just return its index
+                return combinedVertices[combinedVertex];
+            }
+
+            // Otherwise, we add the vertex to the dict and return its index
+            Int16 index = (Int16)combinedVertices.Count;
+            combinedVertices.Add(combinedVertex, index);
+            return index;
+        }
+
         ObjLoaderFactory objLoaderFactory;
         CustomMaterialStreamProvider materialStreamProvider;
         IObjLoader objLoader;
@@ -109,7 +177,7 @@ namespace Converter.Converters
     {
         protected override int GetNovusType() { return 42; } // Never change this one
 
-        protected override int GetVersion() { return 1; } // Increment this if you ever change how NovusModel is serialized
+        protected override int GetVersion() { return 2; } // Increment this if you ever change how NovusModel is serialized
 
         public enum VkPrimitiveTopology
         {
@@ -126,7 +194,14 @@ namespace Converter.Converters
             PATCH_LIST = 10,
         }
 
-        public List<Vec3> vertexPositions = new List<Vec3>();
+        public struct Vertex
+        {
+            public Vec3 position;
+            public Vec3 normal;
+            public Vec2 texCoord;
+        }
+
+        public List<Vertex> vertices = new List<Vertex>();
         public VkPrimitiveTopology indexType;
         public List<Int16> indices = new List<Int16>();
 
@@ -136,17 +211,22 @@ namespace Converter.Converters
             SerializeNovusHeader(binaryWriter);
 
             // Write vertices
-            binaryWriter.Write(vertexPositions.Count);
-            foreach(Vec3 vertex in vertexPositions)
+            binaryWriter.Write(vertices.Count);
+            foreach(Vertex vertex in vertices)
             {
-                binaryWriter.Write(vertex.X);
-                binaryWriter.Write(vertex.Y);
-                binaryWriter.Write(vertex.Z);
+                binaryWriter.Write(vertex.position.X);
+                binaryWriter.Write(vertex.position.Y);
+                binaryWriter.Write(vertex.position.Z);
+                binaryWriter.Write(vertex.normal.X);
+                binaryWriter.Write(vertex.normal.Y);
+                binaryWriter.Write(vertex.normal.Z);
+                binaryWriter.Write(vertex.texCoord.X);
+                binaryWriter.Write(vertex.texCoord.Y);
             }
 
             // Write indices
             binaryWriter.Write((int)indexType);
-            binaryWriter.Write(indices.Count);
+            binaryWriter.Write((uint)indices.Count);
             foreach (Int16 index in indices)
             {
                 binaryWriter.Write(index);

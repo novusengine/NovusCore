@@ -86,6 +86,8 @@ Renderer::~Renderer()
 {
     vkDeviceWaitIdle(_device->device);
 
+    vkDestroySampler(_device->device, _textureSampler, nullptr);
+
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) 
     {
         vkDestroySemaphore(_device->device, _renderFinishedSemaphores[i], nullptr);
@@ -149,7 +151,12 @@ bool Renderer::Init(GLFWwindow* window)
     
     // Models used to be here
     _model = new NovusModel();
-    _model->LoadFromFile(_device, "data/Cube.novusmodel");
+    _model->LoadFromFile(_device, "data/objBook.novusmodel");
+    //_model->SetTextureHandle(_textureHandler.LoadTexture(_device, "textures/debug.bmp"));
+    //_model->SetTextureHandle(_textureHandler.LoadTexture(_device, "textures/book.jpg"));
+    _model->SetTextureHandle(_textureHandler.LoadTexture(_device, "textures/NovusBookTexture.png"));
+
+    CreateTextureSampler();
     CreateGraphicsPipeline();
 
     CreateUniformBuffers();
@@ -157,7 +164,6 @@ bool Renderer::Init(GLFWwindow* window)
     CreateDescriptorSets();
     CreateCommandBuffers();
     CreateSyncObjects();
-
     return true;
 }
 
@@ -195,7 +201,8 @@ void Renderer::Render()
     {
         _model->UpdateUniformBuffer(modelMatrix, _imageIndex);
 
-        if (vkQueueSubmit(_device->graphicsQueue, 1, &submitInfo, _inFlightFences[_currentFrame]) != VK_SUCCESS)
+        VkResult result = vkQueueSubmit(_device->graphicsQueue, 1, &submitInfo, _inFlightFences[_currentFrame]);
+        if (result != VK_SUCCESS)
         {
             throw std::runtime_error("failed to submit draw command buffer!");
         }
@@ -359,6 +366,7 @@ void Renderer::CreateLogicalDevice()
     }
 
     VkPhysicalDeviceFeatures deviceFeatures = {};
+    deviceFeatures.samplerAnisotropy = VK_TRUE;
 
     VkDeviceCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -514,12 +522,19 @@ void Renderer::CreateDescriptorSetLayout()
     modelUboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     modelUboLayoutBinding.pImmutableSamplers = nullptr; // Optional
 
-    VkDescriptorSetLayoutBinding uboLayoutBindings[] = { sharedUboLayoutBinding, modelUboLayoutBinding };
+    VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
+    samplerLayoutBinding.binding = 2;
+    samplerLayoutBinding.descriptorCount = 1;
+    samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    samplerLayoutBinding.pImmutableSamplers = nullptr;
+    samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    VkDescriptorSetLayoutBinding layoutBindings[] = { sharedUboLayoutBinding, modelUboLayoutBinding, samplerLayoutBinding };
 
     VkDescriptorSetLayoutCreateInfo layoutInfo = {};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = 2;
-    layoutInfo.pBindings = uboLayoutBindings;
+    layoutInfo.bindingCount = 3;
+    layoutInfo.pBindings = layoutBindings;
 
     if (vkCreateDescriptorSetLayout(_device->device, &layoutInfo, nullptr, &_descriptorSetLayout) != VK_SUCCESS)
     {
@@ -704,28 +719,7 @@ void Renderer::CreateImageViews()
 
     for (size_t i = 0; i < _device->swapChainImages.size(); i++)
     {
-        VkImageViewCreateInfo createInfo = {};
-        createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        createInfo.image = _device->swapChainImages[i];
-
-        createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        createInfo.format = _device->swapChainImageFormat;
-
-        createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-        createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-        createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-        createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-
-        createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        createInfo.subresourceRange.baseMipLevel = 0;
-        createInfo.subresourceRange.levelCount = 1;
-        createInfo.subresourceRange.baseArrayLayer = 0;
-        createInfo.subresourceRange.layerCount = 1;
-
-        if (vkCreateImageView(_device->device, &createInfo, nullptr, &_device->swapChainImageViews[i]) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create image views!");
-        }
+        _device->swapChainImageViews[i] = _device->CreateImageView(_device->swapChainImages[i], _device->swapChainImageFormat);
     }
 }
 
@@ -841,14 +835,18 @@ void Renderer::CreateUniformBuffers()
 
 void Renderer::CreateDescriptorPool()
 {
-    VkDescriptorPoolSize poolSize = {};
-    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSize.descriptorCount = static_cast<uint32_t>(_device->swapChainImages.size());
+    std::array<VkDescriptorPoolSize, 3> poolSizes = {};
+    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSizes[0].descriptorCount = static_cast<uint32_t>(_device->swapChainImages.size());
+    poolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSizes[1].descriptorCount = static_cast<uint32_t>(_device->swapChainImages.size());
+    poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSizes[2].descriptorCount = static_cast<uint32_t>(_device->swapChainImages.size());
 
     VkDescriptorPoolCreateInfo poolInfo = {};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = 1;
-    poolInfo.pPoolSizes = &poolSize;
+    poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+    poolInfo.pPoolSizes = poolSizes.data();
     poolInfo.maxSets = static_cast<uint32_t>(_device->swapChainImages.size());
 
     if (vkCreateDescriptorPool(_device->device, &poolInfo, nullptr, &_descriptorPool) != VK_SUCCESS)
@@ -882,22 +880,73 @@ void Renderer::CreateDescriptorSets()
         VkDescriptorBufferInfo modelBufferInfo = {};
         modelBufferInfo.buffer = _model->GetUniformBuffer(i);
         modelBufferInfo.offset = 0;
-        modelBufferInfo.range = sizeof(Vector3);
+        modelBufferInfo.range = sizeof(Matrix);
 
         VkDescriptorBufferInfo bufferInfos[] = { sharedBufferInfo, modelBufferInfo };
 
-        VkWriteDescriptorSet descriptorWrite = {};
-        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrite.dstSet = descriptorSets[i];
-        descriptorWrite.dstBinding = 0;
-        descriptorWrite.dstArrayElement = 0;
-        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrite.descriptorCount = 2;
-        descriptorWrite.pBufferInfo = bufferInfos;
-        descriptorWrite.pImageInfo = nullptr; // Optional
-        descriptorWrite.pTexelBufferView = nullptr; // Optional
+        VkDescriptorImageInfo imageInfo = {};
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView = _textureHandler.GetTextureImageView(_model->GetTextureHandle());
+        imageInfo.sampler = _textureSampler;
 
-        vkUpdateDescriptorSets(_device->device, 1, &descriptorWrite, 0, nullptr);
+        std::array<VkWriteDescriptorSet, 3> descriptorWrites = {};
+        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[0].dstSet = descriptorSets[i];
+        descriptorWrites[0].dstBinding = 0;
+        descriptorWrites[0].dstArrayElement = 0;
+        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrites[0].descriptorCount = 1;
+        descriptorWrites[0].pBufferInfo = &sharedBufferInfo;
+        descriptorWrites[0].pImageInfo = nullptr;
+        descriptorWrites[0].pTexelBufferView = nullptr;
+
+        descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[1].dstSet = descriptorSets[i];
+        descriptorWrites[1].dstBinding = 1;
+        descriptorWrites[1].dstArrayElement = 0;
+        descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrites[1].descriptorCount = 1;
+        descriptorWrites[1].pBufferInfo = &modelBufferInfo;
+        descriptorWrites[1].pImageInfo = nullptr;
+        descriptorWrites[1].pTexelBufferView = nullptr;
+
+        descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[2].dstSet = descriptorSets[i];
+        descriptorWrites[2].dstBinding = 2;
+        descriptorWrites[2].dstArrayElement = 0;
+        descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[2].descriptorCount = 1;
+        descriptorWrites[2].pBufferInfo = nullptr;
+        descriptorWrites[2].pImageInfo = &imageInfo;
+        descriptorWrites[2].pTexelBufferView = nullptr;
+
+        vkUpdateDescriptorSets(_device->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+    }
+}
+
+void Renderer::CreateTextureSampler()
+{
+    VkSamplerCreateInfo samplerInfo = {};
+    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter = VK_FILTER_LINEAR;
+    samplerInfo.minFilter = VK_FILTER_LINEAR;
+    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.anisotropyEnable = VK_TRUE;
+    samplerInfo.maxAnisotropy = 16;
+    samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    samplerInfo.unnormalizedCoordinates = VK_FALSE;
+    samplerInfo.compareEnable = VK_FALSE;
+    samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerInfo.mipLodBias = 0.0f;
+    samplerInfo.minLod = 0.0f;
+    samplerInfo.maxLod = 0.0f;
+
+    if (vkCreateSampler(_device->device, &samplerInfo, nullptr, &_textureSampler) != VK_SUCCESS) 
+    {
+        throw std::runtime_error("failed to create texture sampler!");
     }
 }
 
@@ -965,6 +1014,12 @@ int Renderer::RateDeviceSuitability(VkPhysicalDevice device)
 
     // Maximum possible size of textures affects graphics quality
     score += deviceProperties.limits.maxImageDimension2D;
+
+    if (!deviceFeatures.samplerAnisotropy)
+    {
+        NC_LOG_MESSAGE("[Renderer]: GPU Detected %s with score %i because it doesn't support sampler anisotropy", deviceProperties.deviceName, 0);
+        return 0;
+    }
 
     // Application can't function without geometry shaders
     if (!deviceFeatures.geometryShader) 
