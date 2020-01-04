@@ -5,24 +5,28 @@
 [![Website Documentation](https://img.shields.io/badge/Website-Documentation-success)](https://novuscore.org)
 [![Discord](https://img.shields.io/discord/554123112384299010?label=Discord&logo=Discord)](https://discord.gg/gz6FMZa)
 
+Note: Build Status is temporarily broken
+
 ### What is NovusCore
 
-NovusCore is an emulating project for World of Warcraft. We aim to support as many versions as we can, in an as flexible manner as possible, meaning that the aim is to make it 'easier', to have multiple game builds supported by the same core.
+NovusCore is an emulator project for World of Warcraft.
 
-Currently NovusCore is being written baseline for the Wrath of the Lich King 3.3.5a 12340 client build. This is to better enable us to design our architecture around the WoW Client. 
+Currently NovusCore is a client/server solution where our main focus is to support the Wrath of the Lich King expansion.
+Long term, we hope to support the base game and all expansions in one client.
 
 
 ### The NovusCore Promise
 
 The project was made with the promise that we would always focus on reliability, redundancy, and performance over convenience. We achieve this through making use of experience, but also applying modern techniques and design patterns.
 
-The end-goal is to provide a core capable of tackling all of the current limitations set by the cores available. Solving those issues are complicated, but we start by applying a proper foundation for our architecture to allow for better flow of information(data) and performance.
+The end-goal is to provide a client/server setup, capable of tackling all of the limitations set by the current standard. Solving those issues are complicated, but we start by applying a proper foundation for our architecture to allow for better flow of information(data) and performance.
 
 
 ### NovusCore Discord
 
 The project has an official [Discord](https://discord.gg/gz6FMZa).
 You will find the developers to be active on the discord and always up for answering any questions you might have regarding the project. Despite NovusCore not currently being ready for production level use, we are always welcoming any users that want to try using it.
+
 
 ### Dependencies
 * [OpenSSL 1.1.0](https://www.openssl.org/source/)
