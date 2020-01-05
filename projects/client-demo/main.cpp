@@ -30,9 +30,12 @@ i32 main()
         io_service.run();
     });
 
-    Connection connection(new asio::ip::tcp::socket(io_service));
     ClientHandler clientHandler;
     clientHandler.Start();
+
+    // This has to run after clientHandler.Start()
+    Connection connection(new asio::ip::tcp::socket(io_service));
+    connection.Start();
 
     ConsoleCommandHandler consoleCommandHandler;
     auto future = std::async(std::launch::async, StringUtils::GetLineFromCin);

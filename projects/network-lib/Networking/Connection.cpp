@@ -1,4 +1,5 @@
 #pragma once
+#include <NovusTypes.h>
 #include "Connection.h"
 #include <Utils/Message.h>
 #include <Utils/DebugHandler.h>
@@ -8,24 +9,25 @@
 
 void Connection::Start()
 {
-    _socket->connect(asio::ip::tcp::endpoint(asio::ip::address::from_string("127.0.0.1"), 3724));
+    try
+    {
+        _baseSocket->socket()->connect(asio::ip::tcp::endpoint(asio::ip::address::from_string("127.0.0.1"), 3724));
+    }
+    catch (std::exception e)
+    {
 
-    cAuthLogonChallenge challenge("admin");
-    u32 challengeSize = 34 + 5;
+        Message packetMessage;
+        packetMessage.code = MSG_IN_PRINT;
+        packetMessage.message = new std::string("Failed to connect to: 127.0.0.1:3724");
 
-    std::shared_ptr<ByteBuffer> data = ByteBuffer::Borrow<8192>();
-    data->Size = challenge.size;
-    std::memcpy(data->GetInternalData(), &challenge, challengeSize);
-    data->WrittenData += challengeSize;
-
-    Send(data.get());
-
-    AsyncRead();
+        InputQueue::PassMessage(packetMessage);
+    }
+    _baseSocket->AsyncRead();
 }
 
 void Connection::HandleRead()
 {
-    std::shared_ptr<ByteBuffer> buffer = GetReceiveBuffer();
+    std::shared_ptr<ByteBuffer> buffer = _baseSocket->GetReceiveBuffer();
 
     while (buffer->GetActiveSize())
     {
@@ -37,7 +39,7 @@ void Connection::HandleRead()
 
         if (opcode > OpcodeCount || size > 8192)
         {
-            Close(asio::error::shut_down);
+            _baseSocket->Close(asio::error::shut_down);
             return;
         }
 
@@ -49,15 +51,14 @@ void Connection::HandleRead()
         netPacket->data->WrittenData = size;
         netPacket->data->IsOwner = true;
         std::memcpy(netPacket->data->GetInternalData(), buffer->GetReadPointer(), size);
+        buffer->ReadData += size;
 
         Message packetMessage;
         packetMessage.code = MSG_IN_NET_PACKET;
         packetMessage.object = netPacket;
 
         InputQueue::PassMessage(packetMessage);
-
-        buffer->ReadData += size;
     }
 
-    AsyncRead();
+    _baseSocket->AsyncRead();
 }
