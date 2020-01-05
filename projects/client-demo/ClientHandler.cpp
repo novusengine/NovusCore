@@ -118,6 +118,10 @@ bool ClientHandler::Update(f32 deltaTime)
         {
             return false;
         }
+        else if (message.code == MSG_IN_PRINT)
+        {
+            _outputQueue.enqueue(message);
+        }
         else if (message.code == MSG_IN_PING)
         {
             Message pongMessage;
