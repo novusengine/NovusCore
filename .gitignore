@@ -30,8 +30,11 @@
 *.out
 *.app
 
-build*/
+build*/ 
 .vs/
 .vscode/
 out/
 CMakeSettings.json
+
+# Exceptions
+!projects/client-demo/Data/**/*.obj

@@ -117,6 +117,7 @@ namespace Converter
             }
 
             Console.WriteLine("Conversion done in " + totalTime.Elapsed.ToString());
+            Console.ReadLine();
         }
     }
 }
