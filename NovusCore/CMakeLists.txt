@@ -21,5 +21,6 @@
 # SOFTWARE.
 
 # Include Project Directories
-add_subdirectory(NovusCore/NovusCore-Client)
-add_subdirectory(NovusCore/NovusCore-Tools)
+add_subdirectory(NovusCore-Common)
+add_subdirectory(NovusCore-Client)
+add_subdirectory(NovusCore-Tools)
