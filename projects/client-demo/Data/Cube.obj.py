@@ -1,1 +1,0 @@
-testVariable = 42

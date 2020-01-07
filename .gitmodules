@@ -1,0 +1,9 @@
+[submodule "projects/NovusCore/NovusCore-Client"]
+	path = projects/NovusCore/NovusCore-Client
+	url = https://github.com/novuscore/NovusCore-Client.git
+[submodule "projects/NovusCore/NovusCore-Tools"]
+	path = projects/NovusCore/NovusCore-Tools
+	url = https://github.com/novuscore/NovusCore-Tools.git
+[submodule "NovusCore/NovusCore-Common"]
+	path = NovusCore/NovusCore-Common
+	url = https://github.com/novuscore/NovusCore-Common.git
