@@ -29,11 +29,10 @@ set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 set(CMAKE_CONFIGURATION_TYPES Debug Release RelWithDebInfo CACHE STRING "" FORCE)
 set(COMMON_ROOT "NovusCore/NovusCore-Common")
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules;${CMAKE_CURRENT_SOURCE_DIR}/${COMMON_ROOT}/cmake/modules")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/${COMMON_ROOT}/cmake/modules")
 set(CMAKE_CXX_STANDARD 17)
 
 include(${COMMON_ROOT}/cmake/Configuration.cmake)
 include(${COMMON_ROOT}/cmake/FindFiles.cmake)
 
-add_subdirectory(${COMMON_ROOT})
-add_subdirectory(projects)
+add_subdirectory(NovusCore)
