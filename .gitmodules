@@ -7,3 +7,6 @@
 [submodule "NovusCore/NovusCore-Tools"]
 	path = NovusCore/NovusCore-Tools
 	url = https://github.com/novuscore/NovusCore-Tools.git
+[submodule "NovusCore/NovusCore-AuthMaster"]
+	path = NovusCore/NovusCore-AuthMaster
+	url = https://github.com/novuscore/NovusCore-AuthMaster.git
