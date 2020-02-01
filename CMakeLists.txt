@@ -20,7 +20,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-project(NovusCore)
+if (POLICY CMP0048)
+  # cmake warns if loaded from a min-3.0-required parent dir, so silence the warning:
+  cmake_policy(SET CMP0048 NEW)
+endif()
+
+project(NovusCore VERSION 1.0.0)
 
 # CMake >= 3.12
 cmake_minimum_required(VERSION 3.12)

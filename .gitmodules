@@ -10,3 +10,6 @@
 [submodule "NovusCore/NovusCore-AuthMaster"]
 	path = NovusCore/NovusCore-AuthMaster
 	url = https://github.com/novuscore/NovusCore-AuthMaster.git
+[submodule "NovusCore/NovusCore-Service"]
+	path = NovusCore/NovusCore-Service
+	url = https://github.com/novuscore/NovusCore-Service.git
