@@ -1,1 +1,0 @@
-..\build\Debug\bin\converter.exe D:\Development\Novus\source\projects\client-demo\client\Data D:\Development\Novus\source\build\Debug\data
