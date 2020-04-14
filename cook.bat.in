@@ -1,0 +1,1 @@
+@CMAKE_CURRENT_BINARY_DIR@/NovusCore/NovusCore-Tools/converter/bin/Debug/converter.exe @CMAKE_CURRENT_SOURCE_DIR@/NovusCore/NovusCore-Client/client/Data @CMAKE_CURRENT_BINARY_DIR@/NovusCore/NovusCore-Client/Data

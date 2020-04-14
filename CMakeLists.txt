@@ -40,4 +40,11 @@ set(CMAKE_CXX_STANDARD 17)
 include(${COMMON_ROOT}/cmake/Configuration.cmake)
 include(${COMMON_ROOT}/cmake/FindFiles.cmake)
 
+configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/cook.bat.in
+        ${CMAKE_CURRENT_BINARY_DIR}/cook.bat
+
+        @ONLY
+    )
+
 add_subdirectory(NovusCore)
