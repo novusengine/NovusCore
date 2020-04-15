@@ -33,6 +33,8 @@ cmake_minimum_required(VERSION 3.12)
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 set(CMAKE_CONFIGURATION_TYPES Debug Release RelWithDebInfo CACHE STRING "" FORCE)
+set(NOVUSCORE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(NOVUSCORE_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set(COMMON_ROOT "NovusCore/NovusCore-Common")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/${COMMON_ROOT}/cmake/modules")
 set(CMAKE_CXX_STANDARD 17)
@@ -41,8 +43,8 @@ include(${COMMON_ROOT}/cmake/Configuration.cmake)
 include(${COMMON_ROOT}/cmake/FindFiles.cmake)
 
 configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/cook.bat.in
-        ${CMAKE_CURRENT_BINARY_DIR}/cook.bat
+        ${NOVUSCORE_SOURCE_DIR}/CookData.bat.in
+        ${NOVUSCORE_BUILD_DIR}/CookData.bat
 
         @ONLY
     )
