@@ -23,6 +23,7 @@
 # Include Project Directories
 add_subdirectory(NovusCore-Common)
 add_subdirectory(NovusCore-Service)
+add_subdirectory(NovusCore-LoadBalancer)
+add_subdirectory(NovusCore-Region)
 add_subdirectory(NovusCore-Client)
-add_subdirectory(NovusCore-AuthMaster)
 add_subdirectory(NovusCore-Tools)
