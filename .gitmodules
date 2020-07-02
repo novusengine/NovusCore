@@ -13,3 +13,12 @@
 [submodule "NovusCore/NovusCore-Service"]
 	path = NovusCore/NovusCore-Service
 	url = https://github.com/novuscore/NovusCore-Service.git
+[submodule "NovusCore/NovusCore-Auth"]
+	path = NovusCore/NovusCore-Auth
+	url = https://github.com/novuscore/NovusCore-Auth.git
+[submodule "NovusCore/NovusCore-Region"]
+	path = NovusCore/NovusCore-Region
+	url = https://github.com/novuscore/NovusCore-Region.git
+[submodule "NovusCore/NovusCore-LoadBalancer"]
+	path = NovusCore/NovusCore-LoadBalancer
+	url = https://github.com/novuscore/NovusCore-LoadBalancer.git
