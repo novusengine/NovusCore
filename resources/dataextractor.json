@@ -1,0 +1,14 @@
+{
+    "M2": {
+        "Extract": true
+    },
+    "Map": {
+        "Extract": true,
+        "ExtractChunkAlphaMaps": true,
+        "MapNames": []
+    },
+    "Texture": {
+        "Extract": true,
+        "DisableStringTableGeneration": false
+    }
+}
