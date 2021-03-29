@@ -367,7 +367,7 @@ DROP TABLE IF EXISTS `realm_tags`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `realm_tags` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) NOT NULL,
+  `tag` varchar(255) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `realm_tags_id_uindex` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
