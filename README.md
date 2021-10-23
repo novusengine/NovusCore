@@ -9,10 +9,10 @@ Note: Build Status is temporarily broken
 
 ### What is NovusCore
 
-NovusCore is an emulator project for World of Warcraft.
+NovusCore is an MMO Engine using World of Warcraft as an inspiration to benchmark
 
-Currently NovusCore is a client/server solution where our main focus is to support the Wrath of the Lich King expansion.
-Long term, we hope to support the base game and all expansions in one client.
+Currently NovusCore offers a client/server solution where our main focus is to be feature complete with the Wrath of the Lich King expansion.
+Long term, we hope to support many more features.
 
 
 ### The NovusCore Promise
