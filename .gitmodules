@@ -22,3 +22,9 @@
 [submodule "NovusCore/NovusCore-LoadBalancer"]
 	path = NovusCore/NovusCore-LoadBalancer
 	url = https://github.com/novuscore/NovusCore-LoadBalancer.git
+[submodule "NovusCore/NovusCore-Gameplay"]
+	path = NovusCore/NovusCore-Gameplay
+	url = https://github.com/novuscore/NovusCore-Gameplay.git
+[submodule "NovusCore/NovusCore-World"]
+	path = NovusCore/NovusCore-World
+	url = https://github.com/novuscore/NovusCore-World.git
