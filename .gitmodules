@@ -4,3 +4,6 @@
 [submodule "Submodules/Game"]
 	path = Submodules/Game
 	url = https://github.com/novuscore/Game.git
+[submodule "Submodules/Server"]
+	path = Submodules/Server
+	url = https://github.com/novuscore/Servers.git
