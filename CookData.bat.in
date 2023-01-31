@@ -1,2 +1,0 @@
-xcopy /s /e /i "@NOVUSCORE_SOURCE_DIR@/NovusCore/NovusCore-Client/client/Data/scripts" "@NOVUSCORE_BUILD_DIR@/NovusCore/NovusCore-Client/Data/scripts"
-@NOVUSCORE_BUILD_DIR@/NovusCore/NovusCore-Tools/converter/bin/Debug/converter.exe @NOVUSCORE_SOURCE_DIR@/NovusCore/NovusCore-Client/client/Data @NOVUSCORE_BUILD_DIR@/NovusCore/NovusCore-Client/Data
