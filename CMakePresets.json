@@ -6,7 +6,7 @@
         "description": "For more information: http://aka.ms/cmakepresetsvs",
         "hidden": true,
         "generator": "Ninja",
-        "binaryDir": "out/${presetName}",
+        "binaryDir": "${sourceDir}/out/${presetName}",
         "condition": {
           "type": "equals",
           "lhs": "${hostSystemName}",
