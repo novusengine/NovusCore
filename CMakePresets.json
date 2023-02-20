@@ -1,0 +1,108 @@
+{
+    "version": 3,
+    "configurePresets": [
+      {
+        "name": "base",
+        "description": "For more information: http://aka.ms/cmakepresetsvs",
+        "hidden": true,
+        "generator": "Ninja",
+        "binaryDir": "out/${presetName}",
+        "condition": {
+          "type": "equals",
+          "lhs": "${hostSystemName}",
+          "rhs": "Windows"
+        }
+      },
+      {
+        "name": "msvc",
+        "description": "For more information: http://aka.ms/cmakepresetsvs",
+        "hidden": true,
+        "inherits": "base",
+        "cacheVariables": {
+          "CMAKE_C_COMPILER": "cl",
+          "CMAKE_CXX_COMPILER": "cl"
+        }
+      },
+      {
+        "name": "clang",
+        "description": "For more information: http://aka.ms/cmakepresetsvs",
+        "hidden": true,
+        "inherits": "base",
+        "cacheVariables": {
+          "CMAKE_C_COMPILER": "clang-cl",
+          "CMAKE_CXX_COMPILER": "clang-cl"
+        }
+      },
+      {
+        "name": "x64-debug",
+        "displayName": "x64 Debug",
+        "description": "Sets debug build type and x64 arch",
+        "inherits": "msvc",
+        "architecture": {
+          "value": "x64",
+          "strategy": "external"
+        },
+        "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Debug"
+        }
+      },
+      {
+        "name": "x64-release",
+        "displayName": "x64 Release",
+        "description": "Sets release build type",
+        "inherits": "x64-debug",
+        "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Release"
+        }
+      },
+      {
+        "name": "x64-clang-debug",
+        "displayName": "x64 Clang Debug ",
+        "description": "Sets debug build type and x64 arch with clang",
+        "inherits": "clang",
+        "architecture": {
+          "value": "x64-clang",
+          "strategy": "external"
+        },
+        "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Debug"
+        }
+      },
+      {
+        "name": "x64-clang-release",
+        "displayName": "x64 Clang Release",
+        "description": "Sets release build type and x64 arch with Clang",
+        "inherits": "x64-clang-debug",
+        "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Release"
+        }
+      }
+    ],
+    "buildPresets": [
+      {
+        "name": "build-x64-debug",
+        "displayName": "X64 Debug",
+        "configurePreset": "x64-debug",
+        "description": "Vanilla build"
+      },
+      {
+        "name": "build-x64-release",
+        "displayName": "X64 Release",
+        "configurePreset": "x64-release",
+        "description": "Vanilla build"
+      },
+      {
+        "name": "build-x64-clang-debug",
+        "displayName": "X64 Clang debug",
+        "configurePreset": "x64-clang-debug",
+        "description": "Vanilla build"
+      },
+      {
+        "name": "build-x64-clang-release",
+        "displayName": "X64 Clang Release",
+        "configurePreset": "x64-clang-release",
+        "description": "Vanilla build"
+      }
+    ]
+  }
+  
