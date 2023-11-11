@@ -37,4 +37,5 @@ out/
 CMakeSettings.json
 
 # Exceptions
-!projects/client-demo/Data/**/*.obj
+.cache/
+*.patch
